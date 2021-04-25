@@ -40,14 +40,17 @@ use core::{
     ptr::{read_volatile, write_volatile},
 };
 
-#[cfg(feature = "stm32wl5x_cm0p")]
-pub use stm32wl::stm32wl5x_cm0p as pac;
-
-#[cfg(feature = "stm32wl5x_cm4")]
-pub use stm32wl::stm32wl5x_cm4 as pac;
-
-#[cfg(feature = "stm32wle5")]
-pub use stm32wl::stm32wle5 as pac;
+cfg_if::cfg_if! {
+    if #[cfg(feature = "stm32wl5x_cm0p")] {
+        pub use stm32wl::stm32wl5x_cm0p as pac;
+    } else if #[cfg(feature = "stm32wl5x_cm4")] {
+        pub use stm32wl::stm32wl5x_cm4 as pac;
+    } else if #[cfg(feature = "stm32wle5")] {
+        pub use stm32wl::stm32wle5 as pac;
+    } else {
+        core::compile_error!("You must select your hardware with a feature flag");
+    }
+}
 
 /// Errors?  What errors!  TODO.
 pub type SubGhzError = Infallible;
@@ -58,7 +61,7 @@ pub struct SubGhz {
 }
 
 impl SubGhz {
-    /// Create a new sub-GHz radio peripheral.
+    /// Create a new sub-GHz radio driver from a peripheral.
     ///
     /// This will initialize the SPI bus, and bring the radio out of reset,
     /// but it will **not** enable the clocks on the radio.

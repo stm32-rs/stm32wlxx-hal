@@ -1,12 +1,15 @@
 [workspace]
 members = [
     "hal",
-    "pka",
     "pka-testsuite",
+    "pka",
+    "rng",
+    "rng-testsuite",
     "subghz",
 ]
 default-members = [
     "hal",
     "pka",
+    "rng",
     "subghz",
 ]

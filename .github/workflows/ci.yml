@@ -35,6 +35,21 @@ jobs:
           target: ${{ matrix.target }}
       - run: RUSTFLAGS="-D warnings" cargo build --target ${{ matrix.target }} --features ${{ matrix.feature }}
 
+  build_testsuite:
+    name: Testsuite Compile
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        workspace:
+          - "pka-testsuite"
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: thumbv7em-none-eabi
+      - run: RUSTFLAGS="-D warnings" cargo test -p ${{ matrix.workspace }} --target thumbv7em-none-eabi --no-run
+
   test:
     name: Unit Tests
     runs-on: ubuntu-latest

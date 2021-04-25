@@ -34,19 +34,10 @@ The on-target tests use [defmt-test].
 
 * `cargo install flip-link` ([flip-link])
 * `cargo install probe-run` ([probe-run])
-* `rustup target add --toolchain stable thumbv7m-none-eabi` [rustup]
+* `rustup target add --toolchain stable thumbv7m-none-eabi` ([rustup])
 * (Linux users only) udev rules are available at [newAM/nucleo-wl55jc2-rs]
 * Connect the nucleo board to your PC via USB.
 * `cargo test -p pka-testsuite --target thumbv7em-none-eabi`
-
-## Unit Tests
-
-Off-target unit tests use the built-in cargo framework.
-The only difference is you must specify the MCU as a feature.
-
-```bash
-cargo test --features stm32wl5x_cm4
-```
 
 Sample output:
 ```text
@@ -56,6 +47,15 @@ Sample output:
 └─ test::tests::__defmt_test_entry @ tests/test.rs:48
          INFO  all tests passed!
 └─ test::tests::__defmt_test_entry @ tests/test.rs:48
+```
+
+## Unit Tests
+
+Off-target unit tests use the built-in cargo framework.
+The only difference is you must specify the MCU as a feature.
+
+```bash
+cargo test --features stm32wl5x_cm4
 ```
 
 [newAM/nucleo-wl55jc2-rs]: https://github.com/newAM/nucleo-wl55jc2-rs

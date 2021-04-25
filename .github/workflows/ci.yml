@@ -1,0 +1,93 @@
+on:
+  push:
+  pull_request:
+  # schedule:
+  #   - cron: "13 3 * * *"
+
+name: CI
+
+jobs:
+  build:
+    name: Cargo Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - "x86_64-unknown-linux-gnu"
+          - "thumbv6m-none-eabi"
+          - "thumbv7em-none-eabi"
+        feature:
+          - "stm32wl5x_cm0p"
+          - "stm32wl5x_cm4"
+          - "stm32wle5"
+        exclude:
+          - feature: "stm32wl5x_cm0p"
+            target: "thumbv7em-none-eabi"
+          - feature: "stm32wl5x_cm4"
+            target: "thumbv6m-none-eabi"
+          - feature: "stm32wle5"
+            target: "thumbv6m-none-eabi"
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+      - run: RUSTFLAGS="-D warnings" cargo build --target ${{ matrix.target }} --features ${{ matrix.feature }}
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        feature:
+          - "stm32wl5x_cm0p"
+          - "stm32wl5x_cm4"
+          - "stm32wle5"
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - run: RUSTFLAGS="-D warnings" cargo test --features ${{ matrix.feature }}
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy
+      - uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --features stm32wl5x_cm4
+
+  format:
+    name: Rust Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          components: rustfmt
+      - run: cargo +nightly fmt -- --check
+
+  doc:
+    name: doc
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        feature:
+          - "stm32wl5x_cm0p"
+          - "stm32wl5x_cm4"
+          - "stm32wle5"
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - run: cargo doc --features ${{ matrix.feature }}

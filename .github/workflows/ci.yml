@@ -30,7 +30,7 @@ jobs:
           - feature: "stm32wle5"
             target: "thumbv6m-none-eabi"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
       - uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
@@ -46,7 +46,7 @@ jobs:
           - "pka-testsuite"
           - "rng-testsuite"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
       - uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
@@ -63,7 +63,7 @@ jobs:
           - "stm32wl5x_cm4"
           - "stm32wle5"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
       - uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
@@ -73,7 +73,7 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
       - uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
@@ -87,7 +87,7 @@ jobs:
     name: Rust Format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
       - uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: nightly
@@ -104,7 +104,7 @@ jobs:
           - "stm32wl5x_cm4"
           - "stm32wle5"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
       - uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable

@@ -1,7 +1,7 @@
 /// Preamble detection length for [`GenericPacketParams`].
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum PbDetLen {
+pub enum PreambleDetection {
     /// Preamble detection disabled.
     Disabled = 0x0,
     /// 8-bit preamble detection.
@@ -82,7 +82,7 @@ impl GenericPacketParams {
             ],
         }
         .set_preamble_len(1)
-        .set_pb_det_len(PbDetLen::Disabled)
+        .set_preamble_detection(PreambleDetection::Disabled)
         .set_sync_word_len(0)
         .set_addr_comp(AddrComp::Disabled)
         .set_payload_type(PayloadType::Fixed)
@@ -119,15 +119,18 @@ impl GenericPacketParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_subghz::{GenericPacketParams, PbDetLen};
+    /// use stm32wl_hal_subghz::{GenericPacketParams, PreambleDetection};
     ///
     /// const PKT_PARAMS: GenericPacketParams =
-    ///     GenericPacketParams::new().set_pb_det_len(PbDetLen::Bit8);
+    ///     GenericPacketParams::new().set_preamble_detection(PreambleDetection::Bit8);
     /// # assert_eq!(PKT_PARAMS.as_slice()[3], 0x4);
     /// ```
-    #[must_use = "set_pb_det_len returns a modified GenericPacketParams"]
-    pub const fn set_pb_det_len(mut self, pb_det_len: PbDetLen) -> GenericPacketParams {
-        self.buf[3] = pb_det_len as u8;
+    #[must_use = "set_preamble_detection returns a modified GenericPacketParams"]
+    pub const fn set_preamble_detection(
+        mut self,
+        pb_det: PreambleDetection,
+    ) -> GenericPacketParams {
+        self.buf[3] = pb_det as u8;
         self
     }
 
@@ -255,11 +258,13 @@ impl GenericPacketParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_subghz::{AddrComp, CrcType, GenericPacketParams, PayloadType, PbDetLen};
+    /// use stm32wl_hal_subghz::{
+    ///     AddrComp, CrcType, GenericPacketParams, PayloadType, PreambleDetection,
+    /// };
     ///
     /// const PKT_PARAMS: GenericPacketParams = GenericPacketParams::new()
     ///     .set_preamble_len(8)
-    ///     .set_pb_det_len(PbDetLen::Disabled)
+    ///     .set_preamble_detection(PreambleDetection::Disabled)
     ///     .set_sync_word_len(2)
     ///     .set_addr_comp(AddrComp::Disabled)
     ///     .set_payload_type(PayloadType::Fixed)

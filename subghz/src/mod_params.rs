@@ -307,20 +307,20 @@ impl GfskModParams {
         GfskModParams {
             buf: [
                 crate::OpCode::SetModulationParams as u8,
-                // bitrate
                 0x00,
-                0x10,
                 0x00,
-                // pulseshape
                 0x00,
-                // bw
-                0x16,
-                // fdev
                 0x00,
-                0x80,
+                0x00,
+                0x00,
+                0x00,
                 0x00,
             ],
         }
+        .set_bitrate(GfskBitrate::from_bps(50_000))
+        .set_pulse_shape(GfskPulseShape::None)
+        .set_bandwidth(GfskBandwidth::Bw58)
+        .set_fdev(GfskFdev::from_hertz(25_000))
     }
 
     /// Set the bitrate.

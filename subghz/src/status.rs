@@ -56,7 +56,9 @@ impl StatusMode {
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum CmdStatus {
-    /// data available to host (packet received successfully and data can be retrieved)
+    /// Data available to host.
+    ///
+    /// Packet received successfully and data can be retrieved.
     Avaliable = 0x2,
     /// Command time out.
     ///
@@ -127,6 +129,23 @@ impl From<Status> for u8 {
 }
 
 impl Status {
+    /// Create a new `Status` from a raw `u8` value.
+    ///
+    /// This is the same as `Status::from(u8)`, but in a `const` function.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal_subghz::{CmdStatus, Status, StatusMode};
+    ///
+    /// const STATUS: Status = Status::from_raw(0x54_u8);
+    /// assert_eq!(STATUS.mode(), Ok(StatusMode::Rx));
+    /// assert_eq!(STATUS.cmd(), Ok(CmdStatus::Avaliable));
+    /// ```
+    pub const fn from_raw(value: u8) -> Status {
+        Status(value)
+    }
+
     /// sub-GHz radio operating mode.
     ///
     /// # Example

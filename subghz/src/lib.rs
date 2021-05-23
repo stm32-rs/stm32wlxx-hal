@@ -8,6 +8,7 @@ mod mod_params;
 mod ocp;
 mod pa_config;
 mod packet_params;
+mod packet_status;
 mod packet_type;
 mod reg_mode;
 mod rf_frequency;
@@ -24,7 +25,8 @@ pub use mod_params::{CodingRate, LoRaBandwidth, LoRaModParams, SpreadingFactor};
 pub use mod_params::{GfskBandwidth, GfskBitrate, GfskFdev, GfskModParams, GfskPulseShape};
 pub use ocp::Ocp;
 pub use pa_config::{PaConfig, PaSel};
-pub use packet_params::{AddrComp, CrcType, GenericPacketParams, PayloadType, PbDetLen};
+pub use packet_params::{AddrComp, CrcType, GenericPacketParams, PayloadType, PreambleDetection};
+pub use packet_status::GfskPacketStatus;
 pub use packet_type::PacketType;
 pub use reg_mode::RegMode;
 pub use rf_frequency::RfFreq;
@@ -39,6 +41,8 @@ use core::{
     convert::Infallible,
     ptr::{read_volatile, write_volatile},
 };
+
+pub use num_rational;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "stm32wl5x_cm0p")] {
@@ -537,12 +541,12 @@ impl SubGhz {
     ///
     /// loop {
     ///     let (_, irq_status) = sg.irq_status()?;
-    ///     if irq_status | Irq::TxDone.mask() != 0 {
-    ///         /* handle TX done */
+    ///     if irq_status & Irq::TxDone.mask() != 0 {
+    ///         // handle TX done
     ///         break;
     ///     }
-    ///     if irq_status | Irq::Timeout.mask() != 0 {
-    ///         /* handle timeout */
+    ///     if irq_status & Irq::Timeout.mask() != 0 {
+    ///         // handle timeout
     ///         break;
     ///     }
     /// }
@@ -739,6 +743,61 @@ impl SubGhz {
     /// ```
     pub fn calibrate_image(&mut self, cal: CalibrateImage) -> Result<(), SubGhzError> {
         self.write(&[OpCode::CalibrateImage as u8, cal.0, cal.1])
+    }
+
+    /// Get the RX buffer status.
+    ///
+    /// The return tuple is (status, payload_length, buffer_pointer).
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use stm32wl_hal_subghz::{CmdStatus, Timeout};
+    ///
+    /// sg.set_rx(Timeout::DISABLED)?;
+    /// loop {
+    ///     let (status, len, ptr) = sg.rx_buffer_status()?;
+    ///
+    ///     if status.cmd() == Ok(CmdStatus::Avaliable) {
+    ///         let mut buf: [u8; 256] = [0; 256];
+    ///         let data: &mut [u8] = &mut buf[..usize::from(len)];
+    ///         sg.read_buffer(ptr, data)?;
+    ///         // ... do things with the data
+    ///         break;
+    ///     }
+    /// }
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn rx_buffer_status(&self) -> Result<(Status, u8, u8), SubGhzError> {
+        let data: [u8; 3] = self.read_n(OpCode::GetRxBufferStatus)?;
+        Ok((data[0].into(), data[1], data[2]))
+    }
+
+    /// Returns information on the last received packet.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use stm32wl_hal_subghz::{CmdStatus, Timeout};
+    ///
+    /// sg.set_rx(Timeout::DISABLED)?;
+    /// loop {
+    ///     let pkt_status = sg.gfsk_packet_status()?;
+    ///
+    ///     if pkt_status.status().cmd() == Ok(CmdStatus::Avaliable) {
+    ///         let rssi = pkt_status.rssi_avg();
+    ///         // ... log rssi here
+    ///         break;
+    ///     }
+    /// }
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn gfsk_packet_status(&self) -> Result<GfskPacketStatus, SubGhzError> {
+        Ok(GfskPacketStatus::from(
+            self.read_n(OpCode::GetPacketStatus)?,
+        ))
     }
 
     /// Set the sub-GHz radio in TX mode.

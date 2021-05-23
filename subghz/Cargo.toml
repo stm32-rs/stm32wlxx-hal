@@ -14,6 +14,10 @@ stm32wle5 = ["stm32wl/stm32wle5"]
 [dependencies]
 cfg-if = "^1"
 
+[dependencies.num-rational]
+version = "0.4"
+default-features = false
+
 [dependencies.stm32wl]
 git = "https://github.com/newAM/stm32wl-rs.git"
 rev = "031c2ecc3664c8ef3f642fbce075b2c238d5ff1b"

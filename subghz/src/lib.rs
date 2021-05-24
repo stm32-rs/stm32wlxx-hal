@@ -29,7 +29,7 @@ pub use ocp::Ocp;
 pub use op_error::OpError;
 pub use pa_config::{PaConfig, PaSel};
 pub use packet_params::{AddrComp, CrcType, GenericPacketParams, PayloadType, PreambleDetection};
-pub use packet_status::GfskPacketStatus;
+pub use packet_status::{GfskPacketStatus, LoRaPacketStatus};
 pub use packet_type::PacketType;
 pub use reg_mode::RegMode;
 pub use rf_frequency::RfFreq;
@@ -733,7 +733,7 @@ impl SubGhz {
         Ok((data[0].into(), data[1], data[2]))
     }
 
-    /// Returns information on the last received packet.
+    /// Returns information on the last received (G)FSK packet.
     ///
     /// # Example
     ///
@@ -749,7 +749,7 @@ impl SubGhz {
     ///
     ///     if pkt_status.status().cmd() == Ok(CmdStatus::Avaliable) {
     ///         let rssi = pkt_status.rssi_avg();
-    ///         writeln!(&mut uart, "Avg RSSI: {}", rssi);
+    ///         writeln!(&mut uart, "Avg RSSI: {} dBm", rssi);
     ///         break;
     ///     }
     /// }
@@ -761,7 +761,33 @@ impl SubGhz {
         ))
     }
 
-    // TODO: LoRa Get_PacketStatus
+    /// Returns information on the last received LoRa packet.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use std::fmt::Write;
+    /// # let mut uart = String::new();
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use stm32wl_hal_subghz::{CmdStatus, Timeout};
+    ///
+    /// sg.set_rx(Timeout::DISABLED)?;
+    /// loop {
+    ///     let pkt_status = sg.lora_packet_status()?;
+    ///
+    ///     if pkt_status.status().cmd() == Ok(CmdStatus::Avaliable) {
+    ///         let snr = pkt_status.snr_pkt();
+    ///         writeln!(&mut uart, "SNR: {} dB", snr);
+    ///         break;
+    ///     }
+    /// }
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn lora_packet_status(&self) -> Result<LoRaPacketStatus, SubGhzError> {
+        Ok(LoRaPacketStatus::from(
+            self.read_n(OpCode::GetPacketStatus)?,
+        ))
+    }
 
     /// Get the instantaneous signal strength during packet reception.
     ///

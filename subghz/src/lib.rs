@@ -54,10 +54,13 @@ use num_rational::Ratio;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "stm32wl5x_cm0p")] {
+        /// Peripheral access crate.
         pub use stm32wl::stm32wl5x_cm0p as pac;
     } else if #[cfg(feature = "stm32wl5x_cm4")] {
+        /// Peripheral access crate.
         pub use stm32wl::stm32wl5x_cm4 as pac;
     } else if #[cfg(feature = "stm32wle5")] {
+        /// Peripheral access crate.
         pub use stm32wl::stm32wle5 as pac;
     } else {
         core::compile_error!("You must select your hardware with a feature flag");
@@ -457,6 +460,8 @@ impl SubGhz {
     /// sg.set_fs()?;
     /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
     /// ```
+    ///
+    /// [`set_rf_frequency`]: crate::SubGhz::set_rf_frequency
     pub fn set_fs(&mut self) -> Result<(), SubGhzError> {
         self.write(&[OpCode::SetFs.into()])
     }
@@ -477,7 +482,7 @@ impl SubGhz {
     pub fn set_tx(&mut self, timeout: Timeout) -> Result<(), SubGhzError> {
         let tobits: u32 = timeout.into_bits();
         self.write(&[
-            crate::OpCode::SetTx as u8,
+            OpCode::SetTx.into(),
             ((tobits >> 16) & 0xFF) as u8,
             ((tobits >> 8) & 0xFF) as u8,
             (tobits & 0xFF) as u8,
@@ -501,7 +506,7 @@ impl SubGhz {
     pub fn set_rx(&mut self, timeout: Timeout) -> Result<(), SubGhzError> {
         let tobits: u32 = timeout.into_bits();
         self.write(&[
-            crate::OpCode::SetRx as u8,
+            OpCode::SetRx.into(),
             ((tobits >> 16) & 0xFF) as u8,
             ((tobits >> 8) & 0xFF) as u8,
             (tobits & 0xFF) as u8,
@@ -526,12 +531,74 @@ impl SubGhz {
         rx_timeout_stop: RxTimeoutStop,
     ) -> Result<(), SubGhzError> {
         self.write(&[
-            OpCode::SetStopRxTimerOnPreamble as u8,
-            rx_timeout_stop as u8,
+            OpCode::SetStopRxTimerOnPreamble.into(),
+            rx_timeout_stop.into(),
         ])
     }
 
-    // TODO: set_rx_duty_cycle
+    /// Put the radio in non-continuous RX mode.
+    ///
+    /// This command must be sent in Standby mode.
+    /// This command is only functional with FSK and LoRa packet type.
+    ///
+    /// The following steps are performed:
+    /// 1. Save sub-GHz radio configuration.
+    /// 2. Enter Receive mode and listen for a preamble for the specified `rx_period`.
+    /// 3. Upon the detection of a preamble, the `rx_period` timeout is stopped
+    ///    and restarted with the value 2 x `rx_period` + `sleep_period`.
+    ///    During this new period, the sub-GHz radio looks for the detection of
+    ///    a synchronization word when in (G)FSK modulation mode,
+    ///    or a header when in LoRa modulation mode.
+    /// 4. If no packet is received during the listen period defined by
+    ///    2 x `rx_period` + `sleep_period`, the sleep mode is entered for a
+    ///    duration of `sleep_period`. At the end of the receive period,
+    ///    the sub-GHz radio takes some time to save the context before starting
+    ///    the sleep period.
+    /// 5. After the sleep period, a new listening period is automatically
+    ///    started. The sub-GHz radio restores the sub-GHz radio configuration
+    ///    and continuous with step 2.
+    ///
+    /// The listening mode is terminated in one of the following cases:
+    /// * if a packet is received during the listening period: the sub-GHz radio
+    ///   issues a [`RxDone`] interrupt and enters standby mode.
+    /// * if [`set_standby`] is sent during the listening period or after the
+    ///   sub-GHz has been requested to exit sleep mode by sub-GHz radio SPI NSS
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use core::time::Duration;
+    /// use stm32wl_hal_subghz::{StandbyClk, Timeout};
+    ///
+    /// const RX_PERIOD: Timeout = Timeout::from_duration_sat(Duration::from_millis(100));
+    /// const SLEEP_PERIOD: Timeout = Timeout::from_duration_sat(Duration::from_secs(1));
+    ///
+    /// sg.set_standby(StandbyClk::Rc)?;
+    /// sg.set_rx_duty_cycle(RX_PERIOD, SLEEP_PERIOD)?;
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    ///
+    /// [`RxDone`]: crate::Irq::RxDone
+    /// [`set_rf_frequency`]: crate::SubGhz::set_rf_frequency
+    /// [`set_standby`]: crate::SubGhz::set_standby
+    pub fn set_rx_duty_cycle(
+        &mut self,
+        rx_period: Timeout,
+        sleep_period: Timeout,
+    ) -> Result<(), SubGhzError> {
+        let rx_period_bits: u32 = rx_period.into_bits();
+        let sleep_period_bits: u32 = sleep_period.into_bits();
+        self.write(&[
+            OpCode::SetRxDutyCycle.into(),
+            ((rx_period_bits >> 16) & 0xFF) as u8,
+            ((rx_period_bits >> 8) & 0xFF) as u8,
+            (rx_period_bits & 0xFF) as u8,
+            ((sleep_period_bits >> 16) & 0xFF) as u8,
+            ((sleep_period_bits >> 8) & 0xFF) as u8,
+            (sleep_period_bits & 0xFF) as u8,
+        ])
+    }
 
     // TODO: set_cad
 

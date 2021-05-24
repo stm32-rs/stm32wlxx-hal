@@ -1,5 +1,6 @@
-//! The RNG is a true random number generator that provides full entropy outputs
-//! to the application as 32-bit samples.
+//! True random number generator.
+//!
+//! Provides full entropy outputs to the application as 32-bit samples.
 //! It is composed of a live entropy source (analog) and an internal
 //! conditioning component.
 #![cfg_attr(not(test), no_std)]
@@ -14,10 +15,13 @@ pub use rand_core;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "stm32wl5x_cm0p")] {
+        /// Peripheral access crate.
         pub use stm32wl::stm32wl5x_cm0p as pac;
     } else if #[cfg(feature = "stm32wl5x_cm4")] {
+        /// Peripheral access crate.
         pub use stm32wl::stm32wl5x_cm4 as pac;
     } else if #[cfg(feature = "stm32wle5")] {
+        /// Peripheral access crate.
         pub use stm32wl::stm32wle5 as pac;
     } else {
         core::compile_error!("You must select your hardware with a feature flag");

@@ -1,6 +1,6 @@
 use crate::Status;
 
-/// [Type-state] for LoRa stats.
+/// [Typestate] for LoRa stats.
 ///
 /// [Typestate]: https://docs.rust-embedded.org/book/static-guarantees/typestate-programming.html
 pub struct LoRaStats;

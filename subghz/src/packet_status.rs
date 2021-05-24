@@ -4,30 +4,30 @@ use crate::Status;
 
 /// (G)FSK packet status.
 ///
-/// Returned by [`gfsk_packet_status`].
+/// Returned by [`fsk_packet_status`].
 ///
-/// [`gfsk_packet_status`]: crate::SubGhz::gfsk_packet_status
+/// [`fsk_packet_status`]: crate::SubGhz::fsk_packet_status
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct GfskPacketStatus {
+pub struct FskPacketStatus {
     buf: [u8; 4],
 }
 
-impl From<[u8; 4]> for GfskPacketStatus {
+impl From<[u8; 4]> for FskPacketStatus {
     fn from(buf: [u8; 4]) -> Self {
-        GfskPacketStatus { buf }
+        FskPacketStatus { buf }
     }
 }
 
-impl GfskPacketStatus {
+impl FskPacketStatus {
     /// Get the status.
     ///
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_subghz::{CmdStatus, GfskPacketStatus, Status, StatusMode};
+    /// use stm32wl_hal_subghz::{CmdStatus, FskPacketStatus, Status, StatusMode};
     ///
     /// let example_data_from_radio: [u8; 4] = [0x54, 0, 0, 0];
-    /// let pkt_status: GfskPacketStatus = GfskPacketStatus::from(example_data_from_radio);
+    /// let pkt_status: FskPacketStatus = FskPacketStatus::from(example_data_from_radio);
     /// let status: Status = pkt_status.status();
     /// assert_eq!(status.mode(), Ok(StatusMode::Rx));
     /// assert_eq!(status.cmd(), Ok(CmdStatus::Avaliable));
@@ -83,10 +83,10 @@ impl GfskPacketStatus {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_subghz::{num_rational::Ratio, GfskPacketStatus};
+    /// use stm32wl_hal_subghz::{num_rational::Ratio, FskPacketStatus};
     ///
     /// let example_data_from_radio: [u8; 4] = [0, 0, 80, 0];
-    /// let pkt_status: GfskPacketStatus = GfskPacketStatus::from(example_data_from_radio);
+    /// let pkt_status: FskPacketStatus = FskPacketStatus::from(example_data_from_radio);
     /// assert_eq!(pkt_status.rssi_sync().to_integer(), -40);
     /// ```
     pub fn rssi_sync(&self) -> Ratio<i16> {
@@ -100,10 +100,10 @@ impl GfskPacketStatus {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_subghz::{num_rational::Ratio, GfskPacketStatus};
+    /// use stm32wl_hal_subghz::{num_rational::Ratio, FskPacketStatus};
     ///
     /// let example_data_from_radio: [u8; 4] = [0, 0, 0, 100];
-    /// let pkt_status: GfskPacketStatus = GfskPacketStatus::from(example_data_from_radio);
+    /// let pkt_status: FskPacketStatus = FskPacketStatus::from(example_data_from_radio);
     /// assert_eq!(pkt_status.rssi_avg().to_integer(), -50);
     /// ```
     pub fn rssi_avg(&self) -> Ratio<i16> {

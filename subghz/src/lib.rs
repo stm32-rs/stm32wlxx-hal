@@ -24,12 +24,12 @@ mod value_error;
 pub use calibrate::{Calibrate, CalibrateImage};
 pub use irq::{CfgDioIrq, Irq, IrqLine};
 pub use mod_params::{CodingRate, LoRaBandwidth, LoRaModParams, SpreadingFactor};
-pub use mod_params::{GfskBandwidth, GfskBitrate, GfskFdev, GfskModParams, GfskPulseShape};
+pub use mod_params::{FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape};
 pub use ocp::Ocp;
 pub use op_error::OpError;
 pub use pa_config::{PaConfig, PaSel};
 pub use packet_params::{AddrComp, CrcType, GenericPacketParams, PayloadType, PreambleDetection};
-pub use packet_status::{GfskPacketStatus, LoRaPacketStatus};
+pub use packet_status::{FskPacketStatus, LoRaPacketStatus};
 pub use packet_type::PacketType;
 pub use reg_mode::RegMode;
 pub use rf_frequency::RfFreq;
@@ -626,25 +626,25 @@ impl SubGhz {
     /// ```no_run
     /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
     /// use stm32wl_hal_subghz::{
-    ///     GfskBandwidth, GfskBitrate, GfskFdev, GfskModParams, GfskPulseShape, PacketType,
+    ///     FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape, PacketType,
     /// };
     ///
-    /// const BITRATE: GfskBitrate = GfskBitrate::from_bps(32_000);
-    /// const PULSE_SHAPE: GfskPulseShape = GfskPulseShape::Bt03;
-    /// const BW: GfskBandwidth = GfskBandwidth::Bw9;
-    /// const FDEV: GfskFdev = GfskFdev::from_hertz(31_250);
+    /// const BITRATE: FskBitrate = FskBitrate::from_bps(32_000);
+    /// const PULSE_SHAPE: FskPulseShape = FskPulseShape::Bt03;
+    /// const BW: FskBandwidth = FskBandwidth::Bw9;
+    /// const FDEV: FskFdev = FskFdev::from_hertz(31_250);
     ///
-    /// const MOD_PARAMS: GfskModParams = GfskModParams::new()
+    /// const MOD_PARAMS: FskModParams = FskModParams::new()
     ///     .set_bitrate(BITRATE)
     ///     .set_pulse_shape(PULSE_SHAPE)
     ///     .set_bandwidth(BW)
     ///     .set_fdev(FDEV);
     ///
     /// sg.set_packet_type(PacketType::Fsk)?;
-    /// sg.set_gfsk_mod_params(&MOD_PARAMS)?;
+    /// sg.set_fsk_mod_params(&MOD_PARAMS)?;
     /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
     /// ```
-    pub fn set_gfsk_mod_params(&mut self, params: &GfskModParams) -> Result<(), SubGhzError> {
+    pub fn set_fsk_mod_params(&mut self, params: &FskModParams) -> Result<(), SubGhzError> {
         self.write(params.as_slice())
     }
 
@@ -745,7 +745,7 @@ impl SubGhz {
     ///
     /// sg.set_rx(Timeout::DISABLED)?;
     /// loop {
-    ///     let pkt_status = sg.gfsk_packet_status()?;
+    ///     let pkt_status = sg.fsk_packet_status()?;
     ///
     ///     if pkt_status.status().cmd() == Ok(CmdStatus::Avaliable) {
     ///         let rssi = pkt_status.rssi_avg();
@@ -755,10 +755,8 @@ impl SubGhz {
     /// }
     /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
     /// ```
-    pub fn gfsk_packet_status(&self) -> Result<GfskPacketStatus, SubGhzError> {
-        Ok(GfskPacketStatus::from(
-            self.read_n(OpCode::GetPacketStatus)?,
-        ))
+    pub fn fsk_packet_status(&self) -> Result<FskPacketStatus, SubGhzError> {
+        Ok(FskPacketStatus::from(self.read_n(OpCode::GetPacketStatus)?))
     }
 
     /// Returns information on the last received LoRa packet.

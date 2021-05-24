@@ -1,3 +1,8 @@
+/// Operation Errors.
+///
+/// Returned by [`op_error`].
+///
+/// [`op_error`]: crate::SubGhz::op_error
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[repr(u8)]
 pub enum OpError {

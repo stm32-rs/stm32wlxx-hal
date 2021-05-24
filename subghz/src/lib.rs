@@ -438,7 +438,28 @@ impl SubGhz {
         self.write(&[OpCode::SetStandby as u8, u8::from(standby_clk)])
     }
 
-    // TODO: set_fs
+    /// Put the subghz radio into frequency synthesis mode.
+    ///
+    /// The RF-PLL frequency must be set with [`set_rf_frequency`] before using
+    /// this command.
+    ///
+    /// Check the datasheet for more information, this is a test command but
+    /// I honestly do not see any use for it.  Please update this description
+    /// if you know more than I do.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use stm32wl_hal_subghz::RfFreq;
+    ///
+    /// sg.set_rf_frequency(&RfFreq::from_frequency(915_000_000))?;
+    /// sg.set_fs()?;
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn set_fs(&mut self) -> Result<(), SubGhzError> {
+        self.write(&[OpCode::SetFs.into()])
+    }
 
     /// Set the sub-GHz radio in TX mode.
     ///

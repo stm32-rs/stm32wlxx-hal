@@ -492,11 +492,40 @@ impl SubGhz {
 
     // TODO: set_cad
 
+    /// Generate a continuous transmit tone at the RF-PLL frequency.
+    ///
+    /// The sub-GHz radio remains in continuous transmit tone mode until a mode
+    /// configuration command is received.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// sg.set_tx_continuous_wave()?;
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
     pub fn set_tx_continuous_wave(&mut self) -> Result<(), SubGhzError> {
         self.write(&[OpCode::SetTxContinuousWave as u8])
     }
 
-    // TODO: set_tx_continuous_preamble
+    /// Generate an infinite preamble at the RF-PLL frequency.
+    ///
+    /// The preamble is an alternating 0s and 1s sequence in generic (G)FSK and
+    /// (G)MSK modulations.
+    /// The preamble is symbol 0 in LoRa modulation.
+    /// The sub-GHz radio remains in infinite preamble mode until a mode
+    /// configuration command is received.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// sg.set_tx_continuous_preamble()?;
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn set_tx_continuous_preamble(&mut self) -> Result<(), SubGhzError> {
+        self.write(&[OpCode::SetTxContinuousPreamble as u8])
+    }
 }
 
 // 5.8.4

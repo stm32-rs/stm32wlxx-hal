@@ -46,13 +46,11 @@ impl CalibrateImage {
     ///
     /// * Panics if `freq1` is less than `freq2`.
     /// * Panics if `freq1` or `freq1` is not a multiple of 4MHz.
-    /// * Panics if `freq1` or `freq2` are greater than `1020`.
+    /// * Panics if `freq1` or `freq2` is greater than `1020`.
     ///
     /// # Example
     ///
     /// Create an image calibration for the 430 - 440 MHz ISM band.
-    ///
-    /// # Example
     ///
     /// ```
     /// use stm32wl_hal_subghz::CalibrateImage;
@@ -73,5 +71,50 @@ impl CalibrateImage {
 impl Default for CalibrateImage {
     fn default() -> Self {
         CalibrateImage::new(0xE1, 0xE9)
+    }
+}
+
+/// Block calibration.
+///
+/// An argument of [`calibrate`].
+///
+/// [`calibrate`]: crate::SubGhz::calibrate
+#[derive(PartialEq, Eq, Debug, Clone, Copy, Hash)]
+#[repr(u8)]
+pub enum Calibrate {
+    /// Image calibration
+    Image = 1 << 6,
+    ///  RF-ADC bulk P calibration
+    AdcBulkP = 1 << 5,
+    /// RF-ADC bulk N calibration
+    AdcBulkN = 1 << 4,
+    /// RF-ADC pulse calibration
+    AdcPulse = 1 << 3,
+    /// RF-PLL calibration
+    Pll = 1 << 2,
+    /// Sub-GHz radio RC 13 MHz calibration
+    Rc13M = 1 << 1,
+    /// Sub-GHz radio RC 64 kHz calibration
+    Rc64K = 1,
+}
+
+impl Calibrate {
+    /// Get the bitmask for the block calibration.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal_subghz::Calibrate;
+    ///
+    /// assert_eq!(Calibrate::Image.mask(), 0b0100_0000);
+    /// assert_eq!(Calibrate::AdcBulkP.mask(), 0b0010_0000);
+    /// assert_eq!(Calibrate::AdcBulkN.mask(), 0b0001_0000);
+    /// assert_eq!(Calibrate::AdcPulse.mask(), 0b0000_1000);
+    /// assert_eq!(Calibrate::Pll.mask(), 0b0000_0100);
+    /// assert_eq!(Calibrate::Rc13M.mask(), 0b0000_0010);
+    /// assert_eq!(Calibrate::Rc64K.mask(), 0b0000_0001);
+    /// ```
+    pub const fn mask(self) -> u8 {
+        self as u8
     }
 }

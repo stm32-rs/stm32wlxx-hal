@@ -1,10 +1,10 @@
-use stm32wl_hal_subghz::{GfskBandwidth, GfskBitrate, GfskFdev, LoRaBandwidth};
+use stm32wl_hal_subghz::{FskBandwidth, FskBitrate, FskFdev, LoRaBandwidth};
 
 #[test]
-fn gfsk_bw_ord() {
-    assert!((GfskBandwidth::Bw4 as u8) > (GfskBandwidth::Bw5 as u8));
-    assert!(GfskBandwidth::Bw4 < GfskBandwidth::Bw5);
-    assert!(GfskBandwidth::Bw5 > GfskBandwidth::Bw4);
+fn fsk_bw_ord() {
+    assert!((FskBandwidth::Bw4 as u8) > (FskBandwidth::Bw5 as u8));
+    assert!(FskBandwidth::Bw4 < FskBandwidth::Bw5);
+    assert!(FskBandwidth::Bw5 > FskBandwidth::Bw4);
 }
 
 #[test]
@@ -15,16 +15,16 @@ fn lora_bw_ord() {
 }
 
 #[test]
-fn gfsk_bitrate_ord() {
-    assert!(GfskBitrate::from_bps(9600) > GfskBitrate::from_bps(4800));
-    assert!(GfskBitrate::from_bps(4800) < GfskBitrate::from_bps(9600));
+fn fsk_bitrate_ord() {
+    assert!(FskBitrate::from_bps(9600) > FskBitrate::from_bps(4800));
+    assert!(FskBitrate::from_bps(4800) < FskBitrate::from_bps(9600));
 }
 
 #[test]
-fn gfsk_bitrate_as_bps_limits() {
-    const ZERO: GfskBitrate = GfskBitrate::from_bits(0);
-    const ONE: GfskBitrate = GfskBitrate::from_bits(1);
-    const MAX: GfskBitrate = GfskBitrate::from_bits(u32::MAX);
+fn fsk_bitrate_as_bps_limits() {
+    const ZERO: FskBitrate = FskBitrate::from_bits(0);
+    const ONE: FskBitrate = FskBitrate::from_bits(1);
+    const MAX: FskBitrate = FskBitrate::from_bits(u32::MAX);
 
     assert_eq!(ZERO.as_bps(), 0);
     assert_eq!(ONE.as_bps(), 1_024_000_000);
@@ -32,10 +32,10 @@ fn gfsk_bitrate_as_bps_limits() {
 }
 
 #[test]
-fn gfsk_bitrate_from_bps_limits() {
-    const ZERO: GfskBitrate = GfskBitrate::from_bps(0);
-    const ONE: GfskBitrate = GfskBitrate::from_bps(1);
-    const MAX: GfskBitrate = GfskBitrate::from_bps(u32::MAX);
+fn fsk_bitrate_from_bps_limits() {
+    const ZERO: FskBitrate = FskBitrate::from_bps(0);
+    const ONE: FskBitrate = FskBitrate::from_bps(1);
+    const MAX: FskBitrate = FskBitrate::from_bps(u32::MAX);
 
     assert_eq!(ZERO.as_bps(), 61);
     assert_eq!(ONE.as_bps(), 61);
@@ -43,16 +43,16 @@ fn gfsk_bitrate_from_bps_limits() {
 }
 
 #[test]
-fn gfsk_fdev_ord() {
-    assert!(GfskFdev::from_hertz(30_000) > GfskFdev::from_hertz(20_000));
-    assert!(GfskFdev::from_hertz(20_000) < GfskFdev::from_hertz(30_000));
+fn fsk_fdev_ord() {
+    assert!(FskFdev::from_hertz(30_000) > FskFdev::from_hertz(20_000));
+    assert!(FskFdev::from_hertz(20_000) < FskFdev::from_hertz(30_000));
 }
 
 #[test]
-fn gfsk_fdev_as_hertz_limits() {
-    const ZERO: GfskFdev = GfskFdev::from_bits(0);
-    const ONE: GfskFdev = GfskFdev::from_bits(1);
-    const MAX: GfskFdev = GfskFdev::from_bits(u32::MAX);
+fn fsk_fdev_as_hertz_limits() {
+    const ZERO: FskFdev = FskFdev::from_bits(0);
+    const ONE: FskFdev = FskFdev::from_bits(1);
+    const MAX: FskFdev = FskFdev::from_bits(u32::MAX);
 
     assert_eq!(ZERO.as_hertz(), 0);
     assert_eq!(ONE.as_hertz(), 0);
@@ -60,10 +60,10 @@ fn gfsk_fdev_as_hertz_limits() {
 }
 
 #[test]
-fn gfsk_fdev_from_hertz_limits() {
-    const ZERO: GfskFdev = GfskFdev::from_hertz(0);
-    const ONE: GfskFdev = GfskFdev::from_hertz(1);
-    const MAX: GfskFdev = GfskFdev::from_hertz(u32::MAX);
+fn fsk_fdev_from_hertz_limits() {
+    const ZERO: FskFdev = FskFdev::from_hertz(0);
+    const ONE: FskFdev = FskFdev::from_hertz(1);
+    const MAX: FskFdev = FskFdev::from_hertz(u32::MAX);
 
     assert_eq!(ZERO.as_hertz(), 0);
     assert_eq!(ONE.as_hertz(), 0);

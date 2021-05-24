@@ -1,6 +1,6 @@
-/// Bandwidth options for [`GfskModParams`].
+/// Bandwidth options for [`FskModParams`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
-pub enum GfskBandwidth {
+pub enum FskBandwidth {
     /// 4.8 kHz DSB
     Bw4 = 0x1F,
     /// 5.8 kHz DSB
@@ -45,78 +45,78 @@ pub enum GfskBandwidth {
     Bw467 = 0x09,
 }
 
-impl GfskBandwidth {
+impl FskBandwidth {
     /// Get the bandwidth in hertz.
     ///
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_subghz::GfskBandwidth;
+    /// use stm32wl_hal_subghz::FskBandwidth;
     ///
-    /// assert_eq!(GfskBandwidth::Bw4.hertz(), 4_800);
-    /// assert_eq!(GfskBandwidth::Bw5.hertz(), 5_800);
-    /// assert_eq!(GfskBandwidth::Bw7.hertz(), 7_300);
-    /// assert_eq!(GfskBandwidth::Bw9.hertz(), 9_700);
-    /// assert_eq!(GfskBandwidth::Bw11.hertz(), 11_700);
-    /// assert_eq!(GfskBandwidth::Bw14.hertz(), 14_600);
-    /// assert_eq!(GfskBandwidth::Bw19.hertz(), 19_500);
-    /// assert_eq!(GfskBandwidth::Bw23.hertz(), 23_400);
-    /// assert_eq!(GfskBandwidth::Bw29.hertz(), 29_300);
-    /// assert_eq!(GfskBandwidth::Bw39.hertz(), 39_000);
-    /// assert_eq!(GfskBandwidth::Bw46.hertz(), 46_900);
-    /// assert_eq!(GfskBandwidth::Bw58.hertz(), 58_600);
-    /// assert_eq!(GfskBandwidth::Bw78.hertz(), 78_200);
-    /// assert_eq!(GfskBandwidth::Bw93.hertz(), 93_800);
-    /// assert_eq!(GfskBandwidth::Bw117.hertz(), 117_300);
-    /// assert_eq!(GfskBandwidth::Bw156.hertz(), 156_200);
-    /// assert_eq!(GfskBandwidth::Bw187.hertz(), 187_200);
-    /// assert_eq!(GfskBandwidth::Bw234.hertz(), 234_300);
-    /// assert_eq!(GfskBandwidth::Bw312.hertz(), 312_000);
-    /// assert_eq!(GfskBandwidth::Bw373.hertz(), 373_600);
-    /// assert_eq!(GfskBandwidth::Bw467.hertz(), 467_000);
+    /// assert_eq!(FskBandwidth::Bw4.hertz(), 4_800);
+    /// assert_eq!(FskBandwidth::Bw5.hertz(), 5_800);
+    /// assert_eq!(FskBandwidth::Bw7.hertz(), 7_300);
+    /// assert_eq!(FskBandwidth::Bw9.hertz(), 9_700);
+    /// assert_eq!(FskBandwidth::Bw11.hertz(), 11_700);
+    /// assert_eq!(FskBandwidth::Bw14.hertz(), 14_600);
+    /// assert_eq!(FskBandwidth::Bw19.hertz(), 19_500);
+    /// assert_eq!(FskBandwidth::Bw23.hertz(), 23_400);
+    /// assert_eq!(FskBandwidth::Bw29.hertz(), 29_300);
+    /// assert_eq!(FskBandwidth::Bw39.hertz(), 39_000);
+    /// assert_eq!(FskBandwidth::Bw46.hertz(), 46_900);
+    /// assert_eq!(FskBandwidth::Bw58.hertz(), 58_600);
+    /// assert_eq!(FskBandwidth::Bw78.hertz(), 78_200);
+    /// assert_eq!(FskBandwidth::Bw93.hertz(), 93_800);
+    /// assert_eq!(FskBandwidth::Bw117.hertz(), 117_300);
+    /// assert_eq!(FskBandwidth::Bw156.hertz(), 156_200);
+    /// assert_eq!(FskBandwidth::Bw187.hertz(), 187_200);
+    /// assert_eq!(FskBandwidth::Bw234.hertz(), 234_300);
+    /// assert_eq!(FskBandwidth::Bw312.hertz(), 312_000);
+    /// assert_eq!(FskBandwidth::Bw373.hertz(), 373_600);
+    /// assert_eq!(FskBandwidth::Bw467.hertz(), 467_000);
     /// ```
     pub fn hertz(&self) -> u32 {
         match self {
-            GfskBandwidth::Bw4 => 4_800,
-            GfskBandwidth::Bw5 => 5_800,
-            GfskBandwidth::Bw7 => 7_300,
-            GfskBandwidth::Bw9 => 9_700,
-            GfskBandwidth::Bw11 => 11_700,
-            GfskBandwidth::Bw14 => 14_600,
-            GfskBandwidth::Bw19 => 19_500,
-            GfskBandwidth::Bw23 => 23_400,
-            GfskBandwidth::Bw29 => 29_300,
-            GfskBandwidth::Bw39 => 39_000,
-            GfskBandwidth::Bw46 => 46_900,
-            GfskBandwidth::Bw58 => 58_600,
-            GfskBandwidth::Bw78 => 78_200,
-            GfskBandwidth::Bw93 => 93_800,
-            GfskBandwidth::Bw117 => 117_300,
-            GfskBandwidth::Bw156 => 156_200,
-            GfskBandwidth::Bw187 => 187_200,
-            GfskBandwidth::Bw234 => 234_300,
-            GfskBandwidth::Bw312 => 312_000,
-            GfskBandwidth::Bw373 => 373_600,
-            GfskBandwidth::Bw467 => 467_000,
+            FskBandwidth::Bw4 => 4_800,
+            FskBandwidth::Bw5 => 5_800,
+            FskBandwidth::Bw7 => 7_300,
+            FskBandwidth::Bw9 => 9_700,
+            FskBandwidth::Bw11 => 11_700,
+            FskBandwidth::Bw14 => 14_600,
+            FskBandwidth::Bw19 => 19_500,
+            FskBandwidth::Bw23 => 23_400,
+            FskBandwidth::Bw29 => 29_300,
+            FskBandwidth::Bw39 => 39_000,
+            FskBandwidth::Bw46 => 46_900,
+            FskBandwidth::Bw58 => 58_600,
+            FskBandwidth::Bw78 => 78_200,
+            FskBandwidth::Bw93 => 93_800,
+            FskBandwidth::Bw117 => 117_300,
+            FskBandwidth::Bw156 => 156_200,
+            FskBandwidth::Bw187 => 187_200,
+            FskBandwidth::Bw234 => 234_300,
+            FskBandwidth::Bw312 => 312_000,
+            FskBandwidth::Bw373 => 373_600,
+            FskBandwidth::Bw467 => 467_000,
         }
     }
 }
 
-impl Ord for GfskBandwidth {
+impl Ord for FskBandwidth {
     fn cmp(&self, other: &Self) -> core::cmp::Ordering {
         self.hertz().cmp(&other.hertz())
     }
 }
 
-impl PartialOrd for GfskBandwidth {
+impl PartialOrd for FskBandwidth {
     fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
         Some(self.hertz().cmp(&other.hertz()))
     }
 }
 
-/// Pulse shaping options for [`GfskModParams`].
+/// Pulse shaping options for [`FskModParams`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
-pub enum GfskPulseShape {
+pub enum FskPulseShape {
     /// No filtering applied.
     None = 0b00,
     /// Gaussian BT 0.3
@@ -129,14 +129,14 @@ pub enum GfskPulseShape {
     Bt10 = 0x0B,
 }
 
-/// Bitrate argument for [`GfskModParams::set_bitrate`].
+/// Bitrate argument for [`FskModParams::set_bitrate`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
-pub struct GfskBitrate {
+pub struct FskBitrate {
     bits: u32,
 }
 
-impl GfskBitrate {
-    /// Create a new `GfskBitrate` from a bitrate in bits per second.
+impl FskBitrate {
+    /// Create a new `FskBitrate` from a bitrate in bits per second.
     ///
     /// This the resulting value will be rounded down, and will saturate if
     /// `bps` is outside of the theoretical limits.
@@ -144,9 +144,9 @@ impl GfskBitrate {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_subghz::GfskBitrate;
+    /// use stm32wl_hal_subghz::FskBitrate;
     ///
-    /// const BITRATE: GfskBitrate = GfskBitrate::from_bps(9600);
+    /// const BITRATE: FskBitrate = FskBitrate::from_bps(9600);
     /// assert_eq!(BITRATE.as_bps(), 9600);
     /// ```
     pub const fn from_bps(bps: u32) -> Self {
@@ -163,7 +163,7 @@ impl GfskBitrate {
         }
     }
 
-    /// Create a new `GfskBitrate` from a raw bit value.
+    /// Create a new `FskBitrate` from a raw bit value.
     ///
     /// bits = 32 × 32 MHz / bitrate
     ///
@@ -173,9 +173,9 @@ impl GfskBitrate {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_subghz::GfskBitrate;
+    /// use stm32wl_hal_subghz::FskBitrate;
     ///
-    /// const BITRATE: GfskBitrate = GfskBitrate::from_bits(0x7D00);
+    /// const BITRATE: FskBitrate = FskBitrate::from_bits(0x7D00);
     /// assert_eq!(BITRATE.as_bps(), 32_000);
     /// ```
     pub const fn from_bits(bits: u32) -> Self {
@@ -189,10 +189,10 @@ impl GfskBitrate {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_subghz::GfskBitrate;
+    /// use stm32wl_hal_subghz::FskBitrate;
     ///
     /// const BITS_PER_SEC: u32 = 9600;
-    /// const BITRATE: GfskBitrate = GfskBitrate::from_bps(BITS_PER_SEC);
+    /// const BITRATE: FskBitrate = FskBitrate::from_bps(BITS_PER_SEC);
     /// assert_eq!(BITRATE.as_bps(), BITS_PER_SEC);
     /// ```
     pub const fn as_bps(&self) -> u32 {
@@ -208,34 +208,34 @@ impl GfskBitrate {
     }
 }
 
-impl Ord for GfskBitrate {
+impl Ord for FskBitrate {
     fn cmp(&self, other: &Self) -> core::cmp::Ordering {
         self.as_bps().cmp(&other.as_bps())
     }
 }
 
-impl PartialOrd for GfskBitrate {
+impl PartialOrd for FskBitrate {
     fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
         Some(self.as_bps().cmp(&other.as_bps()))
     }
 }
 
-/// Frequency deviation argument for [`GfskModParams::set_fdev`]
+/// Frequency deviation argument for [`FskModParams::set_fdev`]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
-pub struct GfskFdev {
+pub struct FskFdev {
     bits: u32,
 }
 
-impl GfskFdev {
-    /// Create a new `GfskFdev` from a frequency deviation in hertz, rounded
+impl FskFdev {
+    /// Create a new `FskFdev` from a frequency deviation in hertz, rounded
     /// down.
     ///
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_subghz::GfskFdev;
+    /// use stm32wl_hal_subghz::FskFdev;
     ///
-    /// const FDEV: GfskFdev = GfskFdev::from_hertz(31_250);
+    /// const FDEV: FskFdev = FskFdev::from_hertz(31_250);
     /// assert_eq!(FDEV.as_hertz(), 31_250);
     /// ```
     pub const fn from_hertz(hz: u32) -> Self {
@@ -244,7 +244,7 @@ impl GfskFdev {
         }
     }
 
-    /// Create a new `GfskFdev` from a raw bit value.
+    /// Create a new `FskFdev` from a raw bit value.
     ///
     /// bits = fdev × 2<sup>25</sup> / 32 MHz
     ///
@@ -254,9 +254,9 @@ impl GfskFdev {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_subghz::GfskFdev;
+    /// use stm32wl_hal_subghz::FskFdev;
     ///
-    /// const FDEV: GfskFdev = GfskFdev::from_bits(0x8000);
+    /// const FDEV: FskFdev = FskFdev::from_bits(0x8000);
     /// assert_eq!(FDEV.as_hertz(), 31_250);
     /// ```
     pub const fn from_bits(bits: u32) -> Self {
@@ -270,10 +270,10 @@ impl GfskFdev {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_subghz::GfskFdev;
+    /// use stm32wl_hal_subghz::FskFdev;
     ///
     /// const HERTZ: u32 = 31_250;
-    /// const FDEV: GfskFdev = GfskFdev::from_hertz(HERTZ);
+    /// const FDEV: FskFdev = FskFdev::from_hertz(HERTZ);
     /// assert_eq!(FDEV.as_hertz(), HERTZ);
     /// ```
     pub const fn as_hertz(&self) -> u32 {
@@ -287,24 +287,24 @@ impl GfskFdev {
 
 /// (G)FSK modulation paramters.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub struct GfskModParams {
+pub struct FskModParams {
     buf: [u8; 9],
 }
 
-impl GfskModParams {
-    /// Create a new `GfskModParams` struct.
+impl FskModParams {
+    /// Create a new `FskModParams` struct.
     ///
     /// This is the same as `default`, but in a `const` function.
     ///
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_subghz::GfskModParams;
+    /// use stm32wl_hal_subghz::FskModParams;
     ///
-    /// const MOD_PARAMS: GfskModParams = GfskModParams::new();
+    /// const MOD_PARAMS: FskModParams = FskModParams::new();
     /// ```
-    pub const fn new() -> GfskModParams {
-        GfskModParams {
+    pub const fn new() -> FskModParams {
+        FskModParams {
             buf: [
                 crate::OpCode::SetModulationParams as u8,
                 0x00,
@@ -317,10 +317,10 @@ impl GfskModParams {
                 0x00,
             ],
         }
-        .set_bitrate(GfskBitrate::from_bps(50_000))
-        .set_pulse_shape(GfskPulseShape::None)
-        .set_bandwidth(GfskBandwidth::Bw58)
-        .set_fdev(GfskFdev::from_hertz(25_000))
+        .set_bitrate(FskBitrate::from_bps(50_000))
+        .set_pulse_shape(FskPulseShape::None)
+        .set_bandwidth(FskBandwidth::Bw58)
+        .set_fdev(FskFdev::from_hertz(25_000))
     }
 
     /// Set the bitrate.
@@ -330,16 +330,16 @@ impl GfskModParams {
     /// Setting the bitrate to 32,000 bits per second.
     ///
     /// ```
-    /// use stm32wl_hal_subghz::{GfskBitrate, GfskModParams};
+    /// use stm32wl_hal_subghz::{FskBitrate, FskModParams};
     ///
-    /// const BITRATE: GfskBitrate = GfskBitrate::from_bps(32_000);
-    /// const MOD_PARAMS: GfskModParams = GfskModParams::new().set_bitrate(BITRATE);
+    /// const BITRATE: FskBitrate = FskBitrate::from_bps(32_000);
+    /// const MOD_PARAMS: FskModParams = FskModParams::new().set_bitrate(BITRATE);
     /// # assert_eq!(MOD_PARAMS.as_slice()[1], 0x00);
     /// # assert_eq!(MOD_PARAMS.as_slice()[2], 0x7D);
     /// # assert_eq!(MOD_PARAMS.as_slice()[3], 0x00);
     /// ```
-    #[must_use = "set_bitrate returns a new GfskModParams"]
-    pub const fn set_bitrate(mut self, bitrate: GfskBitrate) -> GfskModParams {
+    #[must_use = "set_bitrate returns a new FskModParams"]
+    pub const fn set_bitrate(mut self, bitrate: FskBitrate) -> FskModParams {
         let bits: u32 = bitrate.into_bits();
         self.buf[1] = ((bits >> 16) & 0xFF) as u8;
         self.buf[2] = ((bits >> 8) & 0xFF) as u8;
@@ -352,13 +352,13 @@ impl GfskModParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_subghz::{GfskModParams, GfskPulseShape};
+    /// use stm32wl_hal_subghz::{FskModParams, FskPulseShape};
     ///
-    /// const MOD_PARAMS: GfskModParams = GfskModParams::new().set_pulse_shape(GfskPulseShape::Bt03);
+    /// const MOD_PARAMS: FskModParams = FskModParams::new().set_pulse_shape(FskPulseShape::Bt03);
     /// # assert_eq!(MOD_PARAMS.as_slice()[4], 0x08);
     /// ```
-    #[must_use = "set_pulse_shape returns a new GfskModParams"]
-    pub const fn set_pulse_shape(mut self, shape: GfskPulseShape) -> GfskModParams {
+    #[must_use = "set_pulse_shape returns a new FskModParams"]
+    pub const fn set_pulse_shape(mut self, shape: FskPulseShape) -> FskModParams {
         self.buf[4] = shape as u8;
         self
     }
@@ -368,13 +368,13 @@ impl GfskModParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_subghz::{GfskBandwidth, GfskModParams};
+    /// use stm32wl_hal_subghz::{FskBandwidth, FskModParams};
     ///
-    /// const MOD_PARAMS: GfskModParams = GfskModParams::new().set_bandwidth(GfskBandwidth::Bw9);
+    /// const MOD_PARAMS: FskModParams = FskModParams::new().set_bandwidth(FskBandwidth::Bw9);
     /// # assert_eq!(MOD_PARAMS.as_slice()[5], 0x1E);
     /// ```
-    #[must_use = "set_pulse_shape returns a new GfskModParams"]
-    pub const fn set_bandwidth(mut self, bw: GfskBandwidth) -> GfskModParams {
+    #[must_use = "set_pulse_shape returns a new FskModParams"]
+    pub const fn set_bandwidth(mut self, bw: FskBandwidth) -> FskModParams {
         self.buf[5] = bw as u8;
         self
     }
@@ -384,16 +384,16 @@ impl GfskModParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_subghz::{GfskFdev, GfskModParams};
+    /// use stm32wl_hal_subghz::{FskFdev, FskModParams};
     ///
-    /// const FDEV: GfskFdev = GfskFdev::from_hertz(31_250);
-    /// const MOD_PARAMS: GfskModParams = GfskModParams::new().set_fdev(FDEV);
+    /// const FDEV: FskFdev = FskFdev::from_hertz(31_250);
+    /// const MOD_PARAMS: FskModParams = FskModParams::new().set_fdev(FDEV);
     /// # assert_eq!(MOD_PARAMS.as_slice()[6], 0x00);
     /// # assert_eq!(MOD_PARAMS.as_slice()[7], 0x80);
     /// # assert_eq!(MOD_PARAMS.as_slice()[8], 0x00);
     /// ```
-    #[must_use = "set_fdev returns a new GfskModParams"]
-    pub const fn set_fdev(mut self, fdev: GfskFdev) -> GfskModParams {
+    #[must_use = "set_fdev returns a new FskModParams"]
+    pub const fn set_fdev(mut self, fdev: FskFdev) -> FskModParams {
         let bits: u32 = fdev.into_bits();
         self.buf[6] = ((bits >> 16) & 0xFF) as u8;
         self.buf[7] = ((bits >> 8) & 0xFF) as u8;
@@ -406,14 +406,14 @@ impl GfskModParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_subghz::{GfskBandwidth, GfskBitrate, GfskFdev, GfskModParams, GfskPulseShape};
+    /// use stm32wl_hal_subghz::{FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape};
     ///
-    /// const BITRATE: GfskBitrate = GfskBitrate::from_bps(32_000);
-    /// const PULSE_SHAPE: GfskPulseShape = GfskPulseShape::Bt03;
-    /// const BW: GfskBandwidth = GfskBandwidth::Bw9;
-    /// const FDEV: GfskFdev = GfskFdev::from_hertz(31_250);
+    /// const BITRATE: FskBitrate = FskBitrate::from_bps(32_000);
+    /// const PULSE_SHAPE: FskPulseShape = FskPulseShape::Bt03;
+    /// const BW: FskBandwidth = FskBandwidth::Bw9;
+    /// const FDEV: FskFdev = FskFdev::from_hertz(31_250);
     ///
-    /// const MOD_PARAMS: GfskModParams = GfskModParams::new()
+    /// const MOD_PARAMS: FskModParams = FskModParams::new()
     ///     .set_bitrate(BITRATE)
     ///     .set_pulse_shape(PULSE_SHAPE)
     ///     .set_bandwidth(BW)
@@ -429,7 +429,7 @@ impl GfskModParams {
     }
 }
 
-impl Default for GfskModParams {
+impl Default for FskModParams {
     fn default() -> Self {
         Self::new()
     }

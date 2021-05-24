@@ -15,6 +15,7 @@ mod reg_mode;
 mod rf_frequency;
 mod rx_timeout_stop;
 mod standby_clk;
+mod stats;
 mod status;
 mod tcxo_mode;
 mod timeout;
@@ -34,6 +35,7 @@ pub use reg_mode::RegMode;
 pub use rf_frequency::RfFreq;
 pub use rx_timeout_stop::RxTimeoutStop;
 pub use standby_clk::StandbyClk;
+pub use stats::{FskStats, LoRaStats, Stats};
 pub use status::{CmdStatus, Status, StatusMode};
 pub use tcxo_mode::{TcxoMode, TcxoTrim};
 pub use timeout::Timeout;
@@ -759,11 +761,59 @@ impl SubGhz {
 
     // TODO: Get_RssiInst
 
-    // TODO: (G)FSK Get_Stats
+    /// (G)FSK packet stats.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use stm32wl_hal_subghz::{FskStats, Stats};
+    ///
+    /// let stats: Stats<FskStats> = sg.fsk_stats()?;
+    /// // ... use stats
+    /// sg.reset_stats();
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn fsk_stats(&self) -> Result<Stats<FskStats>, SubGhzError> {
+        let data: [u8; 7] = self.read_n(OpCode::GetStats)?;
+        Ok(Stats::from_raw_fsk(data))
+    }
 
-    // TODO: LoRa Get_Stats
+    /// LoRa packet stats.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use stm32wl_hal_subghz::{LoRaStats, Stats};
+    ///
+    /// let stats: Stats<LoRaStats> = sg.lora_stats()?;
+    /// // ... use stats
+    /// sg.reset_stats();
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn lora_stats(&self) -> Result<Stats<LoRaStats>, SubGhzError> {
+        let data: [u8; 7] = self.read_n(OpCode::GetStats)?;
+        Ok(Stats::from_raw_lora(data))
+    }
 
-    // TODO: Reset_Stats
+    /// Reset the stats as reported in [`lora_stats`] and [`fsk_stats`].
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    ///
+    /// sg.reset_stats();
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    ///
+    /// [`lora_stats`]: crate::SubGhz::lora_stats
+    /// [`fsk_stats`]: crate::SubGhz::fsk_stats
+    pub fn reset_stats(&mut self) -> Result<(), SubGhzError> {
+        const RESET_STATS: [u8; 7] = [0x00; 7];
+        self.write(&RESET_STATS)
+    }
 }
 
 // 5.8.6
@@ -940,7 +990,7 @@ impl SubGhz {
         Ok((data[0].into(), u16::from_le_bytes([data[1], data[2]])))
     }
 
-    /// Clear all errors as reported by [`error`].
+    /// Clear all errors as reported by [`op_error`].
     ///
     /// # Example
     ///
@@ -955,6 +1005,8 @@ impl SubGhz {
     /// }
     /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
     /// ```
+    ///
+    /// [`op_error`]: crate::SubGhz::op_error
     pub fn clear_error(&mut self) -> Result<(), SubGhzError> {
         self.write(&[OpCode::ClrError as u8, 0x00])
     }

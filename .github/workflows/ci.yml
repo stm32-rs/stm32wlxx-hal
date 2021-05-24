@@ -108,4 +108,4 @@ jobs:
       - uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
-      - run: cargo doc --features ${{ matrix.feature }}
+      - run: RUSTDOCFLAGS="-D warnings" cargo doc --features ${{ matrix.feature }}

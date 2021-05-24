@@ -12,3 +12,9 @@ pub enum RxTimeoutStop {
     /// Receive timeout stopped on preamble detection.
     Preamble = 0b1,
 }
+
+impl From<RxTimeoutStop> for u8 {
+    fn from(rx_ts: RxTimeoutStop) -> Self {
+        rx_ts as u8
+    }
+}

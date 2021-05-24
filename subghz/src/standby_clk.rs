@@ -11,3 +11,9 @@ pub enum StandbyClk {
     /// HSE32 used in standby mode.
     Hse32 = 0b1,
 }
+
+impl From<StandbyClk> for u8 {
+    fn from(sc: StandbyClk) -> Self {
+        sc as u8
+    }
+}

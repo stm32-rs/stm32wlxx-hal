@@ -14,6 +14,7 @@ mod packet_type;
 mod reg_mode;
 mod rf_frequency;
 mod rx_timeout_stop;
+mod sleep_cfg;
 mod standby_clk;
 mod stats;
 mod status;
@@ -34,6 +35,7 @@ pub use packet_type::PacketType;
 pub use reg_mode::RegMode;
 pub use rf_frequency::RfFreq;
 pub use rx_timeout_stop::RxTimeoutStop;
+pub use sleep_cfg::{SleepCfg, Startup};
 pub use standby_clk::StandbyClk;
 pub use stats::{FskStats, LoRaStats, Stats};
 pub use status::{CmdStatus, Status, StatusMode};
@@ -387,7 +389,27 @@ impl SubGhz {
 // 5.8.3
 /// Operating mode commands.
 impl SubGhz {
-    // TODO: set_sleep
+    /// Put the radio into sleep mode.
+    ///
+    /// This command is only accepted in standby mode.
+    /// The cfg argument allows some optional functions to be maintained
+    /// in sleep mode.
+    ///
+    /// # Example
+    ///
+    /// Put the radio into sleep mode.
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use stm32wl_hal_subghz::{SleepCfg, StandbyClk};
+    ///
+    /// sg.set_standby(StandbyClk::Rc)?;
+    /// sg.set_sleep(SleepCfg::default())?;
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn set_sleep(&mut self, cfg: SleepCfg) -> Result<(), SubGhzError> {
+        self.write(&[OpCode::SetSleep as u8, u8::from(cfg)])
+    }
 
     /// Put the radio into standby mode.
     ///
@@ -413,7 +435,7 @@ impl SubGhz {
     /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
     /// ```
     pub fn set_standby(&mut self, standby_clk: StandbyClk) -> Result<(), SubGhzError> {
-        self.write(&[OpCode::SetStandby as u8, standby_clk as u8])
+        self.write(&[OpCode::SetStandby as u8, u8::from(standby_clk)])
     }
 
     // TODO: set_fs

@@ -48,6 +48,8 @@ use core::{
 
 pub use num_rational;
 
+use num_rational::Ratio;
+
 cfg_if::cfg_if! {
     if #[cfg(feature = "stm32wl5x_cm0p")] {
         pub use stm32wl::stm32wl5x_cm0p as pac;
@@ -736,6 +738,8 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
+    /// # use std::fmt::Write;
+    /// # let mut uart = String::new();
     /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
     /// use stm32wl_hal_subghz::{CmdStatus, Timeout};
     ///
@@ -745,7 +749,7 @@ impl SubGhz {
     ///
     ///     if pkt_status.status().cmd() == Ok(CmdStatus::Avaliable) {
     ///         let rssi = pkt_status.rssi_avg();
-    ///         // ... log rssi here
+    ///         writeln!(&mut uart, "Avg RSSI: {}", rssi);
     ///         break;
     ///     }
     /// }
@@ -759,7 +763,32 @@ impl SubGhz {
 
     // TODO: LoRa Get_PacketStatus
 
-    // TODO: Get_RssiInst
+    /// Get the instantaneous signal strength during packet reception.
+    ///
+    /// The units are in dbm.
+    ///
+    /// # Example
+    ///
+    /// Log the instantaneous signal strength to UART.
+    ///
+    /// ```no_run
+    /// # use std::fmt::Write;
+    /// # let mut uart = String::new();
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use stm32wl_hal_subghz::{CmdStatus, Timeout};
+    ///
+    /// sg.set_rx(Timeout::DISABLED)?;
+    /// let (_, rssi) = sg.rssi_inst()?;
+    /// writeln!(&mut uart, "RSSI: {} dBm", rssi);
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn rssi_inst(&self) -> Result<(Status, Ratio<i16>), SubGhzError> {
+        let data: [u8; 2] = self.read_n(OpCode::GetRssiInst)?;
+        let status: Status = data[0].into();
+        let rssi: Ratio<i16> = Ratio::new(i16::from(data[1]), -2);
+
+        Ok((status, rssi))
+    }
 
     /// (G)FSK packet stats.
     ///

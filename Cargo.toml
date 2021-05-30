@@ -5,6 +5,9 @@ members = [
     "pka",
     "rng-testsuite",
     "rng",
+    "subghz-testsuite-assets",
+    "subghz-testsuite-rx",
+    "subghz-testsuite-tx",
     "subghz",
 ]
 default-members = [

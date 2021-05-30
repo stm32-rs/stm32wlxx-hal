@@ -49,6 +49,28 @@ Sample output:
 └─ test::tests::__defmt_test_entry @ tests/test.rs:48
 ```
 
+#### SubGhz Tests
+
+These tests require two nucleo boards, one for transmitting, and one for
+receiving.
+
+Run `subghz-testsuite-rx` before `subghz-testsuite-tx`.
+
+Assuming both are connected to the same system you will have to pass a specific
+probe to each.
+
+```text
+$ probe-run --list-probes
+The following devices were found:
+[0]: STLink V3 (VID: 0483, PID: 374e, Serial: 001D00145553500A20393256, STLink)
+[1]: STLink V3 (VID: 0483, PID: 374e, Serial: 002900205553500A20393256, STLink)
+$ cargo test -p subghz-testsuite-rx --target thumbv7em-none-eabi -- --probe 001D00145553500A20393256
+$ cargo test -p subghz-testsuite-tx --target thumbv7em-none-eabi -- --probe 002900205553500A20393256
+```
+
+**Note:** These tests are currently very flakey; but I suspect that is because
+I damaged one of my nucleo boards.
+
 ## Unit Tests
 
 Off-target unit tests use the built-in cargo framework.

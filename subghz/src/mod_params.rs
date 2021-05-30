@@ -175,10 +175,10 @@ impl FskBitrate {
     /// ```
     /// use stm32wl_hal_subghz::FskBitrate;
     ///
-    /// const BITRATE: FskBitrate = FskBitrate::from_bits(0x7D00);
+    /// const BITRATE: FskBitrate = FskBitrate::from_raw(0x7D00);
     /// assert_eq!(BITRATE.as_bps(), 32_000);
     /// ```
-    pub const fn from_bits(bits: u32) -> Self {
+    pub const fn from_raw(bits: u32) -> Self {
         Self {
             bits: bits & 0x00FF_FFFF,
         }
@@ -256,10 +256,10 @@ impl FskFdev {
     /// ```
     /// use stm32wl_hal_subghz::FskFdev;
     ///
-    /// const FDEV: FskFdev = FskFdev::from_bits(0x8000);
+    /// const FDEV: FskFdev = FskFdev::from_raw(0x8000);
     /// assert_eq!(FDEV.as_hertz(), 31_250);
     /// ```
-    pub const fn from_bits(bits: u32) -> Self {
+    pub const fn from_raw(bits: u32) -> Self {
         Self {
             bits: bits & 0x00FF_FFFF,
         }

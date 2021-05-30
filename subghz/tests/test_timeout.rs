@@ -21,7 +21,7 @@ fn rounding() {
 #[test]
 fn lower_limit() {
     let low: Duration = (Timeout::RESOLUTION + Duration::from_nanos(1)) / 2;
-    assert_eq!(Timeout::from_duration(low), Ok(Timeout::from_bits(1)));
+    assert_eq!(Timeout::from_duration(low), Ok(Timeout::from_raw(1)));
 
     let too_low: Duration = low - Duration::from_nanos(1);
     assert_eq!(
@@ -35,7 +35,7 @@ fn upper_limit() {
     let high: Duration = Timeout::MAX.as_duration() + Timeout::RESOLUTION / 2;
     assert_eq!(
         Timeout::from_duration(high),
-        Ok(Timeout::from_bits(0xFFFFFF))
+        Ok(Timeout::from_raw(0xFFFFFF))
     );
 
     let too_high: Duration = high + Duration::from_nanos(1);

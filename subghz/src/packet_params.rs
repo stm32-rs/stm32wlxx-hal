@@ -71,6 +71,7 @@ impl GenericPacketParams {
     /// use stm32wl_hal_subghz::GenericPacketParams;
     ///
     /// const PKT_PARAMS: GenericPacketParams = GenericPacketParams::new();
+    /// assert_eq!(PKT_PARAMS, GenericPacketParams::default());
     /// ```
     pub const fn new() -> GenericPacketParams {
         // const variable ensure the compile always optimizes the methods

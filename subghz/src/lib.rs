@@ -2,6 +2,7 @@
 //! 150 - 960 MHz ISM band.
 #![cfg_attr(not(test), no_std)]
 
+mod cad_params;
 mod calibrate;
 mod irq;
 mod mod_params;
@@ -22,6 +23,7 @@ mod tcxo_mode;
 mod timeout;
 mod value_error;
 
+pub use cad_params::{CadParams, ExitMode, NbCadSymbol};
 pub use calibrate::{Calibrate, CalibrateImage};
 pub use irq::{CfgDioIrq, Irq, IrqLine};
 pub use mod_params::{CodingRate, LoRaBandwidth, LoRaModParams, SpreadingFactor};
@@ -600,7 +602,43 @@ impl SubGhz {
         ])
     }
 
-    // TODO: set_cad
+    /// Channel Activity Detection (CAD) with LoRa packets.
+    ///
+    /// The channel activity detection (CAD) is a specific LoRa operation mode,
+    /// where the sub-GHz radio searches for a LoRa radio signal.
+    /// After the search is completed, the Standby mode is automatically
+    /// entered, CAD is done and IRQ is generated.
+    /// When a LoRa radio signal is detected, the CAD detected IRQ is also
+    /// generated.
+    ///
+    /// The length of the search must be configured with [`set_cad_params`]
+    /// prior to calling `set_cad`.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use core::time::Duration;
+    /// use stm32wl_hal_subghz::{CadParams, ExitMode, NbCadSymbol, StandbyClk, Timeout};
+    ///
+    /// const RX_PERIOD: Timeout = Timeout::from_duration_sat(Duration::from_millis(100));
+    /// const SLEEP_PERIOD: Timeout = Timeout::from_duration_sat(Duration::from_secs(1));
+    /// const CAD_PARAMS: CadParams = CadParams::new()
+    ///     .set_num_symbol(NbCadSymbol::S4)
+    ///     .set_det_peak(0x18)
+    ///     .set_det_min(0x10)
+    ///     .set_exit_mode(ExitMode::Standby);
+    ///
+    /// sg.set_standby(StandbyClk::Rc)?;
+    /// sg.set_cad_params(&CAD_PARAMS)?;
+    /// sg.set_cad()?;
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    ///
+    /// [`set_cad_params`]: crate::SubGhz::set_cad_params
+    pub fn set_cad(&mut self) -> Result<(), SubGhzError> {
+        self.write(&[OpCode::SetCad.into()])
+    }
 
     /// Generate a continuous transmit tone at the RF-PLL frequency.
     ///
@@ -702,7 +740,7 @@ impl SubGhz {
     /// ```
     pub fn packet_type(&self) -> Result<Result<PacketType, u8>, SubGhzError> {
         let pkt_type: [u8; 2] = self.read_n(OpCode::GetPacketType)?;
-        Ok(PacketType::from_bits(pkt_type[1]))
+        Ok(PacketType::from_raw(pkt_type[1]))
     }
 
     /// Set the radio carrier frequency.
@@ -734,7 +772,31 @@ impl SubGhz {
 
     // TODO: Set_TxRxFallbackMode
 
-    // TODO: Set_CadParams
+    /// Set channel activity detection (CAD) parameters.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use core::time::Duration;
+    /// use stm32wl_hal_subghz::{CadParams, ExitMode, NbCadSymbol, StandbyClk, Timeout};
+    ///
+    /// const RX_PERIOD: Timeout = Timeout::from_duration_sat(Duration::from_millis(100));
+    /// const SLEEP_PERIOD: Timeout = Timeout::from_duration_sat(Duration::from_secs(1));
+    /// const CAD_PARAMS: CadParams = CadParams::new()
+    ///     .set_num_symbol(NbCadSymbol::S4)
+    ///     .set_det_peak(0x18)
+    ///     .set_det_min(0x10)
+    ///     .set_exit_mode(ExitMode::Standby);
+    ///
+    /// sg.set_standby(StandbyClk::Rc)?;
+    /// sg.set_cad_params(&CAD_PARAMS)?;
+    /// sg.set_cad()?;
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn set_cad_params(&mut self, params: &CadParams) -> Result<(), SubGhzError> {
+        self.write(params.as_slice())
+    }
 
     /// Set the data buffer base address for the packet handling in TX and RX.
     ///

@@ -4,6 +4,7 @@
 
 mod cad_params;
 mod calibrate;
+mod fallback_mode;
 mod irq;
 mod mod_params;
 mod ocp;
@@ -26,6 +27,7 @@ mod value_error;
 
 pub use cad_params::{CadParams, ExitMode, NbCadSymbol};
 pub use calibrate::{Calibrate, CalibrateImage};
+pub use fallback_mode::FallbackMode;
 pub use irq::{CfgDioIrq, Irq, IrqLine};
 pub use mod_params::{CodingRate, LoRaBandwidth, LoRaModParams, SpreadingFactor};
 pub use mod_params::{FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape};
@@ -818,7 +820,23 @@ impl SubGhz {
         self.write(pa_config.as_slice())
     }
 
-    // TODO: Set_TxRxFallbackMode
+    /// Operating mode to enter after a successful packet transmission or
+    /// packet reception.
+    ///
+    /// # Example
+    ///
+    /// Set the fallback mode to standby mode.
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use stm32wl_hal_subghz::FallbackMode;
+    ///
+    /// sg.set_tx_rx_fallback_mode(FallbackMode::Standby)?;
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn set_tx_rx_fallback_mode(&mut self, fm: FallbackMode) -> Result<(), SubGhzError> {
+        self.write(&[OpCode::SetTxRxFallbackMode.into(), fm.into()])
+    }
 
     /// Set channel activity detection (CAD) parameters.
     ///

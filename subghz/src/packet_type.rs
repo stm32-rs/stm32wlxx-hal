@@ -24,14 +24,14 @@ impl PacketType {
     /// ```
     /// use stm32wl_hal_subghz::PacketType;
     ///
-    /// assert_eq!(PacketType::from_bits(0), Ok(PacketType::Fsk));
-    /// assert_eq!(PacketType::from_bits(1), Ok(PacketType::LoRa));
-    /// assert_eq!(PacketType::from_bits(2), Ok(PacketType::Bpsk));
-    /// assert_eq!(PacketType::from_bits(3), Ok(PacketType::Msk));
+    /// assert_eq!(PacketType::from_raw(0), Ok(PacketType::Fsk));
+    /// assert_eq!(PacketType::from_raw(1), Ok(PacketType::LoRa));
+    /// assert_eq!(PacketType::from_raw(2), Ok(PacketType::Bpsk));
+    /// assert_eq!(PacketType::from_raw(3), Ok(PacketType::Msk));
     /// // Other values are reserved
-    /// assert_eq!(PacketType::from_bits(4), Err(4));
+    /// assert_eq!(PacketType::from_raw(4), Err(4));
     /// ```
-    pub const fn from_bits(bits: u8) -> Result<PacketType, u8> {
+    pub const fn from_raw(bits: u8) -> Result<PacketType, u8> {
         match bits {
             0 => Ok(PacketType::Fsk),
             1 => Ok(PacketType::LoRa),

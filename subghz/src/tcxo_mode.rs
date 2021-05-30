@@ -153,7 +153,7 @@ impl TcxoMode {
     ///
     /// const TCXO_MODE: TcxoMode = TcxoMode::new()
     ///     .set_txco_trim(TcxoTrim::Volts1pt7)
-    ///     .set_timeout(Timeout::from_bits(0x123456));
+    ///     .set_timeout(Timeout::from_raw(0x123456));
     /// assert_eq!(TCXO_MODE.as_slice(), &[0x97, 0x1, 0x12, 0x34, 0x56]);
     /// ```
     pub const fn as_slice(&self) -> &[u8] {

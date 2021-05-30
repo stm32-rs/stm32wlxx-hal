@@ -154,8 +154,8 @@ impl Timeout {
             let div_floor: u64 = duration_nanos / Self::RESOLUTION_NANOS;
             let div_ceil: u64 = 1 + (duration_nanos - 1) / Self::RESOLUTION_NANOS;
 
-            let timeout_ceil: Timeout = Timeout::from_bits(div_ceil as u32);
-            let timeout_floor: Timeout = Timeout::from_bits(div_floor as u32);
+            let timeout_ceil: Timeout = Timeout::from_raw(div_ceil as u32);
+            let timeout_floor: Timeout = Timeout::from_raw(div_floor as u32);
 
             let error_ceil: u64 = abs_diff(timeout_ceil.as_nanos(), duration_nanos);
             let error_floor: u64 = abs_diff(timeout_floor.as_nanos(), duration_nanos);
@@ -204,7 +204,7 @@ impl Timeout {
         if nanos > UPPER_LIMIT {
             Timeout::MAX
         } else if nanos < (Timeout::RESOLUTION_NANOS as u128) {
-            Timeout::from_bits(1)
+            Timeout::from_raw(1)
         } else {
             // safe to truncate here because of previous bounds check.
             let duration_nanos: u64 = duration.as_nanos() as u64;
@@ -212,8 +212,8 @@ impl Timeout {
             let div_floor: u64 = duration_nanos / Self::RESOLUTION_NANOS;
             let div_ceil: u64 = 1 + (duration_nanos - 1) / Self::RESOLUTION_NANOS;
 
-            let timeout_ceil: Timeout = Timeout::from_bits(div_ceil as u32);
-            let timeout_floor: Timeout = Timeout::from_bits(div_floor as u32);
+            let timeout_ceil: Timeout = Timeout::from_raw(div_ceil as u32);
+            let timeout_floor: Timeout = Timeout::from_raw(div_floor as u32);
 
             let error_ceil: u64 = abs_diff(timeout_ceil.as_nanos(), duration_nanos);
             let error_floor: u64 = abs_diff(timeout_floor.as_nanos(), duration_nanos);
@@ -237,12 +237,12 @@ impl Timeout {
     /// ```
     /// use stm32wl_hal_subghz::Timeout;
     ///
-    /// assert_eq!(Timeout::from_bits(u32::MAX), Timeout::MAX);
-    /// assert_eq!(Timeout::from_bits(0x00_FF_FF_FF), Timeout::MAX);
-    /// assert_eq!(Timeout::from_bits(1).as_duration(), Timeout::RESOLUTION);
-    /// assert_eq!(Timeout::from_bits(0), Timeout::DISABLED);
+    /// assert_eq!(Timeout::from_raw(u32::MAX), Timeout::MAX);
+    /// assert_eq!(Timeout::from_raw(0x00_FF_FF_FF), Timeout::MAX);
+    /// assert_eq!(Timeout::from_raw(1).as_duration(), Timeout::RESOLUTION);
+    /// assert_eq!(Timeout::from_raw(0), Timeout::DISABLED);
     /// ```
-    pub const fn from_bits(bits: u32) -> Timeout {
+    pub const fn from_raw(bits: u32) -> Timeout {
         Timeout {
             bits: bits & 0x00FF_FFFF,
         }
@@ -257,7 +257,7 @@ impl Timeout {
     ///
     /// assert_eq!(Timeout::MAX.as_nanos(), 262_143_984_375);
     /// assert_eq!(Timeout::DISABLED.as_nanos(), 0);
-    /// assert_eq!(Timeout::from_bits(1).as_nanos(), 15_625);
+    /// assert_eq!(Timeout::from_raw(1).as_nanos(), 15_625);
     /// ```
     pub const fn as_nanos(&self) -> u64 {
         (self.bits as u64) * Timeout::RESOLUTION_NANOS
@@ -276,7 +276,7 @@ impl Timeout {
     ///     Duration::from_nanos(262_143_984_375)
     /// );
     /// assert_eq!(Timeout::DISABLED.as_duration(), Duration::from_nanos(0));
-    /// assert_eq!(Timeout::from_bits(1).as_duration(), Timeout::RESOLUTION);
+    /// assert_eq!(Timeout::from_raw(1).as_duration(), Timeout::RESOLUTION);
     /// ```
     pub const fn as_duration(&self) -> Duration {
         Duration::from_nanos((self.bits as u64) * Timeout::RESOLUTION_NANOS)
@@ -289,16 +289,40 @@ impl Timeout {
     /// ```
     /// use stm32wl_hal_subghz::Timeout;
     ///
-    /// assert_eq!(Timeout::from_bits(u32::MAX).into_bits(), 0x00FF_FFFF);
-    /// assert_eq!(Timeout::from_bits(1).into_bits(), 1);
+    /// assert_eq!(Timeout::from_raw(u32::MAX).into_bits(), 0x00FF_FFFF);
+    /// assert_eq!(Timeout::from_raw(1).into_bits(), 1);
     /// ```
     pub const fn into_bits(self) -> u32 {
         self.bits
+    }
+
+    /// Get the byte value for the timeout.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal_subghz::Timeout;
+    ///
+    /// assert_eq!(Timeout::from_raw(u32::MAX).as_bytes(), [0xFF, 0xFF, 0xFF]);
+    /// assert_eq!(Timeout::from_raw(1).as_bytes(), [0, 0, 1]);
+    /// ```
+    pub const fn as_bytes(self) -> [u8; 3] {
+        [
+            ((self.bits >> 16) & 0xFF) as u8,
+            ((self.bits >> 8) & 0xFF) as u8,
+            (self.bits & 0xFF) as u8,
+        ]
     }
 }
 
 impl From<Timeout> for Duration {
     fn from(to: Timeout) -> Self {
         to.as_duration()
+    }
+}
+
+impl From<Timeout> for [u8; 3] {
+    fn from(to: Timeout) -> Self {
+        to.as_bytes()
     }
 }

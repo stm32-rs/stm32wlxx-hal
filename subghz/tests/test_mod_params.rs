@@ -22,9 +22,9 @@ fn fsk_bitrate_ord() {
 
 #[test]
 fn fsk_bitrate_as_bps_limits() {
-    const ZERO: FskBitrate = FskBitrate::from_bits(0);
-    const ONE: FskBitrate = FskBitrate::from_bits(1);
-    const MAX: FskBitrate = FskBitrate::from_bits(u32::MAX);
+    const ZERO: FskBitrate = FskBitrate::from_raw(0);
+    const ONE: FskBitrate = FskBitrate::from_raw(1);
+    const MAX: FskBitrate = FskBitrate::from_raw(u32::MAX);
 
     assert_eq!(ZERO.as_bps(), 0);
     assert_eq!(ONE.as_bps(), 1_024_000_000);
@@ -50,9 +50,9 @@ fn fsk_fdev_ord() {
 
 #[test]
 fn fsk_fdev_as_hertz_limits() {
-    const ZERO: FskFdev = FskFdev::from_bits(0);
-    const ONE: FskFdev = FskFdev::from_bits(1);
-    const MAX: FskFdev = FskFdev::from_bits(u32::MAX);
+    const ZERO: FskFdev = FskFdev::from_raw(0);
+    const ONE: FskFdev = FskFdev::from_raw(1);
+    const MAX: FskFdev = FskFdev::from_raw(u32::MAX);
 
     assert_eq!(ZERO.as_hertz(), 0);
     assert_eq!(ONE.as_hertz(), 0);

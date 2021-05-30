@@ -27,15 +27,15 @@ impl StatusMode {
     /// ```
     /// use stm32wl_hal_subghz::StatusMode;
     ///
-    /// assert_eq!(StatusMode::from_bits(0x2), Ok(StatusMode::StandbyRc));
-    /// assert_eq!(StatusMode::from_bits(0x3), Ok(StatusMode::StandbyHse));
-    /// assert_eq!(StatusMode::from_bits(0x4), Ok(StatusMode::Fs));
-    /// assert_eq!(StatusMode::from_bits(0x5), Ok(StatusMode::Rx));
-    /// assert_eq!(StatusMode::from_bits(0x6), Ok(StatusMode::Tx));
+    /// assert_eq!(StatusMode::from_raw(0x2), Ok(StatusMode::StandbyRc));
+    /// assert_eq!(StatusMode::from_raw(0x3), Ok(StatusMode::StandbyHse));
+    /// assert_eq!(StatusMode::from_raw(0x4), Ok(StatusMode::Fs));
+    /// assert_eq!(StatusMode::from_raw(0x5), Ok(StatusMode::Rx));
+    /// assert_eq!(StatusMode::from_raw(0x6), Ok(StatusMode::Tx));
     /// // Other values are reserved
-    /// assert_eq!(StatusMode::from_bits(0), Err(0));
+    /// assert_eq!(StatusMode::from_raw(0), Err(0));
     /// ```
-    pub const fn from_bits(bits: u8) -> Result<Self, u8> {
+    pub const fn from_raw(bits: u8) -> Result<Self, u8> {
         match bits {
             0x2 => Ok(StatusMode::StandbyRc),
             0x3 => Ok(StatusMode::StandbyHse),
@@ -89,15 +89,15 @@ impl CmdStatus {
     /// ```
     /// use stm32wl_hal_subghz::CmdStatus;
     ///
-    /// assert_eq!(CmdStatus::from_bits(0x2), Ok(CmdStatus::Avaliable));
-    /// assert_eq!(CmdStatus::from_bits(0x3), Ok(CmdStatus::Timeout));
-    /// assert_eq!(CmdStatus::from_bits(0x4), Ok(CmdStatus::ProcessingError));
-    /// assert_eq!(CmdStatus::from_bits(0x5), Ok(CmdStatus::ExecutionFailure));
-    /// assert_eq!(CmdStatus::from_bits(0x6), Ok(CmdStatus::Complete));
+    /// assert_eq!(CmdStatus::from_raw(0x2), Ok(CmdStatus::Avaliable));
+    /// assert_eq!(CmdStatus::from_raw(0x3), Ok(CmdStatus::Timeout));
+    /// assert_eq!(CmdStatus::from_raw(0x4), Ok(CmdStatus::ProcessingError));
+    /// assert_eq!(CmdStatus::from_raw(0x5), Ok(CmdStatus::ExecutionFailure));
+    /// assert_eq!(CmdStatus::from_raw(0x6), Ok(CmdStatus::Complete));
     /// // Other values are reserved
-    /// assert_eq!(CmdStatus::from_bits(0), Err(0));
+    /// assert_eq!(CmdStatus::from_raw(0), Err(0));
     /// ```
-    pub const fn from_bits(bits: u8) -> Result<Self, u8> {
+    pub const fn from_raw(bits: u8) -> Result<Self, u8> {
         match bits {
             0x2 => Ok(CmdStatus::Avaliable),
             0x3 => Ok(CmdStatus::Timeout),
@@ -157,7 +157,7 @@ impl Status {
     /// assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
     /// ```
     pub const fn mode(&self) -> Result<StatusMode, u8> {
-        StatusMode::from_bits((self.0 >> 4) & 0b111)
+        StatusMode::from_raw((self.0 >> 4) & 0b111)
     }
 
     /// Command status.
@@ -174,7 +174,7 @@ impl Status {
     /// assert_eq!(status.cmd(), Ok(CmdStatus::Complete));
     /// ```
     pub const fn cmd(&self) -> Result<CmdStatus, u8> {
-        CmdStatus::from_bits((self.0 >> 1) & 0b111)
+        CmdStatus::from_raw((self.0 >> 1) & 0b111)
     }
 }
 

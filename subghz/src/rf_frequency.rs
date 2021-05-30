@@ -18,7 +18,7 @@ impl RfFreq {
     ///
     /// assert_eq!(RfFreq::F915.freq(), 915_000_000);
     /// ```
-    pub const F915: RfFreq = RfFreq::from_bits(0x39_30_00_00);
+    pub const F915: RfFreq = RfFreq::from_raw(0x39_30_00_00);
 
     /// 868MHz, often used in Europe.
     ///
@@ -29,7 +29,7 @@ impl RfFreq {
     ///
     /// assert_eq!(RfFreq::F868.freq(), 868_000_000);
     /// ```
-    pub const F868: RfFreq = RfFreq::from_bits(0x36_40_00_00);
+    pub const F868: RfFreq = RfFreq::from_raw(0x36_40_00_00);
 
     /// 433MHz, often used in Europe.
     ///
@@ -40,7 +40,7 @@ impl RfFreq {
     ///
     /// assert_eq!(RfFreq::F433.freq(), 433_000_000);
     /// ```
-    pub const F433: RfFreq = RfFreq::from_bits(0x1B_10_00_00);
+    pub const F433: RfFreq = RfFreq::from_raw(0x1B_10_00_00);
 
     /// Create a new `RfFreq` from a raw bit value.
     ///
@@ -53,10 +53,10 @@ impl RfFreq {
     /// ```
     /// use stm32wl_hal_subghz::RfFreq;
     ///
-    /// const FREQ: RfFreq = RfFreq::from_bits(0x39300000);
+    /// const FREQ: RfFreq = RfFreq::from_raw(0x39300000);
     /// assert_eq!(FREQ, RfFreq::F915);
     /// ```
-    pub const fn from_bits(bits: u32) -> RfFreq {
+    pub const fn from_raw(bits: u32) -> RfFreq {
         RfFreq {
             buf: [
                 crate::OpCode::SetRfFrequency as u8,
@@ -83,7 +83,7 @@ impl RfFreq {
     /// assert_eq!(FREQ, RfFreq::F915);
     /// ```
     pub const fn from_frequency(freq: u32) -> RfFreq {
-        Self::from_bits((((freq as u64) * (1 << 25)) / 32_000_000) as u32)
+        Self::from_raw((((freq as u64) * (1 << 25)) / 32_000_000) as u32)
     }
 
     // Get the frequency bit value.
@@ -101,7 +101,7 @@ impl RfFreq {
     /// ```
     /// use stm32wl_hal_subghz::RfFreq;
     ///
-    /// assert_eq!(RfFreq::from_bits(0x39300000).freq(), 915_000_000);
+    /// assert_eq!(RfFreq::from_raw(0x39300000).freq(), 915_000_000);
     /// ```
     pub fn freq(&self) -> u32 {
         (32_000_000 * (self.as_bits() as u64) / (1 << 25)) as u32

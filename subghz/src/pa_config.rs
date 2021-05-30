@@ -1,6 +1,6 @@
 /// Power amplifier configuration paramters.
 ///
-/// This is an argument of [`set_pa_config`].
+/// Argument of [`set_pa_config`].
 ///
 /// [`set_pa_config`]: crate::SubGhz::set_pa_config
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]

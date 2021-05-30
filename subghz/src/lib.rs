@@ -21,6 +21,7 @@ mod stats;
 mod status;
 mod tcxo_mode;
 mod timeout;
+mod tx_params;
 mod value_error;
 
 pub use cad_params::{CadParams, ExitMode, NbCadSymbol};
@@ -43,6 +44,7 @@ pub use stats::{FskStats, LoRaStats, Stats};
 pub use status::{CmdStatus, Status, StatusMode};
 pub use tcxo_mode::{TcxoMode, TcxoTrim};
 pub use timeout::Timeout;
+pub use tx_params::{RampTime, TxParams};
 pub use value_error::ValueError;
 
 use core::{
@@ -760,12 +762,58 @@ impl SubGhz {
         self.write(freq.as_slice())
     }
 
-    pub fn set_tx_params(&mut self, power: u8, ramp_time: RampTime) -> Result<(), SubGhzError> {
-        self.write(&[OpCode::SetTxParams as u8, power, ramp_time.into()])
+    /// Set the transmit output power and the PA ramp-up time.
+    ///
+    /// # Example
+    ///
+    /// Set the output power to +10 dBm (low power mode) and a ramp up time of
+    /// 40 microseconds.
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use stm32wl_hal_subghz::{PaConfig, PaSel, RampTime, TxParams};
+    ///
+    /// const TX_PARAMS: TxParams = TxParams::new()
+    ///     .set_ramp_time(RampTime::Micros40)
+    ///     .set_power(0x0D);
+    /// const PA_CONFIG: PaConfig = PaConfig::new()
+    ///     .set_pa(PaSel::Lp)
+    ///     .set_pa_duty_cycle(0x1)
+    ///     .set_hp_max(0x0);
+    ///
+    /// sg.set_pa_config(&PA_CONFIG)?;
+    /// sg.set_tx_params(&TX_PARAMS)?;
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn set_tx_params(&mut self, params: &TxParams) -> Result<(), SubGhzError> {
+        self.write(params.as_slice())
     }
 
-    /// Power amplifier configuation, used to customize the maximum output power
-    /// and efficiency.
+    /// Power amplifier configuation.
+    ///
+    /// Used to customize the maximum output power and efficiency.
+    ///
+    /// # Example
+    ///
+    /// Set the output power to +22 dBm (high power mode) and a ramp up time of
+    /// 200 microseconds.
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use stm32wl_hal_subghz::{PaConfig, PaSel, RampTime, TxParams};
+    ///
+    /// const TX_PARAMS: TxParams = TxParams::new()
+    ///     .set_ramp_time(RampTime::Micros200)
+    ///     .set_power(0x16);
+    /// const PA_CONFIG: PaConfig = PaConfig::new()
+    ///     .set_pa(PaSel::Hp)
+    ///     .set_pa_duty_cycle(0x4)
+    ///     .set_hp_max(0x7);
+    ///
+    /// sg.set_pa_config(&PA_CONFIG)?;
+    /// sg.set_tx_params(&TX_PARAMS)?;
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
     pub fn set_pa_config(&mut self, pa_config: &PaConfig) -> Result<(), SubGhzError> {
         self.write(pa_config.as_slice())
     }
@@ -1366,48 +1414,5 @@ pub(crate) enum Register {
 impl Register {
     pub const fn address(self) -> u16 {
         self as u16
-    }
-}
-
-/// Power amplifier ramp time for FSK, MSK, and LoRa modulation.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[repr(u8)]
-pub enum RampTime {
-    /// 10µs
-    Micros10 = 0x00,
-    /// 20µs
-    Micros20 = 0x01,
-    /// 40µs
-    Micros40 = 0x02,
-    /// 80µs
-    Micros80 = 0x03,
-    /// 200µs
-    Micros200 = 0x04,
-    /// 800µs
-    Micros800 = 0x05,
-    /// 1.7ms
-    Micros1700 = 0x06,
-    /// 3.4ms
-    Micros3400 = 0x07,
-}
-
-impl From<RampTime> for u8 {
-    fn from(rt: RampTime) -> Self {
-        rt as u8
-    }
-}
-
-impl From<RampTime> for core::time::Duration {
-    fn from(rt: RampTime) -> Self {
-        match rt {
-            RampTime::Micros10 => core::time::Duration::from_micros(10),
-            RampTime::Micros20 => core::time::Duration::from_micros(20),
-            RampTime::Micros40 => core::time::Duration::from_micros(40),
-            RampTime::Micros80 => core::time::Duration::from_micros(80),
-            RampTime::Micros200 => core::time::Duration::from_micros(200),
-            RampTime::Micros800 => core::time::Duration::from_micros(800),
-            RampTime::Micros1700 => core::time::Duration::from_micros(1700),
-            RampTime::Micros3400 => core::time::Duration::from_micros(3400),
-        }
     }
 }

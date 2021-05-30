@@ -575,6 +575,7 @@ impl LoRaModParams {
     /// use stm32wl_hal_subghz::LoRaModParams;
     ///
     /// const MOD_PARAMS: LoRaModParams = LoRaModParams::new();
+    /// assert_eq!(MOD_PARAMS, LoRaModParams::default());
     /// ```
     pub const fn new() -> LoRaModParams {
         LoRaModParams {

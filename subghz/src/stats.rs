@@ -143,3 +143,14 @@ impl Stats<LoRaStats> {
         self.pkt_len_or_hdr_err
     }
 }
+
+impl core::fmt::Display for Stats<FskStats> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("Stats")
+            .field("status", &self.status())
+            .field("pkt_rx", &self.pkt_rx())
+            .field("pkt_crc", &self.pkt_crc())
+            .field("pkt_len_err", &self.pkt_len_err())
+            .finish()
+    }
+}

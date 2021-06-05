@@ -4,8 +4,8 @@ use core::time::Duration;
 
 use stm32wl_hal::subghz::{
     AddrComp, CrcType, FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape,
-    GenericPacketParams, PaConfig, PaSel, PayloadType, PreambleDetection, RfFreq, TcxoMode,
-    TcxoTrim, Timeout,
+    GenericPacketParams, PaConfig, PaSel, PayloadType, PreambleDetection, RampTime, RfFreq,
+    TcxoMode, TcxoTrim, Timeout, TxParams,
 };
 
 pub const DATA: &str = "HELLO WORLD!";
@@ -13,7 +13,7 @@ pub const DATA_LEN: u8 = DATA.len() as u8;
 pub const DATA_BYTES: &[u8] = DATA.as_bytes();
 pub const PREAMBLE_LEN: u16 = 5 * 8;
 
-pub const RF_FREQ: RfFreq = RfFreq::from_frequency(915_000_000);
+pub const RF_FREQ: RfFreq = RfFreq::from_frequency(434_000_000);
 
 pub const SYNC_WORD: [u8; 8] = [0x79, 0x80, 0x0C, 0xC0, 0x29, 0x95, 0xF8, 0x4A];
 pub const SYNC_WORD_LEN: u8 = SYNC_WORD.len() as u8;
@@ -45,3 +45,7 @@ pub const PA_CONFIG: PaConfig = PaConfig::new()
 pub const TCXO_MODE: TcxoMode = TcxoMode::new()
     .set_txco_trim(TcxoTrim::Volts1pt7)
     .set_timeout(Timeout::from_duration_sat(Duration::from_millis(10)));
+
+pub const TX_PARAMS: TxParams = TxParams::new()
+    .set_power(0x0D)
+    .set_ramp_time(RampTime::Micros40);

@@ -7,16 +7,16 @@ use panic_probe as _;
 use stm32wl_hal::{
     pac,
     subghz::{
-        CalibrateImage, CmdStatus, Ocp, PacketType, RampTime, RegMode, StandbyClk, Status,
-        StatusMode, SubGhz, Timeout,
+        CalibrateImage, CfgDioIrq, CmdStatus, Irq, IrqLine, Ocp, PacketType, RegMode, StandbyClk,
+        Status, StatusMode, SubGhz, Timeout,
     },
 };
 
 #[defmt_test::tests]
 mod tests {
-    use stm32wl_hal::subghz::{CfgDioIrq, Irq, IrqLine, TxParams};
     use subghz_testsuite_assets::{
         DATA_BYTES, DATA_LEN, MOD_PARAMS, PACKET_PARAMS, PA_CONFIG, RF_FREQ, SYNC_WORD, TCXO_MODE,
+        TX_PARAMS,
     };
 
     use super::*;
@@ -80,9 +80,6 @@ mod tests {
         sg.set_buffer_base_address(0, 0).unwrap();
         sg.set_pa_config(&PA_CONFIG).unwrap();
         sg.set_pa_ocp(Ocp::Max60m).unwrap();
-        const TX_PARAMS: TxParams = TxParams::new()
-            .set_power(0x0D)
-            .set_ramp_time(RampTime::Micros40);
         sg.set_tx_params(&TX_PARAMS).unwrap();
         sg.set_sync_word(SYNC_WORD).unwrap();
 
@@ -92,7 +89,7 @@ mod tests {
         sg.set_packet_type(PacketType::Fsk).unwrap();
         sg.set_fsk_mod_params(&MOD_PARAMS).unwrap();
         sg.set_packet_params(&PACKET_PARAMS).unwrap();
-        sg.calibrate_image(CalibrateImage::ISM_902_928).unwrap();
+        sg.calibrate_image(CalibrateImage::ISM_430_440).unwrap();
         sg.set_rf_frequency(&RF_FREQ).unwrap();
 
         const IRQ_CFG: CfgDioIrq = CfgDioIrq::new()
@@ -104,17 +101,18 @@ mod tests {
 
         // infinite loop while waiting for incoming data
         loop {
-            let (status, len, ptr) = sg.rx_buffer_status().unwrap();
-            let (_, irq_status) = sg.irq_status().unwrap();
+            let (status, irq_status) = sg.irq_status().unwrap();
             if irq_status & Irq::RxDone.mask() != 0 {
+                let (status, len, ptr) = sg.rx_buffer_status().unwrap();
                 assert_eq!(len, DATA_LEN);
                 assert_eq!(status.cmd(), Ok(CmdStatus::Avaliable));
+                assert_eq!(ptr, 0);
+                assert_eq!(irq_status, 0b10);
                 let mut data_buf: [u8; DATA_BYTES.len()] = [0; DATA_BYTES.len()];
                 sg.read_buffer(ptr, &mut data_buf).unwrap();
                 assert_eq!(data_buf, DATA_BYTES);
                 break;
             }
-            assert_eq!(len, 0);
             assert_eq!(status.mode(), Ok(StatusMode::Rx));
             assert_ne!(status.cmd(), Ok(CmdStatus::Avaliable));
             assert_ne!(status.cmd(), Ok(CmdStatus::Timeout));

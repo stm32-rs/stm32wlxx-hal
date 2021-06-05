@@ -384,7 +384,7 @@ impl SubGhz {
         self.poll_not_busy();
 
         pwr.subghzspicr.write(|w| w.nss().clear_bit());
-        self.write_byte_raw(OpCode::WriteBuffer as u8);
+        self.write_byte_raw(OpCode::ReadBuffer as u8);
         self.write_byte_raw(offset);
         let status: Status = self.read_byte_raw().into();
         buf.iter_mut().for_each(|b| *b = self.read_byte_raw());

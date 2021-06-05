@@ -15,7 +15,7 @@ use stm32wl_hal::{
 #[defmt_test::tests]
 mod tests {
     use subghz_testsuite_assets::{
-        DATA_BYTES, MOD_PARAMS, PACKET_PARAMS, PA_CONFIG, RF_FREQ, SYNC_WORD, TCXO_MODE,
+        DATA_BYTES, MOD_PARAMS, PACKET_PARAMS, PA_CONFIG, RF_FREQ, SYNC_WORD, TCXO_MODE, TX_PARAMS,
     };
 
     use super::*;
@@ -78,6 +78,7 @@ mod tests {
         sg.set_buffer_base_address(0, 0).unwrap();
         sg.set_pa_config(&PA_CONFIG).unwrap();
         sg.set_pa_ocp(Ocp::Max60m).unwrap();
+        sg.set_tx_params(&TX_PARAMS).unwrap();
         sg.set_sync_word(SYNC_WORD).unwrap();
 
         let status: Status = sg.status().unwrap();
@@ -86,7 +87,7 @@ mod tests {
         sg.set_packet_type(PacketType::Fsk).unwrap();
         sg.set_fsk_mod_params(&MOD_PARAMS).unwrap();
         sg.set_packet_params(&PACKET_PARAMS).unwrap();
-        sg.calibrate_image(CalibrateImage::ISM_902_928).unwrap();
+        sg.calibrate_image(CalibrateImage::ISM_430_440).unwrap();
         sg.set_rf_frequency(&RF_FREQ).unwrap();
 
         sg.write_buffer(0, DATA_BYTES).unwrap();

@@ -68,9 +68,6 @@ $ cargo test -p subghz-testsuite-rx --target thumbv7em-none-eabi -- --probe 001D
 $ cargo test -p subghz-testsuite-tx --target thumbv7em-none-eabi -- --probe 002900205553500A20393256
 ```
 
-**Note:** These tests are currently very flakey; but I suspect that is because
-I damaged one of my nucleo boards.
-
 ## Unit Tests
 
 Off-target unit tests use the built-in cargo framework.

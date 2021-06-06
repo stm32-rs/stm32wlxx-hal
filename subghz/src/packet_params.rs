@@ -462,3 +462,70 @@ impl Default for LoRaPacketParams {
         Self::new()
     }
 }
+
+/// Packet parameters for [`set_lora_packet_params`].
+///
+/// [`set_lora_packet_params`]: crate::SubGhz::set_lora_packet_params
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BpskPacketParams {
+    buf: [u8; 2],
+}
+
+impl BpskPacketParams {
+    /// Create a new `BpskPacketParams`.
+    ///
+    /// This is the same as `default`, but in a `const` function.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal_subghz::BpskPacketParams;
+    ///
+    /// const PKT_PARAMS: BpskPacketParams = BpskPacketParams::new();
+    /// assert_eq!(PKT_PARAMS, BpskPacketParams::default());
+    /// ```
+    pub const fn new() -> BpskPacketParams {
+        BpskPacketParams {
+            buf: [crate::OpCode::SetPacketParams as u8, 0x00],
+        }
+    }
+
+    /// Set the payload length in bytes.
+    ///
+    /// The length includes preamble, sync word, device ID, and CRC.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal_subghz::BpskPacketParams;
+    ///
+    /// const PKT_PARAMS: BpskPacketParams = BpskPacketParams::new().set_payload_len(12);
+    /// # assert_eq!(PKT_PARAMS.as_slice()[1], 12);
+    /// ```
+    #[must_use = "set_payload_len returns a modified BpskPacketParams"]
+    pub const fn set_payload_len(mut self, len: u8) -> BpskPacketParams {
+        self.buf[1] = len;
+        self
+    }
+
+    /// Extracts a slice containing the packet.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal_subghz::{BpskPacketParams, HeaderType};
+    ///
+    /// const PKT_PARAMS: BpskPacketParams = BpskPacketParams::new().set_payload_len(24);
+    ///
+    /// assert_eq!(PKT_PARAMS.as_slice(), &[0x8C, 24]);
+    /// ```
+    pub const fn as_slice(&self) -> &[u8] {
+        &self.buf
+    }
+}
+
+impl Default for BpskPacketParams {
+    fn default() -> Self {
+        Self::new()
+    }
+}

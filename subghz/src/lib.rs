@@ -36,7 +36,8 @@ pub use ocp::Ocp;
 pub use op_error::OpError;
 pub use pa_config::{PaConfig, PaSel};
 pub use packet_params::{
-    AddrComp, CrcType, GenericPacketParams, HeaderType, LoRaPacketParams, PreambleDetection,
+    AddrComp, BpskPacketParams, CrcType, GenericPacketParams, HeaderType, LoRaPacketParams,
+    PreambleDetection,
 };
 pub use packet_status::{FskPacketStatus, LoRaPacketStatus};
 pub use packet_type::PacketType;
@@ -960,7 +961,7 @@ impl SubGhz {
         self.write(params.as_slice())
     }
 
-    /// Set the LoRa packet parameters.
+    /// Set the generic (FSK) packet parameters.
     ///
     /// # Example
     ///
@@ -988,7 +989,21 @@ impl SubGhz {
         self.write(params.as_slice())
     }
 
-    // TODO: BPSK `Set_PacketParams`
+    /// Set the BPSK packet parameters.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use stm32wl_hal_subghz::{BpskPacketParams, PacketType};
+    ///
+    /// sg.set_packet_type(PacketType::Bpsk)?;
+    /// sg.set_bpsk_packet_params(&BpskPacketParams::new().set_payload_len(64))?;
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn set_bpsk_packet_params(&mut self, params: &BpskPacketParams) -> Result<(), SubGhzError> {
+        self.write(params.as_slice())
+    }
 
     /// Set the LoRa packet parameters.
     ///

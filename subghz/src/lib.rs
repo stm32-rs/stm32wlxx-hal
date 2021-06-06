@@ -351,6 +351,45 @@ impl SubGhz {
         Ok(())
     }
 
+    /// Set the initial value for generic packet whitening.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// sg.set_initial_whitening(0xA5);
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn set_initial_whitening(&mut self, init: u8) -> Result<(), SubGhzError> {
+        self.write_register(Register::GWHITEINIRL, &[init])
+    }
+
+    /// Set the initial value for generic packet CRC polynomial.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// sg.set_crc_polynomial(0x1D0F);
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn set_crc_polynomial(&mut self, polynomial: u16) -> Result<(), SubGhzError> {
+        self.write_register(Register::GCRCINIRH, &polynomial.to_be_bytes())
+    }
+
+    /// Set the generic packet CRC polynomial.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// sg.set_initial_crc_polynomial(0x1021);
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn set_initial_crc_polynomial(&mut self, polynomial: u16) -> Result<(), SubGhzError> {
+        self.write_register(Register::GCRCPOLRH, &polynomial.to_be_bytes())
+    }
+
     /// Set the synchronization word registers.
     ///
     /// # Example
@@ -1524,6 +1563,12 @@ impl From<OpCode> for u8 {
 #[allow(dead_code)]
 #[allow(clippy::upper_case_acronyms)]
 pub(crate) enum Register {
+    /// Generic CRC initial.
+    GCRCINIRH = 0x06BC,
+    /// Generic CRC polynomial.
+    GCRCPOLRH = 0x06BE,
+    /// Generic whitening.
+    GWHITEINIRL = 0x06B9,
     /// PA over current protection.
     PAOCP = 0x08E7,
     /// LoRa synchronization word MSB.

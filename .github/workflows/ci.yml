@@ -43,6 +43,7 @@ jobs:
     strategy:
       matrix:
         workspace:
+          - "aes-testsuite"
           - "pka-testsuite"
           - "rng-testsuite"
           - "subghz-testsuite-rx"

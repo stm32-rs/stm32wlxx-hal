@@ -1,5 +1,7 @@
 [workspace]
 members = [
+    "aes-testsuite",
+    "aes",
     "hal",
     "pka-testsuite",
     "pka",
@@ -11,6 +13,7 @@ members = [
     "subghz",
 ]
 default-members = [
+    "aes",
     "hal",
     "pka",
     "rng",

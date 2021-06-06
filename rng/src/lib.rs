@@ -1,8 +1,4 @@
 //! True random number generator.
-//!
-//! Provides full entropy outputs to the application as 32-bit samples.
-//! It is composed of a live entropy source (analog) and an internal
-//! conditioning component.
 #![cfg_attr(not(test), no_std)]
 
 use core::{

@@ -17,6 +17,7 @@ cfg_if::cfg_if! {
     }
 }
 
+pub use stm32wl_hal_aes as aes;
 pub use stm32wl_hal_pka as pka;
 pub use stm32wl_hal_rng as rng;
 pub use stm32wl_hal_subghz as subghz;

@@ -73,13 +73,12 @@ mod tests {
         assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
 
         sg.set_tcxo_mode(&TCXO_MODE).unwrap();
-        sg.set_hse_in_trim(0).unwrap();
         sg.set_regulator_mode(RegMode::Ldo).unwrap();
         sg.set_buffer_base_address(0, 0).unwrap();
         sg.set_pa_config(&PA_CONFIG).unwrap();
         sg.set_pa_ocp(Ocp::Max60m).unwrap();
         sg.set_tx_params(&TX_PARAMS).unwrap();
-        sg.set_sync_word(SYNC_WORD).unwrap();
+        sg.set_sync_word(&SYNC_WORD).unwrap();
 
         let status: Status = sg.status().unwrap();
         assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));

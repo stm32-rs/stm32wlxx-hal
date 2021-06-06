@@ -6,6 +6,7 @@ mod cad_params;
 mod calibrate;
 mod fallback_mode;
 mod irq;
+mod lora_sync_word;
 mod mod_params;
 mod ocp;
 mod op_error;
@@ -29,6 +30,7 @@ pub use cad_params::{CadParams, ExitMode, NbCadSymbol};
 pub use calibrate::{Calibrate, CalibrateImage};
 pub use fallback_mode::FallbackMode;
 pub use irq::{CfgDioIrq, Irq, IrqLine};
+pub use lora_sync_word::LoRaSyncWord;
 pub use mod_params::BpskModParams;
 pub use mod_params::{CodingRate, LoRaBandwidth, LoRaModParams, SpreadingFactor};
 pub use mod_params::{FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape};
@@ -270,63 +272,45 @@ impl SubGhz {
         self.read(opcode, &mut buf)?;
         Ok(buf)
     }
+}
 
-    // TODO: make a struct for the input value.
-    pub fn set_hse_in_trim(&mut self, in_trimr: u8) -> Result<(), SubGhzError> {
-        self.write_register(Register::HSEOUTTRIM, &[in_trimr])
+// 5.8.2
+/// Buffer access commands.
+impl SubGhz {
+    pub fn write_buffer(&mut self, offset: u8, data: &[u8]) -> Result<(), SubGhzError> {
+        let dp = unsafe { pac::Peripherals::steal() };
+        let pwr = &dp.PWR;
+        self.poll_not_busy();
+
+        pwr.subghzspicr.write(|w| w.nss().clear_bit());
+        self.write_byte_raw(OpCode::WriteBuffer as u8);
+        self.write_byte_raw(offset);
+        data.iter().for_each(|&b| self.write_byte_raw(b));
+        pwr.subghzspicr.write(|w| w.nss().set_bit());
+
+        self.poll_not_busy();
+        Ok(())
     }
 
-    /// Set the LoRa sync word.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
-    /// use stm32wl_hal_subghz::PacketType;
-    ///
-    /// sg.set_packet_type(PacketType::LoRa)?;
-    /// sg.set_lora_sync_word(0x1234)?;
-    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
-    /// ```
-    pub fn set_lora_sync_word(&mut self, sync_word: u16) -> Result<(), SubGhzError> {
-        self.write_register(Register::LSYNCH, &sync_word.to_be_bytes())
-    }
+    pub fn read_buffer(&mut self, offset: u8, buf: &mut [u8]) -> Result<Status, SubGhzError> {
+        let dp = unsafe { pac::Peripherals::steal() };
+        let pwr = &dp.PWR;
+        self.poll_not_busy();
 
-    /// Set the power amplifier over current protection.
-    ///
-    /// # Example
-    ///
-    /// Maximum 60mA for LP PA mode.
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
-    /// use stm32wl_hal_subghz::Ocp;
-    ///
-    /// sg.set_pa_ocp(Ocp::Max60m)?;
-    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
-    /// ```
-    ///
-    /// Maximum 60mA for HP PA mode.
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
-    /// use stm32wl_hal_subghz::Ocp;
-    ///
-    /// sg.set_pa_ocp(Ocp::Max140m)?;
-    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
-    /// ```
-    pub fn set_pa_ocp(&mut self, ocp: Ocp) -> Result<(), SubGhzError> {
-        self.write_register(Register::PAOCP, &[ocp as u8])
-    }
+        pwr.subghzspicr.write(|w| w.nss().clear_bit());
+        self.write_byte_raw(OpCode::ReadBuffer as u8);
+        self.write_byte_raw(offset);
+        let status: Status = self.read_byte_raw().into();
+        buf.iter_mut().for_each(|b| *b = self.read_byte_raw());
+        pwr.subghzspicr.write(|w| w.nss().set_bit());
 
-    /// Set the synchronization word registers.
-    pub fn set_sync_word(&mut self, sync_word: [u8; 8]) -> Result<(), SubGhzError> {
-        self.write_register(Register::GSYNC7, &sync_word)
+        self.poll_not_busy();
+        Ok(status)
     }
 }
 
 // 5.8.2
-/// Register and buffer access commands.
+/// Register access.
 impl SubGhz {
     #[allow(dead_code)]
     #[allow(clippy::unnecessary_wraps)]
@@ -367,35 +351,62 @@ impl SubGhz {
         Ok(())
     }
 
-    pub fn write_buffer(&mut self, offset: u8, data: &[u8]) -> Result<(), SubGhzError> {
-        let dp = unsafe { pac::Peripherals::steal() };
-        let pwr = &dp.PWR;
-        self.poll_not_busy();
-
-        pwr.subghzspicr.write(|w| w.nss().clear_bit());
-        self.write_byte_raw(OpCode::WriteBuffer as u8);
-        self.write_byte_raw(offset);
-        data.iter().for_each(|&b| self.write_byte_raw(b));
-        pwr.subghzspicr.write(|w| w.nss().set_bit());
-
-        self.poll_not_busy();
-        Ok(())
+    /// Set the synchronization word registers.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// const SYNC_WORD: [u8; 8] = [0x79, 0x80, 0x0C, 0xC0, 0x29, 0x95, 0xF8, 0x4A];
+    ///
+    /// sg.set_sync_word(&SYNC_WORD);
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn set_sync_word(&mut self, sync_word: &[u8; 8]) -> Result<(), SubGhzError> {
+        self.write_register(Register::GSYNC7, sync_word)
     }
 
-    pub fn read_buffer(&mut self, offset: u8, buf: &mut [u8]) -> Result<Status, SubGhzError> {
-        let dp = unsafe { pac::Peripherals::steal() };
-        let pwr = &dp.PWR;
-        self.poll_not_busy();
+    /// Set the LoRa synchronization word registers.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use stm32wl_hal_subghz::{LoRaSyncWord, PacketType};
+    ///
+    /// sg.set_packet_type(PacketType::LoRa)?;
+    /// sg.set_lora_sync_word(LoRaSyncWord::Public)?;
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn set_lora_sync_word(&mut self, sync_word: LoRaSyncWord) -> Result<(), SubGhzError> {
+        self.write_register(Register::LSYNCH, &sync_word.bytes())
+    }
 
-        pwr.subghzspicr.write(|w| w.nss().clear_bit());
-        self.write_byte_raw(OpCode::ReadBuffer as u8);
-        self.write_byte_raw(offset);
-        let status: Status = self.read_byte_raw().into();
-        buf.iter_mut().for_each(|b| *b = self.read_byte_raw());
-        pwr.subghzspicr.write(|w| w.nss().set_bit());
-
-        self.poll_not_busy();
-        Ok(status)
+    /// Set the power amplifier over current protection.
+    ///
+    /// # Example
+    ///
+    /// Maximum 60mA for LP PA mode.
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use stm32wl_hal_subghz::Ocp;
+    ///
+    /// sg.set_pa_ocp(Ocp::Max60m)?;
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    ///
+    /// Maximum 60mA for HP PA mode.
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use stm32wl_hal_subghz::Ocp;
+    ///
+    /// sg.set_pa_ocp(Ocp::Max140m)?;
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn set_pa_ocp(&mut self, ocp: Ocp) -> Result<(), SubGhzError> {
+        self.write_register(Register::PAOCP, &[ocp as u8])
     }
 }
 

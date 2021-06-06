@@ -17,6 +17,7 @@ default-members = [
     "aes",
     "hal",
     "pka",
+    "rcc",
     "rng",
     "subghz",
 ]

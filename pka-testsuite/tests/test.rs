@@ -6,6 +6,7 @@ use panic_probe as _;
 use stm32wl_hal::{
     pac,
     pka::{curve::NIST_P256, EcdsaPublicKey, EcdsaSignature, Pka},
+    rcc,
 };
 
 // Message hash
@@ -51,12 +52,12 @@ mod tests {
 
     #[init]
     fn init() -> Pka {
-        let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+        let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
         let mut rcc = dp.RCC;
         rcc.ahb3enr.modify(|_, w| w.pkaen().set_bit());
         rcc.ahb3enr.read(); // Delay after an RCC peripheral clock enabling
 
-        // TODO: set clocks to 48MHz so the tests execute fater
+        rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut rcc);
 
         Pka::new(dp.PKA, &mut rcc)
     }

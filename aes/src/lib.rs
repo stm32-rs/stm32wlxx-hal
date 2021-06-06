@@ -36,10 +36,7 @@ enum Algorithm {
 impl Algorithm {
     /// Bit 16
     pub(crate) const fn chmod2(&self) -> bool {
-        match self {
-            Algorithm::Ccm => true,
-            _ => false,
-        }
+        matches!(self, Algorithm::Ccm)
     }
 
     /// Bits 6:5

@@ -3,7 +3,7 @@
 
 use defmt_rtt as _; // global logger
 use panic_probe as _;
-use stm32wl_hal::{aes::Aes, pac};
+use stm32wl_hal::{aes::Aes, pac, rcc};
 
 pub const fn u128_to_u32(u: u128) -> [u32; 4] {
     [
@@ -22,12 +22,12 @@ mod tests {
 
     #[init]
     fn init() -> Aes {
-        let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+        let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
         let mut rcc = dp.RCC;
         rcc.ahb3enr.modify(|_, w| w.aesen().set_bit());
         rcc.ahb3enr.read(); // Delay after an RCC peripheral clock enabling
 
-        // TODO: set clocks to 48MHz so the tests execute fater
+        rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut rcc);
 
         Aes::new(dp.AES, &mut rcc)
     }

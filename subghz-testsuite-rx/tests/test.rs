@@ -5,7 +5,7 @@ use defmt_rtt as _; // global logger
 use panic_probe as _;
 
 use stm32wl_hal::{
-    pac,
+    pac, rcc,
     subghz::{
         CalibrateImage, CfgDioIrq, CmdStatus, Irq, IrqLine, Ocp, PacketType, RegMode, StandbyClk,
         Status, StatusMode, SubGhz, Timeout,
@@ -23,11 +23,11 @@ mod tests {
 
     #[init]
     fn init() -> SubGhz {
-        let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+        let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
         let gpioc = &dp.GPIOC;
         let spi3 = dp.SPI3;
         let mut rcc = dp.RCC;
-        let pwr = dp.PWR;
+        let mut pwr = dp.PWR;
 
         rcc.apb3enr.modify(|_, w| w.subghzspien().set_bit());
         rcc.apb3enr.read(); // Delay after an RCC peripheral clock enabling
@@ -63,7 +63,7 @@ mod tests {
             .odr
             .write(|w| w.odr3().set_bit().odr4().set_bit().odr5().clear_bit());
 
-        // TODO: set clocks to 48MHz so the tests execute fater
+        rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut pwr, &mut rcc);
 
         SubGhz::new(spi3, &mut rcc)
     }

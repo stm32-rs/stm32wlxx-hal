@@ -1,0 +1,19 @@
+[package]
+name = "stm32wl-hal-rcc"
+version = "0.1.0"
+authors = ["Alex M. <alexmgit@protonmail.com>"]
+edition = "2018"
+license = "MIT"
+description = "STM32WL RCC HAL"
+
+[features]
+stm32wl5x_cm0p = ["stm32wl/stm32wl5x_cm0p"]
+stm32wl5x_cm4 = ["stm32wl/stm32wl5x_cm4"]
+stm32wle5 = ["stm32wl/stm32wle5"]
+
+[dependencies]
+cfg-if = "^1"
+
+[dependencies.stm32wl]
+git = "https://github.com/newAM/stm32wl-rs.git"
+rev = "031c2ecc3664c8ef3f642fbce075b2c238d5ff1b"

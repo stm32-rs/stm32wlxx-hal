@@ -966,7 +966,26 @@ impl SubGhz {
 
     // TODO: LoRa `Set_PacketParams`
 
-    // TODO: `Set_LoRaSymbTimeout`
+    /// Set the number of LoRa symbols to be received before starting the
+    /// reception of a LoRa packet.
+    ///
+    /// Packet reception is started after `n` + 1 symbols are detected.
+    ///
+    /// # Example
+    ///
+    /// Start reception after a single LoRa word is detected
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    ///
+    /// // ... setup the radio for LoRa RX
+    ///
+    /// sg.set_lora_symb_timeout(0)?;
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn set_lora_symb_timeout(&mut self, n: u8) -> Result<(), SubGhzError> {
+        self.write(&[OpCode::SetLoRaSymbTimeout.into(), n])
+    }
 }
 
 // 5.8.5

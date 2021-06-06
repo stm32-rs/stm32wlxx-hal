@@ -26,14 +26,32 @@ pub enum AddrComp {
     Broadcast = 0x2,
 }
 
-/// Payload type for [`GenericPacketParams`].
-#[repr(u8)]
+/// Packet header type.
+///
+/// Argument of [`GenericPacketParams::set_header_type`] and
+/// [`LoRaPacketParams::set_header_type`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum PayloadType {
+pub enum HeaderType {
     /// Fixed; payload length and header field not added to packet.
-    Fixed = 0b0,
+    Fixed,
     /// Variable; payload length and header field added to packet.
-    Variable = 0b1,
+    Variable,
+}
+
+impl HeaderType {
+    pub(crate) const fn to_bits_generic(self) -> u8 {
+        match self {
+            HeaderType::Fixed => 0,
+            HeaderType::Variable => 1,
+        }
+    }
+
+    pub(crate) const fn to_bits_lora(self) -> u8 {
+        match self {
+            HeaderType::Fixed => 1,
+            HeaderType::Variable => 0,
+        }
+    }
 }
 
 /// CRC type definition for [`GenericPacketParams`].
@@ -74,19 +92,16 @@ impl GenericPacketParams {
     /// assert_eq!(PKT_PARAMS, GenericPacketParams::default());
     /// ```
     pub const fn new() -> GenericPacketParams {
+        const OPCODE: u8 = crate::OpCode::SetPacketParams as u8;
         // const variable ensure the compile always optimizes the methods
         const NEW: GenericPacketParams = GenericPacketParams {
-            #[rustfmt::skip]
-            buf: [
-                crate::OpCode::SetPacketParams as u8,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            ],
+            buf: [OPCODE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
         }
         .set_preamble_len(1)
         .set_preamble_detection(PreambleDetection::Disabled)
         .set_sync_word_len(0)
         .set_addr_comp(AddrComp::Disabled)
-        .set_payload_type(PayloadType::Fixed)
+        .set_header_type(HeaderType::Fixed)
         .set_payload_len(1);
 
         NEW
@@ -180,7 +195,7 @@ impl GenericPacketParams {
         self
     }
 
-    /// Payload type definition.
+    /// Header type definition.
     ///
     /// **Note:** The reference manual calls this packet type, but that results
     /// in a conflicting variable name for the modulation scheme, which the
@@ -188,18 +203,18 @@ impl GenericPacketParams {
     ///
     /// # Example
     ///
-    /// Set the payload type to a variable length.
+    /// Set the header type to a variable length.
     ///
     /// ```
-    /// use stm32wl_hal_subghz::{GenericPacketParams, PayloadType};
+    /// use stm32wl_hal_subghz::{GenericPacketParams, HeaderType};
     ///
     /// const PKT_PARAMS: GenericPacketParams =
-    ///     GenericPacketParams::new().set_payload_type(PayloadType::Variable);
+    ///     GenericPacketParams::new().set_header_type(HeaderType::Variable);
     /// # assert_eq!(PKT_PARAMS.as_slice()[6], 0x01);
     /// ```
-    #[must_use = "set_payload_type returns a modified GenericPacketParams"]
-    pub const fn set_payload_type(mut self, payload_type: PayloadType) -> GenericPacketParams {
-        self.buf[6] = payload_type as u8;
+    #[must_use = "set_header_type returns a modified GenericPacketParams"]
+    pub const fn set_header_type(mut self, header_type: HeaderType) -> GenericPacketParams {
+        self.buf[6] = header_type.to_bits_generic();
         self
     }
 
@@ -260,7 +275,7 @@ impl GenericPacketParams {
     ///
     /// ```
     /// use stm32wl_hal_subghz::{
-    ///     AddrComp, CrcType, GenericPacketParams, PayloadType, PreambleDetection,
+    ///     AddrComp, CrcType, GenericPacketParams, HeaderType, PreambleDetection,
     /// };
     ///
     /// const PKT_PARAMS: GenericPacketParams = GenericPacketParams::new()
@@ -268,7 +283,7 @@ impl GenericPacketParams {
     ///     .set_preamble_detection(PreambleDetection::Disabled)
     ///     .set_sync_word_len(2)
     ///     .set_addr_comp(AddrComp::Disabled)
-    ///     .set_payload_type(PayloadType::Fixed)
+    ///     .set_header_type(HeaderType::Fixed)
     ///     .set_payload_len(128)
     ///     .set_crc_type(CrcType::Byte2)
     ///     .set_whitening_enable(true);
@@ -284,6 +299,165 @@ impl GenericPacketParams {
 }
 
 impl Default for GenericPacketParams {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Packet parameters for [`set_lora_packet_params`].
+///
+/// [`set_lora_packet_params`]: crate::SubGhz::set_lora_packet_params
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LoRaPacketParams {
+    buf: [u8; 7],
+}
+
+impl LoRaPacketParams {
+    /// Create a new `GenericPacketParams`.
+    ///
+    /// This is the same as `default`, but in a `const` function.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal_subghz::LoRaPacketParams;
+    ///
+    /// const PKT_PARAMS: LoRaPacketParams = LoRaPacketParams::new();
+    /// assert_eq!(PKT_PARAMS, LoRaPacketParams::default());
+    /// ```
+    pub const fn new() -> LoRaPacketParams {
+        const OPCODE: u8 = crate::OpCode::SetPacketParams as u8;
+        // const variable ensure the compile always optimizes the methods
+        const NEW: LoRaPacketParams = LoRaPacketParams {
+            buf: [OPCODE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+        }
+        .set_preamble_len(1)
+        .set_header_type(HeaderType::Fixed)
+        .set_payload_len(1)
+        .set_crc_en(true)
+        .set_invert_iq(false);
+
+        NEW
+    }
+
+    /// Preamble length in number of symbols.
+    ///
+    /// Values of zero are invalid, and will automatically be set to 1.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal_subghz::LoRaPacketParams;
+    ///
+    /// const PKT_PARAMS: LoRaPacketParams = LoRaPacketParams::new().set_preamble_len(0x1234);
+    /// # assert_eq!(PKT_PARAMS.as_slice()[1], 0x12);
+    /// # assert_eq!(PKT_PARAMS.as_slice()[2], 0x34);
+    /// ```
+    #[must_use = "preamble_length returns a modified LoRaPacketParams"]
+    pub const fn set_preamble_len(mut self, mut len: u16) -> LoRaPacketParams {
+        if len == 0 {
+            len = 1
+        }
+        self.buf[1] = ((len >> 8) & 0xFF) as u8;
+        self.buf[2] = (len & 0xFF) as u8;
+        self
+    }
+
+    /// Header type (fixed or variable).
+    ///
+    /// # Example
+    ///
+    /// Set the payload type to a fixed length.
+    ///
+    /// ```
+    /// use stm32wl_hal_subghz::{HeaderType, LoRaPacketParams};
+    ///
+    /// const PKT_PARAMS: LoRaPacketParams = LoRaPacketParams::new().set_header_type(HeaderType::Fixed);
+    /// # assert_eq!(PKT_PARAMS.as_slice()[3], 0x01);
+    /// ```
+    #[must_use = "set_header_type returns a modified LoRaPacketParams"]
+    pub const fn set_header_type(mut self, header_type: HeaderType) -> LoRaPacketParams {
+        self.buf[3] = header_type.to_bits_lora();
+        self
+    }
+
+    /// Set the payload length in bytes.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal_subghz::LoRaPacketParams;
+    ///
+    /// const PKT_PARAMS: LoRaPacketParams = LoRaPacketParams::new().set_payload_len(12);
+    /// # assert_eq!(PKT_PARAMS.as_slice()[4], 12);
+    /// ```
+    #[must_use = "set_payload_len returns a modified LoRaPacketParams"]
+    pub const fn set_payload_len(mut self, len: u8) -> LoRaPacketParams {
+        self.buf[4] = len;
+        self
+    }
+
+    /// CRC enable.
+    ///
+    /// # Example
+    ///
+    /// Enable CRC.
+    ///
+    /// ```
+    /// use stm32wl_hal_subghz::LoRaPacketParams;
+    ///
+    /// const PKT_PARAMS: LoRaPacketParams = LoRaPacketParams::new().set_crc_en(true);
+    /// # assert_eq!(PKT_PARAMS.as_slice()[5], 0x1);
+    /// ```
+    #[must_use = "set_crc_en returns a modified LoRaPacketParams"]
+    pub const fn set_crc_en(mut self, en: bool) -> LoRaPacketParams {
+        self.buf[5] = en as u8;
+        self
+    }
+
+    /// IQ setup.
+    ///
+    /// # Example
+    ///
+    /// Use an inverted IQ setup.
+    ///
+    /// ```
+    /// use stm32wl_hal_subghz::LoRaPacketParams;
+    ///
+    /// const PKT_PARAMS: LoRaPacketParams = LoRaPacketParams::new().set_invert_iq(true);
+    /// # assert_eq!(PKT_PARAMS.as_slice()[6], 0x1);
+    /// ```
+    #[must_use = "set_invert_iq returns a modified LoRaPacketParams"]
+    pub const fn set_invert_iq(mut self, invert: bool) -> LoRaPacketParams {
+        self.buf[6] = invert as u8;
+        self
+    }
+
+    /// Extracts a slice containing the packet.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal_subghz::{HeaderType, LoRaPacketParams};
+    ///
+    /// const PKT_PARAMS: LoRaPacketParams = LoRaPacketParams::new()
+    ///     .set_preamble_len(5 * 8)
+    ///     .set_header_type(HeaderType::Fixed)
+    ///     .set_payload_len(64)
+    ///     .set_crc_en(true)
+    ///     .set_invert_iq(true);
+    ///
+    /// assert_eq!(
+    ///     PKT_PARAMS.as_slice(),
+    ///     &[0x8C, 0x00, 0x28, 0x01, 0x40, 0x01, 0x01]
+    /// );
+    /// ```
+    pub const fn as_slice(&self) -> &[u8] {
+        &self.buf
+    }
+}
+
+impl Default for LoRaPacketParams {
     fn default() -> Self {
         Self::new()
     }

@@ -35,7 +35,9 @@ pub use mod_params::{FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseSh
 pub use ocp::Ocp;
 pub use op_error::OpError;
 pub use pa_config::{PaConfig, PaSel};
-pub use packet_params::{AddrComp, CrcType, GenericPacketParams, PayloadType, PreambleDetection};
+pub use packet_params::{
+    AddrComp, CrcType, GenericPacketParams, HeaderType, LoRaPacketParams, PreambleDetection,
+};
 pub use packet_status::{FskPacketStatus, LoRaPacketStatus};
 pub use packet_type::PacketType;
 pub use reg_mode::RegMode;
@@ -958,13 +960,58 @@ impl SubGhz {
         self.write(params.as_slice())
     }
 
+    /// Set the LoRa packet parameters.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use stm32wl_hal_subghz::{
+    ///     AddrComp, CrcType, GenericPacketParams, HeaderType, PacketType, PreambleDetection,
+    /// };
+    ///
+    /// const PKT_PARAMS: GenericPacketParams = GenericPacketParams::new()
+    ///     .set_preamble_len(8)
+    ///     .set_preamble_detection(PreambleDetection::Disabled)
+    ///     .set_sync_word_len(2)
+    ///     .set_addr_comp(AddrComp::Disabled)
+    ///     .set_header_type(HeaderType::Fixed)
+    ///     .set_payload_len(128)
+    ///     .set_crc_type(CrcType::Byte2)
+    ///     .set_whitening_enable(true);
+    ///
+    /// sg.set_packet_type(PacketType::Fsk)?;
+    /// sg.set_packet_params(&PKT_PARAMS)?;
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
     pub fn set_packet_params(&mut self, params: &GenericPacketParams) -> Result<(), SubGhzError> {
         self.write(params.as_slice())
     }
 
     // TODO: BPSK `Set_PacketParams`
 
-    // TODO: LoRa `Set_PacketParams`
+    /// Set the LoRa packet parameters.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use stm32wl_hal_subghz::{HeaderType, LoRaPacketParams, PacketType};
+    ///
+    /// const PKT_PARAMS: LoRaPacketParams = LoRaPacketParams::new()
+    ///     .set_preamble_len(5 * 8)
+    ///     .set_header_type(HeaderType::Fixed)
+    ///     .set_payload_len(64)
+    ///     .set_crc_en(true)
+    ///     .set_invert_iq(true);
+    ///
+    /// sg.set_packet_type(PacketType::LoRa)?;
+    /// sg.set_lora_packet_params(&PKT_PARAMS)?;
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn set_lora_packet_params(&mut self, params: &LoRaPacketParams) -> Result<(), SubGhzError> {
+        self.write(params.as_slice())
+    }
 
     /// Set the number of LoRa symbols to be received before starting the
     /// reception of a LoRa packet.

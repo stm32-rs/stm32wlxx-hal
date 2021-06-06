@@ -163,6 +163,16 @@ impl Key {
             Key::K256(k) => &k.key,
         }
     }
+
+    /// Returns `true` if the key is a 128-bit key.
+    pub fn is_128bit(&self) -> bool {
+        matches!(self, Self::K128(..))
+    }
+
+    /// Returns `true` if the key is a 256-bit key.
+    pub fn is_256bit(&self) -> bool {
+        matches!(self, Self::K256(..))
+    }
 }
 
 #[repr(u8)]
@@ -171,6 +181,9 @@ enum Mode {
     Encryption = 0b00,
     KeyDerivation = 0b01,
     Decryption = 0b10,
+    /// ST does not document this!
+    /// ST uses this in their HAL implementation and it passes NIST tests...
+    KeyDerivationDecryption = 0b11,
 }
 
 impl Mode {
@@ -282,6 +295,35 @@ impl Aes {
         Aes { aes: dp.AES }
     }
 
+    fn set_key(&mut self, key: &Key) {
+        self.aes.keyr0.write(|w| unsafe { w.bits(key.key()[0]) });
+        self.aes.keyr1.write(|w| unsafe { w.bits(key.key()[1]) });
+        self.aes.keyr2.write(|w| unsafe { w.bits(key.key()[2]) });
+        self.aes.keyr3.write(|w| unsafe { w.bits(key.key()[3]) });
+        if key.is_256bit() {
+            self.aes.keyr4.write(|w| unsafe { w.bits(key.key()[4]) });
+            self.aes.keyr5.write(|w| unsafe { w.bits(key.key()[5]) });
+            self.aes.keyr6.write(|w| unsafe { w.bits(key.key()[6]) });
+            self.aes.keyr7.write(|w| unsafe { w.bits(key.key()[7]) });
+        }
+    }
+
+    fn poll_completion(&self) -> Result<(), Error> {
+        // TODO: timeouts
+        loop {
+            let sr = self.aes.sr.read();
+            if sr.wrerr().bit_is_set() {
+                return Err(Error::Write);
+            }
+            if sr.rderr().bit_is_set() {
+                return Err(Error::Read);
+            }
+            if sr.ccf().bit_is_set() {
+                return Ok(());
+            }
+        }
+    }
+
     /// Encrypt using the electronic codebook chaining (ECB) algorithm.
     ///
     /// # Example
@@ -290,10 +332,11 @@ impl Aes {
     /// use stm32wl_hal_aes::{Key, Key128};
     /// # let mut aes = unsafe { stm32wl_hal_aes::Aes::conjure() };
     ///
+    /// // this is a bad key, I am just using values from the NIST testsuite
     /// const KEY: Key = Key::K128(Key128::from_u128(0));
     ///
     /// let plaintext: [u32; 4] = [0xf34481ec, 0x3cc627ba, 0xcd5dc3fb, 0x08f273e6];
-    /// let chiphertext = aes.encrypt_ecb(&KEY, &plaintext)?;
+    /// let chiphertext: [u32; 4] = aes.encrypt_ecb(&KEY, &plaintext)?;
     /// # Ok::<(), stm32wl_hal_aes::Error>(())
     /// ```
     pub fn encrypt_ecb(&mut self, key: &Key, plaintext: &[u32; 4]) -> Result<[u32; 4], Error> {
@@ -314,51 +357,82 @@ impl Aes {
                 .errc().set_bit()
                 .ccfie().set_bit()
                 .errie().set_bit()
-                .dmainen().set_bit()
-                .dmaouten().set_bit()
+                .dmainen().clear_bit()
+                .dmaouten().clear_bit()
                 .gcmph().bits(0) // do not care for ECB
                 .keysize().bit(key.keysize())
                 .npblb().bits(0) // no padding
         });
 
-        // WARNING
-        // HAL DOES THIS BACKWARDS (key dw 0 in reg 7 for 256 or reg 3 for 128)
-        // WARNING
-        self.aes.keyr0.write(|w| unsafe { w.bits(key.key()[0]) });
-        self.aes.keyr1.write(|w| unsafe { w.bits(key.key()[1]) });
-        self.aes.keyr2.write(|w| unsafe { w.bits(key.key()[2]) });
-        self.aes.keyr3.write(|w| unsafe { w.bits(key.key()[3]) });
-        if key.keysize() {
-            self.aes.keyr4.write(|w| unsafe { w.bits(key.key()[4]) });
-            self.aes.keyr5.write(|w| unsafe { w.bits(key.key()[5]) });
-            self.aes.keyr6.write(|w| unsafe { w.bits(key.key()[6]) });
-            self.aes.keyr7.write(|w| unsafe { w.bits(key.key()[7]) });
-        }
+        self.set_key(key);
 
         for &dw in plaintext.iter() {
             self.aes.dinr.write(|w| unsafe { w.bits(dw) });
         }
 
-        // TODO: timeouts
-        loop {
-            let sr = self.aes.sr.read();
-            if sr.wrerr().bit_is_set() {
-                return Err(Error::Write);
-            }
-            if sr.rderr().bit_is_set() {
-                return Err(Error::Read);
-            }
-            if sr.ccf().bit_is_set() {
-                break;
-            }
-        }
+        self.poll_completion()?;
 
-        let mut ret: [u32; 4] = [0; 4];
-
-        for dw in ret.iter_mut() {
+        let mut ciphertext: [u32; 4] = [0; 4];
+        for dw in ciphertext.iter_mut() {
             *dw = self.aes.doutr.read().bits();
         }
+        self.aes.cr.write(|w| w.en().clear_bit());
+        Ok(ciphertext)
+    }
 
-        Ok(ret)
+    /// Decrypt using the electronic codebook chaining (ECB) algorithm.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal_aes::{Key, Key128};
+    /// # let mut aes = unsafe { stm32wl_hal_aes::Aes::conjure() };
+    ///
+    /// // this is a bad key, I am just using values from the NIST testsuite
+    /// const KEY: Key = Key::K128(Key128::from_u128(0));
+    ///
+    /// let ciphertext: [u32; 4] = [0x0336763e, 0x966d9259, 0x5a567cc9, 0xce537f5e];
+    /// let plaintext: [u32; 4] = aes.decrypt_ecb(&KEY, &ciphertext)?;
+    /// # Ok::<(), stm32wl_hal_aes::Error>(())
+    /// ```
+    pub fn decrypt_ecb(&mut self, key: &Key, ciphertext: &[u32; 4]) -> Result<[u32; 4], Error> {
+        const ALGO: Algorithm = Algorithm::Ecb;
+        const CHMOD2: bool = ALGO.chmod2();
+        const CHMOD10: u8 = ALGO.chmod10();
+        const MODE: u8 = Mode::KeyDerivationDecryption.bits();
+
+        #[rustfmt::skip]
+        self.aes.cr.write(|w| unsafe {
+            w
+                .en().set_bit()
+                .datatype().bits(0b00)
+                .mode().bits(MODE)
+                .chmod2().bit(CHMOD2)
+                .chmod10().bits(CHMOD10)
+                .ccfc().set_bit()
+                .errc().set_bit()
+                .ccfie().set_bit()
+                .errie().set_bit()
+                .dmainen().clear_bit()
+                .dmaouten().clear_bit()
+                .gcmph().bits(0) // do not care for ECB
+                .keysize().bit(key.keysize())
+                .npblb().bits(0) // no padding
+        });
+
+        self.set_key(key);
+
+        for &dw in ciphertext.iter() {
+            self.aes.dinr.write(|w| unsafe { w.bits(dw) });
+        }
+
+        self.poll_completion()?;
+
+        let mut plaintext: [u32; 4] = [0; 4];
+        for dw in plaintext.iter_mut() {
+            *dw = self.aes.doutr.read().bits();
+        }
+        self.aes.cr.write(|w| w.en().clear_bit());
+        Ok(plaintext)
     }
 }

@@ -4,7 +4,7 @@ use core::time::Duration;
 
 use stm32wl_hal::subghz::{
     AddrComp, CrcType, FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape,
-    GenericPacketParams, PaConfig, PaSel, PayloadType, PreambleDetection, RampTime, RfFreq,
+    GenericPacketParams, HeaderType, PaConfig, PaSel, PreambleDetection, RampTime, RfFreq,
     TcxoMode, TcxoTrim, Timeout, TxParams,
 };
 
@@ -24,7 +24,7 @@ pub const PACKET_PARAMS: GenericPacketParams = GenericPacketParams::new()
     .set_preamble_detection(PreambleDetection::Bit8)
     .set_sync_word_len(SYNC_WORD_LEN_BITS)
     .set_addr_comp(AddrComp::Disabled)
-    .set_payload_type(PayloadType::Fixed)
+    .set_header_type(HeaderType::Fixed)
     .set_payload_len(DATA_LEN)
     .set_crc_type(CrcType::Byte2)
     .set_whitening_enable(true);

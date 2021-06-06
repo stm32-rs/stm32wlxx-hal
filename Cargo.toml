@@ -5,6 +5,7 @@ members = [
     "hal",
     "pka-testsuite",
     "pka",
+    "rcc",
     "rng-testsuite",
     "rng",
     "subghz-testsuite-assets",

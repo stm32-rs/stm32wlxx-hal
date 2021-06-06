@@ -8,25 +8,28 @@ description = "STM32WL HAL"
 
 [features]
 stm32wl5x_cm0p = [
-    "stm32wl/stm32wl5x_cm0p",
     "stm32wl-hal-aes/stm32wl5x_cm0p",
     "stm32wl-hal-pka/stm32wl5x_cm0p",
-    "stm32wl-hal-subghz/stm32wl5x_cm0p",
+    "stm32wl-hal-rcc/stm32wl5x_cm0p",
     "stm32wl-hal-rng/stm32wl5x_cm0p",
+    "stm32wl-hal-subghz/stm32wl5x_cm0p",
+    "stm32wl/stm32wl5x_cm0p",
 ]
 stm32wl5x_cm4 = [
-    "stm32wl/stm32wl5x_cm4",
     "stm32wl-hal-aes/stm32wl5x_cm4",
     "stm32wl-hal-pka/stm32wl5x_cm4",
-    "stm32wl-hal-subghz/stm32wl5x_cm4",
+    "stm32wl-hal-rcc/stm32wl5x_cm4",
     "stm32wl-hal-rng/stm32wl5x_cm4",
+    "stm32wl-hal-subghz/stm32wl5x_cm4",
+    "stm32wl/stm32wl5x_cm4",
 ]
 stm32wle5 = [
-    "stm32wl/stm32wle5",
     "stm32wl-hal-aes/stm32wle5",
     "stm32wl-hal-pka/stm32wle5",
-    "stm32wl-hal-subghz/stm32wle5",
+    "stm32wl-hal-rcc/stm32wle5",
     "stm32wl-hal-rng/stm32wle5",
+    "stm32wl-hal-subghz/stm32wle5",
+    "stm32wl/stm32wle5",
 ]
 
 [dependencies]
@@ -41,6 +44,9 @@ path = "../aes"
 
 [dependencies.stm32wl-hal-pka]
 path = "../pka"
+
+[dependencies.stm32wl-hal-rcc]
+path = "../rcc"
 
 [dependencies.stm32wl-hal-rng]
 path = "../rng"

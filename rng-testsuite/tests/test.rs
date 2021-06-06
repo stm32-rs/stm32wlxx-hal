@@ -4,7 +4,7 @@
 use defmt_rtt as _; // global logger
 use panic_probe as _;
 use stm32wl_hal::{
-    pac,
+    pac, rcc,
     rng::{rand_core::RngCore, Rng},
 };
 
@@ -14,14 +14,14 @@ mod tests {
 
     #[init]
     fn init() -> Rng {
-        let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+        let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
         let mut rcc = dp.RCC;
         // clock RNG from MSI
         rcc.ccipr.modify(|_, w| unsafe { w.rngsel().bits(0b11) });
         rcc.ahb3enr.modify(|_, w| w.rngen().set_bit());
         rcc.ahb3enr.read(); // Delay after an RCC peripheral clock enabling
 
-        // TODO: set clocks to 48MHz so the tests execute fater
+        rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut rcc);
 
         Rng::new(dp.RNG, &mut rcc)
     }

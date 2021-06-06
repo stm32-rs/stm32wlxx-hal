@@ -129,7 +129,8 @@ pub enum FskPulseShape {
     Bt10 = 0x0B,
 }
 
-/// Bitrate argument for [`FskModParams::set_bitrate`].
+/// Bitrate argument for [`FskModParams::set_bitrate`] and
+/// [`BpskModParams::set_bitrate`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct FskBitrate {
     bits: u32,
@@ -674,6 +675,81 @@ impl LoRaModParams {
 }
 
 impl Default for LoRaModParams {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// BPSK modulation paramters.
+///
+/// **Note:** There is no method to set the pulse shape because there is only
+/// one valid pulse shape (Gaussian BT 0.5).
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub struct BpskModParams {
+    buf: [u8; 5],
+}
+
+impl BpskModParams {
+    /// Create a new `BpskModParams` struct.
+    ///
+    /// This is the same as `default`, but in a `const` function.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal_subghz::BpskModParams;
+    ///
+    /// const MOD_PARAMS: BpskModParams = BpskModParams::new();
+    /// assert_eq!(MOD_PARAMS, BpskModParams::default());
+    /// ```
+    pub const fn new() -> BpskModParams {
+        const OPCODE: u8 = crate::OpCode::SetModulationParams as u8;
+        BpskModParams {
+            buf: [OPCODE, 0x1A, 0x0A, 0xAA, 0x16],
+        }
+    }
+
+    /// Set the bitrate.
+    ///
+    /// # Example
+    ///
+    /// Setting the bitrate to 600 bits per second.
+    ///
+    /// ```
+    /// use stm32wl_hal_subghz::{BpskModParams, FskBitrate};
+    ///
+    /// const BITRATE: FskBitrate = FskBitrate::from_bps(600);
+    /// const MOD_PARAMS: BpskModParams = BpskModParams::new().set_bitrate(BITRATE);
+    /// # assert_eq!(MOD_PARAMS.as_slice()[1], 0x1A);
+    /// # assert_eq!(MOD_PARAMS.as_slice()[2], 0x0A);
+    /// # assert_eq!(MOD_PARAMS.as_slice()[3], 0xAA);
+    /// ```
+    #[must_use = "set_bitrate returns a new BpskModParams"]
+    pub const fn set_bitrate(mut self, bitrate: FskBitrate) -> BpskModParams {
+        let bits: u32 = bitrate.into_bits();
+        self.buf[1] = ((bits >> 16) & 0xFF) as u8;
+        self.buf[2] = ((bits >> 8) & 0xFF) as u8;
+        self.buf[3] = (bits & 0xFF) as u8;
+        self
+    }
+
+    /// Extracts a slice containing the packet.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal_subghz::{BpskModParams, FskBitrate};
+    ///
+    /// const BITRATE: FskBitrate = FskBitrate::from_bps(100);
+    /// const MOD_PARAMS: BpskModParams = BpskModParams::new().set_bitrate(BITRATE);
+    /// assert_eq!(MOD_PARAMS.as_slice(), [0x8B, 0x9C, 0x40, 0x00, 0x16]);
+    /// ```
+    pub const fn as_slice(&self) -> &[u8] {
+        &self.buf
+    }
+}
+
+impl Default for BpskModParams {
     fn default() -> Self {
         Self::new()
     }

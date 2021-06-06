@@ -29,6 +29,7 @@ pub use cad_params::{CadParams, ExitMode, NbCadSymbol};
 pub use calibrate::{Calibrate, CalibrateImage};
 pub use fallback_mode::FallbackMode;
 pub use irq::{CfgDioIrq, Irq, IrqLine};
+pub use mod_params::BpskModParams;
 pub use mod_params::{CodingRate, LoRaBandwidth, LoRaModParams, SpreadingFactor};
 pub use mod_params::{FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape};
 pub use ocp::Ocp;
@@ -939,7 +940,23 @@ impl SubGhz {
         self.write(params.as_slice())
     }
 
-    // TODO: BPSK `Set_ModulationParams`
+    /// Set the BPSK modulation parameters.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use stm32wl_hal_subghz::{BpskModParams, FskBitrate, PacketType};
+    ///
+    /// const MOD_PARAMS: BpskModParams = BpskModParams::new().set_bitrate(FskBitrate::from_bps(600));
+    ///
+    /// sg.set_packet_type(PacketType::Bpsk)?;
+    /// sg.set_bpsk_mod_params(&MOD_PARAMS)?;
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn set_bpsk_mod_params(&mut self, params: &BpskModParams) -> Result<(), SubGhzError> {
+        self.write(params.as_slice())
+    }
 
     pub fn set_packet_params(&mut self, params: &GenericPacketParams) -> Result<(), SubGhzError> {
         self.write(params.as_slice())

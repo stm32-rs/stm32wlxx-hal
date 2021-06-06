@@ -5,6 +5,7 @@
 mod cad_params;
 mod calibrate;
 mod fallback_mode;
+mod hse_trim;
 mod irq;
 mod lora_sync_word;
 mod mod_params;
@@ -29,6 +30,7 @@ mod value_error;
 pub use cad_params::{CadParams, ExitMode, NbCadSymbol};
 pub use calibrate::{Calibrate, CalibrateImage};
 pub use fallback_mode::FallbackMode;
+pub use hse_trim::HseTrim;
 pub use irq::{CfgDioIrq, Irq, IrqLine};
 pub use lora_sync_word::LoRaSyncWord;
 pub use mod_params::BpskModParams;
@@ -446,6 +448,40 @@ impl SubGhz {
     /// ```
     pub fn set_pa_ocp(&mut self, ocp: Ocp) -> Result<(), SubGhzError> {
         self.write_register(Register::PAOCP, &[ocp as u8])
+    }
+
+    /// Set the HSE32 crystal OSC_IN load capaitor trimming.
+    ///
+    /// # Example
+    ///
+    /// Set the trim to the lowest value.
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use stm32wl_hal_subghz::HseTrim;
+    ///
+    /// sg.set_hse_in_trim(HseTrim::MIN);
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn set_hse_in_trim(&mut self, trim: HseTrim) -> Result<(), SubGhzError> {
+        self.write_register(Register::HSEINTRIM, &[trim.into()])
+    }
+
+    /// Set the HSE32 crystal OSC_OUT load capaitor trimming.
+    ///
+    /// # Example
+    ///
+    /// Set the trim to the lowest value.
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// use stm32wl_hal_subghz::HseTrim;
+    ///
+    /// sg.set_hse_out_trim(HseTrim::MIN);
+    /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
+    /// ```
+    pub fn set_hse_out_trim(&mut self, trim: HseTrim) -> Result<(), SubGhzError> {
+        self.write_register(Register::HSEOUTTRIM, &[trim.into()])
     }
 }
 

@@ -225,7 +225,6 @@ impl Pka {
 
     /// Free the PKA peripheral from the driver.
     ///
-    ///
     /// # Example
     ///
     /// ```no_run

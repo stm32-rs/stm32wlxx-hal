@@ -10,8 +10,12 @@ There should be enough code for very basic:
 
 * LoRa TX
 * (G)FSK TX
+* (G)FSK RX
 * ECDSA signing
 * ECDSA verification
+* Cryptographically secure random number generation
+* AES encryption
+* AES decryption
 
 ## Why upload incomplete code?
 

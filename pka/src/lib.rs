@@ -26,7 +26,7 @@ use core::{
 
 /// PKA errors.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum PkaError {
+enum Error {
     /// Address access is out of range (unmapped address).
     Address,
     /// An AHB access to the PKA RAM occurred while the PKA core was computing
@@ -55,11 +55,11 @@ pub enum EcdsaSignError {
     },
 }
 
-impl From<PkaError> for EcdsaSignError {
-    fn from(pka: PkaError) -> Self {
+impl From<Error> for EcdsaSignError {
+    fn from(pka: Error) -> Self {
         match pka {
-            PkaError::Address => EcdsaSignError::Address,
-            PkaError::Ram => EcdsaSignError::Ram,
+            Error::Address => EcdsaSignError::Address,
+            Error::Ram => EcdsaSignError::Ram,
         }
     }
 }
@@ -77,11 +77,11 @@ pub enum EcdsaVerifyError {
     Invalid,
 }
 
-impl From<PkaError> for EcdsaVerifyError {
-    fn from(pka: PkaError) -> Self {
+impl From<Error> for EcdsaVerifyError {
+    fn from(pka: Error) -> Self {
         match pka {
-            PkaError::Address => EcdsaVerifyError::Address,
-            PkaError::Ram => EcdsaVerifyError::Ram,
+            Error::Address => EcdsaVerifyError::Address,
+            Error::Ram => EcdsaVerifyError::Ram,
         }
     }
 }
@@ -339,7 +339,7 @@ impl Pka {
         }
     }
 
-    fn process(&mut self, opcode: PkaOpcode) -> Result<(), PkaError> {
+    fn process(&mut self, opcode: PkaOpcode) -> Result<(), Error> {
         debug_assert!(self.pka.sr.read().procendf().bit_is_clear());
 
         #[rustfmt::skip]
@@ -357,9 +357,9 @@ impl Pka {
         loop {
             let sr = self.pka.sr.read();
             if sr.addrerrf().bit_is_set() {
-                return Err(PkaError::Address);
+                return Err(Error::Address);
             } else if sr.ramerrf().bit_is_set() {
-                return Err(PkaError::Ram);
+                return Err(Error::Ram);
             } else if sr.procendf().bit_is_set() {
                 break;
             } else {

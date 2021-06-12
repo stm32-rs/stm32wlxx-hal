@@ -26,7 +26,7 @@ cfg_if::cfg_if! {
 
 /// RNG error types
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
-pub enum RngError {
+pub enum Error {
     /// A noise error (seed error) occured and automatic correction failed.
     UncorrectableNoise,
     /// RNG frequency is too low.
@@ -37,12 +37,12 @@ pub enum RngError {
     Timeout,
 }
 
-impl From<RngError> for rand_core::Error {
-    fn from(e: RngError) -> Self {
+impl From<Error> for rand_core::Error {
+    fn from(e: Error) -> Self {
         match e {
-            RngError::UncorrectableNoise => NonZeroU32::new(1).unwrap().into(),
-            RngError::Clock => NonZeroU32::new(2).unwrap().into(),
-            RngError::Timeout => NonZeroU32::new(3).unwrap().into(),
+            Error::UncorrectableNoise => NonZeroU32::new(1).unwrap().into(),
+            Error::Clock => NonZeroU32::new(2).unwrap().into(),
+            Error::Timeout => NonZeroU32::new(3).unwrap().into(),
         }
     }
 }
@@ -130,18 +130,40 @@ impl Rng {
         self.err_cnt = 0
     }
 
-    // Reference manual section 22.3.5 "RNG operation"
-    fn read_dr_x4(&mut self) -> [u32; 4] {
-        [
-            self.rng.dr.read().bits(),
-            self.rng.dr.read().bits(),
-            self.rng.dr.read().bits(),
-            self.rng.dr.read().bits(),
-        ]
+    fn wait_for_new_entropy(&mut self) -> Result<(), Error> {
+        let mut timeout: u32 = 0;
+        loop {
+            let sr = self.rng.sr.read();
+            if sr.seis().bit_is_set() {
+                self.recover_from_noise_error()?;
+            } else if sr.ceis().bit_is_set() {
+                return Err(Error::Clock.into());
+            } else if sr.drdy().bit_is_set() {
+                return Ok(());
+            }
+
+            // TODO: User selectable timeout duration (or not? this has a fixed duration)
+            // TODO: I dislike everything about this.
+            timeout = timeout.saturating_add(1);
+            if timeout > 100_000 {
+                return Err(Error::Timeout.into());
+            }
+        }
+    }
+
+    /// Try to fill the destination buffer with random data by `u32`s.
+    pub fn try_fill_u32(&mut self, dest: &mut [u32]) -> Result<(), Error> {
+        for chunk in dest.chunks_mut(4) {
+            self.wait_for_new_entropy()?;
+            for dw in chunk {
+                *dw = self.rng.dr.read().bits();
+            }
+        }
+        Ok(())
     }
 
     // Reference manual section 22.3.7 "Error management"
-    fn recover_from_noise_error(&mut self) -> Result<(), RngError> {
+    fn recover_from_noise_error(&mut self) -> Result<(), Error> {
         // software reset by writing CONDRST
         self.rng.cr.modify(|_, w| w.condrst().set_bit());
         self.rng.cr.modify(|_, w| w.condrst().clear_bit());
@@ -156,7 +178,7 @@ impl Rng {
         loop {
             let sr = self.rng.sr.read();
             if sr.seis().bit_is_set() {
-                return Err(RngError::UncorrectableNoise);
+                return Err(Error::UncorrectableNoise);
             }
             if sr.secs().bit_is_clear() {
                 self.err_cnt = self.err_cnt.saturating_add(1);
@@ -188,28 +210,12 @@ impl rand_core::RngCore for Rng {
 
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand_core::Error> {
         for chunk in dest.chunks_mut(16) {
-            let mut timeout: u32 = 0;
-            loop {
-                let sr = self.rng.sr.read();
-                if sr.seis().bit_is_set() {
-                    self.recover_from_noise_error()?;
-                } else if sr.ceis().bit_is_set() {
-                    return Err(RngError::Clock.into());
-                } else if sr.drdy().bit_is_set() {
-                    break;
-                }
+            self.wait_for_new_entropy()?;
 
-                // TODO: User selectable timeout duration (or not? this has a fixed duration)
-                // TODO: I dislike everything about this.
-                timeout += 1;
-                if timeout > 100_000 {
-                    return Err(RngError::Timeout.into());
-                }
-            }
-
-            let data: [u32; 4] = self.read_dr_x4();
+            let mut block: [u32; 4] = [0; 4];
+            self.try_fill_u32(&mut block)?;
             // safety: random data has no requirements for safe transmute.
-            let data: [u8; 16] = unsafe { transmute::<[u32; 4], [u8; 16]>(data) };
+            let data: [u8; 16] = unsafe { transmute::<[u32; 4], [u8; 16]>(block) };
 
             chunk
                 .iter_mut()

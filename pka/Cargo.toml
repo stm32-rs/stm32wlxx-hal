@@ -16,4 +16,4 @@ cfg-if = "^1"
 
 [dependencies.stm32wl]
 git = "https://github.com/newAM/stm32wl-rs.git"
-rev = "031c2ecc3664c8ef3f642fbce075b2c238d5ff1b"
+rev = "eee6fa7e15c956d2eaab18a005ff6b1ad0ee48d5"

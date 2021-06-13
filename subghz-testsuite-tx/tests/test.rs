@@ -39,22 +39,21 @@ mod tests {
 
         // GPIO setup for the RF switch on the NUCLEO-WL55JC2
         #[rustfmt::skip]
-        rcc.ahb2enr.modify(|_, w| {
+        rcc.ahb2enr.modify(|_, w|
             w
                 .gpioaen().set_bit()
                 .gpioben().set_bit()
                 .gpiocen().set_bit()
-        });
+        );
         rcc.ahb2enr.read(); // Delay after an RCC peripheral clock enabling
 
-        const GPIO_MODE_OUTPUT: u8 = 0b01;
         #[rustfmt::skip]
-        gpioc.moder.write(|w| unsafe {
+        gpioc.moder.write(|w| 
             w
-                .moder3().bits(GPIO_MODE_OUTPUT)
-                .moder4().bits(GPIO_MODE_OUTPUT)
-                .moder5().bits(GPIO_MODE_OUTPUT)
-        });
+                .moder3().output()
+                .moder4().output()
+                .moder5().output()
+        );
         // Drive FE_CTRL1, FE_CTRL2, FE_CTRL3 high.
         // Configures the RF switch for low power transmit
         gpioc

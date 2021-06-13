@@ -1,6 +1,6 @@
-//! STM32WL HAL.
+//! External interfaces.
 #![cfg_attr(not(test), no_std)]
-#![forbid(missing_docs, unsafe_code)]
+#![deny(missing_docs)]
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "stm32wl5x_cm0p")] {
@@ -17,11 +17,10 @@ cfg_if::cfg_if! {
     }
 }
 
-pub use stm32wl_hal_aes as aes;
-pub use stm32wl_hal_pka as pka;
-pub use stm32wl_hal_rcc as rcc;
-pub use stm32wl_hal_rng as rng;
-pub use stm32wl_hal_subghz as subghz;
+/// General-purpose input/output pins.
+pub mod gpio;
+/// Serial peripheral interface.
+pub mod spi;
 
-pub use stm32wl_hal_iface::gpio;
-pub use stm32wl_hal_iface::spi;
+/// Embedded-hal trait abstractions.
+pub use embedded_hal;

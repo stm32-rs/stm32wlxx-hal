@@ -24,4 +24,4 @@ default-features = false
 
 [dependencies.stm32wl]
 git = "https://github.com/newAM/stm32wl-rs.git"
-rev = "031c2ecc3664c8ef3f642fbce075b2c238d5ff1b"
+rev = "9a4201bbb48cb7a4eef01d8b4abed23d3c7f23e4"

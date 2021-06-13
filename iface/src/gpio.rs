@@ -1,33 +1,6 @@
-//! General-purpose input/output pins.
-//!
-//! # Safety
-//!
-//! This crate relies upon exclusive access to registers via disabling and
-//! re-enabling interrupts.
-//! Dual core systems can easily bypass this.
-//! You are responsible for ensuring exclusive access between cores for all
-//! structures in this crate.
-#![cfg_attr(not(test), no_std)]
-#![cfg_attr(docsrs, feature(doc_cfg))]
-#![deny(missing_docs)]
-
+pub use super::pac;
 use core::ptr::{read_volatile, write_volatile};
 use cortex_m::interrupt::CriticalSection;
-
-cfg_if::cfg_if! {
-    if #[cfg(feature = "stm32wl5x_cm0p")] {
-        /// Peripheral access crate.
-        pub use stm32wl::stm32wl5x_cm0p as pac;
-    } else if #[cfg(feature = "stm32wl5x_cm4")] {
-        /// Peripheral access crate.
-        pub use stm32wl::stm32wl5x_cm4 as pac;
-    } else if #[cfg(feature = "stm32wle5")] {
-        /// Peripheral access crate.
-        pub use stm32wl::stm32wle5 as pac;
-    } else {
-        core::compile_error!("You must select your hardware with a feature flag");
-    }
-}
 
 /// GPIO output types.
 #[repr(u8)]
@@ -87,7 +60,7 @@ impl<const BASE: usize, const N: u8> Pin<BASE, N> {
     const AF: usize = if N > 7 { BASE + 0x24 } else { BASE + 0x20 };
     const AF_R: *const u32 = Self::AF as *const u32;
     const AF_W: *mut u32 = Self::AF as *mut u32;
-    const AF_SHIFT: u8 = if N > 7 { 1 << (N - 7) } else { 1 << N };
+    const AF_SHIFT: u8 = if N > 7 { (N - 7) * 4 } else { N * 4 };
 
     pub(crate) const fn new() -> Pin<BASE, N> {
         Pin {}
@@ -155,12 +128,14 @@ impl<const BASE: usize, const N: u8> Pin<BASE, N> {
     }
 
     #[inline(always)]
-    pub(crate) unsafe fn set_alternate_function(&mut self, cs: &CriticalSection, af: u8) {
-        self.set_mode(cs, sealed::Mode::Alternate);
-        let mut val: u32 = read_volatile(Self::AF_R);
-        val &= !(0b1111 << Self::AF_SHIFT);
-        val |= (af as u8 as u32) << Self::AF_SHIFT;
-        write_volatile(Self::AF_W, val);
+    pub(crate) fn set_alternate_function(&mut self, af: u8) {
+        cortex_m::interrupt::free(|cs| unsafe {
+            self.set_mode(cs, sealed::Mode::Alternate);
+            let mut val: u32 = read_volatile(Self::AF_R);
+            val &= !(0b1111 << Self::AF_SHIFT);
+            val |= (af as u8 as u32) << Self::AF_SHIFT;
+            write_volatile(Self::AF_W, val);
+        })
     }
 }
 
@@ -187,7 +162,31 @@ pub(crate) mod sealed {
         fn input_level(&self) -> Level;
         fn output_level(&self) -> Level;
         fn set_output_level(&mut self, level: Level);
-        unsafe fn set_alternate_function(&mut self, cs: &CriticalSection, af: u8);
+        fn set_alternate_function(&mut self, af: u8);
+    }
+
+    /// Indicate a GPIO pin has the SPI1 MOSI alternate function.
+    pub trait Spi1Mosi {
+        /// Initialize the GPIO pin for use as SPI1 MOSI.
+        fn set_spi1_mosi_af(&mut self);
+    }
+
+    /// Indicate a GPIO pin has the SPI1 MISO alternate function.
+    pub trait Spi1Miso {
+        /// Initialize the GPIO pin for use as SPI1 MISO.
+        fn set_spi1_miso_af(&mut self);
+    }
+
+    /// Indicate a GPIO pin has the SPI1 SCK alternate function.
+    pub trait Spi1Sck {
+        /// Initialize the GPIO pin for use as SPI1 SCK.
+        fn set_spi1_sck_af(&mut self);
+    }
+
+    /// Indicate a GPIO pin has the SPI1 NSS alternate function.
+    pub trait Spi1Nss {
+        /// Initialize the GPIO pin for use as SPI1 NSS.
+        fn set_spi1_nss_af(&mut self);
     }
 }
 
@@ -219,9 +218,9 @@ pub mod pins {
                 }
             }
 
-            impl crate::sealed::PinOps for $name {
+            impl super::sealed::PinOps for $name {
                 #[inline(always)]
-                unsafe fn set_mode(&mut self, cs: &CriticalSection, mode: crate::sealed::Mode) {
+                unsafe fn set_mode(&mut self, cs: &CriticalSection, mode: super::sealed::Mode) {
                     self.pin.set_mode(cs, mode)
                 }
 
@@ -256,8 +255,8 @@ pub mod pins {
                 }
 
                 #[inline(always)]
-                unsafe fn set_alternate_function(&mut self, cs: &CriticalSection, af: u8) {
-                    self.pin.set_alternate_function(cs, af)
+                fn set_alternate_function(&mut self, af: u8) {
+                    self.pin.set_alternate_function(af)
                 }
             }
         };
@@ -307,6 +306,78 @@ pub mod pins {
     gpio_struct!(C13, GPIOC_BASE, 13, "Port C pin 13");
     gpio_struct!(C14, GPIOC_BASE, 14, "Port C pin 14");
     gpio_struct!(C15, GPIOC_BASE, 15, "Port C pin 15");
+
+    impl super::sealed::Spi1Sck for A0 {
+        fn set_spi1_sck_af(&mut self) {
+            self.pin.set_alternate_function(5);
+        }
+    }
+
+    impl super::sealed::Spi1Nss for A4 {
+        fn set_spi1_nss_af(&mut self) {
+            self.pin.set_alternate_function(5);
+        }
+    }
+
+    impl super::sealed::Spi1Sck for A5 {
+        fn set_spi1_sck_af(&mut self) {
+            self.pin.set_alternate_function(5);
+        }
+    }
+
+    impl super::sealed::Spi1Miso for A6 {
+        fn set_spi1_miso_af(&mut self) {
+            self.pin.set_alternate_function(5);
+        }
+    }
+
+    impl super::sealed::Spi1Mosi for A7 {
+        fn set_spi1_mosi_af(&mut self) {
+            self.pin.set_alternate_function(5);
+        }
+    }
+
+    impl super::sealed::Spi1Miso for A11 {
+        fn set_spi1_miso_af(&mut self) {
+            self.pin.set_alternate_function(5);
+        }
+    }
+
+    impl super::sealed::Spi1Mosi for A12 {
+        fn set_spi1_mosi_af(&mut self) {
+            self.pin.set_alternate_function(5);
+        }
+    }
+
+    impl super::sealed::Spi1Nss for A15 {
+        fn set_spi1_nss_af(&mut self) {
+            self.pin.set_alternate_function(5);
+        }
+    }
+
+    impl super::sealed::Spi1Nss for B2 {
+        fn set_spi1_nss_af(&mut self) {
+            self.pin.set_alternate_function(5);
+        }
+    }
+
+    impl super::sealed::Spi1Sck for B3 {
+        fn set_spi1_sck_af(&mut self) {
+            self.pin.set_alternate_function(5);
+        }
+    }
+
+    impl super::sealed::Spi1Miso for B4 {
+        fn set_spi1_miso_af(&mut self) {
+            self.pin.set_alternate_function(5);
+        }
+    }
+
+    impl super::sealed::Spi1Mosi for B5 {
+        fn set_spi1_mosi_af(&mut self) {
+            self.pin.set_alternate_function(5);
+        }
+    }
 }
 
 /// Port A GPIOs
@@ -332,23 +403,29 @@ pub struct PortA {
 }
 
 impl PortA {
-    /// Enable GPIO port A and split the port into individual pins.
+    /// Reset GPIO port A and split the port into individual pins.
+    ///
+    /// This will not enable clocks for the GPIO port.
     ///
     /// # Example
     ///
     /// Get GPIO A0.
     ///
     /// ```no_run
-    /// use stm32wl_hal_gpio::{pac, pins, PortA};
+    /// use stm32wl_hal_iface::gpio::{pac, pins, PortA};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let mut rcc = dp.RCC;
+    ///
+    /// rcc.ahb2enr.modify(|_, w| w.gpioaen().set_bit());
+    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut rcc);
     /// let pa0: pins::A0 = gpioa.pa0;
     /// ```
     #[allow(unused_variables)]
     pub fn split(gpioa: pac::GPIOA, rcc: &mut pac::RCC) -> Self {
-        rcc.ahb2enr.modify(|_, w| w.gpioaen().set_bit());
-        rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+        rcc.ahb2rstr.modify(|_, w| w.gpioarst().set_bit());
+        rcc.ahb2rstr.modify(|_, w| w.gpioarst().clear_bit());
         const RET: PortA = PortA {
             pa0: pins::A0::new(),
             pa1: pins::A1::new(),
@@ -395,23 +472,29 @@ pub struct PortB {
 }
 
 impl PortB {
-    /// Enable GPIO port B and split the port into individual pins.
+    /// Reset GPIO port B and split the port into individual pins.
+    ///
+    /// This will not enable clocks for the GPIO port.
     ///
     /// # Example
     ///
     /// Get GPIO B0.
     ///
     /// ```no_run
-    /// use stm32wl_hal_gpio::{pac, pins, PortB};
+    /// use stm32wl_hal_iface::gpio::{pac, pins, PortB};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    /// let mut rcc = dp.RCC;
+    ///
+    /// rcc.ahb2enr.modify(|_, w| w.gpioben().set_bit());
+    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut rcc);
     /// let pb0: pins::B0 = gpiob.pb0;
     /// ```
     #[allow(unused_variables)]
     pub fn split(gpiob: pac::GPIOB, rcc: &mut pac::RCC) -> Self {
-        rcc.ahb2enr.modify(|_, w| w.gpioben().set_bit());
-        rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+        rcc.ahb2rstr.modify(|_, w| w.gpiobrst().set_bit());
+        rcc.ahb2rstr.modify(|_, w| w.gpiobrst().clear_bit());
         const RET: PortB = PortB {
             pb0: pins::B0::new(),
             pb1: pins::B1::new(),
@@ -452,23 +535,30 @@ pub struct PortC {
 }
 
 impl PortC {
-    /// Enable GPIO port C and split the port into individual pins.
+    /// Reset GPIO port C and split the port into individual pins.
+    ///
+    /// This will not enable clocks for the GPIO port.
     ///
     /// # Example
     ///
     /// Get GPIO C0.
     ///
     /// ```no_run
-    /// use stm32wl_hal_gpio::{pac, pins, PortC};
+    /// use stm32wl_hal_iface::gpio::{pac, pins, PortC};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+    /// let mut rcc = dp.RCC;
+    ///
+    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
+    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
     /// let pc0: pins::C0 = gpioc.pc0;
     /// ```
     #[allow(unused_variables)]
     pub fn split(gpioc: pac::GPIOC, rcc: &mut pac::RCC) -> Self {
-        rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
-        rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+        rcc.ahb2rstr.modify(|_, w| w.gpiocrst().set_bit());
+        rcc.ahb2rstr.modify(|_, w| w.gpiocrst().clear_bit());
+
         const RET: PortC = PortC {
             pc0: pins::C0::new(),
             pc1: pins::C1::new(),
@@ -501,7 +591,7 @@ impl Level {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_gpio::Level;
+    /// use stm32wl_hal_iface::gpio::Level;
     ///
     /// assert_eq!(Level::High.toggle(), Level::Low);
     /// assert_eq!(Level::Low.toggle(), Level::High);
@@ -539,7 +629,7 @@ impl OutputArgs {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_gpio::OutputArgs;
+    /// use stm32wl_hal_iface::gpio::OutputArgs;
     ///
     /// assert_eq!(OutputArgs::new(), OutputArgs::default());
     /// ```
@@ -577,9 +667,12 @@ where
     /// These are the GPIOs for the RF switch on the NUCLEO-WL55JC2.
     ///
     /// ```no_run
-    /// use stm32wl_hal_gpio::{pac, pins, Level, Output, OutputArgs, OutputType, PortC, Pull, Speed};
+    /// use stm32wl_hal_iface::gpio::{
+    ///     pac, pins, Level, Output, OutputArgs, OutputType, PortC, Pull, Speed,
+    /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut rcc = dp.RCC;
     ///
     /// const OUTPUT_ARGS: OutputArgs = OutputArgs {
     ///     level: Level::Low,
@@ -588,7 +681,10 @@ where
     ///     pull: Pull::None,
     /// };
     ///
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
+    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+    ///
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
     /// let mut pc3: Output<pins::C3> = Output::new(gpioc.pc3, &OUTPUT_ARGS);
     /// let mut pc4: Output<pins::C4> = Output::new(gpioc.pc4, &OUTPUT_ARGS);
     /// let mut pc5: Output<pins::C5> = Output::new(gpioc.pc5, &OUTPUT_ARGS);
@@ -615,11 +711,14 @@ where
     /// Configure GPIO C0 as an output.
     ///
     /// ```no_run
-    /// use stm32wl_hal_gpio::{pac, pins, Output, OutputArgs, PortC};
+    /// use stm32wl_hal_iface::gpio::{pac, pins, Output, OutputArgs, PortC};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut rcc = dp.RCC;
     ///
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
+    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
     /// let mut pc0: Output<pins::C0> = Output::default(gpioc.pc0);
     /// ```
     pub fn default(pin: P) -> Self {
@@ -635,11 +734,14 @@ where
     /// Configure a GPIO as an output, then free it.
     ///
     /// ```no_run
-    /// use stm32wl_hal_gpio::{pac, pins, Output, PortC};
+    /// use stm32wl_hal_iface::gpio::{pac, pins, Output, PortC};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut rcc = dp.RCC;
     ///
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
+    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
     /// let pc0_output: Output<pins::C0> = Output::default(gpioc.pc0);
     /// let pc0: pins::C0 = pc0_output.free();
     /// ```
@@ -661,11 +763,14 @@ where
     /// Pulse a GPIO pin.
     ///
     /// ```no_run
-    /// use stm32wl_hal_gpio::{pac, pins, Level, Output, PortC};
+    /// use stm32wl_hal_iface::gpio::{pac, pins, Level, Output, PortC};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut rcc = dp.RCC;
     ///
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
+    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
     /// let mut pc0: Output<pins::C0> = Output::default(gpioc.pc0);
     /// pc0.set_output_level(Level::High);
     /// pc0.set_output_level(Level::High);
@@ -681,11 +786,14 @@ where
     /// Toggle a GPIO pin.
     ///
     /// ```no_run
-    /// use stm32wl_hal_gpio::{pac, pins, Level, Output, PortC};
+    /// use stm32wl_hal_iface::gpio::{pac, pins, Level, Output, PortC};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut rcc = dp.RCC;
     ///
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
+    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
     /// let mut pc0: Output<pins::C0> = Output::default(gpioc.pc0);
     /// pc0.set_output_level(pc0.output_level().toggle());
     /// ```
@@ -694,8 +802,6 @@ where
     }
 }
 
-#[cfg(feature = "embedded-hal")]
-#[cfg_attr(docsrs, doc(cfg(feature = "embedded-hal")))]
 impl<P> embedded_hal::digital::v2::OutputPin for Output<P>
 where
     P: sealed::PinOps,
@@ -731,10 +837,14 @@ where
     /// This is the GPIO for button 3 on the NUCLEO-WL55JC2.
     ///
     /// ```no_run
-    /// use stm32wl_hal_gpio::{pac, pins, Input, PortC, Pull};
+    /// use stm32wl_hal_iface::gpio::{pac, pins, Input, PortC, Pull};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+    /// let mut rcc = dp.RCC;
+    ///
+    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
+    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
     /// let mut pc6: Input<pins::C6> = Input::new(gpioc.pc6, Pull::Up);
     /// ```
     pub fn new(mut pin: P, pull: Pull) -> Self {
@@ -753,14 +863,46 @@ where
     /// Configure GPIO C0 as an input.
     ///
     /// ```no_run
-    /// use stm32wl_hal_gpio::{pac, pins, Input, PortC};
+    /// use stm32wl_hal_iface::gpio::{pac, pins, Input, PortC};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+    /// let mut rcc = dp.RCC;
+    ///
+    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
+    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
     /// let mut pc0: Input<pins::C0> = Input::default(gpioc.pc0);
     /// ```
     pub fn default(pin: P) -> Self {
         Self::new(pin, Pull::None)
+    }
+
+    /// Free the GPIO pin.
+    ///
+    /// This will reconfigure the GPIO as a floating input.
+    ///
+    /// # Example
+    ///
+    /// Configure a GPIO as an output, then free it.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal_iface::gpio::{pac, pins, Input, PortC};
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut rcc = dp.RCC;
+    ///
+    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
+    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let pc0_input: Input<pins::C0> = Input::default(gpioc.pc0);
+    /// let pc0: pins::C0 = pc0_input.free();
+    /// ```
+    pub fn free(mut self) -> P {
+        cortex_m::interrupt::free(|cs| unsafe {
+            self.pin.set_pull(cs, Pull::None);
+            // mode is already input
+        });
+        self.pin
     }
 
     /// Get the input level.
@@ -771,10 +913,14 @@ where
     /// This is the GPIO for button 3 on the NUCLEO-WL55JC2.
     ///
     /// ```no_run
-    /// use stm32wl_hal_gpio::{pac, pins, Input, Level, PortC, Pull};
+    /// use stm32wl_hal_iface::gpio::{pac, pins, Input, Level, PortC, Pull};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+    /// let mut rcc = dp.RCC;
+    ///
+    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
+    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
     /// let mut pc6: Input<pins::C6> = Input::new(gpioc.pc6, Pull::Up);
     ///
     /// let button_3_is_pressed: bool = pc6.level() == Level::High;

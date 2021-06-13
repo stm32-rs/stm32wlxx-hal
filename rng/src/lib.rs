@@ -137,7 +137,7 @@ impl Rng {
             if sr.seis().bit_is_set() {
                 self.recover_from_noise_error()?;
             } else if sr.ceis().bit_is_set() {
-                return Err(Error::Clock.into());
+                return Err(Error::Clock);
             } else if sr.drdy().bit_is_set() {
                 return Ok(());
             }
@@ -146,7 +146,7 @@ impl Rng {
             // TODO: I dislike everything about this.
             timeout = timeout.saturating_add(1);
             if timeout > 100_000 {
-                return Err(Error::Timeout.into());
+                return Err(Error::Timeout);
             }
         }
     }

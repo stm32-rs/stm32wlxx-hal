@@ -36,7 +36,6 @@ jobs:
           toolchain: stable
           target: ${{ matrix.target }}
       - run: RUSTFLAGS="-D warnings" cargo build --target ${{ matrix.target }} --features ${{ matrix.feature }}
-      - run: RUSTFLAGS="-D warnings" cargo build --target ${{ matrix.target }} --features ${{ matrix.feature }},embedded-hal
 
   build_testsuite:
     name: Testsuite Compile
@@ -132,7 +131,8 @@ jobs:
       matrix:
         workspace:
           - "aes"
-          - "gpio"
+          - "hal"
+          - "iface"
           - "pka"
           - "rcc"
           - "rng"
@@ -144,7 +144,7 @@ jobs:
           toolchain: nightly
       - run: |
           cd ${{ matrix.workspace }}
-          RUSTDOCFLAGS="--cfg docsrs -D warnings" cargo +nightly rustdoc --all-features
+          RUSTDOCFLAGS="-D warnings" cargo +nightly rustdoc --all-features
 
   release_sub:
     name: crates.io sub-crate release
@@ -163,7 +163,7 @@ jobs:
       matrix:
         workspace:
           - "aes"
-          - "gpio"
+          - "iface"
           - "pka"
           - "rcc"
           - "rng"

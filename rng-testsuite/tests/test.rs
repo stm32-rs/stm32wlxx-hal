@@ -17,7 +17,7 @@ mod tests {
         let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
         let mut rcc = dp.RCC;
         // clock RNG from MSI
-        rcc.ccipr.modify(|_, w| unsafe { w.rngsel().bits(0b11) });
+        rcc.ccipr.modify(|_, w| w.rngsel().msi());
         rcc.ahb3enr.modify(|_, w| w.rngen().set_bit());
         rcc.ahb3enr.read(); // Delay after an RCC peripheral clock enabling
 

@@ -127,7 +127,7 @@ impl SubGhz {
         });
 
         #[rustfmt::skip]
-        spi.cr1.write(|w| unsafe {
+        spi.cr1.write(|w|
             w
                 // SPI clock phase 0
                 .cpha().clear_bit()
@@ -148,7 +148,7 @@ impl SubGhz {
                 .bidimode().clear_bit()
                 // Enable the SPI peripheral
                 .spe().set_bit()
-        });
+        );
 
         SubGhz { spi }
     }

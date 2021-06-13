@@ -3,8 +3,8 @@ members = [
     "aes-testsuite",
     "aes",
     "examples",
-    "gpio",
     "hal",
+    "iface",
     "pka-testsuite",
     "pka",
     "rcc",
@@ -17,8 +17,8 @@ members = [
 ]
 default-members = [
     "aes",
-    "gpio",
     "hal",
+    "iface",
     "pka",
     "rcc",
     "rng",

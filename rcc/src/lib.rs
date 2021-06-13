@@ -310,20 +310,18 @@ pub fn set_sysclk_to_msi_48megahertz(
 
     if !(sysclk_source.is_msi() || sysclk_source.is_pllrclk() && pll_config.is_msi()) {
         rcc.cfgr
-            .modify(|_, w| unsafe { w.sw().bits(SysclkSource::Msi.into()) });
+            .modify(|_, w| w.sw().bits(SysclkSource::Msi.into()));
     }
 
     if MSI_RANGE > MsiRange::from_rcc(rcc) {
         rcc_set_flash_latency_from_msi_range(flash, rcc, &MSI_RANGE, VOS);
         rcc.cr
             .modify(|_, w| unsafe { w.msirgsel().set_bit().msirange().bits(MSI_RANGE.into()) });
-        rcc.icscr
-            .modify(|_, w| unsafe { w.msitrim().bits(MSI_CALIBRATION) });
+        rcc.icscr.modify(|_, w| w.msitrim().bits(MSI_CALIBRATION));
     } else {
         rcc.cr
             .modify(|_, w| unsafe { w.msirgsel().set_bit().msirange().bits(MSI_RANGE.into()) });
-        rcc.icscr
-            .modify(|_, w| unsafe { w.msitrim().bits(MSI_CALIBRATION) });
+        rcc.icscr.modify(|_, w| w.msitrim().bits(MSI_CALIBRATION));
         rcc_set_flash_latency_from_msi_range(flash, rcc, &MSI_RANGE, VOS);
     }
 
@@ -353,7 +351,7 @@ pub fn set_sysclk_to_msi_48megahertz(
 
     assert!(rcc.cr.read().msirdy().bit_is_set());
     rcc.cfgr
-        .modify(|_, w| unsafe { w.sw().bits(SysclkSource::Msi.into()) });
+        .modify(|_, w| w.sw().bits(SysclkSource::Msi.into()));
     while SysclkSource::try_from(rcc.cfgr.read().sws().bits()) != Ok(SysclkSource::Msi) {
         compiler_fence(SeqCst);
     }

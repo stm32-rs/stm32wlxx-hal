@@ -8,6 +8,7 @@
 //! You are responsible for ensuring exclusive access between cores for all
 //! structures in this crate.
 #![cfg_attr(not(test), no_std)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(missing_docs)]
 
 use core::ptr::{read_volatile, write_volatile};

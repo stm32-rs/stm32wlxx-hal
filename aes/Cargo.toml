@@ -1,10 +1,15 @@
 [package]
 name = "stm32wl-hal-aes"
-version = "0.1.0"
+description = "STM32WL AES HAL"
+
+readme = "../hal/README.md"
+version = "0.1.0-alpha.0"
 authors = ["Alex M. <alexmgit@protonmail.com>"]
 edition = "2018"
 license = "MIT"
-description = "STM32WL AES HAL"
+keywords = ["arm", "cortex-m", "stm32", "hal"]
+categories = ["embedded", "hardware-support", "no-std"]
+repository = "https://github.com/newAM/stm32wl-hal"
 
 [features]
 stm32wl5x_cm0p = ["stm32wl/stm32wl5x_cm0p"]

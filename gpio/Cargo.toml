@@ -1,0 +1,28 @@
+[package]
+name = "stm32wl-hal-gpio"
+version = "0.1.0"
+authors = ["Alex M. <alexmgit@protonmail.com>"]
+edition = "2018"
+license = "MIT"
+description = "STM32WL GPIO HAL"
+
+[features]
+stm32wl5x_cm0p = ["stm32wl/stm32wl5x_cm0p"]
+stm32wl5x_cm4 = ["stm32wl/stm32wl5x_cm4"]
+stm32wle5 = ["stm32wl/stm32wle5"]
+
+[dependencies]
+cfg-if = "^1"
+cortex-m = "~0.7.2"
+
+[dependencies.embedded-hal]
+version = "~0.2.5"
+optional = true
+
+[dependencies.stm32wl]
+git = "https://github.com/newAM/stm32wl-rs.git"
+rev = "031c2ecc3664c8ef3f642fbce075b2c238d5ff1b"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

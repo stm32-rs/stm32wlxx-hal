@@ -7,8 +7,12 @@ license = "MIT"
 description = "STM32WL HAL"
 
 [features]
+embedded-hal = [
+    "stm32wl-hal-gpio/embedded-hal"
+]
 stm32wl5x_cm0p = [
     "stm32wl-hal-aes/stm32wl5x_cm0p",
+    "stm32wl-hal-gpio/stm32wl5x_cm0p",
     "stm32wl-hal-pka/stm32wl5x_cm0p",
     "stm32wl-hal-rcc/stm32wl5x_cm0p",
     "stm32wl-hal-rng/stm32wl5x_cm0p",
@@ -17,6 +21,7 @@ stm32wl5x_cm0p = [
 ]
 stm32wl5x_cm4 = [
     "stm32wl-hal-aes/stm32wl5x_cm4",
+    "stm32wl-hal-gpio/stm32wl5x_cm4",
     "stm32wl-hal-pka/stm32wl5x_cm4",
     "stm32wl-hal-rcc/stm32wl5x_cm4",
     "stm32wl-hal-rng/stm32wl5x_cm4",
@@ -25,6 +30,7 @@ stm32wl5x_cm4 = [
 ]
 stm32wle5 = [
     "stm32wl-hal-aes/stm32wle5",
+    "stm32wl-hal-gpio/stm32wle5",
     "stm32wl-hal-pka/stm32wle5",
     "stm32wl-hal-rcc/stm32wle5",
     "stm32wl-hal-rng/stm32wle5",
@@ -41,6 +47,9 @@ rev = "031c2ecc3664c8ef3f642fbce075b2c238d5ff1b"
 
 [dependencies.stm32wl-hal-aes]
 path = "../aes"
+
+[dependencies.stm32wl-hal-gpio]
+path = "../gpio"
 
 [dependencies.stm32wl-hal-pka]
 path = "../pka"

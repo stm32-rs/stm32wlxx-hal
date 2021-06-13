@@ -18,6 +18,7 @@ cfg_if::cfg_if! {
 }
 
 pub use stm32wl_hal_aes as aes;
+pub use stm32wl_hal_gpio as gpio;
 pub use stm32wl_hal_pka as pka;
 pub use stm32wl_hal_rcc as rcc;
 pub use stm32wl_hal_rng as rng;

@@ -81,6 +81,15 @@ The only difference is you must specify the MCU as a feature.
 cargo test --features stm32wl5x_cm4
 ```
 
+## Examples
+
+All examples run on the NUCLEO-WL55JC2.
+Examples are located in the `examples` crate.
+
+```bash
+cargo run --example gpio-button -p examples --target thumbv7em-none-eabi
+```
+
 [newAM/nucleo-wl55jc2-rs]: https://github.com/newAM/nucleo-wl55jc2-rs
 [defmt-test]: https://crates.io/crates/defmt-test
 [flip-link]: https://github.com/knurling-rs/flip-link

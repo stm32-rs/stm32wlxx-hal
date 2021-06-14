@@ -4,7 +4,10 @@
 use defmt_rtt as _; // global logger
 use panic_probe as _;
 
-use stm32wl_hal::{
+use bsp::hal;
+use nucleo_wl55jc_bsp as bsp;
+
+use hal::{
     pac, rcc,
     subghz::{
         CalibrateImage, CfgDioIrq, CmdStatus, Irq, IrqLine, Ocp, PacketType, RegMode, StandbyClk,
@@ -14,6 +17,7 @@ use stm32wl_hal::{
 
 #[defmt_test::tests]
 mod tests {
+    use bsp::{hal::gpio::PortC, RfSwitch};
     use subghz_testsuite_assets::{
         DATA_BYTES, DATA_LEN, MOD_PARAMS, PACKET_PARAMS, PA_CONFIG, RF_FREQ, SYNC_WORD, TCXO_MODE,
         TX_PARAMS,
@@ -24,7 +28,6 @@ mod tests {
     #[init]
     fn init() -> SubGhz {
         let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-        let gpioc = &dp.GPIOC;
         let spi3 = dp.SPI3;
         let mut rcc = dp.RCC;
         let mut pwr = dp.PWR;
@@ -46,21 +49,11 @@ mod tests {
                 .gpioben().set_bit()
                 .gpiocen().set_bit()
         );
-        rcc.ahb2enr.read(); // Delay after an RCC peripheral clock enabling
+        rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
 
-        #[rustfmt::skip]
-        gpioc.moder.write(|w|
-            w
-                .moder3().output()
-                .moder4().output()
-                .moder5().output()
-        );
-        // Drive FE_CTRL1, FE_CTRL3 high.
-        // Drive FE_CTRL2 low.
-        // Configures the RF switch for receive
-        gpioc
-            .odr
-            .write(|w| w.odr3().set_bit().odr4().set_bit().odr5().clear_bit());
+        let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+        let mut rfs: RfSwitch = RfSwitch::new(gpioc.pc3, gpioc.pc4, gpioc.pc5);
+        rfs.set_rx();
 
         rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut pwr, &mut rcc);
 

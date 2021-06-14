@@ -56,6 +56,24 @@ jobs:
           target: thumbv7em-none-eabi
       - run: RUSTFLAGS="-D warnings" cargo test -p ${{ matrix.workspace }} --target thumbv7em-none-eabi --no-run
 
+  build_test_bsp:
+    name: Build and Test BSP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.3.4
+      - uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: stable
+          target: thumbv7em-none-eabi
+      - name: "Build"
+        run: RUSTFLAGS="-D warnings" cargo build -p nucleo-wl55jc-bsp --target thumbv7em-none-eabi
+      - uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: stable
+          target: x86_64-unknown-linux-gnu
+      - name: "Test"
+        run: RUSTFLAGS="-D warnings" cargo test -p nucleo-wl55jc-bsp --target x86_64-unknown-linux-gnu
+
   build_examples:
     name: Examples Compile
     runs-on: ubuntu-latest
@@ -133,6 +151,7 @@ jobs:
           - "aes"
           - "hal"
           - "iface"
+          - "nucleo-wl55jc-bsp"
           - "pka"
           - "rcc"
           - "rng"
@@ -152,6 +171,7 @@ jobs:
     needs:
       - build
       - build_examples
+      - build_test_bsp
       - build_testsuite
       - clippy
       - doc
@@ -191,6 +211,22 @@ jobs:
           toolchain: stable
       - run: |
           cd hal
+          cargo publish --token ${CRATES_IO_TOKEN}
+        env:
+          CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+
+  release_bsp:
+    name: crates.io bsp release
+    needs:
+      - release_hal
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2.3.4
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - run: |
+          cd nucleo-wl55jc-bsp
           cargo publish --token ${CRATES_IO_TOKEN}
         env:
           CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}

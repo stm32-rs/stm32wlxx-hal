@@ -1,0 +1,18 @@
+[package]
+name = "nucleo-wl55jc-bsp"
+description = "Board support package"
+readme = "README.md"
+
+version = "0.1.0-alpha.0"
+authors = ["Alex M. <alexmgit@protonmail.com>"]
+edition = "2018"
+license = "MIT"
+keywords = ["arm", "cortex-m", "stm32", "hal"]
+categories = ["embedded", "hardware-support", "no-std"]
+repository = "https://github.com/newAM/stm32wl-hal"
+
+[dependencies]
+
+[dependencies.stm32wl-hal]
+path = "../hal"
+features = ["stm32wl5x_cm4"]

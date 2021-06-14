@@ -5,6 +5,7 @@ members = [
     "examples",
     "hal",
     "iface",
+    "nucleo-wl55jc-bsp",
     "pka-testsuite",
     "pka",
     "rcc",

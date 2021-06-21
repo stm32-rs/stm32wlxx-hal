@@ -153,7 +153,7 @@ impl SubGhz {
         SubGhz { spi }
     }
 
-    /// Magically creates a radio peripheral out of thin air.
+    /// Steal the SubGHz peripheral from whatever is currently using it.
     ///
     /// This will **not** initialize the SPI bus (unlike [`new`]).
     ///
@@ -171,11 +171,11 @@ impl SubGhz {
     ///
     /// // ... setup happens here
     ///
-    /// let sg = unsafe { SubGhz::conjure() };
+    /// let sg = unsafe { SubGhz::steal() };
     /// ```
     ///
     /// [`new`]: SubGhz::new
-    pub unsafe fn conjure() -> SubGhz {
+    pub unsafe fn steal() -> SubGhz {
         let dp: pac::Peripherals = pac::Peripherals::steal();
         SubGhz { spi: dp.SPI3 }
     }
@@ -358,7 +358,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// sg.set_initial_whitening(0xA5);
     /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
     /// ```
@@ -371,7 +371,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// sg.set_crc_polynomial(0x1D0F);
     /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
     /// ```
@@ -384,7 +384,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// sg.set_initial_crc_polynomial(0x1021);
     /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
     /// ```
@@ -397,7 +397,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// const SYNC_WORD: [u8; 8] = [0x79, 0x80, 0x0C, 0xC0, 0x29, 0x95, 0xF8, 0x4A];
     ///
     /// sg.set_sync_word(&SYNC_WORD);
@@ -412,7 +412,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::{LoRaSyncWord, PacketType};
     ///
     /// sg.set_packet_type(PacketType::LoRa)?;
@@ -430,7 +430,7 @@ impl SubGhz {
     /// Maximum 60mA for LP PA mode.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::Ocp;
     ///
     /// sg.set_pa_ocp(Ocp::Max60m)?;
@@ -440,7 +440,7 @@ impl SubGhz {
     /// Maximum 60mA for HP PA mode.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::Ocp;
     ///
     /// sg.set_pa_ocp(Ocp::Max140m)?;
@@ -457,7 +457,7 @@ impl SubGhz {
     /// Set the trim to the lowest value.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::HseTrim;
     ///
     /// sg.set_hse_in_trim(HseTrim::MIN);
@@ -474,7 +474,7 @@ impl SubGhz {
     /// Set the trim to the lowest value.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::HseTrim;
     ///
     /// sg.set_hse_out_trim(HseTrim::MIN);
@@ -499,7 +499,7 @@ impl SubGhz {
     /// Put the radio into sleep mode.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::{SleepCfg, StandbyClk};
     ///
     /// sg.set_standby(StandbyClk::Rc)?;
@@ -517,7 +517,7 @@ impl SubGhz {
     /// Put the radio into standby mode using the RC 13MHz clock.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::StandbyClk;
     ///
     /// sg.set_standby(StandbyClk::Rc)?;
@@ -527,7 +527,7 @@ impl SubGhz {
     /// Put the radio into standby mode using the HSE32 clock.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::StandbyClk;
     ///
     /// sg.set_standby(StandbyClk::Hse32)?;
@@ -549,7 +549,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::RfFreq;
     ///
     /// sg.set_rf_frequency(&RfFreq::from_frequency(915_000_000))?;
@@ -569,7 +569,7 @@ impl SubGhz {
     /// Transmit with no timeout.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::Timeout;
     ///
     /// sg.set_tx(Timeout::DISABLED)?;
@@ -592,7 +592,7 @@ impl SubGhz {
     /// Receive with a 1 second timeout.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use core::time::Duration;
     /// use stm32wl_hal_subghz::Timeout;
     ///
@@ -616,7 +616,7 @@ impl SubGhz {
     /// Set the RX timeout timer to stop on preamble detection.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::RxTimeoutStop;
     ///
     /// sg.set_rx_timeout_stop(RxTimeoutStop::Preamble)?;
@@ -663,7 +663,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use core::time::Duration;
     /// use stm32wl_hal_subghz::{StandbyClk, Timeout};
     ///
@@ -711,7 +711,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use core::time::Duration;
     /// use stm32wl_hal_subghz::{CadParams, ExitMode, NbCadSymbol, StandbyClk, Timeout};
     ///
@@ -742,7 +742,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// sg.set_tx_continuous_wave()?;
     /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
     /// ```
@@ -761,7 +761,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// sg.set_tx_continuous_preamble()?;
     /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
     /// ```
@@ -780,7 +780,7 @@ impl SubGhz {
     /// FSK (frequency shift keying):
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::PacketType;
     ///
     /// sg.set_packet_type(PacketType::Fsk)?;
@@ -790,7 +790,7 @@ impl SubGhz {
     /// LoRa (long range):
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::PacketType;
     ///
     /// sg.set_packet_type(PacketType::LoRa)?;
@@ -800,7 +800,7 @@ impl SubGhz {
     /// BPSK (binary phase shift keying):
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::PacketType;
     ///
     /// sg.set_packet_type(PacketType::Bpsk)?;
@@ -810,7 +810,7 @@ impl SubGhz {
     /// MSK (minimum shift keying):
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::PacketType;
     ///
     /// sg.set_packet_type(PacketType::Msk)?;
@@ -825,7 +825,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::PacketType;
     ///
     /// sg.set_packet_type(PacketType::LoRa)?;
@@ -844,7 +844,7 @@ impl SubGhz {
     /// Set the frequency to 915MHz (Australia and North America).
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::RfFreq;
     ///
     /// sg.set_rf_frequency(&RfFreq::F915)?;
@@ -862,7 +862,7 @@ impl SubGhz {
     /// 40 microseconds.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::{PaConfig, PaSel, RampTime, TxParams};
     ///
     /// const TX_PARAMS: TxParams = TxParams::new()
@@ -891,7 +891,7 @@ impl SubGhz {
     /// 200 microseconds.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::{PaConfig, PaSel, RampTime, TxParams};
     ///
     /// const TX_PARAMS: TxParams = TxParams::new()
@@ -918,7 +918,7 @@ impl SubGhz {
     /// Set the fallback mode to standby mode.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::FallbackMode;
     ///
     /// sg.set_tx_rx_fallback_mode(FallbackMode::Standby)?;
@@ -933,7 +933,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use core::time::Duration;
     /// use stm32wl_hal_subghz::{CadParams, ExitMode, NbCadSymbol, StandbyClk, Timeout};
     ///
@@ -965,7 +965,7 @@ impl SubGhz {
     /// Set the TX and RX buffer base to the start.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// sg.set_buffer_base_address(0, 0)?;
     /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
     /// ```
@@ -981,7 +981,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::{
     ///     FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape, PacketType,
     /// };
@@ -1010,7 +1010,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::{
     ///     CodingRate, LoRaBandwidth, LoRaModParams, PacketType, SpreadingFactor,
     /// };
@@ -1034,7 +1034,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::{BpskModParams, FskBitrate, PacketType};
     ///
     /// const MOD_PARAMS: BpskModParams = BpskModParams::new().set_bitrate(FskBitrate::from_bps(600));
@@ -1052,7 +1052,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::{
     ///     AddrComp, CrcType, GenericPacketParams, HeaderType, PacketType, PreambleDetection,
     /// };
@@ -1080,7 +1080,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::{BpskPacketParams, PacketType};
     ///
     /// sg.set_packet_type(PacketType::Bpsk)?;
@@ -1096,7 +1096,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::{HeaderType, LoRaPacketParams, PacketType};
     ///
     /// const PKT_PARAMS: LoRaPacketParams = LoRaPacketParams::new()
@@ -1124,7 +1124,7 @@ impl SubGhz {
     /// Start reception after a single LoRa word is detected
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     ///
     /// // ... setup the radio for LoRa RX
     ///
@@ -1145,7 +1145,7 @@ impl SubGhz {
     /// values.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::Status;
     ///
     /// let status: Status = sg.status()?;
@@ -1162,7 +1162,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::{CmdStatus, Timeout};
     ///
     /// sg.set_rx(Timeout::DISABLED)?;
@@ -1191,7 +1191,7 @@ impl SubGhz {
     /// ```no_run
     /// # use std::fmt::Write;
     /// # let mut uart = String::new();
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::{CmdStatus, Timeout};
     ///
     /// sg.set_rx(Timeout::DISABLED)?;
@@ -1217,7 +1217,7 @@ impl SubGhz {
     /// ```no_run
     /// # use std::fmt::Write;
     /// # let mut uart = String::new();
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::{CmdStatus, Timeout};
     ///
     /// sg.set_rx(Timeout::DISABLED)?;
@@ -1249,7 +1249,7 @@ impl SubGhz {
     /// ```no_run
     /// # use std::fmt::Write;
     /// # let mut uart = String::new();
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::{CmdStatus, Timeout};
     ///
     /// sg.set_rx(Timeout::DISABLED)?;
@@ -1270,7 +1270,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::{FskStats, Stats};
     ///
     /// let stats: Stats<FskStats> = sg.fsk_stats()?;
@@ -1288,7 +1288,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::{LoRaStats, Stats};
     ///
     /// let stats: Stats<LoRaStats> = sg.lora_stats()?;
@@ -1306,7 +1306,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     ///
     /// sg.reset_stats();
     /// # Ok::<(), stm32wl_hal_subghz::SubGhzError>(())
@@ -1330,7 +1330,7 @@ impl SubGhz {
     /// Enable TX and timeout interrupts globally.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::{CfgDioIrq, Irq, IrqLine};
     ///
     /// const IRQ_CFG: CfgDioIrq = CfgDioIrq::new()
@@ -1350,7 +1350,7 @@ impl SubGhz {
     /// Wait for TX to complete or time out.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::Irq;
     ///
     /// loop {
@@ -1379,7 +1379,7 @@ impl SubGhz {
     /// Clear the [`TxDone`] and [`RxDone`] interrupts.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::Irq;
     ///
     /// sg.clear_irq_status(Irq::TxDone.mask() | Irq::RxDone.mask())?;
@@ -1413,7 +1413,7 @@ impl SubGhz {
     /// Calibrate the RC 13 MHz and PLL.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::{Calibrate, StandbyClk};
     ///
     /// sg.set_standby(StandbyClk::Rc)?;
@@ -1437,7 +1437,7 @@ impl SubGhz {
     /// Calibrate the image for the 430 - 440 MHz ISM band.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::{CalibrateImage, StandbyClk};
     ///
     /// sg.set_standby(StandbyClk::Rc)?;
@@ -1455,7 +1455,7 @@ impl SubGhz {
     /// Use the linear dropout regulator (LDO):
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::RegMode;
     ///
     /// sg.set_regulator_mode(RegMode::Ldo)?;
@@ -1465,7 +1465,7 @@ impl SubGhz {
     /// Use the switch mode power supply (SPMS):
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::RegMode;
     ///
     /// sg.set_regulator_mode(RegMode::Smps)?;
@@ -1480,7 +1480,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::OpError;
     ///
     /// let (status, error_mask) = sg.op_error()?;
@@ -1499,7 +1499,7 @@ impl SubGhz {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use stm32wl_hal_subghz::OpError;
     ///
     /// let (status, error_mask) = sg.op_error()?;
@@ -1526,7 +1526,7 @@ impl SubGhz {
     /// Setup the TCXO with 1.7V trim and a 10ms timeout.
     ///
     /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::conjure() };
+    /// # let mut sg = unsafe { stm32wl_hal_subghz::SubGhz::steal() };
     /// use core::time::Duration;
     /// use stm32wl_hal_subghz::{TcxoMode, TcxoTrim, Timeout};
     ///

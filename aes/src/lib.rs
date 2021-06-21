@@ -263,13 +263,13 @@ impl Aes {
         self.aes
     }
 
-    /// Magically creates a AES driver out of thin air.
+    /// Steal the AES peripheral from whatever is currently using it.
     ///
     /// This will **not** initialize the AES peripheral (unlike [`new`]).
     ///
     /// # Safety
     ///
-    /// This will create a new `AES` peripheral, bypassing the singleton checks
+    /// This will create a new AES peripheral, bypassing the singleton checks
     /// that normally occur.
     /// You are responsible for ensuring that the driver has exclusive access to
     /// the AES peripheral.
@@ -283,11 +283,11 @@ impl Aes {
     ///
     /// // ... setup happens here
     ///
-    /// let aes = unsafe { Aes::conjure() };
+    /// let aes = unsafe { Aes::steal() };
     /// ```
     ///
     /// [`new`]: Aes::new
-    pub unsafe fn conjure() -> Aes {
+    pub unsafe fn steal() -> Aes {
         let dp: pac::Peripherals = pac::Peripherals::steal();
         Aes { aes: dp.AES }
     }
@@ -327,7 +327,7 @@ impl Aes {
     ///
     /// ```no_run
     /// use stm32wl_hal_aes::{Key, Key128};
-    /// # let mut aes = unsafe { stm32wl_hal_aes::Aes::conjure() };
+    /// # let mut aes = unsafe { stm32wl_hal_aes::Aes::steal() };
     ///
     /// // this is a bad key, I am just using values from the NIST testsuite
     /// const KEY: Key = Key::K128(Key128::from_u128(0));
@@ -383,7 +383,7 @@ impl Aes {
     ///
     /// ```no_run
     /// use stm32wl_hal_aes::{Key, Key128};
-    /// # let mut aes = unsafe { stm32wl_hal_aes::Aes::conjure() };
+    /// # let mut aes = unsafe { stm32wl_hal_aes::Aes::steal() };
     ///
     /// // this is a bad key, I am just using values from the NIST testsuite
     /// const KEY: Key = Key::K128(Key128::from_u128(0));

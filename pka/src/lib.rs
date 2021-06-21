@@ -247,13 +247,13 @@ impl Pka {
         self.pka
     }
 
-    /// Magically creates a PKA driver out of thin air.
+    /// Steal the PKA peripheral from whatever is currently using it.
     ///
     /// This will **not** initialize the PKA (unlike [`new`]).
     ///
     /// # Safety
     ///
-    /// This will create a new `PKA` peripheral, bypassing the singleton checks
+    /// This will create a new PKA peripheral, bypassing the singleton checks
     /// that normally occur.
     /// You are responsible for ensuring that the driver has exclusive access to
     /// the PKA peripheral.
@@ -266,11 +266,11 @@ impl Pka {
     ///
     /// // ... setup happens here
     ///
-    /// let pka = unsafe { Pka::conjure() };
+    /// let pka = unsafe { Pka::steal() };
     /// ```
     ///
     /// [`new`]: Pka::new
-    pub unsafe fn conjure() -> Pka {
+    pub unsafe fn steal() -> Pka {
         let dp: pac::Peripherals = pac::Peripherals::steal();
         Pka { pka: dp.PKA }
     }

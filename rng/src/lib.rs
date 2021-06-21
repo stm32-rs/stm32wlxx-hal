@@ -118,6 +118,63 @@ impl Rng {
         Rng { rng, err_cnt: 0 }
     }
 
+    /// Free the RNG peripheral from the driver.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal_rng::{pac, Rng};
+    ///
+    /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut rcc: pac::RCC = dp.RCC;
+    /// let rng_dp: pac::RNG = dp.RNG;
+    ///
+    /// // ... setup the system clocks
+    /// // ... take a look at RCC_CCIPR to select the RNG clock source
+    ///
+    /// rcc.ahb3enr.modify(|_, w| w.rngen().set_bit());
+    /// rcc.ahb3enr.read(); // Delay after an RCC peripheral clock enabling
+    ///
+    /// let mut rng = Rng::new(rng_dp, &mut rcc);
+    /// // ... use rng
+    /// let rng_dp: pac::RNG = rng.free();
+    /// ```
+    pub fn free(self) -> pac::RNG {
+        self.rng
+    }
+
+    /// Steal the RNG peripheral from whatever is currently using it.
+    ///
+    /// This will **not** initialize the RNG peripheral (unlike [`new`]).
+    ///
+    /// # Safety
+    ///
+    /// This will create a new RNG peripheral, bypassing the singleton checks
+    /// that normally occur.
+    /// You are responsible for ensuring that the driver has exclusive access to
+    /// the RNG peripheral.
+    /// You are also responsible for ensuring the RNG peripheral has been setup
+    /// correctly.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal_rng::Rng;
+    ///
+    /// // ... setup happens here
+    ///
+    /// let rng = unsafe { Rng::steal() };
+    /// ```
+    ///
+    /// [`new`]: Rng::new
+    pub unsafe fn steal() -> Rng {
+        let dp: pac::Peripherals = pac::Peripherals::steal();
+        Rng {
+            rng: dp.RNG,
+            err_cnt: 0,
+        }
+    }
+
     /// Returns the number of correctable noise errors that have occured.
     ///
     /// This counter will saturate when it hits the maximum value.
@@ -151,7 +208,7 @@ impl Rng {
         }
     }
 
-    /// Try to fill the destination buffer with random data by `u32`s.
+    /// Try to fill the destination buffer with random data.
     pub fn try_fill_u32(&mut self, dest: &mut [u32]) -> Result<(), Error> {
         for chunk in dest.chunks_mut(4) {
             self.wait_for_new_entropy()?;

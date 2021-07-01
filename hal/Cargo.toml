@@ -39,6 +39,15 @@ stm32wle5 = [
     "stm32wl-hal-subghz/stm32wle5",
     "stm32wl/stm32wle5",
 ]
+rt = [
+    "stm32wl-hal-aes/rt",
+    "stm32wl-hal-iface/rt",
+    "stm32wl-hal-pka/rt",
+    "stm32wl-hal-rcc/rt",
+    "stm32wl-hal-rng/rt",
+    "stm32wl-hal-subghz/rt",
+    "stm32wl/rt",
+]
 
 [dependencies]
 cfg-if = "^1"

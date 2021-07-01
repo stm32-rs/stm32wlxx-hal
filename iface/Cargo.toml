@@ -15,6 +15,7 @@ repository = "https://github.com/newAM/stm32wl-hal"
 stm32wl5x_cm0p = ["stm32wl/stm32wl5x_cm0p"]
 stm32wl5x_cm4 = ["stm32wl/stm32wl5x_cm4"]
 stm32wle5 = ["stm32wl/stm32wle5"]
+rt = ["stm32wl/rt"]
 
 [dependencies]
 cfg-if = "^1"

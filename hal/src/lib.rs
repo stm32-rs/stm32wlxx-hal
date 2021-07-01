@@ -23,5 +23,6 @@ pub use stm32wl_hal_rcc as rcc;
 pub use stm32wl_hal_rng as rng;
 pub use stm32wl_hal_subghz as subghz;
 
+pub use stm32wl_hal_iface::embedded_hal;
 pub use stm32wl_hal_iface::gpio;
 pub use stm32wl_hal_iface::spi;

@@ -1,7 +1,7 @@
 use super::gpio;
 pub use super::pac;
 
-pub use embedded_hal::spi::Mode;
+pub use embedded_hal::spi::{Mode, MODE_0, MODE_1, MODE_2, MODE_3};
 
 use core::ptr::{read_volatile, write_volatile};
 

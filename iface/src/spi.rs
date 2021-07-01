@@ -19,6 +19,7 @@ pub enum Error {
 }
 
 const SPI1_BASE: usize = 0x4001_3000;
+const SPI1_DR: usize = SPI1_BASE + 0xC;
 #[allow(dead_code)]
 const SPI2_BASE: usize = 0x4000_3800;
 
@@ -90,8 +91,10 @@ where
         #[rustfmt::skip]
         spi1.cr1.write(|w|
             w
+                .ssi().set_bit()
+                .ssm().set_bit()
                 .spe().set_bit()
-                .br().bits(000)
+                .br().div4()
                 .mstr().set_bit()
                 .cpol().bit(cpol)
                 .cpha().bit(cpha)
@@ -139,23 +142,35 @@ where
     pub fn free(self) -> (pac::SPI1, MOSI, MISO, SCK) {
         (self.spi1, self.mosi, self.miso, self.sck)
     }
+
+    #[inline(always)]
+    fn status(&self) -> Result<pac::spi1::sr::R, Error> {
+        let sr = self.spi1.sr.read();
+        if sr.ovr().bit_is_set() {
+            Err(Error::Overrun)
+        } else if sr.fre().bit_is_set() {
+            Err(Error::Framing)
+        } else if sr.modf().bit_is_set() {
+            Err(Error::ModeFault)
+        } else if sr.crcerr().bit_is_set() {
+            Err(Error::Crc)
+        } else {
+            Ok(sr)
+        }
+    }
 }
 
-impl<MOSI, MISO, SCK> Spi1<MOSI, MISO, SCK> {
+impl<MOSI, MISO, SCK> Spi1<MOSI, MISO, SCK>
+where
+    MOSI: gpio::sealed::Spi1Mosi,
+    MISO: gpio::sealed::Spi1Miso,
+    SCK: gpio::sealed::Spi1Sck,
+{
     fn write_word(&mut self, word: u8) -> Result<(), Error> {
         loop {
-            let sr = self.spi1.sr.read();
-            if sr.ovr().bit_is_set() {
-                return Err(Error::Overrun);
-            } else if sr.fre().bit_is_set() {
-                return Err(Error::Framing);
-            } else if sr.modf().bit_is_set() {
-                return Err(Error::ModeFault);
-            } else if sr.crcerr().bit_is_set() {
-                return Err(Error::Crc);
-            } else if sr.txe().bit_is_set() {
-                const DR: usize = SPI1_BASE + 0xC;
-                unsafe { write_volatile(DR as *mut u8, word) };
+            if self.status()?.txe().bit_is_set() {
+                // access size must be 1 byte
+                unsafe { write_volatile(SPI1_DR as *mut u8, word) };
                 return Ok(());
             }
         }
@@ -163,24 +178,20 @@ impl<MOSI, MISO, SCK> Spi1<MOSI, MISO, SCK> {
 
     fn read_word(&mut self) -> Result<u8, Error> {
         loop {
-            let sr = self.spi1.sr.read();
-            if sr.ovr().bit_is_set() {
-                return Err(Error::Overrun);
-            } else if sr.fre().bit_is_set() {
-                return Err(Error::Framing);
-            } else if sr.modf().bit_is_set() {
-                return Err(Error::ModeFault);
-            } else if sr.crcerr().bit_is_set() {
-                return Err(Error::Crc);
-            } else if sr.rxne().bit_is_set() {
-                const DR: usize = SPI1_BASE + 0xC;
-                return Ok(unsafe { read_volatile(DR as *mut u8) });
+            if !self.status()?.frlvl().is_empty() {
+                // access size must be 1 byte
+                return Ok(unsafe { read_volatile(SPI1_DR as *const u8) });
             }
         }
     }
 }
 
-impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Transfer<u8> for Spi1<MOSI, MISO, SCK> {
+impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Transfer<u8> for Spi1<MOSI, MISO, SCK>
+where
+    MOSI: gpio::sealed::Spi1Mosi,
+    MISO: gpio::sealed::Spi1Miso,
+    SCK: gpio::sealed::Spi1Sck,
+{
     type Error = Error;
 
     fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
@@ -192,7 +203,12 @@ impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Transfer<u8> for Spi1<MOSI, M
     }
 }
 
-impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Write<u8> for Spi1<MOSI, MISO, SCK> {
+impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Write<u8> for Spi1<MOSI, MISO, SCK>
+where
+    MOSI: gpio::sealed::Spi1Mosi,
+    MISO: gpio::sealed::Spi1Miso,
+    SCK: gpio::sealed::Spi1Sck,
+{
     type Error = Error;
 
     fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {

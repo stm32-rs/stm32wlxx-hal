@@ -129,6 +129,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2.3.4
       - uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: stable
       - run: cargo test --features ${{ matrix.feature }}
 
   clippy:
@@ -170,6 +172,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2.3.4
       - uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: stable
       - run: cargo doc --features ${{ matrix.feature }}
 
   rustdoc:
@@ -206,7 +210,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.4
-      - uses: actions-rs/toolchain@v1
+      - uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: stable
       - run: |
           cd hal
           cargo publish --token ${CRATES_IO_TOKEN}
@@ -220,7 +226,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.4
-      - uses: actions-rs/toolchain@v1
+      - uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: stable
       - run: |
           cd nucleo-wl55jc-bsp
           cargo publish --token ${CRATES_IO_TOKEN}

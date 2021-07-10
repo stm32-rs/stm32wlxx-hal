@@ -5,14 +5,6 @@ publish = false
 authors = ["Alex M. <alexmgit@protonmail.com>"]
 edition = "2018"
 
-[features]
-aio = [
-    "stm32wl-hal/aio",
-    "crossbeam-queue",
-    "futures-util",
-    "alloc-cortex-m"
-]
-
 [dependencies]
 nb = "^1"
 cortex-m = "~0.7.2"
@@ -22,18 +14,3 @@ defmt-rtt = "~0.2.0"
 defmt-test = "~0.2.0"
 stm32wl-hal = { path = "../hal", features = ["stm32wl5x_cm4"] }
 rtt-target = { version = "~0.3.1", features = ["cortex-m"] }
-
-[dependencies.crossbeam-queue]
-version = "0.3.2"
-default-features = false
-optional = true
-features = ["alloc"]
-
-[dependencies.futures-util]
-version = "0.3.15"
-default-features = false
-optional = true
-
-[dependencies.alloc-cortex-m]
-version = "0.4"
-optional = true

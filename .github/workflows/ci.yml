@@ -62,26 +62,43 @@ jobs:
           - "rng-testsuite"
           - "subghz-testsuite-rx"
           - "subghz-testsuite-tx"
-        aio: ["aio", ""]
     steps:
       - uses: actions/checkout@v2.3.4
-      - if: ${{ matrix.aio == 'aio' }}
-        name: setup rust nightly
-        uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: nightly
-          target: thumbv7em-none-eabi
-      - if: ${{ matrix.aio != 'aio' }}
-        name: setup rust stable
-        uses: actions-rs/toolchain@v1.0.7
+      - uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
           target: thumbv7em-none-eabi
-      - run: |
+      - name: cargo test
+        run: |
           cargo test \
           -p ${{ matrix.workspace }} \
           --target thumbv7em-none-eabi \
-          --features ${{ matrix.aio }} \
+          --no-run
+
+  build_testsuite_aio:
+    name: Testsuite Compile async
+    runs-on: ubuntu-latest
+    env: {"RUSTFLAGS": "-D warnings"}
+    strategy:
+      matrix:
+        workspace:
+          - "aes-testsuite"
+          - "pka-testsuite"
+          - "rng-testsuite"
+          - "subghz-testsuite-rx"
+          - "subghz-testsuite-tx"
+    steps:
+      - uses: actions/checkout@v2.3.4
+      - uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: nightly
+          target: thumbv7em-none-eabi
+      - name: cargo test
+        run: |
+          cargo test \
+          -p ${{ matrix.workspace }} \
+          --target thumbv7em-none-eabi \
+          --features aio \
           --no-run
 
   build_test_bsp:
@@ -202,6 +219,7 @@ jobs:
       - build_examples
       - build_test_bsp
       - build_testsuite
+      - build_testsuite_aio
       - clippy
       - doc
       - format

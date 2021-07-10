@@ -1,27 +1,14 @@
 [workspace]
+resolver = "2"
 members = [
     "aes-testsuite",
-    "aes",
     "examples",
     "hal",
-    "iface",
     "nucleo-wl55jc-bsp",
     "pka-testsuite",
-    "pka",
-    "rcc",
     "rng-testsuite",
-    "rng",
     "subghz-testsuite-assets",
     "subghz-testsuite-rx",
     "subghz-testsuite-tx",
-    "subghz",
 ]
-default-members = [
-    "aes",
-    "hal",
-    "iface",
-    "pka",
-    "rcc",
-    "rng",
-    "subghz",
-]
+default-members = ["hal"]

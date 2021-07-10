@@ -1,6 +1,5 @@
 //! STM32WL HAL.
 #![cfg_attr(not(test), no_std)]
-#![forbid(missing_docs, unsafe_code)]
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "stm32wl5x_cm0p")] {
@@ -17,12 +16,15 @@ cfg_if::cfg_if! {
     }
 }
 
-pub use stm32wl_hal_aes as aes;
-pub use stm32wl_hal_pka as pka;
-pub use stm32wl_hal_rcc as rcc;
-pub use stm32wl_hal_rng as rng;
-pub use stm32wl_hal_subghz as subghz;
+pub mod aes;
+pub mod gpio;
+pub mod pka;
+pub mod rcc;
+pub mod rng;
+pub mod spi;
+pub mod subghz;
 
-pub use stm32wl_hal_iface::embedded_hal;
-pub use stm32wl_hal_iface::gpio;
-pub use stm32wl_hal_iface::spi;
+/// Cortex-M CPU peripherals.
+pub use cortex_m;
+/// Embedded-hal trait abstractions.
+pub use embedded_hal;

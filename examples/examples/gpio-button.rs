@@ -6,7 +6,10 @@
 use core::fmt::Write;
 use core::sync::atomic::{compiler_fence, Ordering::SeqCst};
 use rtt_target::rprintln;
-use stm32wl_hal::gpio::{pac, pins, Input, Level, PortC, Pull};
+use stm32wl_hal::{
+    gpio::{pins, Input, Level, PortC, Pull},
+    pac,
+};
 
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {

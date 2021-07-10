@@ -1,6 +1,7 @@
 //! NUCLEO-WL55JC board support package.
 
 #![cfg_attr(not(test), no_std)]
+#![forbid(unsafe_code, missing_docs)]
 
 pub use stm32wl_hal as hal;
 

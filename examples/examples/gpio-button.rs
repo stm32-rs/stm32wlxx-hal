@@ -43,8 +43,11 @@ fn main() -> ! {
     rtt_target::set_print_channel(channels.up.0);
     rprintln!("Hello from rprintln!");
 
-    let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+    let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    let mut rcc: pac::RCC = dp.RCC;
+    rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
+    rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+    let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
     let pc6: Input<pins::C6> = Input::new(gpioc.pc6, Pull::Up);
 
     let mut prev_level: Level = pc6.level();

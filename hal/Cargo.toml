@@ -42,5 +42,6 @@ default-features = false
 optional = true
 
 [package.metadata.docs.rs]
-all-features = true
+all-features = false
+features = ["aio", "stm32wl5x_cm4"]
 rustdoc-args = ["--cfg", "docsrs"]

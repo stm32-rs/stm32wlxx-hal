@@ -195,19 +195,14 @@ jobs:
     name: rustdoc
     runs-on: ubuntu-latest
     env: {"RUSTDOCFLAGS": "-D warnings --cfg docsrs"}
-    strategy:
-      matrix:
-        workspace:
-          - "hal"
-          - "nucleo-wl55jc-bsp"
     steps:
       - uses: actions/checkout@v2.3.4
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
       - run: |
-          cd ${{ matrix.workspace }}
-          cargo +nightly rustdoc --all-features
+          cd hal
+          cargo +nightly rustdoc --features aio,stm32wl5x_cm4
 
   release_hal:
     name: crates.io hal release

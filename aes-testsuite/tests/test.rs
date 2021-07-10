@@ -3,7 +3,10 @@
 
 use defmt_rtt as _; // global logger
 use panic_probe as _;
-use stm32wl_hal::{aes::Aes, pac, rcc};
+use stm32wl_hal::{
+    aes::{Aes, Key, Key128},
+    pac, rcc,
+};
 
 pub const fn u128_to_u32(u: u128) -> [u32; 4] {
     [
@@ -16,8 +19,6 @@ pub const fn u128_to_u32(u: u128) -> [u32; 4] {
 
 #[defmt_test::tests]
 mod tests {
-    use stm32wl_hal::aes::{Key, Key128};
-
     use super::*;
 
     #[init]

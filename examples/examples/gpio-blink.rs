@@ -6,7 +6,10 @@
 use core::fmt::Write;
 use core::sync::atomic::{compiler_fence, Ordering::SeqCst};
 use rtt_target::rprintln;
-use stm32wl_hal::gpio::{pac, Level, Output, PortB};
+use stm32wl_hal::{
+    gpio::{Level, Output, PortB},
+    pac,
+};
 
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
@@ -47,8 +50,11 @@ fn main() -> ! {
     rtt_target::set_print_channel(channels.up.0);
     rprintln!("Hello from rprintln!");
 
-    let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    let mut rcc: pac::RCC = dp.RCC;
+    rcc.ahb2enr.modify(|_, w| w.gpioben().set_bit());
+    rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+    let gpiob: PortB = PortB::split(dp.GPIOB, &mut rcc);
     let mut led1 = Output::default(gpiob.pb9);
     let mut led2 = Output::default(gpiob.pb15);
     let mut led3 = Output::default(gpiob.pb11);

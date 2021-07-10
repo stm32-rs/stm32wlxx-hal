@@ -45,12 +45,18 @@ The on-target tests use [defmt-test].
 
 Sample output:
 ```text
-         INFO  (1/2) running `ecdsa_sign`...
-└─ test::tests::__defmt_test_entry @ tests/test.rs:48
-         INFO  (2/2) running `ecdsa_verify`...
-└─ test::tests::__defmt_test_entry @ tests/test.rs:48
-         INFO  all tests passed!
-└─ test::tests::__defmt_test_entry @ tests/test.rs:48
+$ cargo test -p pka-testsuite --target thumbv7em-none-eabi
+(HOST) INFO  flashing program (43.04 KiB)
+(HOST) INFO  success!
+────────────────────────────────────────────────────────────────────────────────
+ INFO  (1/2) running `ecdsa_sign`...
+└─ test::tests::__defmt_test_entry @ tests/test.rs:49
+ INFO  (2/2) running `ecdsa_verify`...
+└─ test::tests::__defmt_test_entry @ tests/test.rs:49
+ INFO  all tests passed!
+└─ test::tests::__defmt_test_entry @ tests/test.rs:49
+────────────────────────────────────────────────────────────────────────────────
+(HOST) INFO  device halted without error
 ```
 
 #### SubGhz Tests

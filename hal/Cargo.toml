@@ -1,7 +1,7 @@
 [package]
 name = "stm32wl-hal"
 description = "Hardware abstraction layer for the STM32WL series microcontrollers."
-readme = "README.md"
+readme = "../README.md"
 
 version = "0.1.0-alpha.0"
 authors = ["Alex M. <alexmgit@protonmail.com>"]
@@ -12,64 +12,21 @@ categories = ["embedded", "hardware-support", "no-std"]
 repository = "https://github.com/newAM/stm32wl-hal"
 
 [features]
-stm32wl5x_cm0p = [
-    "stm32wl-hal-aes/stm32wl5x_cm0p",
-    "stm32wl-hal-iface/stm32wl5x_cm0p",
-    "stm32wl-hal-pka/stm32wl5x_cm0p",
-    "stm32wl-hal-rcc/stm32wl5x_cm0p",
-    "stm32wl-hal-rng/stm32wl5x_cm0p",
-    "stm32wl-hal-subghz/stm32wl5x_cm0p",
-    "stm32wl/stm32wl5x_cm0p",
-]
-stm32wl5x_cm4 = [
-    "stm32wl-hal-aes/stm32wl5x_cm4",
-    "stm32wl-hal-iface/stm32wl5x_cm4",
-    "stm32wl-hal-pka/stm32wl5x_cm4",
-    "stm32wl-hal-rcc/stm32wl5x_cm4",
-    "stm32wl-hal-rng/stm32wl5x_cm4",
-    "stm32wl-hal-subghz/stm32wl5x_cm4",
-    "stm32wl/stm32wl5x_cm4",
-]
-stm32wle5 = [
-    "stm32wl-hal-aes/stm32wle5",
-    "stm32wl-hal-iface/stm32wle5",
-    "stm32wl-hal-pka/stm32wle5",
-    "stm32wl-hal-rcc/stm32wle5",
-    "stm32wl-hal-rng/stm32wle5",
-    "stm32wl-hal-subghz/stm32wle5",
-    "stm32wl/stm32wle5",
-]
-rt = [
-    "stm32wl-hal-aes/rt",
-    "stm32wl-hal-iface/rt",
-    "stm32wl-hal-pka/rt",
-    "stm32wl-hal-rcc/rt",
-    "stm32wl-hal-rng/rt",
-    "stm32wl-hal-subghz/rt",
-    "stm32wl/rt",
-]
+stm32wl5x_cm0p = ["stm32wl/stm32wl5x_cm0p"]
+stm32wl5x_cm4 = ["stm32wl/stm32wl5x_cm4"]
+stm32wle5 = ["stm32wl/stm32wle5"]
+rt = ["stm32wl/rt"]
 
 [dependencies]
-cfg-if = "^1"
+cfg-if = "1"
+rand_core = "0.6"
+cortex-m = "0.7"
+embedded-hal = "0.2"
+
+[dependencies.num-rational]
+version = "0.4"
+default-features = false
 
 [dependencies.stm32wl]
 git = "https://github.com/newAM/stm32wl-rs.git"
 rev = "f6e2994dc1e60bd000a6933bbb6cf87be1ae90fd"
-
-[dependencies.stm32wl-hal-aes]
-path = "../aes"
-
-[dependencies.stm32wl-hal-iface]
-path = "../iface"
-
-[dependencies.stm32wl-hal-pka]
-path = "../pka"
-
-[dependencies.stm32wl-hal-rcc]
-path = "../rcc"
-
-[dependencies.stm32wl-hal-rng]
-path = "../rng"
-
-[dependencies.stm32wl-hal-subghz]
-path = "../subghz"

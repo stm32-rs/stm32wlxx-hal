@@ -161,6 +161,7 @@ jobs:
 
   release_hal:
     name: crates.io hal release
+    if: startsWith(github.ref, 'refs/tags/v')
     needs:
       - build
       - build_examples

@@ -38,6 +38,7 @@ jobs:
         uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: nightly
+          default: true
           target: ${{ matrix.target }}
       - if: ${{ matrix.aio != 'aio' }}
         name: setup rust stable
@@ -95,7 +96,7 @@ jobs:
           target: thumbv7em-none-eabi
       - name: cargo test
         run: |
-          cargo test \
+          cargo +nightly test \
           -p ${{ matrix.workspace }} \
           --target thumbv7em-none-eabi \
           --features aio \

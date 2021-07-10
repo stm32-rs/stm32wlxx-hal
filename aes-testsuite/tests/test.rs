@@ -2,12 +2,11 @@
 #![no_main]
 #![cfg_attr(feature = "aio", feature(alloc_error_handler))]
 
-use core::sync::atomic::{compiler_fence, Ordering::SeqCst};
 use defmt_rtt as _; // global logger
 use panic_probe as _;
 use stm32wl_hal::{
     aes::{Aes, Key, Key128},
-    gpio, pac, rcc,
+    pac, rcc,
 };
 
 #[cfg(feature = "aio")]
@@ -69,6 +68,8 @@ fn oom(_layout: core::alloc::Layout) -> ! {
     let mut rcc: pac::RCC = dp.RCC;
     rcc.ahb2enr.modify(|_, w| w.gpioben().set_bit());
     rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+
+    use stm32wl_hal::gpio;
     let gpiob: gpio::PortB = gpio::PortB::split(dp.GPIOB, &mut rcc);
     let mut led1 = gpio::Output::default(gpiob.pb9);
     let mut led2 = gpio::Output::default(gpiob.pb15);
@@ -78,6 +79,7 @@ fn oom(_layout: core::alloc::Layout) -> ! {
     led2.set_output_level(gpio::Level::High);
     led3.set_output_level(gpio::Level::High);
 
+    use core::sync::atomic::{compiler_fence, Ordering::SeqCst};
     loop {
         compiler_fence(SeqCst);
     }

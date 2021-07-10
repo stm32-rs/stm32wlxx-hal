@@ -192,6 +192,21 @@ pub enum Error {
     Write,
 }
 
+impl Error {
+    #[cfg_attr(not(feature = "aio"), allow(dead_code))]
+    pub(crate) fn from_sr(sr: u32) -> Result<(), Self> {
+        const RDERR: u32 = 1 << 1;
+        const WRERR: u32 = 1 << 2;
+        if sr & RDERR != 0 {
+            Err(Error::Read)
+        } else if sr & WRERR != 0 {
+            Err(Error::Write)
+        } else {
+            Ok(())
+        }
+    }
+}
+
 /// AES driver.
 pub struct Aes {
     aes: pac::AES,
@@ -306,6 +321,18 @@ impl Aes {
         }
     }
 
+    fn set_din(&mut self, din: &[u32; 4]) {
+        din.iter()
+            .for_each(|dw| self.aes.dinr.write(|w| w.din().bits(*dw)))
+    }
+
+    fn dout(&self) -> [u32; 4] {
+        let mut ret: [u32; 4] = [0; 4];
+        ret.iter_mut()
+            .for_each(|dw| *dw = self.aes.doutr.read().bits());
+        ret
+    }
+
     /// Encrypt using the electronic codebook chaining (ECB) algorithm.
     ///
     /// # Example
@@ -330,36 +357,31 @@ impl Aes {
         #[rustfmt::skip]
         self.aes.cr.write(|w|
             w
-                .en().set_bit()
-                .datatype().bits(0b00)
+                .en().enabled()
+                .datatype().none()
                 .mode().bits(MODE)
                 .chmod2().bit(CHMOD2)
                 .chmod().bits(CHMOD10)
-                .ccfc().set_bit()
-                .errc().set_bit()
-                .ccfie().set_bit()
-                .errie().set_bit()
-                .dmainen().clear_bit()
-                .dmaouten().clear_bit()
+                .ccfc().clear()
+                .errc().clear()
+                .ccfie().disabled()
+                .errie().disabled()
+                .dmainen().disabled()
+                .dmaouten().disabled()
                 .gcmph().bits(0) // do not care for ECB
                 .keysize().bit(key.keysize())
                 .npblb().bits(0) // no padding
         );
 
         self.set_key(key);
+        self.set_din(plaintext);
+        let ret: Result<[u32; 4], Error> = match self.poll_completion() {
+            Ok(_) => Ok(self.dout()),
+            Err(e) => Err(e),
+        };
 
-        for &dw in plaintext.iter() {
-            self.aes.dinr.write(|w| unsafe { w.bits(dw) });
-        }
-
-        self.poll_completion()?;
-
-        let mut ciphertext: [u32; 4] = [0; 4];
-        for dw in ciphertext.iter_mut() {
-            *dw = self.aes.doutr.read().bits();
-        }
         self.aes.cr.write(|w| w.en().clear_bit());
-        Ok(ciphertext)
+        ret
     }
 
     /// Decrypt using the electronic codebook chaining (ECB) algorithm.
@@ -386,35 +408,157 @@ impl Aes {
         #[rustfmt::skip]
         self.aes.cr.write(|w|
             w
-                .en().set_bit()
-                .datatype().bits(0b00)
+                .en().enabled()
+                .datatype().none()
                 .mode().bits(MODE)
                 .chmod2().bit(CHMOD2)
                 .chmod().bits(CHMOD10)
-                .ccfc().set_bit()
-                .errc().set_bit()
-                .ccfie().set_bit()
-                .errie().set_bit()
-                .dmainen().clear_bit()
-                .dmaouten().clear_bit()
+                .ccfc().clear()
+                .errc().clear()
+                .ccfie().disabled()
+                .errie().disabled()
+                .dmainen().disabled()
+                .dmaouten().disabled()
                 .gcmph().bits(0) // do not care for ECB
                 .keysize().bit(key.keysize())
                 .npblb().bits(0) // no padding
         );
 
         self.set_key(key);
+        self.set_din(ciphertext);
+        let ret: Result<[u32; 4], Error> = match self.poll_completion() {
+            Ok(_) => Ok(self.dout()),
+            Err(e) => Err(e),
+        };
 
-        for &dw in ciphertext.iter() {
-            self.aes.dinr.write(|w| unsafe { w.bits(dw) });
-        }
-
-        self.poll_completion()?;
-
-        let mut plaintext: [u32; 4] = [0; 4];
-        for dw in plaintext.iter_mut() {
-            *dw = self.aes.doutr.read().bits();
-        }
         self.aes.cr.write(|w| w.en().clear_bit());
-        Ok(plaintext)
+        ret
+    }
+
+    /// Decrypt using the electronic codebook chaining (ECB) algorithm,
+    /// asynchronously.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::aes::{Key, Key128};
+    /// # let mut aes = unsafe { stm32wl_hal::aes::Aes::steal() };
+    ///
+    /// // this is a bad key, I am just using values from the NIST testsuite
+    /// const KEY: Key = Key::K128(Key128::from_u128(0));
+    ///
+    /// let ciphertext: [u32; 4] = [0x0336763e, 0x966d9259, 0x5a567cc9, 0xce537f5e];
+    /// let plaintext: [u32; 4] = aes.aio_decrypt_ecb(&KEY, &ciphertext).await?;
+    /// # Ok::<(), stm32wl_hal::aes::Error>(())
+    /// ```
+    #[cfg(feature = "aio")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "aio")))]
+    pub async fn aio_decrypt_ecb(
+        &mut self,
+        key: &Key,
+        ciphertext: &[u32; 4],
+    ) -> Result<[u32; 4], Error> {
+        const ALGO: Algorithm = Algorithm::Ecb;
+        const CHMOD2: bool = ALGO.chmod2();
+        const CHMOD10: u8 = ALGO.chmod10();
+        const MODE: u8 = Mode::KeyDerivationDecryption.bits();
+
+        #[rustfmt::skip]
+        self.aes.cr.write(|w|
+            w
+                .en().enabled()
+                .datatype().none()
+                .mode().bits(MODE)
+                .chmod2().bit(CHMOD2)
+                .chmod().bits(CHMOD10)
+                .ccfc().clear()
+                .errc().clear()
+                .ccfie().enabled()
+                .errie().enabled()
+                .dmainen().disabled()
+                .dmaouten().disabled()
+                .gcmph().bits(0) // do not care for ECB
+                .keysize().bit(key.keysize())
+                .npblb().bits(0) // no padding
+        );
+
+        self.set_key(key);
+        self.set_din(ciphertext);
+
+        use futures_util::StreamExt;
+
+        let ret: Result<[u32; 4], Error> = match aio::AesIrq::new().next().await.unwrap() {
+            Ok(_) => Ok(self.dout()),
+            Err(e) => Err(e),
+        };
+        self.aes.cr.write(|w| w.en().clear_bit());
+        ret
+    }
+}
+
+#[cfg(feature = "aio")]
+#[cfg_attr(docsrs, doc(cfg(feature = "aio")))]
+mod aio {
+    use crate::pac::{self, interrupt};
+    use core::{
+        sync::atomic::{AtomicU32, Ordering::SeqCst},
+        task::Poll,
+    };
+    use futures_util::{task::AtomicWaker, Stream};
+
+    static AES_WAKER: AtomicWaker = AtomicWaker::new();
+    static AES_RESULT: AtomicU32 = AtomicU32::new(0);
+
+    pub struct AesIrq {
+        _priv: (),
+    }
+
+    impl AesIrq {
+        pub const fn new() -> Self {
+            AesIrq { _priv: () }
+        }
+    }
+
+    impl Stream for AesIrq {
+        type Item = Result<(), super::Error>;
+
+        fn poll_next(
+            self: core::pin::Pin<&mut Self>,
+            cx: &mut core::task::Context<'_>,
+        ) -> Poll<Option<Self::Item>> {
+            AES_WAKER.register(&cx.waker());
+            if AES_RESULT.load(SeqCst) == 0 {
+                Poll::Pending
+            } else {
+                AES_WAKER.take();
+                let sr: u32 = AES_RESULT.swap(0, SeqCst);
+                Poll::Ready(Some(super::Error::from_sr(sr)))
+            }
+        }
+    }
+
+    #[interrupt]
+    #[allow(non_snake_case)]
+    fn AES() {
+        debug_assert_eq!(AES_RESULT.load(SeqCst), 0);
+
+        let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
+
+        // store result
+        AES_RESULT.store(dp.AES.sr.read().bits(), SeqCst);
+
+        // clear and disable IRQs
+        dp.AES.cr.modify(|_, w| {
+            w.ccfc()
+                .clear()
+                .errc()
+                .clear()
+                .ccfie()
+                .disabled()
+                .errie()
+                .disabled()
+        });
+
+        AES_WAKER.wake();
     }
 }

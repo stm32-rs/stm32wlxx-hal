@@ -558,7 +558,7 @@ impl Aes {
 #[cfg(feature = "aio")]
 #[cfg_attr(docsrs, doc(cfg(feature = "aio")))]
 mod aio {
-    use crate::pac::{self, interrupt};
+
     use core::{
         sync::atomic::{AtomicU32, Ordering::SeqCst},
         task::Poll,
@@ -596,28 +596,34 @@ mod aio {
         }
     }
 
-    #[interrupt]
-    #[allow(non_snake_case)]
-    fn AES() {
-        debug_assert_eq!(AES_RESULT.load(SeqCst), 0);
+    #[cfg(all(target_arch = "arm", target_os = "none"))]
+    mod irq {
+        use super::{SeqCst, AES_RESULT, AES_WAKER};
+        use crate::pac::{self, interrupt};
 
-        let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
+        #[interrupt]
+        #[allow(non_snake_case)]
+        fn AES() {
+            debug_assert_eq!(AES_RESULT.load(SeqCst), 0);
 
-        // store result
-        AES_RESULT.store(dp.AES.sr.read().bits(), SeqCst);
+            let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
 
-        // clear and disable IRQs
-        dp.AES.cr.modify(|_, w| {
-            w.ccfc()
-                .clear()
-                .errc()
-                .clear()
-                .ccfie()
-                .disabled()
-                .errie()
-                .disabled()
-        });
+            // store result
+            AES_RESULT.store(dp.AES.sr.read().bits(), SeqCst);
 
-        AES_WAKER.wake();
+            // clear and disable IRQs
+            dp.AES.cr.modify(|_, w| {
+                w.ccfc()
+                    .clear()
+                    .errc()
+                    .clear()
+                    .ccfie()
+                    .disabled()
+                    .errie()
+                    .disabled()
+            });
+
+            AES_WAKER.wake();
+        }
     }
 }

@@ -1,4 +1,10 @@
+//! Asynchronous Test Executor
+
+#![no_std]
+
 extern crate alloc;
+
+pub use alloc_cortex_m;
 
 use alloc::{boxed::Box, collections::BTreeMap, sync::Arc, task::Wake};
 use core::{

@@ -1,0 +1,19 @@
+[package]
+authors = ["Alex M. <alexmgit@protonmail.com>"]
+name = "ate"
+description = "Asynchronous Test Executor"
+publish = false
+edition = "2018"
+version = "0.1.0"
+
+[dependencies.crossbeam-queue]
+version = "0.3"
+default-features = false
+features = ["alloc"]
+
+[dependencies.futures-util]
+version = "0.3"
+default-features = false
+
+[dependencies]
+alloc-cortex-m = "0.4"

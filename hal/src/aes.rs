@@ -435,6 +435,65 @@ impl Aes {
         ret
     }
 
+    /// Encrypt using the electronic codebook chaining (ECB) algorithm.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::aes::{Key, Key128};
+    /// # let mut aes = unsafe { stm32wl_hal::aes::Aes::steal() };
+    ///
+    /// // this is a bad key, I am just using values from the NIST testsuite
+    /// const KEY: Key = Key::K128(Key128::from_u128(0));
+    ///
+    /// let plaintext: [u32; 4] = [0xf34481ec, 0x3cc627ba, 0xcd5dc3fb, 0x08f273e6];
+    /// let chiphertext: [u32; 4] = aes.aio_encrypt_ecb(&KEY, &plaintext).await?;
+    /// # Ok::<(), stm32wl_hal::aes::Error>(())
+    /// ```
+    #[cfg(feature = "aio")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "aio")))]
+    pub async fn aio_encrypt_ecb(
+        &mut self,
+        key: &Key,
+        ciphertext: &[u32; 4],
+    ) -> Result<[u32; 4], Error> {
+        const ALGO: Algorithm = Algorithm::Ecb;
+        const CHMOD2: bool = ALGO.chmod2();
+        const CHMOD10: u8 = ALGO.chmod10();
+        const MODE: u8 = Mode::Encryption.bits();
+
+        #[rustfmt::skip]
+        self.aes.cr.write(|w|
+            w
+                .en().enabled()
+                .datatype().none()
+                .mode().bits(MODE)
+                .chmod2().bit(CHMOD2)
+                .chmod().bits(CHMOD10)
+                .ccfc().clear()
+                .errc().clear()
+                .ccfie().enabled()
+                .errie().enabled()
+                .dmainen().disabled()
+                .dmaouten().disabled()
+                .gcmph().bits(0) // do not care for ECB
+                .keysize().bit(key.keysize())
+                .npblb().bits(0) // no padding
+        );
+
+        self.set_key(key);
+        self.set_din(ciphertext);
+
+        use futures_util::StreamExt;
+
+        let ret: Result<[u32; 4], Error> = match aio::AesIrq::new().next().await.unwrap() {
+            Ok(_) => Ok(self.dout()),
+            Err(e) => Err(e),
+        };
+        self.aes.cr.write(|w| w.en().clear_bit());
+        ret
+    }
+
     /// Decrypt using the electronic codebook chaining (ECB) algorithm,
     /// asynchronously.
     ///

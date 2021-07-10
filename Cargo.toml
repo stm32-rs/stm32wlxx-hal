@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "aes-testsuite",
+    "ate",
     "examples",
     "hal",
     "nucleo-wl55jc-bsp",
@@ -14,7 +15,7 @@ members = [
 default-members = ["hal"]
 
 [profile.dev]
-opt-level = 2
+opt-level = 3
 
 [profile.release]
 debug = 2

@@ -343,13 +343,13 @@ impl Aes {
         const MODE: u8 = Mode::Encryption.bits();
 
         #[rustfmt::skip]
-        self.aes.cr.write(|w| unsafe {
+        self.aes.cr.write(|w|
             w
                 .en().set_bit()
                 .datatype().bits(0b00)
                 .mode().bits(MODE)
                 .chmod2().bit(CHMOD2)
-                .chmod10().bits(CHMOD10)
+                .chmod().bits(CHMOD10)
                 .ccfc().set_bit()
                 .errc().set_bit()
                 .ccfie().set_bit()
@@ -359,7 +359,7 @@ impl Aes {
                 .gcmph().bits(0) // do not care for ECB
                 .keysize().bit(key.keysize())
                 .npblb().bits(0) // no padding
-        });
+        );
 
         self.set_key(key);
 
@@ -399,13 +399,13 @@ impl Aes {
         const MODE: u8 = Mode::KeyDerivationDecryption.bits();
 
         #[rustfmt::skip]
-        self.aes.cr.write(|w| unsafe {
+        self.aes.cr.write(|w|
             w
                 .en().set_bit()
                 .datatype().bits(0b00)
                 .mode().bits(MODE)
                 .chmod2().bit(CHMOD2)
-                .chmod10().bits(CHMOD10)
+                .chmod().bits(CHMOD10)
                 .ccfc().set_bit()
                 .errc().set_bit()
                 .ccfie().set_bit()
@@ -415,7 +415,7 @@ impl Aes {
                 .gcmph().bits(0) // do not care for ECB
                 .keysize().bit(key.keysize())
                 .npblb().bits(0) // no padding
-        });
+        );
 
         self.set_key(key);
 

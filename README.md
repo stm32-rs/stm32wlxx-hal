@@ -97,7 +97,7 @@ cargo run --example gpio-button -p examples --target thumbv7em-none-eabi
 
 ## async
 
-There is some experimental `async` code in the hal.
+There is opt-in experimental `async` code in the hal.
 The `async` code is more experimental and unstable then the rest of this crate
 (which is already experimental and unstable).
 

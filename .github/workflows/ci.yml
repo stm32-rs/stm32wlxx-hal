@@ -12,34 +12,48 @@ jobs:
   build:
     name: Cargo Build
     runs-on: ubuntu-latest
+    env: {"RUSTFLAGS": "-D warnings"}
     strategy:
       matrix:
         target:
           - "x86_64-unknown-linux-gnu"
           - "thumbv6m-none-eabi"
           - "thumbv7em-none-eabi"
-        feature:
+        mcu:
           - "stm32wl5x_cm0p"
           - "stm32wl5x_cm4"
           - "stm32wle5"
+        aio: ["aio", ""]
         exclude:
-          - feature: "stm32wl5x_cm0p"
+          - mcu: "stm32wl5x_cm0p"
             target: "thumbv7em-none-eabi"
-          - feature: "stm32wl5x_cm4"
+          - mcu: "stm32wl5x_cm4"
             target: "thumbv6m-none-eabi"
-          - feature: "stm32wle5"
+          - mcu: "stm32wle5"
             target: "thumbv6m-none-eabi"
     steps:
       - uses: actions/checkout@v2.3.4
-      - uses: actions-rs/toolchain@v1.0.7
+      - if: ${{ matrix.aio == 'aio' }}
+        name: setup rust nightly
+        uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: nightly
+          target: ${{ matrix.target }}
+      - if: ${{ matrix.aio != 'aio' }}
+        name: setup rust stable
+        uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
           target: ${{ matrix.target }}
-      - run: RUSTFLAGS="-D warnings" cargo build --target ${{ matrix.target }} --features ${{ matrix.feature }}
+      - run: |
+          cargo build \
+          --target ${{ matrix.target }} \
+          --features ${{ matrix.mcu }},${{ matrix.aio }}
 
   build_testsuite:
     name: Testsuite Compile
     runs-on: ubuntu-latest
+    env: {"RUSTFLAGS": "-D warnings"}
     strategy:
       matrix:
         workspace:
@@ -48,17 +62,32 @@ jobs:
           - "rng-testsuite"
           - "subghz-testsuite-rx"
           - "subghz-testsuite-tx"
+        aio: ["aio", ""]
     steps:
       - uses: actions/checkout@v2.3.4
-      - uses: actions-rs/toolchain@v1.0.7
+      - if: ${{ matrix.aio == 'aio' }}
+        name: setup rust nightly
+        uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: nightly
+          target: thumbv7em-none-eabi
+      - if: ${{ matrix.aio != 'aio' }}
+        name: setup rust stable
+        uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
           target: thumbv7em-none-eabi
-      - run: RUSTFLAGS="-D warnings" cargo test -p ${{ matrix.workspace }} --target thumbv7em-none-eabi --no-run
+      - run: |
+          cargo test \
+          -p ${{ matrix.workspace }} \
+          --target thumbv7em-none-eabi \
+          --features ${{ matrix.aio }} \
+          --no-run
 
   build_test_bsp:
     name: Build and Test BSP
     runs-on: ubuntu-latest
+    env: {"RUSTFLAGS": "-D warnings"}
     steps:
       - uses: actions/checkout@v2.3.4
       - uses: actions-rs/toolchain@v1.0.7
@@ -66,28 +95,31 @@ jobs:
           toolchain: stable
           target: thumbv7em-none-eabi
       - name: "Build"
-        run: RUSTFLAGS="-D warnings" cargo build -p nucleo-wl55jc-bsp --target thumbv7em-none-eabi
+        run: cargo build -p nucleo-wl55jc-bsp --target thumbv7em-none-eabi
       - uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
           target: x86_64-unknown-linux-gnu
       - name: "Test"
-        run: RUSTFLAGS="-D warnings" cargo test -p nucleo-wl55jc-bsp --target x86_64-unknown-linux-gnu
+        run: cargo test -p nucleo-wl55jc-bsp --target x86_64-unknown-linux-gnu
 
   build_examples:
     name: Examples Compile
     runs-on: ubuntu-latest
+    env: {"RUSTFLAGS": "-D warnings"}
     steps:
       - uses: actions/checkout@v2.3.4
       - uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
           target: thumbv7em-none-eabi
-      - run: RUSTFLAGS="-D warnings" cargo build --examples -p examples --target thumbv7em-none-eabi
+      - run: |
+          cargo build --examples -p examples --target thumbv7em-none-eabi
 
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
+    env: {"RUSTFLAGS": "-D warnings"}
     strategy:
       matrix:
         feature:
@@ -97,9 +129,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2.3.4
       - uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: stable
-      - run: RUSTFLAGS="-D warnings" cargo test --features ${{ matrix.feature }}
+      - run: cargo test --features ${{ matrix.feature }}
 
   clippy:
     name: Clippy
@@ -118,6 +148,7 @@ jobs:
   format:
     name: Rust Format
     runs-on: ubuntu-latest
+    env: {"RUSTFLAGS": "-D warnings"}
     steps:
       - uses: actions/checkout@v2.3.4
       - uses: actions-rs/toolchain@v1.0.7
@@ -129,6 +160,7 @@ jobs:
   doc:
     name: doc
     runs-on: ubuntu-latest
+    env: {"RUSTDOCFLAGS": "-D warnings"}
     strategy:
       matrix:
         feature:
@@ -138,13 +170,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2.3.4
       - uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: stable
-      - run: RUSTDOCFLAGS="-D warnings" cargo doc --features ${{ matrix.feature }}
+      - run: cargo doc --features ${{ matrix.feature }}
 
   rustdoc:
     name: rustdoc
     runs-on: ubuntu-latest
+    env: {"RUSTDOCFLAGS": "-D warnings --cfg docsrs"}
     strategy:
       matrix:
         workspace:
@@ -157,7 +188,7 @@ jobs:
           toolchain: nightly
       - run: |
           cd ${{ matrix.workspace }}
-          RUSTDOCFLAGS="-D warnings" cargo +nightly rustdoc --all-features
+          cargo +nightly rustdoc --all-features
 
   release_hal:
     name: crates.io hal release
@@ -176,8 +207,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2.3.4
       - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
       - run: |
           cd hal
           cargo publish --token ${CRATES_IO_TOKEN}
@@ -192,8 +221,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2.3.4
       - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
       - run: |
           cd nucleo-wl55jc-bsp
           cargo publish --token ${CRATES_IO_TOKEN}

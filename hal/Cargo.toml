@@ -32,13 +32,13 @@ default-features = false
 git = "https://github.com/newAM/stm32wl-rs.git"
 rev = "f6e2994dc1e60bd000a6933bbb6cf87be1ae90fd"
 
+[dependencies.cortex-m-rt]
+version = "0.6"
+optional = true
+
 [dependencies.futures-util]
 version = "0.3"
 default-features = false
-optional = true
-
-[dependencies.cortex-m-rt]
-version = "0.6"
 optional = true
 
 [package.metadata.docs.rs]

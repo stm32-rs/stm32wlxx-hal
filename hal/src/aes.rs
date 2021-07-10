@@ -48,7 +48,7 @@ impl Key128 {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_aes::Key128;
+    /// use stm32wl_hal::aes::Key128;
     ///
     /// const KEY: Key128 = Key128::from_u128(0xAAAAAAAABBBBBBBBCCCCCCCCDDDDDDDD);
     /// assert_eq!(
@@ -74,7 +74,7 @@ impl Key128 {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_aes::Key128;
+    /// use stm32wl_hal::aes::Key128;
     ///
     /// const KEY: Key128 = Key128::from_u32([0xAAAAAAAA, 0xBBBBBBBB, 0xCCCCCCCC, 0xDDDDDDDD]);
     /// assert_eq!(KEY, Key128::from_u128(0xAAAAAAAABBBBBBBBCCCCCCCCDDDDDDDD));
@@ -205,7 +205,7 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal_aes::{pac, Aes};
+    /// use stm32wl_hal::{aes::Aes, pac};
     ///
     /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut rcc = dp.RCC;
@@ -229,7 +229,7 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal_aes::{pac, Aes};
+    /// use stm32wl_hal::{aes::Aes, pac};
     ///
     /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut rcc = dp.RCC;
@@ -264,7 +264,7 @@ impl Aes {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal_aes::Aes;
+    /// use stm32wl_hal::aes::Aes;
     ///
     /// // ... setup happens here
     ///
@@ -311,15 +311,15 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal_aes::{Key, Key128};
-    /// # let mut aes = unsafe { stm32wl_hal_aes::Aes::steal() };
+    /// use stm32wl_hal::aes::{Key, Key128};
+    /// # let mut aes = unsafe { stm32wl_hal::aes::Aes::steal() };
     ///
     /// // this is a bad key, I am just using values from the NIST testsuite
     /// const KEY: Key = Key::K128(Key128::from_u128(0));
     ///
     /// let plaintext: [u32; 4] = [0xf34481ec, 0x3cc627ba, 0xcd5dc3fb, 0x08f273e6];
     /// let chiphertext: [u32; 4] = aes.encrypt_ecb(&KEY, &plaintext)?;
-    /// # Ok::<(), stm32wl_hal_aes::Error>(())
+    /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
     pub fn encrypt_ecb(&mut self, key: &Key, plaintext: &[u32; 4]) -> Result<[u32; 4], Error> {
         const ALGO: Algorithm = Algorithm::Ecb;
@@ -367,15 +367,15 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal_aes::{Key, Key128};
-    /// # let mut aes = unsafe { stm32wl_hal_aes::Aes::steal() };
+    /// use stm32wl_hal::aes::{Key, Key128};
+    /// # let mut aes = unsafe { stm32wl_hal::aes::Aes::steal() };
     ///
     /// // this is a bad key, I am just using values from the NIST testsuite
     /// const KEY: Key = Key::K128(Key128::from_u128(0));
     ///
     /// let ciphertext: [u32; 4] = [0x0336763e, 0x966d9259, 0x5a567cc9, 0xce537f5e];
     /// let plaintext: [u32; 4] = aes.decrypt_ecb(&KEY, &ciphertext)?;
-    /// # Ok::<(), stm32wl_hal_aes::Error>(())
+    /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
     pub fn decrypt_ecb(&mut self, key: &Key, ciphertext: &[u32; 4]) -> Result<[u32; 4], Error> {
         const ALGO: Algorithm = Algorithm::Ecb;

@@ -15,7 +15,8 @@ repository = "https://github.com/newAM/stm32wl-hal"
 stm32wl5x_cm0p = ["stm32wl/stm32wl5x_cm0p"]
 stm32wl5x_cm4 = ["stm32wl/stm32wl5x_cm4"]
 stm32wle5 = ["stm32wl/stm32wle5"]
-rt = ["stm32wl/rt"]
+rt = ["stm32wl/rt", "cortex-m-rt"]
+aio = ["futures-util", "rt"]
 
 [dependencies]
 cfg-if = "1"
@@ -30,3 +31,17 @@ default-features = false
 [dependencies.stm32wl]
 git = "https://github.com/newAM/stm32wl-rs.git"
 rev = "f6e2994dc1e60bd000a6933bbb6cf87be1ae90fd"
+
+[dependencies.cortex-m-rt]
+version = "0.6"
+optional = true
+
+[dependencies.futures-util]
+version = "0.3"
+default-features = false
+optional = true
+
+[package.metadata.docs.rs]
+all-features = false
+features = ["aio", "stm32wl5x_cm4"]
+rustdoc-args = ["--cfg", "docsrs"]

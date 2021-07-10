@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "aes-testsuite",
+    "ate",
     "examples",
     "hal",
     "nucleo-wl55jc-bsp",
@@ -12,3 +13,9 @@ members = [
     "subghz-testsuite-tx",
 ]
 default-members = ["hal"]
+
+[profile.dev]
+opt-level = 2
+
+[profile.release]
+debug = 2

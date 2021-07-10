@@ -193,7 +193,10 @@ pub enum Error {
 }
 
 impl Error {
-    #[cfg_attr(not(feature = "aio"), allow(dead_code))]
+    #[cfg_attr(
+        not(all(feature = "aio", not(feature = "stm32wl5x_cm0p"))),
+        allow(dead_code)
+    )]
     pub(crate) fn from_sr(sr: u32) -> Result<(), Self> {
         const RDERR: u32 = 1 << 1;
         const WRERR: u32 = 1 << 2;
@@ -450,8 +453,11 @@ impl Aes {
     /// let chiphertext: [u32; 4] = aes.aio_encrypt_ecb(&KEY, &plaintext).await?;
     /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
-    #[cfg(feature = "aio")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "aio")))]
+    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p"))))
+    )]
     pub async fn aio_encrypt_ecb(
         &mut self,
         key: &Key,
@@ -510,8 +516,11 @@ impl Aes {
     /// let plaintext: [u32; 4] = aes.aio_decrypt_ecb(&KEY, &ciphertext).await?;
     /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
-    #[cfg(feature = "aio")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "aio")))]
+    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p"))))
+    )]
     pub async fn aio_decrypt_ecb(
         &mut self,
         key: &Key,
@@ -555,8 +564,7 @@ impl Aes {
     }
 }
 
-#[cfg(feature = "aio")]
-#[cfg_attr(docsrs, doc(cfg(feature = "aio")))]
+#[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
 mod aio {
 
     use core::{

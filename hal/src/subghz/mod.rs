@@ -77,8 +77,8 @@ pub struct SubGhz {
 impl SubGhz {
     /// Create a new sub-GHz radio driver from a peripheral.
     ///
-    /// This will initialize the SPI bus, and bring the radio out of reset,
-    /// but it will **not** enable the clocks on the radio.
+    /// This will reset the radio and the SPI bus, and enable the peripheral
+    /// clock.
     ///
     /// # Example
     ///
@@ -87,29 +87,28 @@ impl SubGhz {
     ///
     /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut rcc = dp.RCC;
-    /// let pwr = dp.PWR;
-    ///
-    /// // ... setup the system clocks
-    ///
-    /// rcc.apb3enr.modify(|_, w| w.subghzspien().set_bit());
-    /// rcc.csr.modify(|_, w| w.rfrst().clear_bit());
-    /// pwr.subghzspicr.write(|w| w.nss().clear_bit());
-    /// pwr.subghzspicr.write(|w| w.nss().set_bit());
     ///
     /// let sg = SubGhz::new(dp.SPI3, &mut rcc);
     /// ```
     pub fn new(spi: pac::SPI3, rcc: &mut pac::RCC) -> SubGhz {
-        rcc.apb3rstr.write(|w| w.subghzspirst().set_bit());
-        rcc.apb3rstr.write(|w| w.subghzspirst().clear_bit());
+        Self::enable_spi_clock(rcc);
+        rcc.csr.modify(|_, w| w.rfrst().set_bit());
+        rcc.csr.modify(|_, w| w.rfrst().clear_bit());
+
+        let pwr: pac::PWR = unsafe { pac::Peripherals::steal() }.PWR;
+
+        pwr.subghzspicr.write(|w| w.nss().clear_bit());
+        pwr.subghzspicr.write(|w| w.nss().set_bit());
+        pwr.scr.write(|w| w.cwrfbusyf().set_bit());
 
         #[rustfmt::skip]
-        spi.cr2.write(|w| unsafe {
+        spi.cr2.write(|w|
             w
                 // 8-bit data size
-                .ds().bits(0b111)
+                .ds().eight_bit()
                 // RXNE generated on 8-bits
                 .frxth().set_bit()
-        });
+        );
 
         #[rustfmt::skip]
         spi.cr1.write(|w|
@@ -165,6 +164,17 @@ impl SubGhz {
         SubGhz { spi: dp.SPI3 }
     }
 
+    /// Disable the SPI3 (SubGHz SPI) clock.
+    pub fn disable_spi_clock(rcc: &mut pac::RCC) {
+        rcc.apb3enr.modify(|_, w| w.subghzspien().disabled());
+    }
+
+    /// Enable the SPI3 (SubGHz SPI) clock.
+    pub fn enable_spi_clock(rcc: &mut pac::RCC) {
+        rcc.apb3enr.modify(|_, w| w.subghzspien().enabled());
+        rcc.apb3enr.read(); // delay after an RCC peripheral clock enabling
+    }
+
     /// Returns `true` if RFBUSYS is high.
     ///
     /// This indicates the radio is busy.
@@ -176,7 +186,8 @@ impl SubGhz {
     }
 
     fn poll_not_busy(&self) {
-        let mut count: u32 = 100_000;
+        // TODO: this is a terrible timeout
+        let mut count: u32 = 1_000_000;
         while self.rfbusys() {
             count -= 1;
             if count == 0 {
@@ -219,6 +230,7 @@ impl SubGhz {
     }
 
     #[allow(clippy::unnecessary_wraps)]
+    #[inline(always)]
     fn write(&self, data: &[u8]) -> Result<(), SubGhzError> {
         let dp = unsafe { pac::Peripherals::steal() };
         let pwr = &dp.PWR;
@@ -232,6 +244,7 @@ impl SubGhz {
         Ok(())
     }
 
+    #[inline(always)]
     fn write_byte_raw(&self, byte: u8) {
         while self.spi.sr.read().txe().bit_is_clear() {}
         unsafe { write_volatile(&self.spi.dr as *const _ as *mut u8, byte) };
@@ -239,6 +252,7 @@ impl SubGhz {
         unsafe { read_volatile(&self.spi.dr as *const _ as *const u8) };
     }
 
+    #[inline(always)]
     fn read_byte_raw(&self) -> u8 {
         while self.spi.sr.read().txe().bit_is_clear() {}
         unsafe { write_volatile(&self.spi.dr as *const _ as *mut u8, 0xFF) };
@@ -264,6 +278,7 @@ impl SubGhz {
 // 5.8.2
 /// Buffer access commands.
 impl SubGhz {
+    #[inline(always)]
     pub fn write_buffer(&mut self, offset: u8, data: &[u8]) -> Result<(), SubGhzError> {
         let dp = unsafe { pac::Peripherals::steal() };
         let pwr = &dp.PWR;
@@ -279,6 +294,7 @@ impl SubGhz {
         Ok(())
     }
 
+    #[inline(always)]
     pub fn read_buffer(&mut self, offset: u8, buf: &mut [u8]) -> Result<Status, SubGhzError> {
         let dp = unsafe { pac::Peripherals::steal() };
         let pwr = &dp.PWR;

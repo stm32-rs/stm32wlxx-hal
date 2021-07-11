@@ -6,3 +6,26 @@ rustflags = [
   "-C", "link-arg=-Tlink.x",
   "-C", "link-arg=-Tdefmt.x",
 ]
+
+[alias]
+# e.g. cargo run-ex gpio-blink
+run-ex = "run -p examples --target thumbv7em-none-eabi --example"
+
+# e.g. cargo test-aes
+test-aes = "test -p aes-testsuite --target thumbv7em-none-eabi"
+test-pka = "test -p pka-testsuite --target thumbv7em-none-eabi"
+test-rng = "test -p rng-testsuite --target thumbv7em-none-eabi"
+
+# e.g. cargo +nightly test-aes-aio
+test-aes-aio = "test -p aes-testsuite --target thumbv7em-none-eabi --features aio --release"
+
+# e.g.
+# cargo test-subghz-rx -- --probe 001D00145553500A20393256
+# cargo test-subghz-tx -- --probe 002900205553500A20393256
+test-subghz-rx = "test -p subghz-testsuite-rx --target thumbv7em-none-eabi"
+test-subghz-tx = "test -p subghz-testsuite-tx --target thumbv7em-none-eabi"
+
+# e.g. cargo unit
+unit = "test --features stm32wl5x_cm4"
+# e.g. cargo +nightly unit-aio
+unit-aio = "test --features stm32wl5x_cm4,aio"

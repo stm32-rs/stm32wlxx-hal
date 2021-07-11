@@ -228,11 +228,6 @@ impl Aes {
     /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut rcc = dp.RCC;
     ///
-    /// // ... setup the system clocks
-    ///
-    /// rcc.ahb3enr.modify(|_, w| w.aesen().set_bit());
-    /// rcc.ahb3enr.read(); // Delay after an RCC peripheral clock enabling
-    ///
     /// let mut aes = Aes::new(dp.AES, &mut rcc);
     /// ```
     pub fn new(aes: pac::AES, rcc: &mut pac::RCC) -> Aes {
@@ -252,11 +247,6 @@ impl Aes {
     /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut rcc = dp.RCC;
     /// let aes = dp.AES;
-    ///
-    /// // ... setup the system clocks
-    ///
-    /// rcc.ahb3enr.modify(|_, w| w.aesen().set_bit());
-    /// rcc.ahb3enr.read(); // Delay after an RCC peripheral clock enabling
     ///
     /// let mut aes_driver = Aes::new(aes, &mut rcc);
     /// // ... use AES
@@ -443,6 +433,7 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
+    /// # async fn doctest() -> Result<(), stm32wl_hal::aes::Error> {
     /// use stm32wl_hal::aes::{Key, Key128};
     /// # let mut aes = unsafe { stm32wl_hal::aes::Aes::steal() };
     ///
@@ -451,7 +442,7 @@ impl Aes {
     ///
     /// let plaintext: [u32; 4] = [0xf34481ec, 0x3cc627ba, 0xcd5dc3fb, 0x08f273e6];
     /// let chiphertext: [u32; 4] = aes.aio_encrypt_ecb(&KEY, &plaintext).await?;
-    /// # Ok::<(), stm32wl_hal::aes::Error>(())
+    /// # Ok(()) }
     /// ```
     #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
     #[cfg_attr(
@@ -506,6 +497,7 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
+    /// # async fn doctest() -> Result<(), stm32wl_hal::aes::Error> {
     /// use stm32wl_hal::aes::{Key, Key128};
     /// # let mut aes = unsafe { stm32wl_hal::aes::Aes::steal() };
     ///
@@ -514,7 +506,7 @@ impl Aes {
     ///
     /// let ciphertext: [u32; 4] = [0x0336763e, 0x966d9259, 0x5a567cc9, 0xce537f5e];
     /// let plaintext: [u32; 4] = aes.aio_decrypt_ecb(&KEY, &ciphertext).await?;
-    /// # Ok::<(), stm32wl_hal::aes::Error>(())
+    /// # Ok(()) }
     /// ```
     #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
     #[cfg_attr(

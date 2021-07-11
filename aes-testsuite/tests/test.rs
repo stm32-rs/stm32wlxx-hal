@@ -66,8 +66,6 @@ fn oom(_layout: core::alloc::Layout) -> ! {
 
     let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
     let mut rcc: pac::RCC = dp.RCC;
-    rcc.ahb2enr.modify(|_, w| w.gpioben().set_bit());
-    rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
 
     use stm32wl_hal::gpio;
     let gpiob: gpio::PortB = gpio::PortB::split(dp.GPIOB, &mut rcc);
@@ -75,9 +73,9 @@ fn oom(_layout: core::alloc::Layout) -> ! {
     let mut led2 = gpio::Output::default(gpiob.pb15);
     let mut led3 = gpio::Output::default(gpiob.pb11);
 
-    led1.set_output_level(gpio::Level::High);
-    led2.set_output_level(gpio::Level::High);
-    led3.set_output_level(gpio::Level::High);
+    led1.set_level_high();
+    led2.set_level_high();
+    led3.set_level_high();
 
     use core::sync::atomic::{compiler_fence, Ordering::SeqCst};
     loop {

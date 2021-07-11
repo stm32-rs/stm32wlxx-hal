@@ -148,6 +148,23 @@ jobs:
           toolchain: stable
       - run: cargo test --features ${{ matrix.feature }}
 
+  test_aio:
+    name: Unit Tests async
+    runs-on: ubuntu-latest
+    env: {"RUSTFLAGS": "-D warnings"}
+    strategy:
+      matrix:
+        feature:
+          - "stm32wl5x_cm0p"
+          - "stm32wl5x_cm4"
+          - "stm32wle5"
+    steps:
+      - uses: actions/checkout@v2.3.4
+      - uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: nightly
+      - run: cargo test --features ${{ matrix.feature }},aio
+
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
@@ -218,6 +235,7 @@ jobs:
       - format
       - rustdoc
       - test
+      - test_aio
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.4

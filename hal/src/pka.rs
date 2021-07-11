@@ -169,7 +169,7 @@ impl Pka {
 
     /// Create a new PKA driver from a PKA peripheral.
     ///
-    /// This will reset the PKA, but it will not enable clocks for the PKA.
+    /// This will enable clocks and reset the PKA peripheral.
     ///
     /// # Example
     ///
@@ -179,14 +179,10 @@ impl Pka {
     /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut rcc = dp.RCC;
     ///
-    /// // ... setup the system clocks
-    ///
-    /// rcc.ahb3enr.modify(|_, w| w.pkaen().set_bit());
-    /// rcc.ahb3enr.read(); // Delay after an RCC peripheral clock enabling
-    ///
     /// let mut pka = Pka::new(dp.PKA, &mut rcc);
     /// ```
     pub fn new(pka: pac::PKA, rcc: &mut pac::RCC) -> Pka {
+        Self::enable_clock(rcc);
         rcc.ahb3rstr.modify(|_, w| w.pkarst().set_bit());
         rcc.ahb3rstr.modify(|_, w| w.pkarst().clear_bit());
 
@@ -217,11 +213,6 @@ impl Pka {
     /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut rcc = dp.RCC;
     /// let pka = dp.PKA;
-    ///
-    /// // ... setup the system clocks
-    ///
-    /// rcc.ahb3enr.modify(|_, w| w.pkaen().set_bit());
-    /// rcc.ahb3enr.read(); // Delay after an RCC peripheral clock enabling
     ///
     /// let mut pka_driver = Pka::new(pka, &mut rcc);
     /// // ... use PKA
@@ -257,6 +248,17 @@ impl Pka {
     pub unsafe fn steal() -> Pka {
         let dp: pac::Peripherals = pac::Peripherals::steal();
         Pka { pka: dp.PKA }
+    }
+
+    /// Disable the PKA clock.
+    pub fn disable_clock(rcc: &mut pac::RCC) {
+        rcc.ahb3enr.modify(|_, w| w.pkaen().disabled());
+    }
+
+    /// Enable the PKA clock.
+    pub fn enable_clock(rcc: &mut pac::RCC) {
+        rcc.ahb3enr.modify(|_, w| w.pkaen().enabled());
+        rcc.ahb3enr.read(); // selay after an RCC peripheral clock enabling
     }
 
     fn clear_all_faults(&mut self) {

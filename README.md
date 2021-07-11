@@ -92,7 +92,7 @@ All examples run on the NUCLEO-WL55JC2.
 Examples are located in the `examples` crate.
 
 ```bash
-cargo run --example gpio-button -p examples --target thumbv7em-none-eabi
+cargo run-ex gpio-blink
 ```
 
 ## async

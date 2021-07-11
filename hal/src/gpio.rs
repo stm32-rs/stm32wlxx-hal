@@ -407,7 +407,7 @@ pub struct PortA {
 impl PortA {
     /// Reset GPIO port A and split the port into individual pins.
     ///
-    /// This will not enable clocks for the GPIO port.
+    /// This will enable clocks and reset the GPIO port.
     ///
     /// # Example
     ///
@@ -420,15 +420,14 @@ impl PortA {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
+
     ///
-    /// rcc.ahb2enr.modify(|_, w| w.gpioaen().set_bit());
-    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
-    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut rcc);
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
     /// let pa0: pins::A0 = gpioa.pa0;
     /// ```
     #[allow(unused_variables)]
     pub fn split(gpioa: pac::GPIOA, rcc: &mut pac::RCC) -> Self {
+        Self::enable_clock(rcc);
         rcc.ahb2rstr.modify(|_, w| w.gpioarst().set_bit());
         rcc.ahb2rstr.modify(|_, w| w.gpioarst().clear_bit());
         const RET: PortA = PortA {
@@ -451,6 +450,17 @@ impl PortA {
         };
 
         RET
+    }
+
+    /// Disable the GPIOA clock.
+    pub fn disable_clock(rcc: &mut pac::RCC) {
+        rcc.ahb2enr.modify(|_, w| w.gpioaen().disabled());
+    }
+
+    /// Enable the GPIOA clock.
+    pub fn enable_clock(rcc: &mut pac::RCC) {
+        rcc.ahb2enr.modify(|_, w| w.gpioaen().enabled());
+        rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
     }
 }
 
@@ -479,7 +489,7 @@ pub struct PortB {
 impl PortB {
     /// Reset GPIO port B and split the port into individual pins.
     ///
-    /// This will not enable clocks for the GPIO port.
+    /// This will enable clocks and reset the GPIO port.
     ///
     /// # Example
     ///
@@ -492,15 +502,14 @@ impl PortB {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
+
     ///
-    /// rcc.ahb2enr.modify(|_, w| w.gpioben().set_bit());
-    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
-    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut rcc);
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
     /// let pb0: pins::B0 = gpiob.pb0;
     /// ```
     #[allow(unused_variables)]
     pub fn split(gpiob: pac::GPIOB, rcc: &mut pac::RCC) -> Self {
+        Self::enable_clock(rcc);
         rcc.ahb2rstr.modify(|_, w| w.gpiobrst().set_bit());
         rcc.ahb2rstr.modify(|_, w| w.gpiobrst().clear_bit());
         const RET: PortB = PortB {
@@ -524,6 +533,17 @@ impl PortB {
 
         RET
     }
+
+    /// Disable the GPIOB clock.
+    pub fn disable_clock(rcc: &mut pac::RCC) {
+        rcc.ahb2enr.modify(|_, w| w.gpioben().disabled());
+    }
+
+    /// Enable the GPIOB clock.
+    pub fn enable_clock(rcc: &mut pac::RCC) {
+        rcc.ahb2enr.modify(|_, w| w.gpioben().enabled());
+        rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+    }
 }
 
 /// Port C GPIOs
@@ -545,7 +565,7 @@ pub struct PortC {
 impl PortC {
     /// Reset GPIO port C and split the port into individual pins.
     ///
-    /// This will not enable clocks for the GPIO port.
+    /// This will enable clocks and reset the GPIO port.
     ///
     /// # Example
     ///
@@ -558,15 +578,13 @@ impl PortC {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
     ///
-    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
-    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let pc0: pins::C0 = gpioc.pc0;
     /// ```
     #[allow(unused_variables)]
     pub fn split(gpioc: pac::GPIOC, rcc: &mut pac::RCC) -> Self {
+        Self::enable_clock(rcc);
         rcc.ahb2rstr.modify(|_, w| w.gpiocrst().set_bit());
         rcc.ahb2rstr.modify(|_, w| w.gpiocrst().clear_bit());
 
@@ -584,6 +602,17 @@ impl PortC {
         };
 
         RET
+    }
+
+    /// Disable the GPIOC clock.
+    pub fn disable_clock(rcc: &mut pac::RCC) {
+        rcc.ahb2enr.modify(|_, w| w.gpiocen().disabled());
+    }
+
+    /// Enable the GPIOC clock.
+    pub fn enable_clock(rcc: &mut pac::RCC) {
+        rcc.ahb2enr.modify(|_, w| w.gpiocen().enabled());
+        rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
     }
 }
 
@@ -679,24 +708,21 @@ where
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{pins, Level, Output, OutputArgs, OutputType, PortC, Pull, Speed},
+    ///     gpio::{pins, Output, PortC, self},
     ///     pac,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
+
     ///
-    /// const OUTPUT_ARGS: OutputArgs = OutputArgs {
-    ///     level: Level::Low,
-    ///     speed: Speed::High,
-    ///     ot: OutputType::PushPull,
-    ///     pull: Pull::None,
+    /// const OUTPUT_ARGS: gpio::OutputArgs = gpio::OutputArgs {
+    ///     level: gpio::Level::Low,
+    ///     speed: gpio::Speed::High,
+    ///     ot: gpio::OutputType::PushPull,
+    ///     pull: gpio::Pull::None,
     /// };
     ///
-    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
-    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
-    ///
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut pc3: Output<pins::C3> = Output::new(gpioc.pc3, &OUTPUT_ARGS);
     /// let mut pc4: Output<pins::C4> = Output::new(gpioc.pc4, &OUTPUT_ARGS);
     /// let mut pc5: Output<pins::C5> = Output::new(gpioc.pc5, &OUTPUT_ARGS);
@@ -729,11 +755,8 @@ where
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
     ///
-    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
-    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut pc0: Output<pins::C0> = Output::default(gpioc.pc0);
     /// ```
     pub fn default(pin: P) -> Self {
@@ -755,11 +778,8 @@ where
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
     ///
-    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
-    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let pc0_output: Output<pins::C0> = Output::default(gpioc.pc0);
     /// let pc0: pins::C0 = pc0_output.free();
     /// ```
@@ -787,17 +807,64 @@ where
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
     ///
-    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
-    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut pc0: Output<pins::C0> = Output::default(gpioc.pc0);
-    /// pc0.set_output_level(Level::High);
-    /// pc0.set_output_level(Level::High);
+    /// pc0.set_level(Level::High);
+    /// pc0.set_level(Level::Low);
     /// ```
-    pub fn set_output_level(&mut self, level: Level) {
+    pub fn set_level(&mut self, level: Level) {
         self.pin.set_output_level(level)
+    }
+
+    /// Set the GPIO output level high.
+    ///
+    /// This is the same as the `OutputPin` trait from the embedded hal, but
+    /// without the `Infallible` result types.
+    ///
+    /// # Example
+    ///
+    /// Set GPIO C0 high.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, Output, PortC},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+    /// let mut pc0: Output<pins::C0> = Output::default(gpioc.pc0);
+    /// pc0.set_level_high();
+    /// ```
+    pub fn set_level_high(&mut self) {
+        self.set_level(Level::High)
+    }
+
+    /// Set the GPIO output level high.
+    ///
+    /// This is the same as the `OutputPin` trait from the embedded hal, but
+    /// without the `Infallible` result types.
+    ///
+    /// # Example
+    ///
+    /// Set GPIO C0 low.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, Output, PortC},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+    /// let mut pc0: Output<pins::C0> = Output::default(gpioc.pc0);
+    /// pc0.set_level_low();
+    /// ```
+    pub fn set_level_low(&mut self) {
+        self.set_level(Level::Low)
     }
 
     /// Get the current GPIO output level.
@@ -813,15 +880,12 @@ where
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
     ///
-    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
-    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut pc0: Output<pins::C0> = Output::default(gpioc.pc0);
-    /// pc0.set_output_level(pc0.output_level().toggle());
+    /// pc0.set_level(pc0.level().toggle());
     /// ```
-    pub fn output_level(&self) -> Level {
+    pub fn level(&self) -> Level {
         self.pin.output_level()
     }
 }
@@ -867,11 +931,8 @@ where
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
     ///
-    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
-    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut pc6: Input<pins::C6> = Input::new(gpioc.pc6, Pull::Up);
     /// ```
     pub fn new(mut pin: P, pull: Pull) -> Self {
@@ -896,11 +957,8 @@ where
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
     ///
-    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
-    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut pc0: Input<pins::C0> = Input::default(gpioc.pc0);
     /// ```
     pub fn default(pin: P) -> Self {
@@ -922,11 +980,8 @@ where
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
     ///
-    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
-    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let pc0_input: Input<pins::C0> = Input::default(gpioc.pc0);
     /// let pc0: pins::C0 = pc0_input.free();
     /// ```
@@ -952,11 +1007,8 @@ where
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
     ///
-    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
-    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut pc6: Input<pins::C6> = Input::new(gpioc.pc6, Pull::Up);
     ///
     /// let button_3_is_pressed: bool = pc6.level() == Level::High;

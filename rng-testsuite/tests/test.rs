@@ -10,19 +10,18 @@ use stm32wl_hal::{
 
 #[defmt_test::tests]
 mod tests {
+    use stm32wl_hal::rng::ClkSrc;
+
     use super::*;
 
     #[init]
     fn init() -> Rng {
         let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
         let mut rcc = dp.RCC;
-        // clock RNG from MSI
-        rcc.ccipr.modify(|_, w| w.rngsel().msi());
-        rcc.ahb3enr.modify(|_, w| w.rngen().set_bit());
-        rcc.ahb3enr.read(); // Delay after an RCC peripheral clock enabling
 
         rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut rcc);
 
+        Rng::set_clock_source(&mut rcc, ClkSrc::Msi);
         Rng::new(dp.RNG, &mut rcc)
     }
 

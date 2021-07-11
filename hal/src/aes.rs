@@ -481,9 +481,7 @@ impl Aes {
         self.set_key(key);
         self.set_din(ciphertext);
 
-        use futures_util::StreamExt;
-
-        let ret: Result<[u32; 4], Error> = match aio::AesIrq::new().next().await.unwrap() {
+        let ret: Result<[u32; 4], Error> = match futures::future::poll_fn(aio::poll).await {
             Ok(_) => Ok(self.dout()),
             Err(e) => Err(e),
         };
@@ -545,9 +543,7 @@ impl Aes {
         self.set_key(key);
         self.set_din(ciphertext);
 
-        use futures_util::StreamExt;
-
-        let ret: Result<[u32; 4], Error> = match aio::AesIrq::new().next().await.unwrap() {
+        let ret: Result<[u32; 4], Error> = match futures::future::poll_fn(aio::poll).await {
             Ok(_) => Ok(self.dout()),
             Err(e) => Err(e),
         };
@@ -558,40 +554,23 @@ impl Aes {
 
 #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
 mod aio {
-
     use core::{
         sync::atomic::{AtomicU32, Ordering::SeqCst},
         task::Poll,
     };
-    use futures_util::{task::AtomicWaker, Stream};
+    use futures_util::task::AtomicWaker;
 
     static AES_WAKER: AtomicWaker = AtomicWaker::new();
     static AES_RESULT: AtomicU32 = AtomicU32::new(0);
 
-    pub struct AesIrq {
-        _priv: (),
-    }
-
-    impl AesIrq {
-        pub const fn new() -> Self {
-            AesIrq { _priv: () }
-        }
-    }
-
-    impl Stream for AesIrq {
-        type Item = Result<(), super::Error>;
-
-        fn poll_next(
-            self: core::pin::Pin<&mut Self>,
-            cx: &mut core::task::Context<'_>,
-        ) -> Poll<Option<Self::Item>> {
-            AES_WAKER.register(&cx.waker());
-            if AES_RESULT.load(SeqCst) == 0 {
-                Poll::Pending
-            } else {
+    pub fn poll(cx: &mut core::task::Context<'_>) -> Poll<Result<(), super::Error>> {
+        AES_WAKER.register(&cx.waker());
+        match AES_RESULT.load(SeqCst) {
+            0 => core::task::Poll::Pending,
+            _ => {
                 AES_WAKER.take();
                 let sr: u32 = AES_RESULT.swap(0, SeqCst);
-                Poll::Ready(Some(super::Error::from_sr(sr)))
+                Poll::Ready(super::Error::from_sr(sr))
             }
         }
     }

@@ -40,7 +40,7 @@ where
 {
     /// Create a new `Spi1` driver.
     ///
-    /// This will not enable clocks for `Spi1`.
+    /// This will enable clocks and reset the SPI1 peripheral.
     ///
     /// # Example
     ///
@@ -54,12 +54,6 @@ where
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut rcc = dp.RCC;
     ///
-    /// rcc.ahb2enr.modify(|_, w| w.gpioaen().set_bit());
-    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
-    ///
-    /// rcc.apb2enr.modify(|_, w| w.spi1en().set_bit());
-    /// rcc.apb2enr.read(); // delay after an RCC peripheral clock enabling
-    ///
     /// let pa: PortA = PortA::split(dp.GPIOA, &mut rcc);
     /// let spi: Spi1<pins::A7, pins::A6, pins::A5> =
     ///     Spi1::new(dp.SPI1, pa.pa7, pa.pa6, pa.pa5, MODE_0, &mut rcc);
@@ -72,6 +66,8 @@ where
         mode: Mode,
         rcc: &mut pac::RCC,
     ) -> Spi1<MOSI, MISO, SCK> {
+        Self::enable_clock(rcc);
+
         rcc.apb2rstr.modify(|_, w| w.spi1rst().set_bit());
         rcc.apb2rstr.modify(|_, w| w.spi1rst().clear_bit());
         mosi.set_spi1_mosi_af();
@@ -124,12 +120,6 @@ where
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut rcc = dp.RCC;
     ///
-    /// rcc.ahb2enr.modify(|_, w| w.gpioaen().set_bit());
-    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
-    ///
-    /// rcc.apb2enr.modify(|_, w| w.spi1en().set_bit());
-    /// rcc.apb2enr.read(); // delay after an RCC peripheral clock enabling
-    ///
     /// let pa: PortA = PortA::split(dp.GPIOA, &mut rcc);
     /// let spi: Spi1<pins::A7, pins::A6, pins::A5> =
     ///     Spi1::new(dp.SPI1, pa.pa7, pa.pa6, pa.pa5, MODE_0, &mut rcc);
@@ -140,6 +130,17 @@ where
     /// ```
     pub fn free(self) -> (pac::SPI1, MOSI, MISO, SCK) {
         (self.spi1, self.mosi, self.miso, self.sck)
+    }
+
+    /// Disable the SPI1 clock.
+    pub fn disable_clock(rcc: &mut pac::RCC) {
+        rcc.apb2enr.modify(|_, w| w.spi1en().disabled());
+    }
+
+    /// Enable the SPI1 clock.
+    pub fn enable_clock(rcc: &mut pac::RCC) {
+        rcc.apb2enr.modify(|_, w| w.spi1en().enabled());
+        rcc.apb2enr.read(); // delay after an RCC peripheral clock enabling
     }
 
     #[inline(always)]

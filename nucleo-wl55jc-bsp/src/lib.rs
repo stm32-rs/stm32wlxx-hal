@@ -26,12 +26,8 @@ impl RfSwitch {
     /// use nucleo_wl55jc_bsp as bsp;
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
     ///
-    /// rcc.ahb2enr.modify(|_, w| w.gpiocen().set_bit());
-    /// rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
-    ///
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let rfs = RfSwitch::new(gpioc.pc3, gpioc.pc4, gpioc.pc5);
     /// ```
     pub fn new(c3: pins::C3, c4: pins::C4, c5: pins::C5) -> RfSwitch {

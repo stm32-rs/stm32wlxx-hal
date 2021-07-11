@@ -228,11 +228,6 @@ impl Aes {
     /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut rcc = dp.RCC;
     ///
-    /// // ... setup the system clocks
-    ///
-    /// rcc.ahb3enr.modify(|_, w| w.aesen().set_bit());
-    /// rcc.ahb3enr.read(); // Delay after an RCC peripheral clock enabling
-    ///
     /// let mut aes = Aes::new(dp.AES, &mut rcc);
     /// ```
     pub fn new(aes: pac::AES, rcc: &mut pac::RCC) -> Aes {
@@ -252,11 +247,6 @@ impl Aes {
     /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut rcc = dp.RCC;
     /// let aes = dp.AES;
-    ///
-    /// // ... setup the system clocks
-    ///
-    /// rcc.ahb3enr.modify(|_, w| w.aesen().set_bit());
-    /// rcc.ahb3enr.read(); // Delay after an RCC peripheral clock enabling
     ///
     /// let mut aes_driver = Aes::new(aes, &mut rcc);
     /// // ... use AES

@@ -66,8 +66,6 @@ fn oom(_layout: core::alloc::Layout) -> ! {
 
     let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
     let mut rcc: pac::RCC = dp.RCC;
-    rcc.ahb2enr.modify(|_, w| w.gpioben().set_bit());
-    rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
 
     use stm32wl_hal::gpio;
     let gpiob: gpio::PortB = gpio::PortB::split(dp.GPIOB, &mut rcc);

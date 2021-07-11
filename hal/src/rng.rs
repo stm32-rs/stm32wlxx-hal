@@ -34,6 +34,19 @@ impl From<Error> for rand_core::Error {
     }
 }
 
+/// RNG clock source selection.
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub enum ClkSrc {
+    /// PLL "Q" clock (PLLQCLK) selected.
+    Pll = 0b00,
+    /// LSI clock selected.
+    Lsi = 0b01,
+    /// LSE clock selected.
+    Lse = 0b10,
+    /// MSI clock selected.
+    Msi = 0b11,
+}
+
 /// RNG driver.
 pub struct Rng {
     rng: pac::RNG,
@@ -43,25 +56,24 @@ pub struct Rng {
 impl Rng {
     /// Create a new `Rng` driver from a RNG peripheral.
     ///
-    /// This will reset the RNG, but it will not enable clocks for the RNG.
+    /// This will enable clocks and reset the RNG peripheral.
     ///
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{pac, rng::Rng};
+    /// use stm32wl_hal::{
+    ///     pac,
+    ///     rng::{ClkSrc, Rng},
+    /// };
     ///
     /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut rcc = dp.RCC;
     ///
-    /// // ... setup the system clocks
-    /// // ... take a look at RCC_CCIPR to select the RNG clock source
-    ///
-    /// rcc.ahb3enr.modify(|_, w| w.rngen().set_bit());
-    /// rcc.ahb3enr.read(); // Delay after an RCC peripheral clock enabling
-    ///
+    /// Rng::set_clock_source(ClkSrc::Msi);
     /// let mut rng = Rng::new(dp.RNG, &mut rcc);
     /// ```
     pub fn new(rng: pac::RNG, rcc: &mut pac::RCC) -> Rng {
+        Self::enable_clock(rcc);
         rcc.ahb3rstr.modify(|_, w| w.rngrst().set_bit());
         rcc.ahb3rstr.modify(|_, w| w.rngrst().clear_bit());
 
@@ -116,12 +128,6 @@ impl Rng {
     /// let mut rcc: pac::RCC = dp.RCC;
     /// let rng_dp: pac::RNG = dp.RNG;
     ///
-    /// // ... setup the system clocks
-    /// // ... take a look at RCC_CCIPR to select the RNG clock source
-    ///
-    /// rcc.ahb3enr.modify(|_, w| w.rngen().set_bit());
-    /// rcc.ahb3enr.read(); // Delay after an RCC peripheral clock enabling
-    ///
     /// let mut rng = Rng::new(rng_dp, &mut rcc);
     /// // ... use rng
     /// let rng_dp: pac::RNG = rng.free();
@@ -159,6 +165,27 @@ impl Rng {
         Rng {
             rng: dp.RNG,
             err_cnt: 0,
+        }
+    }
+
+    /// Disable the RNG clock.
+    pub fn disable_clock(rcc: &mut pac::RCC) {
+        rcc.ahb3enr.modify(|_, w| w.rngen().disabled());
+    }
+
+    /// Enable the RNG clock.
+    pub fn enable_clock(rcc: &mut pac::RCC) {
+        rcc.ahb3enr.modify(|_, w| w.rngen().enabled());
+        rcc.ahb3enr.read(); // delay after an RCC peripheral clock enabling
+    }
+
+    /// Set the RNG clock source.
+    pub fn set_clock_source(rcc: &mut pac::RCC, src: ClkSrc) {
+        match src {
+            ClkSrc::Pll => rcc.ccipr.modify(|_, w| w.rngsel().pllq()),
+            ClkSrc::Lsi => rcc.ccipr.modify(|_, w| w.rngsel().lsi()),
+            ClkSrc::Lse => rcc.ccipr.modify(|_, w| w.rngsel().lse()),
+            ClkSrc::Msi => rcc.ccipr.modify(|_, w| w.rngsel().msi()),
         }
     }
 

@@ -26,37 +26,13 @@ mod tests {
 
     #[init]
     fn init() -> SubGhz {
-        let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-        let spi3 = dp.SPI3;
-        let mut rcc = dp.RCC;
-        let pwr = dp.PWR;
+        let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 
-        rcc.apb3enr.modify(|_, w| w.subghzspien().set_bit());
-        rcc.apb3enr.read(); // Delay after an RCC peripheral clock enabling
-        rcc.csr.modify(|_, w| w.rfrst().set_bit());
-        rcc.csr.modify(|_, w| w.rfrst().clear_bit());
-        pwr.subghzspicr.write(|w| w.nss().clear_bit());
-        pwr.subghzspicr.write(|w| w.nss().set_bit());
-        pwr.cr3.modify(|_, w| w.ewrfbusy().set_bit());
-        pwr.scr.write(|w| w.cwrfbusyf().set_bit());
-
-        // GPIO setup for the RF switch on the NUCLEO-WL55JC2
-        #[rustfmt::skip]
-        rcc.ahb2enr.modify(|_, w|
-            w
-                .gpioaen().set_bit()
-                .gpioben().set_bit()
-                .gpiocen().set_bit()
-        );
-        rcc.ahb2enr.read(); // Delay after an RCC peripheral clock enabling
-
-        let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+        let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
         let mut rfs: RfSwitch = RfSwitch::new(gpioc.pc3, gpioc.pc4, gpioc.pc5);
         rfs.set_tx_lp();
 
-        // TODO: set clocks to 48MHz so the tests execute fater
-
-        SubGhz::new(spi3, &mut rcc)
+        SubGhz::new(dp.SPI3, &mut dp.RCC)
     }
 
     #[test]

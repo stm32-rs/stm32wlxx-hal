@@ -3,39 +3,23 @@
 #![no_std]
 #![no_main]
 
-use core::fmt::Write;
-use core::sync::atomic::{compiler_fence, Ordering::SeqCst};
+use panic_rtt_target as _;
 use rtt_target::rprintln;
 use stm32wl_hal::{
     gpio::{Level, Output, PortB},
     pac,
 };
 
-#[panic_handler]
-fn panic(info: &core::panic::PanicInfo) -> ! {
-    cortex_m::interrupt::disable();
-
-    if let Some(mut channel) = unsafe { rtt_target::UpChannel::conjure(0) } {
-        channel.set_mode(rtt_target::ChannelMode::BlockIfFull);
-
-        writeln!(channel, "{}", info).ok();
-    }
-
-    loop {
-        compiler_fence(SeqCst);
-    }
-}
-
 // Note: This is a bad delay function because it will not be consistent.
 fn wait_a_little() {
-    for _ in 0..2000 {
+    for _ in 0..6000 {
         cortex_m::asm::nop()
     }
 }
 
 #[cortex_m_rt::entry]
 fn main() -> ! {
-    let mut channels = rtt_target::rtt_init! {
+    let channels = rtt_target::rtt_init! {
         up: {
             0: {
                 size: 4096
@@ -44,17 +28,12 @@ fn main() -> ! {
             }
         }
     };
-
-    writeln!(&mut channels.up.0, "Hello from writeln!").ok();
-
     rtt_target::set_print_channel(channels.up.0);
     rprintln!("Hello from rprintln!");
 
-    let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    let mut rcc: pac::RCC = dp.RCC;
-    rcc.ahb2enr.modify(|_, w| w.gpioben().set_bit());
-    rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
-    let gpiob: PortB = PortB::split(dp.GPIOB, &mut rcc);
+    let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+
+    let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
     let mut led1 = Output::default(gpiob.pb9);
     let mut led2 = Output::default(gpiob.pb15);
     let mut led3 = Output::default(gpiob.pb11);

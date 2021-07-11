@@ -127,8 +127,6 @@ mod tests {
     fn init() -> Aes {
         let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
         let mut rcc = dp.RCC;
-        rcc.ahb3enr.modify(|_, w| w.aesen().set_bit());
-        rcc.ahb3enr.read(); // Delay after an RCC peripheral clock enabling
 
         rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut rcc);
 
@@ -139,7 +137,7 @@ mod tests {
             unsafe { ALLOCATOR.init(start, size) };
         }
 
-        unsafe { pac::NVIC::unmask(pac::Interrupt::AES) };
+        unsafe { Aes::unmask_irq() };
 
         Aes::new(dp.AES, &mut rcc)
     }

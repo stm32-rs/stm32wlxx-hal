@@ -218,19 +218,34 @@ pub struct Aes {
 impl Aes {
     /// Create a new AES driver from an AES peripheral.
     ///
-    /// This will reset the AES, but it will not enable clocks for the AES.
+    /// This will enable clocks and reset the AES peripheral.
     ///
     /// # Example
+    ///
+    /// Synchronous (normal) usage:
     ///
     /// ```no_run
     /// use stm32wl_hal::{aes::Aes, pac};
     ///
-    /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
-    /// let mut aes = Aes::new(dp.AES, &mut rcc);
+    /// let mut aes = Aes::new(dp.AES, &mut dp.RCC);
+    /// ```
+    ///
+    /// Asynchronous usage, requires the AES interrupt enabled in the NVIC:
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{aes::Aes, pac};
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let mut aes = Aes::new(dp.AES, &mut dp.RCC);
+    /// unsafe { Aes::unmask_irq() };
     /// ```
     pub fn new(aes: pac::AES, rcc: &mut pac::RCC) -> Aes {
+        rcc.ahb3enr.modify(|_, w| w.aesen().set_bit());
+        rcc.ahb3enr.read(); // delay after an RCC peripheral clock enabling
+
         rcc.ahb3rstr.modify(|_, w| w.aesrst().set_bit());
         rcc.ahb3rstr.modify(|_, w| w.aesrst().clear_bit());
 
@@ -283,6 +298,23 @@ impl Aes {
     pub unsafe fn steal() -> Aes {
         let dp: pac::Peripherals = pac::Peripherals::steal();
         Aes { aes: dp.AES }
+    }
+
+    /// Unmask the AES IRQ in the NVIC.
+    ///
+    /// # Safety
+    ///
+    /// This can break mask-based critical sections.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// unsafe { stm32wl_hal::aes::Aes::unmask_irq() };
+    /// ```
+    #[cfg(not(feature = "stm32wl5x_cm0p"))]
+    #[cfg_attr(docsrs, doc(cfg(not(feature = "stm32wl5x_cm0p"))))]
+    pub unsafe fn unmask_irq() {
+        pac::NVIC::unmask(pac::Interrupt::AES)
     }
 
     fn set_key(&mut self, key: &Key) {

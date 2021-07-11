@@ -420,9 +420,9 @@ impl PortA {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
+
     ///
-    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut rcc);
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
     /// let pa0: pins::A0 = gpioa.pa0;
     /// ```
     #[allow(unused_variables)]
@@ -502,9 +502,9 @@ impl PortB {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
+
     ///
-    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut rcc);
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
     /// let pb0: pins::B0 = gpiob.pb0;
     /// ```
     #[allow(unused_variables)]
@@ -578,9 +578,8 @@ impl PortC {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
     ///
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let pc0: pins::C0 = gpioc.pc0;
     /// ```
     #[allow(unused_variables)]
@@ -709,12 +708,12 @@ where
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{pins, Output, PortC},
+    ///     gpio::{pins, Output, PortC, self},
     ///     pac,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
+
     ///
     /// const OUTPUT_ARGS: gpio::OutputArgs = gpio::OutputArgs {
     ///     level: gpio::Level::Low,
@@ -723,7 +722,7 @@ where
     ///     pull: gpio::Pull::None,
     /// };
     ///
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut pc3: Output<pins::C3> = Output::new(gpioc.pc3, &OUTPUT_ARGS);
     /// let mut pc4: Output<pins::C4> = Output::new(gpioc.pc4, &OUTPUT_ARGS);
     /// let mut pc5: Output<pins::C5> = Output::new(gpioc.pc5, &OUTPUT_ARGS);
@@ -756,9 +755,8 @@ where
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
     ///
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut pc0: Output<pins::C0> = Output::default(gpioc.pc0);
     /// ```
     pub fn default(pin: P) -> Self {
@@ -780,9 +778,8 @@ where
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
     ///
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let pc0_output: Output<pins::C0> = Output::default(gpioc.pc0);
     /// let pc0: pins::C0 = pc0_output.free();
     /// ```
@@ -810,15 +807,64 @@ where
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
     ///
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut pc0: Output<pins::C0> = Output::default(gpioc.pc0);
-    /// pc0.set_output_level(Level::High);
-    /// pc0.set_output_level(Level::High);
+    /// pc0.set_level(Level::High);
+    /// pc0.set_level(Level::Low);
     /// ```
-    pub fn set_output_level(&mut self, level: Level) {
+    pub fn set_level(&mut self, level: Level) {
         self.pin.set_output_level(level)
+    }
+
+    /// Set the GPIO output level high.
+    ///
+    /// This is the same as the `OutputPin` trait from the embedded hal, but
+    /// without the `Infallible` result types.
+    ///
+    /// # Example
+    ///
+    /// Set GPIO C0 high.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, Output, PortC},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+    /// let mut pc0: Output<pins::C0> = Output::default(gpioc.pc0);
+    /// pc0.set_level_high();
+    /// ```
+    pub fn set_level_high(&mut self) {
+        self.set_level(Level::High)
+    }
+
+    /// Set the GPIO output level high.
+    ///
+    /// This is the same as the `OutputPin` trait from the embedded hal, but
+    /// without the `Infallible` result types.
+    ///
+    /// # Example
+    ///
+    /// Set GPIO C0 low.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, Output, PortC},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+    /// let mut pc0: Output<pins::C0> = Output::default(gpioc.pc0);
+    /// pc0.set_level_low();
+    /// ```
+    pub fn set_level_low(&mut self) {
+        self.set_level(Level::Low)
     }
 
     /// Get the current GPIO output level.
@@ -834,13 +880,12 @@ where
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
     ///
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut pc0: Output<pins::C0> = Output::default(gpioc.pc0);
-    /// pc0.set_output_level(pc0.output_level().toggle());
+    /// pc0.set_level(pc0.level().toggle());
     /// ```
-    pub fn output_level(&self) -> Level {
+    pub fn level(&self) -> Level {
         self.pin.output_level()
     }
 }
@@ -886,9 +931,8 @@ where
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
     ///
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut pc6: Input<pins::C6> = Input::new(gpioc.pc6, Pull::Up);
     /// ```
     pub fn new(mut pin: P, pull: Pull) -> Self {
@@ -913,9 +957,8 @@ where
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
     ///
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut pc0: Input<pins::C0> = Input::default(gpioc.pc0);
     /// ```
     pub fn default(pin: P) -> Self {
@@ -937,9 +980,8 @@ where
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
     ///
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let pc0_input: Input<pins::C0> = Input::default(gpioc.pc0);
     /// let pc0: pins::C0 = pc0_input.free();
     /// ```
@@ -965,9 +1007,8 @@ where
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
     ///
-    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut rcc);
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut pc6: Input<pins::C6> = Input::new(gpioc.pc6, Pull::Up);
     ///
     /// let button_3_is_pressed: bool = pc6.level() == Level::High;

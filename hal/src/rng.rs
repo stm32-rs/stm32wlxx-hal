@@ -66,11 +66,10 @@ impl Rng {
     ///     rng::{ClkSrc, Rng},
     /// };
     ///
-    /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
-    /// Rng::set_clock_source(ClkSrc::Msi);
-    /// let mut rng = Rng::new(dp.RNG, &mut rcc);
+    /// Rng::set_clock_source(&mut dp.RCC, ClkSrc::Msi);
+    /// let mut rng = Rng::new(dp.RNG, &mut dp.RCC);
     /// ```
     pub fn new(rng: pac::RNG, rcc: &mut pac::RCC) -> Rng {
         Self::enable_clock(rcc);

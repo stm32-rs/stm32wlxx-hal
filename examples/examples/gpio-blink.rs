@@ -42,11 +42,11 @@ fn main() -> ! {
 
     loop {
         for &level in &[Level::High, Level::Low] {
-            led1.set_output_level(level);
+            led1.set_level(level);
             wait_a_little();
-            led2.set_output_level(level);
+            led2.set_level(level);
             wait_a_little();
-            led3.set_output_level(level);
+            led3.set_level(level);
             wait_a_little();
         }
     }

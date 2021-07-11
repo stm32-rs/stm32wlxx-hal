@@ -46,22 +46,22 @@ impl RfSwitch {
 
     /// Set the RF switch to receive.
     pub fn set_rx(&mut self) {
-        self.fe_ctrl1.set_output_level(Level::High);
-        self.fe_ctrl2.set_output_level(Level::Low);
-        self.fe_ctrl3.set_output_level(Level::High);
+        self.fe_ctrl1.set_level(Level::High);
+        self.fe_ctrl2.set_level(Level::Low);
+        self.fe_ctrl3.set_level(Level::High);
     }
 
     /// Set the RF switch to low power transmit.
     pub fn set_tx_lp(&mut self) {
-        self.fe_ctrl1.set_output_level(Level::High);
-        self.fe_ctrl2.set_output_level(Level::High);
-        self.fe_ctrl3.set_output_level(Level::High);
+        self.fe_ctrl1.set_level(Level::High);
+        self.fe_ctrl2.set_level(Level::High);
+        self.fe_ctrl3.set_level(Level::High);
     }
 
     /// Set the RF switch to high power transmit.
     pub fn set_tx_hp(&mut self) {
-        self.fe_ctrl2.set_output_level(Level::High);
-        self.fe_ctrl1.set_output_level(Level::Low);
-        self.fe_ctrl3.set_output_level(Level::High);
+        self.fe_ctrl2.set_level(Level::High);
+        self.fe_ctrl1.set_level(Level::Low);
+        self.fe_ctrl3.set_level(Level::High);
     }
 }

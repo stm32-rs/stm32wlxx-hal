@@ -24,3 +24,8 @@ test-aes-aio = "test -p aes-testsuite --target thumbv7em-none-eabi --features ai
 # cargo test-subghz-tx -- --probe 002900205553500A20393256
 test-subghz-rx = "test -p subghz-testsuite-rx --target thumbv7em-none-eabi"
 test-subghz-tx = "test -p subghz-testsuite-tx --target thumbv7em-none-eabi"
+
+# e.g. cargo unit
+unit = "cargo test --features stm32wl5x_cm4"
+# e.g. cargo +nightly unit
+aio-unit = "cargo test --features stm32wl5x_cm4,aio"

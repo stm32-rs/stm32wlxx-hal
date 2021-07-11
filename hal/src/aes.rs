@@ -240,6 +240,7 @@ impl Aes {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let mut aes = Aes::new(dp.AES, &mut dp.RCC);
+    /// # #[cfg(not(feature = "stm32wl5x_cm0p"))]
     /// unsafe { Aes::unmask_irq() };
     /// ```
     pub fn new(aes: pac::AES, rcc: &mut pac::RCC) -> Aes {
@@ -309,6 +310,7 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
+    /// # #[cfg(not(feature = "stm32wl5x_cm0p"))]
     /// unsafe { stm32wl_hal::aes::Aes::unmask_irq() };
     /// ```
     #[cfg(not(feature = "stm32wl5x_cm0p"))]

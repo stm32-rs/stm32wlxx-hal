@@ -18,6 +18,7 @@ test-rng = "test -p rng-testsuite --target thumbv7em-none-eabi"
 
 # e.g. cargo +nightly test-aes-aio
 test-aes-aio = "test -p aes-testsuite --target thumbv7em-none-eabi --features aio --release"
+test-pka-aio = "test -p pka-testsuite --target thumbv7em-none-eabi --features aio --release"
 
 # e.g.
 # cargo test-subghz-rx -- --probe 001D00145553500A20393256

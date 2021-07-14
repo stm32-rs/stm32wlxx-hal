@@ -303,11 +303,11 @@ impl Pka {
     /// # Example
     ///
     /// ```no_run
-    /// // #[cfg(not(feature = "stm32wl5x_cm0p"))]
+    /// # #[cfg(not(feature = "stm32wl5x_cm0p"))]
     /// unsafe { stm32wl_hal::pka::Pka::unmask_irq() };
     /// ```
-    // #[cfg(not(feature = "stm32wl5x_cm0p"))]
-    // #[cfg_attr(docsrs, doc(cfg(not(feature = "stm32wl5x_cm0p"))))]
+    #[cfg(not(feature = "stm32wl5x_cm0p"))]
+    #[cfg_attr(docsrs, doc(cfg(not(feature = "stm32wl5x_cm0p"))))]
     pub unsafe fn unmask_irq() {
         pac::NVIC::unmask(pac::Interrupt::PKA)
     }

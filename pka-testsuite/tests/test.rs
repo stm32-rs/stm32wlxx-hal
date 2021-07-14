@@ -1,5 +1,6 @@
 #![no_std]
 #![no_main]
+#![cfg_attr(feature = "aio", feature(alloc_error_handler))]
 
 use defmt_rtt as _; // global logger
 use panic_probe as _;
@@ -8,6 +9,13 @@ use stm32wl_hal::{
     pka::{curve::NIST_P256, EcdsaPublicKey, EcdsaSignature, Pka},
     rcc,
 };
+
+#[cfg(feature = "aio")]
+use ate::alloc_cortex_m::CortexMHeap;
+
+#[global_allocator]
+#[cfg(feature = "aio")]
+static ALLOCATOR: CortexMHeap = CortexMHeap::empty();
 
 // Message hash
 const HASH: [u32; 8] = [
@@ -46,6 +54,57 @@ const PUB_KEY: EcdsaPublicKey<8> = EcdsaPublicKey {
     ],
 };
 
+#[cfg_attr(feature = "aio", alloc_error_handler)]
+#[cfg(feature = "aio")]
+fn oom(_layout: core::alloc::Layout) -> ! {
+    cortex_m::interrupt::disable();
+
+    let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
+    let mut rcc: pac::RCC = dp.RCC;
+
+    use stm32wl_hal::gpio;
+    let gpiob: gpio::PortB = gpio::PortB::split(dp.GPIOB, &mut rcc);
+    let mut led1 = gpio::Output::default(gpiob.pb9);
+    let mut led2 = gpio::Output::default(gpiob.pb15);
+    let mut led3 = gpio::Output::default(gpiob.pb11);
+
+    led1.set_level_high();
+    led2.set_level_high();
+    led3.set_level_high();
+
+    use core::sync::atomic::{compiler_fence, Ordering::SeqCst};
+    loop {
+        compiler_fence(SeqCst);
+    }
+}
+
+#[cfg(feature = "aio")]
+async fn aio_ecdsa_sign_inner() {
+    let mut pka: Pka = unsafe { Pka::steal() };
+    let mut output_signature: EcdsaSignature<8> = EcdsaSignature {
+        r_sign: [0; 8],
+        s_sign: [0; 8],
+    };
+    pka.aio_ecdsa_sign(
+        &NIST_P256,
+        &INTEGER,
+        &PRIVATE_KEY,
+        &HASH,
+        &mut output_signature,
+    )
+    .await
+    .unwrap();
+    assert_eq!(output_signature, SIGNATURE);
+}
+
+#[cfg(feature = "aio")]
+async fn aio_ecdsa_verify_inner() {
+    let mut pka: Pka = unsafe { Pka::steal() };
+    pka.aio_ecdsa_verify(&NIST_P256, &SIGNATURE, &PUB_KEY, &HASH)
+        .await
+        .unwrap();
+}
+
 #[defmt_test::tests]
 mod tests {
     use super::*;
@@ -56,6 +115,15 @@ mod tests {
         let mut rcc = dp.RCC;
 
         rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut rcc);
+
+        #[cfg(feature = "aio")]
+        {
+            let start: usize = cortex_m_rt::heap_start() as usize;
+            let size: usize = 2048; // in bytes
+            unsafe { ALLOCATOR.init(start, size) };
+        }
+
+        unsafe { Pka::unmask_irq() };
 
         Pka::new(dp.PKA, &mut rcc)
     }
@@ -81,5 +149,21 @@ mod tests {
     fn ecdsa_verify(pka: &mut Pka) {
         pka.ecdsa_verify(&NIST_P256, &SIGNATURE, &PUB_KEY, &HASH)
             .unwrap();
+    }
+
+    #[test]
+    #[cfg(feature = "aio")]
+    fn aio_ecdsa_sign(_pka: &mut Pka) {
+        let mut executor = ate::Executor::new();
+        executor.spawn(ate::Task::new(aio_ecdsa_sign_inner()));
+        executor.run();
+    }
+
+    #[test]
+    #[cfg(feature = "aio")]
+    fn aio_ecdsa_verify(_pka: &mut Pka) {
+        let mut executor = ate::Executor::new();
+        executor.spawn(ate::Task::new(aio_ecdsa_verify_inner()));
+        executor.run();
     }
 }

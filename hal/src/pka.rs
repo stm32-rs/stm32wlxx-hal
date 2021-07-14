@@ -20,6 +20,7 @@ enum Error {
 }
 
 impl Error {
+    #[cfg_attr(not(feature = "aio"), allow(dead_code))]
     pub const fn from_sr(raw: u32) -> Result<(), Error> {
         if raw & 1 << 19 != 0 {
             Err(Error::Ram)

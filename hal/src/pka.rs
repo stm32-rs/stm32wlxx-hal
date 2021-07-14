@@ -10,7 +10,7 @@ use core::{
 
 /// PKA errors.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum Error {
+enum Error {
     /// Address access is out of range (unmapped address).
     Address,
     /// An AHB access to the PKA RAM occurred while the PKA core was computing
@@ -641,7 +641,7 @@ pub struct EllipticCurve<const MODULUS_SIZE: usize, const PRIME_ORDER_SIZE: usiz
 }
 
 #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-pub mod aio {
+mod aio {
     use core::{
         sync::atomic::{AtomicU32, Ordering::SeqCst},
         task::Poll,
@@ -651,7 +651,7 @@ pub mod aio {
     static PKA_WAKER: AtomicWaker = AtomicWaker::new();
     static PKA_RESULT: AtomicU32 = AtomicU32::new(0);
 
-    pub fn poll(cx: &mut core::task::Context<'_>) -> Poll<Result<(), super::Error>> {
+    pub(super) fn poll(cx: &mut core::task::Context<'_>) -> Poll<Result<(), super::Error>> {
         PKA_WAKER.register(&cx.waker());
         match PKA_RESULT.load(SeqCst) {
             0 => core::task::Poll::Pending,

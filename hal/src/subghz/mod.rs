@@ -239,7 +239,7 @@ impl SubGhz {
     /// Disable debug of the SubGHz SPI bus over physical pins.
     ///
     /// This will return `None` if debug was not previously enabled with
-    /// [`enable_spi_debug`].
+    /// [`enable_spi_debug`](crate::subghz::SubGhz::enable_spi_debug).
     ///
     /// # Example
     ///

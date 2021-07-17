@@ -20,8 +20,6 @@ pub enum Error {
     ///
     /// Check that the RNG is configured correctly.
     Clock,
-    /// Timeout waiting for the data ready bit.
-    Timeout,
 }
 
 impl From<Error> for rand_core::Error {
@@ -29,7 +27,6 @@ impl From<Error> for rand_core::Error {
         match e {
             Error::UncorrectableNoise => NonZeroU32::new(1).unwrap().into(),
             Error::Clock => NonZeroU32::new(2).unwrap().into(),
-            Error::Timeout => NonZeroU32::new(3).unwrap().into(),
         }
     }
 }
@@ -196,12 +193,11 @@ impl Rng {
     }
 
     /// Reset the correctable noise error counter to zero.
-    pub fn rest_noise_error_stat(&mut self) {
+    pub fn reset_noise_error_stat(&mut self) {
         self.err_cnt = 0
     }
 
     fn wait_for_new_entropy(&mut self) -> Result<(), Error> {
-        let mut timeout: u32 = 0;
         loop {
             let sr = self.rng.sr.read();
             if sr.seis().bit_is_set() {
@@ -211,17 +207,28 @@ impl Rng {
             } else if sr.drdy().bit_is_set() {
                 return Ok(());
             }
-
-            // TODO: User selectable timeout duration (or not? this has a fixed duration)
-            // TODO: I dislike everything about this.
-            timeout = timeout.saturating_add(1);
-            if timeout > 100_000 {
-                return Err(Error::Timeout);
-            }
         }
     }
 
     /// Try to fill the destination buffer with random data.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     pac,
+    ///     rng::{ClkSrc, Rng},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// Rng::set_clock_source(&mut dp.RCC, ClkSrc::Msi);
+    /// let mut rng = Rng::new(dp.RNG, &mut dp.RCC);
+    ///
+    /// let mut nonce: [u32; 4] = [0; 4];
+    /// rng.try_fill_u32(&mut nonce)?;
+    /// # Ok::<(), stm32wl_hal::rng::Error>(())
+    /// ```
     pub fn try_fill_u32(&mut self, dest: &mut [u32]) -> Result<(), Error> {
         for chunk in dest.chunks_mut(4) {
             self.wait_for_new_entropy()?;
@@ -229,6 +236,40 @@ impl Rng {
                 *dw = self.rng.dr.read().bits();
             }
         }
+        Ok(())
+    }
+
+    /// Try to fill the destination buffer with random data.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     pac,
+    ///     rng::{ClkSrc, Rng},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// Rng::set_clock_source(&mut dp.RCC, ClkSrc::Msi);
+    /// let mut rng = Rng::new(dp.RNG, &mut dp.RCC);
+    ///
+    /// let mut nonce: [u8; 16] = [0; 16];
+    /// rng.try_fill_u8(&mut nonce)?;
+    /// # Ok::<(), stm32wl_hal::rng::Error>(())
+    /// ```
+    pub fn try_fill_u8(&mut self, dest: &mut [u8]) -> Result<(), Error> {
+        for chunk in dest.chunks_mut(16) {
+            let mut entropy: [u32; 4] = [0; 4];
+            self.try_fill_u32(&mut entropy)?;
+
+            chunk
+                .iter_mut()
+                // safety: random data has no requirements for safe transmute
+                .zip(unsafe { transmute::<[u32; 4], [u8; 16]>(entropy) }.iter())
+                .for_each(|(buf_u8, entropy_u8)| *buf_u8 = *entropy_u8);
+        }
+
         Ok(())
     }
 
@@ -261,38 +302,26 @@ impl Rng {
 impl rand_core::RngCore for Rng {
     /// Not recommended for use, panics upon errors.
     fn next_u32(&mut self) -> u32 {
-        let mut bytes: [u8; 4] = [0; 4];
-        self.try_fill_bytes(&mut bytes).unwrap();
-        u32::from_le_bytes(bytes)
+        let mut dws: [u32; 1] = [0; 1];
+        self.try_fill_u32(&mut dws).unwrap();
+        dws[0]
     }
 
     /// Not recommended for use, panics upon errors.
     fn next_u64(&mut self) -> u64 {
         let mut bytes: [u8; 8] = [0; 8];
-        self.try_fill_bytes(&mut bytes).unwrap();
+        self.try_fill_u8(&mut bytes).unwrap();
         u64::from_le_bytes(bytes)
     }
 
     /// Not recommended for use, panics upon errors.
     fn fill_bytes(&mut self, dest: &mut [u8]) {
-        self.try_fill_bytes(dest).unwrap()
+        self.try_fill_u8(dest).unwrap()
     }
 
+    /// Use this method if using the `RngCore` for `CryptoRng` traits.
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand_core::Error> {
-        for chunk in dest.chunks_mut(16) {
-            self.wait_for_new_entropy()?;
-
-            let mut block: [u32; 4] = [0; 4];
-            self.try_fill_u32(&mut block)?;
-            // safety: random data has no requirements for safe transmute.
-            let data: [u8; 16] = unsafe { transmute::<[u32; 4], [u8; 16]>(block) };
-
-            chunk
-                .iter_mut()
-                .zip(data.iter())
-                .for_each(|(buffer_byte, &data_byte)| *buffer_byte = data_byte);
-        }
-
+        self.try_fill_u8(dest)?;
         Ok(())
     }
 }

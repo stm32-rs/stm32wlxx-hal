@@ -1,4 +1,4 @@
-//! STM32WL HAL.
+//! STM32WL HAL
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
@@ -18,6 +18,7 @@ cfg_if::cfg_if! {
 }
 
 pub mod aes;
+pub mod dma;
 pub mod gpio;
 pub mod pka;
 pub mod rcc;

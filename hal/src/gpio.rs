@@ -468,7 +468,6 @@ impl PortA {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
     /// let pa0: pins::A0 = gpioa.pa0;
@@ -550,7 +549,6 @@ impl PortB {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
     /// let pb0: pins::B0 = gpiob.pb0;

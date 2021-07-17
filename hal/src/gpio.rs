@@ -190,6 +190,30 @@ pub(crate) mod sealed {
         /// Initialize the GPIO pin for use as SPI1 NSS.
         fn set_spi1_nss_af(&mut self);
     }
+
+    /// Indicate a GPIO pin has the debug SubGHz SPI MOSI alternate function.
+    pub trait SubGhzSpiMosi {
+        /// Initialize the GPIO pin for use as debug SubGHz MOSI.
+        fn set_subghz_spi_mosi_af(&mut self);
+    }
+
+    /// Indicate a GPIO pin has the debug SubGHz SPI MISO alternate function.
+    pub trait SubGhzSpiMiso {
+        /// Initialize the GPIO pin for use as debug SubGHz MISO.
+        fn set_subghz_spi_miso_af(&mut self);
+    }
+
+    /// Indicate a GPIO pin has the debug SubGHz SPI SCK alternate function.
+    pub trait SubGhzSpiSck {
+        /// Initialize the GPIO pin for use as debug SubGHz SCK.
+        fn set_subghz_spi_sck_af(&mut self);
+    }
+
+    /// Indicate a GPIO pin has the debug SubGHz SPI NSS alternate function.
+    pub trait SubGhzSpiNss {
+        /// Initialize the GPIO pin for use as debug SubGHz NSS.
+        fn set_subghz_spi_nss_af(&mut self);
+    }
 }
 
 /// GPIO pins
@@ -378,6 +402,30 @@ pub mod pins {
     impl super::sealed::Spi1Mosi for B5 {
         fn set_spi1_mosi_af(&mut self) {
             self.pin.set_alternate_function(5);
+        }
+    }
+
+    impl super::sealed::SubGhzSpiNss for A4 {
+        fn set_subghz_spi_nss_af(&mut self) {
+            self.pin.set_alternate_function(13);
+        }
+    }
+
+    impl super::sealed::SubGhzSpiSck for A5 {
+        fn set_subghz_spi_sck_af(&mut self) {
+            self.pin.set_alternate_function(13);
+        }
+    }
+
+    impl super::sealed::SubGhzSpiMiso for A6 {
+        fn set_subghz_spi_miso_af(&mut self) {
+            self.pin.set_alternate_function(13);
+        }
+    }
+
+    impl super::sealed::SubGhzSpiMosi for A7 {
+        fn set_subghz_spi_mosi_af(&mut self) {
+            self.pin.set_alternate_function(13);
         }
     }
 }

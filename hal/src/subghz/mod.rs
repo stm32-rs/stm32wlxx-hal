@@ -25,6 +25,10 @@ mod timeout;
 mod tx_params;
 mod value_error;
 
+use crate::gpio::{
+    pins,
+    sealed::{SubGhzSpiMiso, SubGhzSpiMosi, SubGhzSpiNss, SubGhzSpiSck},
+};
 use crate::pac;
 
 pub use cad_params::{CadParams, ExitMode, NbCadSymbol};
@@ -69,9 +73,28 @@ use num_rational::Ratio;
 /// Errors?  What errors!  TODO.
 pub type SubGhzError = Infallible;
 
+#[derive(Debug)]
+struct DebugPins {
+    a4: pins::A4,
+    a5: pins::A5,
+    a6: pins::A6,
+    a7: pins::A7,
+}
+
+impl DebugPins {
+    pub const fn new(a4: pins::A4, a5: pins::A5, a6: pins::A6, a7: pins::A7) -> DebugPins {
+        DebugPins { a4, a5, a6, a7 }
+    }
+
+    pub const fn free(self) -> (pins::A4, pins::A5, pins::A6, pins::A7) {
+        (self.a4, self.a5, self.a6, self.a7)
+    }
+}
+
 /// sub-GHz radio peripheral.
 pub struct SubGhz {
     spi: pac::SPI3,
+    debug_pins: Option<DebugPins>,
 }
 
 impl SubGhz {
@@ -134,7 +157,10 @@ impl SubGhz {
                 .spe().set_bit()
         );
 
-        SubGhz { spi }
+        SubGhz {
+            spi,
+            debug_pins: None,
+        }
     }
 
     /// Steal the SubGHz peripheral from whatever is currently using it.
@@ -161,7 +187,10 @@ impl SubGhz {
     /// [`new`]: SubGhz::new
     pub unsafe fn steal() -> SubGhz {
         let dp: pac::Peripherals = pac::Peripherals::steal();
-        SubGhz { spi: dp.SPI3 }
+        SubGhz {
+            spi: dp.SPI3,
+            debug_pins: None,
+        }
     }
 
     /// Disable the SPI3 (SubGHz SPI) clock.
@@ -173,6 +202,81 @@ impl SubGhz {
     pub fn enable_spi_clock(rcc: &mut pac::RCC) {
         rcc.apb3enr.modify(|_, w| w.subghzspien().enabled());
         rcc.apb3enr.read(); // delay after an RCC peripheral clock enabling
+    }
+
+    /// Enable debug of the SubGHz SPI bus over physical pins.
+    ///
+    /// * A4: NSS
+    /// * A5: SCK
+    /// * A6: MISO
+    /// * A7: MOSI
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{gpio::PortA, pac, subghz::SubGhz};
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let mut gpioa = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let mut sg = SubGhz::new(dp.SPI3, &mut dp.RCC);
+    /// sg.enable_spi_debug(gpioa.a4, gpioa.a5, gpioa.a6, gpioa.a7);
+    /// ```
+    pub fn enable_spi_debug(
+        &mut self,
+        mut a4: pins::A4,
+        mut a5: pins::A5,
+        mut a6: pins::A6,
+        mut a7: pins::A7,
+    ) {
+        a4.set_subghz_spi_nss_af();
+        a5.set_subghz_spi_sck_af();
+        a6.set_subghz_spi_miso_af();
+        a7.set_subghz_spi_mosi_af();
+        self.debug_pins = Some(DebugPins::new(a4, a5, a6, a7))
+    }
+
+    /// Disable debug of the SubGHz SPI bus over physical pins.
+    ///
+    /// This will return `None` if debug was not previously enabled with
+    /// [`enable_spi_debug`].
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{gpio::GpioA, pac, subghz::SubGhz};
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let mut gpioa = GpioA::split(dp.GPIOA, &mut dp.RCC);
+    /// let mut sg = SubGhz::new(dp.SPI3, &mut dp.RCC);
+    /// sg.enable_spi_debug(gpioa.a4, gpioa.a5, gpioa.a6, gpioa.a7);
+    ///
+    /// let (a4, a5, a6, a7) = sg.disable_spi_debug().unwrap();
+    /// ```
+    pub fn disable_spi_debug(&mut self) -> Option<(pins::A4, pins::A5, pins::A6, pins::A7)> {
+        self.debug_pins.take().and_then(|f| Some(f.free()))
+    }
+
+    /// Return `true` if debug of the SubGHz SPI bus over physical pins is
+    /// enabled.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{gpio::GpioA, pac, subghz::SubGhz};
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let mut gpioa = GpioA::split(dp.GPIOA, &mut dp.RCC);
+    /// let mut sg = SubGhz::new(dp.SPI3, &mut dp.RCC);
+    ///
+    /// assert!(!sg.spi_debug_enabled());
+    /// sg.enable_spi_debug(gpioa.a4, gpioa.a5, gpioa.a6, gpioa.a7);
+    /// assert!(sg.spi_debug_enabled());
+    /// ```
+    pub fn spi_debug_enabled(&self) -> bool {
+        self.debug_pins.is_some()
     }
 
     /// Returns `true` if RFBUSYS is high.

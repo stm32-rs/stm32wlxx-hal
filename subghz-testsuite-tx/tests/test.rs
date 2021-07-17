@@ -4,10 +4,11 @@
 use defmt_rtt as _; // global logger
 use panic_probe as _;
 
-use bsp::hal;
+use bsp::{hal, RfSwitch};
 use nucleo_wl55jc_bsp as bsp;
 
 use hal::{
+    gpio::{PortA, PortC},
     pac,
     subghz::{
         CalibrateImage, CmdStatus, Ocp, PacketType, RegMode, StandbyClk, Status, StatusMode,
@@ -17,7 +18,6 @@ use hal::{
 
 #[defmt_test::tests]
 mod tests {
-    use bsp::{hal::gpio::PortC, RfSwitch};
     use subghz_testsuite_assets::{
         DATA_BYTES, MOD_PARAMS, PACKET_PARAMS, PA_CONFIG, RF_FREQ, SYNC_WORD, TCXO_MODE, TX_PARAMS,
     };
@@ -28,11 +28,15 @@ mod tests {
     fn init() -> SubGhz {
         let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 
+        let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
         let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
         let mut rfs: RfSwitch = RfSwitch::new(gpioc.pc3, gpioc.pc4, gpioc.pc5);
         rfs.set_tx_lp();
 
-        SubGhz::new(dp.SPI3, &mut dp.RCC)
+        let mut sg = SubGhz::new(dp.SPI3, &mut dp.RCC);
+        sg.enable_spi_debug(gpioa.pa4, gpioa.pa5, gpioa.pa6, gpioa.pa7);
+
+        sg
     }
 
     #[test]

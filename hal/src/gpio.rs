@@ -167,51 +167,75 @@ pub(crate) mod sealed {
         fn set_alternate_function(&mut self, af: u8);
     }
 
-    /// Indicate a GPIO pin has the SPI1 MOSI alternate function.
+    /// Indicate a GPIO pin has the SPI1 MOSI alternate function
     pub trait Spi1Mosi {
-        /// Initialize the GPIO pin for use as SPI1 MOSI.
+        /// Initialize the GPIO pin for use as SPI1 MOSI
         fn set_spi1_mosi_af(&mut self);
     }
 
-    /// Indicate a GPIO pin has the SPI1 MISO alternate function.
+    /// Indicate a GPIO pin has the SPI1 MISO alternate function
     pub trait Spi1Miso {
-        /// Initialize the GPIO pin for use as SPI1 MISO.
+        /// Initialize the GPIO pin for use as SPI1 MISO
         fn set_spi1_miso_af(&mut self);
     }
 
-    /// Indicate a GPIO pin has the SPI1 SCK alternate function.
+    /// Indicate a GPIO pin has the SPI1 SCK alternate function
     pub trait Spi1Sck {
-        /// Initialize the GPIO pin for use as SPI1 SCK.
+        /// Initialize the GPIO pin for use as SPI1 SCK
         fn set_spi1_sck_af(&mut self);
     }
 
-    /// Indicate a GPIO pin has the SPI1 NSS alternate function.
+    /// Indicate a GPIO pin has the SPI1 NSS alternate function
     pub trait Spi1Nss {
-        /// Initialize the GPIO pin for use as SPI1 NSS.
+        /// Initialize the GPIO pin for use as SPI1 NSS
         fn set_spi1_nss_af(&mut self);
     }
 
-    /// Indicate a GPIO pin has the debug SubGHz SPI MOSI alternate function.
+    /// Indicate a GPIO pin has the SPI2 MOSI alternate function
+    pub trait Spi2Mosi {
+        /// Initialize the GPIO pin for use as SPI2 MOSI
+        fn set_spi2_mosi_af(&mut self);
+    }
+
+    /// Indicate a GPIO pin has the SPI2 MISO alternate function
+    pub trait Spi2Miso {
+        /// Initialize the GPIO pin for use as SPI12 MISO
+        fn set_spi2_miso_af(&mut self);
+    }
+
+    /// Indicate a GPIO pin has the SPI2 SCK alternate function
+    pub trait Spi2Sck {
+        /// Initialize the GPIO pin for use as SPI2 SCK
+        fn set_spi2_sck_af(&mut self);
+    }
+
+    /// Indicate a GPIO pin has the SPI2 NSS alternate function
+    pub trait Spi2Nss {
+        /// Initialize the GPIO pin for use as SPI2 NSS
+        fn set_spi2_nss_af(&mut self);
+    }
+
+    /// Indicate a GPIO pin has the debug SubGHz SPI MOSI alternate function
     pub trait SubGhzSpiMosi {
-        /// Initialize the GPIO pin for use as debug SubGHz MOSI.
+        /// Initialize the GPIO pin for use as debug SubGHz MOSI
         fn set_subghz_spi_mosi_af(&mut self);
     }
 
-    /// Indicate a GPIO pin has the debug SubGHz SPI MISO alternate function.
+    /// Indicate a GPIO pin has the debug SubGHz SPI MISO alternate function
     pub trait SubGhzSpiMiso {
-        /// Initialize the GPIO pin for use as debug SubGHz MISO.
+        /// Initialize the GPIO pin for use as debug SubGHz MISO
         fn set_subghz_spi_miso_af(&mut self);
     }
 
-    /// Indicate a GPIO pin has the debug SubGHz SPI SCK alternate function.
+    /// Indicate a GPIO pin has the debug SubGHz SPI SCK alternate function
     pub trait SubGhzSpiSck {
-        /// Initialize the GPIO pin for use as debug SubGHz SCK.
+        /// Initialize the GPIO pin for use as debug SubGHz SCK
         fn set_subghz_spi_sck_af(&mut self);
     }
 
-    /// Indicate a GPIO pin has the debug SubGHz SPI NSS alternate function.
+    /// Indicate a GPIO pin has the debug SubGHz SPI NSS alternate function
     pub trait SubGhzSpiNss {
-        /// Initialize the GPIO pin for use as debug SubGHz NSS.
+        /// Initialize the GPIO pin for use as debug SubGHz NSS
         fn set_subghz_spi_nss_af(&mut self);
     }
 }
@@ -335,97 +359,181 @@ pub mod pins {
 
     impl super::sealed::Spi1Sck for A0 {
         fn set_spi1_sck_af(&mut self) {
-            self.pin.set_alternate_function(5);
+            self.pin.set_alternate_function(5)
         }
     }
 
     impl super::sealed::Spi1Nss for A4 {
         fn set_spi1_nss_af(&mut self) {
-            self.pin.set_alternate_function(5);
+            self.pin.set_alternate_function(5)
         }
     }
 
     impl super::sealed::Spi1Sck for A5 {
         fn set_spi1_sck_af(&mut self) {
-            self.pin.set_alternate_function(5);
+            self.pin.set_alternate_function(5)
         }
     }
 
     impl super::sealed::Spi1Miso for A6 {
         fn set_spi1_miso_af(&mut self) {
-            self.pin.set_alternate_function(5);
+            self.pin.set_alternate_function(5)
         }
     }
 
     impl super::sealed::Spi1Mosi for A7 {
         fn set_spi1_mosi_af(&mut self) {
-            self.pin.set_alternate_function(5);
+            self.pin.set_alternate_function(5)
         }
     }
 
     impl super::sealed::Spi1Miso for A11 {
         fn set_spi1_miso_af(&mut self) {
-            self.pin.set_alternate_function(5);
+            self.pin.set_alternate_function(5)
         }
     }
 
     impl super::sealed::Spi1Mosi for A12 {
         fn set_spi1_mosi_af(&mut self) {
-            self.pin.set_alternate_function(5);
+            self.pin.set_alternate_function(5)
         }
     }
 
     impl super::sealed::Spi1Nss for A15 {
         fn set_spi1_nss_af(&mut self) {
-            self.pin.set_alternate_function(5);
+            self.pin.set_alternate_function(5)
         }
     }
 
     impl super::sealed::Spi1Nss for B2 {
         fn set_spi1_nss_af(&mut self) {
-            self.pin.set_alternate_function(5);
+            self.pin.set_alternate_function(5)
         }
     }
 
     impl super::sealed::Spi1Sck for B3 {
         fn set_spi1_sck_af(&mut self) {
-            self.pin.set_alternate_function(5);
+            self.pin.set_alternate_function(5)
         }
     }
 
     impl super::sealed::Spi1Miso for B4 {
         fn set_spi1_miso_af(&mut self) {
-            self.pin.set_alternate_function(5);
+            self.pin.set_alternate_function(5)
         }
     }
 
     impl super::sealed::Spi1Mosi for B5 {
         fn set_spi1_mosi_af(&mut self) {
-            self.pin.set_alternate_function(5);
+            self.pin.set_alternate_function(5)
+        }
+    }
+
+    impl super::sealed::Spi2Mosi for A10 {
+        fn set_spi2_mosi_af(&mut self) {
+            self.pin.set_alternate_function(5)
+        }
+    }
+
+    impl super::sealed::Spi2Mosi for B15 {
+        fn set_spi2_mosi_af(&mut self) {
+            self.pin.set_alternate_function(5)
+        }
+    }
+
+    impl super::sealed::Spi2Mosi for C1 {
+        fn set_spi2_mosi_af(&mut self) {
+            self.pin.set_alternate_function(3)
+        }
+    }
+
+    impl super::sealed::Spi2Mosi for C3 {
+        fn set_spi2_mosi_af(&mut self) {
+            self.pin.set_alternate_function(5)
+        }
+    }
+
+    impl super::sealed::Spi2Miso for A5 {
+        fn set_spi2_miso_af(&mut self) {
+            self.pin.set_alternate_function(3)
+        }
+    }
+
+    impl super::sealed::Spi2Miso for B14 {
+        fn set_spi2_miso_af(&mut self) {
+            self.pin.set_alternate_function(5)
+        }
+    }
+
+    impl super::sealed::Spi2Miso for C2 {
+        fn set_spi2_miso_af(&mut self) {
+            self.pin.set_alternate_function(5)
+        }
+    }
+
+    impl super::sealed::Spi2Sck for A8 {
+        fn set_spi2_sck_af(&mut self) {
+            self.pin.set_alternate_function(5)
+        }
+    }
+
+    impl super::sealed::Spi2Sck for A9 {
+        fn set_spi2_sck_af(&mut self) {
+            self.pin.set_alternate_function(5)
+        }
+    }
+
+    impl super::sealed::Spi2Sck for B10 {
+        fn set_spi2_sck_af(&mut self) {
+            self.pin.set_alternate_function(5)
+        }
+    }
+
+    impl super::sealed::Spi2Sck for B13 {
+        fn set_spi2_sck_af(&mut self) {
+            self.pin.set_alternate_function(5)
+        }
+    }
+
+    impl super::sealed::Spi2Nss for A9 {
+        fn set_spi2_nss_af(&mut self) {
+            self.pin.set_alternate_function(3)
+        }
+    }
+
+    impl super::sealed::Spi2Nss for B9 {
+        fn set_spi2_nss_af(&mut self) {
+            self.pin.set_alternate_function(5)
+        }
+    }
+
+    impl super::sealed::Spi2Nss for B12 {
+        fn set_spi2_nss_af(&mut self) {
+            self.pin.set_alternate_function(5)
         }
     }
 
     impl super::sealed::SubGhzSpiNss for A4 {
         fn set_subghz_spi_nss_af(&mut self) {
-            self.pin.set_alternate_function(13);
+            self.pin.set_alternate_function(13)
         }
     }
 
     impl super::sealed::SubGhzSpiSck for A5 {
         fn set_subghz_spi_sck_af(&mut self) {
-            self.pin.set_alternate_function(13);
+            self.pin.set_alternate_function(13)
         }
     }
 
     impl super::sealed::SubGhzSpiMiso for A6 {
         fn set_subghz_spi_miso_af(&mut self) {
-            self.pin.set_alternate_function(13);
+            self.pin.set_alternate_function(13)
         }
     }
 
     impl super::sealed::SubGhzSpiMosi for A7 {
         fn set_subghz_spi_mosi_af(&mut self) {
-            self.pin.set_alternate_function(13);
+            self.pin.set_alternate_function(13)
         }
     }
 }

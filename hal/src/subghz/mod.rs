@@ -1,4 +1,4 @@
-//! sub-GHz radio operating in the 150 - 960 MHz ISM band
+//! Sub-GHz radio operating in the 150 - 960 MHz ISM band
 
 mod cad_params;
 mod calibrate;
@@ -30,9 +30,11 @@ use crate::gpio::{
     sealed::{SubGhzSpiMiso, SubGhzSpiMosi, SubGhzSpiNss, SubGhzSpiSck},
 };
 use crate::pac;
+use crate::spi::{BaudDiv, Spi3};
 
 pub use cad_params::{CadParams, ExitMode, NbCadSymbol};
 pub use calibrate::{Calibrate, CalibrateImage};
+use cortex_m::prelude::{_embedded_hal_blocking_spi_Transfer, _embedded_hal_blocking_spi_Write};
 pub use fallback_mode::FallbackMode;
 pub use hse_trim::HseTrim;
 pub use irq::{CfgDioIrq, Irq, IrqLine};
@@ -61,17 +63,12 @@ pub use timeout::Timeout;
 pub use tx_params::{RampTime, TxParams};
 pub use value_error::ValueError;
 
-use core::{
-    convert::Infallible,
-    ptr::{read_volatile, write_volatile},
-};
-
 pub use num_rational;
 
 use num_rational::Ratio;
 
-/// Errors?  What errors!  TODO.
-pub type SubGhzError = Infallible;
+/// Passthrough for SPI errors (for now)
+pub type Error = crate::spi::Error;
 
 #[derive(Debug)]
 struct DebugPins {
@@ -91,9 +88,10 @@ impl DebugPins {
     }
 }
 
-/// sub-GHz radio peripheral.
+/// Sub-GHz radio peripheral
+#[derive(Debug)]
 pub struct SubGhz {
-    spi: pac::SPI3,
+    spi: Spi3,
     debug_pins: Option<DebugPins>,
 }
 
@@ -118,44 +116,16 @@ impl SubGhz {
         rcc.csr.modify(|_, w| w.rfrst().set_bit());
         rcc.csr.modify(|_, w| w.rfrst().clear_bit());
 
-        let pwr: pac::PWR = unsafe { pac::Peripherals::steal() }.PWR;
+        let spi: Spi3 = Spi3::new(spi, BaudDiv::DIV2, rcc);
 
-        pwr.subghzspicr.write(|w| w.nss().clear_bit());
-        pwr.subghzspicr.write(|w| w.nss().set_bit());
-        pwr.scr.write(|w| w.cwrfbusyf().set_bit());
+        Self::clear_nss();
+        Self::set_nss();
 
-        #[rustfmt::skip]
-        spi.cr2.write(|w|
-            w
-                // 8-bit data size
-                .ds().eight_bit()
-                // RXNE generated on 8-bits
-                .frxth().set_bit()
-        );
-
-        #[rustfmt::skip]
-        spi.cr1.write(|w|
-            w
-                // SPI clock phase 0
-                .cpha().clear_bit()
-                // SPI clock polarity 0
-                .cpol().clear_bit()
-                // SPI is a master device
-                .mstr().set_bit()
-                // this is an internal device - no baud rate divisor necessary
-                .br().bits(0b000)
-                // LSB first
-                .lsbfirst().clear_bit()
-                // enable software slave management
-                .ssm().set_bit()
-                .ssi().set_bit()
-                // Full duplex
-                .rxonly().clear_bit()
-                .bidioe().clear_bit()
-                .bidimode().clear_bit()
-                // Enable the SPI peripheral
-                .spe().set_bit()
-        );
+        // clear RF busy
+        unsafe { pac::Peripherals::steal() }
+            .PWR
+            .scr
+            .write(|w| w.cwrfbusyf().set_bit());
 
         SubGhz {
             spi,
@@ -186,22 +156,20 @@ impl SubGhz {
     ///
     /// [`new`]: SubGhz::new
     pub unsafe fn steal() -> SubGhz {
-        let dp: pac::Peripherals = pac::Peripherals::steal();
         SubGhz {
-            spi: dp.SPI3,
+            spi: Spi3::steal(),
             debug_pins: None,
         }
     }
 
     /// Disable the SPI3 (SubGHz SPI) clock.
     pub fn disable_spi_clock(rcc: &mut pac::RCC) {
-        rcc.apb3enr.modify(|_, w| w.subghzspien().disabled());
+        Spi3::disable_clock(rcc)
     }
 
     /// Enable the SPI3 (SubGHz SPI) clock.
     pub fn enable_spi_clock(rcc: &mut pac::RCC) {
-        rcc.apb3enr.modify(|_, w| w.subghzspien().enabled());
-        rcc.apb3enr.read(); // delay after an RCC peripheral clock enabling
+        Spi3::enable_clock(rcc)
     }
 
     /// Enable debug of the SubGHz SPI bus over physical pins.
@@ -306,73 +274,66 @@ impl SubGhz {
         }
     }
 
-    /// Read from the sub-GHz radio.
-    ///
-    /// # Arguments
-    ///
-    /// * `opcode` - Opcode for the command.
-    /// * `data` - Buffer to read data into. The number of bytes read is equal
-    ///   to the length of this buffer.
-    #[allow(clippy::unnecessary_wraps)]
-    fn read(&self, opcode: OpCode, data: &mut [u8]) -> Result<(), SubGhzError> {
-        let dp = unsafe { pac::Peripherals::steal() };
-        let pwr = &dp.PWR;
+    /// Clear NSS, enabling SPI transactions
+    #[inline(always)]
+    fn clear_nss() {
+        unsafe { pac::Peripherals::steal() }
+            .PWR
+            .subghzspicr
+            .write(|w| w.nss().clear_bit())
+    }
 
+    /// Set NSS, disabling SPI transactions
+    #[inline(always)]
+    fn set_nss() {
+        unsafe { pac::Peripherals::steal() }
+            .PWR
+            .subghzspicr
+            .write(|w| w.nss().set_bit())
+    }
+
+    /// Helper to ensure NSS is always set high; even upon an error
+    #[inline(always)]
+    fn with_nss<F, R>(&mut self, mut f: F) -> R
+    where
+        F: FnMut(&mut Spi3) -> R,
+    {
+        Self::clear_nss();
+        let result = f(&mut self.spi);
+        Self::set_nss();
+        result
+    }
+
+    fn read(&mut self, opcode: OpCode, data: &mut [u8]) -> Result<(), Error> {
         self.poll_not_busy();
-        pwr.subghzspicr.write(|w| w.nss().clear_bit());
 
-        self.write_byte_raw(opcode as u8);
+        self.with_nss(|spi| {
+            spi.write(&[opcode as u8])?;
+            spi.transfer(data)?;
+            Ok(())
+        })?;
 
-        for byte in data.iter_mut() {
-            *byte = self.read_byte_raw()
-        }
-
-        pwr.subghzspicr.write(|w| w.nss().set_bit());
         self.poll_not_busy();
 
         Ok(())
     }
 
-    #[allow(clippy::unnecessary_wraps)]
-    #[inline(always)]
-    fn write(&self, data: &[u8]) -> Result<(), SubGhzError> {
-        let dp = unsafe { pac::Peripherals::steal() };
-        let pwr = &dp.PWR;
+    fn write(&mut self, data: &[u8]) -> Result<(), Error> {
         self.poll_not_busy();
-
-        pwr.subghzspicr.write(|w| w.nss().clear_bit());
-        data.iter().for_each(|&b| self.write_byte_raw(b));
-        pwr.subghzspicr.write(|w| w.nss().set_bit());
-
+        self.with_nss(|spi| spi.write(data))?;
         self.poll_not_busy();
         Ok(())
-    }
-
-    #[inline(always)]
-    fn write_byte_raw(&self, byte: u8) {
-        while self.spi.sr.read().txe().bit_is_clear() {}
-        unsafe { write_volatile(&self.spi.dr as *const _ as *mut u8, byte) };
-        while self.spi.sr.read().rxne().bit_is_clear() {}
-        unsafe { read_volatile(&self.spi.dr as *const _ as *const u8) };
-    }
-
-    #[inline(always)]
-    fn read_byte_raw(&self) -> u8 {
-        while self.spi.sr.read().txe().bit_is_clear() {}
-        unsafe { write_volatile(&self.spi.dr as *const _ as *mut u8, 0xFF) };
-        while self.spi.sr.read().rxne().bit_is_clear() {}
-        unsafe { read_volatile(&self.spi.dr as *const _ as *const u8) }
     }
 
     /// Read one byte from the sub-Ghz radio.
-    fn read_1(&self, opcode: OpCode) -> Result<u8, SubGhzError> {
+    fn read_1(&mut self, opcode: OpCode) -> Result<u8, Error> {
         let mut buf: [u8; 1] = [0; 1];
         self.read(opcode, &mut buf)?;
         Ok(buf[0])
     }
 
     /// Read a fixed number of bytes from the sub-Ghz radio.
-    fn read_n<const N: usize>(&self, opcode: OpCode) -> Result<[u8; N], SubGhzError> {
+    fn read_n<const N: usize>(&mut self, opcode: OpCode) -> Result<[u8; N], Error> {
         let mut buf: [u8; N] = [0; N];
         self.read(opcode, &mut buf)?;
         Ok(buf)
@@ -382,77 +343,47 @@ impl SubGhz {
 // 5.8.2
 /// Buffer access commands.
 impl SubGhz {
-    #[inline(always)]
-    pub fn write_buffer(&mut self, offset: u8, data: &[u8]) -> Result<(), SubGhzError> {
-        let dp = unsafe { pac::Peripherals::steal() };
-        let pwr = &dp.PWR;
+    pub fn write_buffer(&mut self, offset: u8, data: &[u8]) -> Result<(), Error> {
         self.poll_not_busy();
 
-        pwr.subghzspicr.write(|w| w.nss().clear_bit());
-        self.write_byte_raw(OpCode::WriteBuffer as u8);
-        self.write_byte_raw(offset);
-        data.iter().for_each(|&b| self.write_byte_raw(b));
-        pwr.subghzspicr.write(|w| w.nss().set_bit());
+        self.with_nss(|spi| {
+            spi.write(&[OpCode::WriteBuffer as u8, offset])?;
+            spi.write(data)?;
+            Ok(())
+        })?;
 
         self.poll_not_busy();
         Ok(())
     }
 
-    #[inline(always)]
-    pub fn read_buffer(&mut self, offset: u8, buf: &mut [u8]) -> Result<Status, SubGhzError> {
-        let dp = unsafe { pac::Peripherals::steal() };
-        let pwr = &dp.PWR;
+    pub fn read_buffer(&mut self, offset: u8, buf: &mut [u8]) -> Result<Status, Error> {
+        let mut status_buf: [u8; 1] = [0];
         self.poll_not_busy();
 
-        pwr.subghzspicr.write(|w| w.nss().clear_bit());
-        self.write_byte_raw(OpCode::ReadBuffer as u8);
-        self.write_byte_raw(offset);
-        let status: Status = self.read_byte_raw().into();
-        buf.iter_mut().for_each(|b| *b = self.read_byte_raw());
-        pwr.subghzspicr.write(|w| w.nss().set_bit());
+        self.with_nss(|spi| {
+            spi.write(&[OpCode::ReadBuffer as u8, offset])?;
+            spi.transfer(&mut status_buf)?;
+            spi.transfer(buf)?;
+            Ok(())
+        })?;
 
         self.poll_not_busy();
-        Ok(status)
+        Ok(status_buf[0].into())
     }
 }
 
 // 5.8.2
 /// Register access.
 impl SubGhz {
-    #[allow(dead_code)]
-    #[allow(clippy::unnecessary_wraps)]
-    fn read_register(&mut self, register: Register) -> Result<u8, SubGhzError> {
-        let dp = unsafe { pac::Peripherals::steal() };
-        let pwr = &dp.PWR;
+    fn write_register(&mut self, register: Register, data: &[u8]) -> Result<(), Error> {
+        let addr: [u8; 2] = register.address().to_be_bytes();
         self.poll_not_busy();
 
-        pwr.subghzspicr.write(|w| w.nss().clear_bit());
-        self.write_byte_raw(0x1D);
-        let addr: u16 = register.address();
-        self.write_byte_raw(((addr >> 8) & 0xFF) as u8);
-        self.write_byte_raw((addr & 0xFF) as u8);
-        let ret: u8 = self.read_byte_raw();
-        pwr.subghzspicr.write(|w| w.nss().set_bit());
-
-        self.poll_not_busy();
-        Ok(ret)
-    }
-
-    #[allow(clippy::unnecessary_wraps)]
-    fn write_register(&mut self, register: Register, data: &[u8]) -> Result<(), SubGhzError> {
-        let dp = unsafe { pac::Peripherals::steal() };
-        let pwr = &dp.PWR;
-        self.poll_not_busy();
-
-        pwr.subghzspicr.write(|w| w.nss().clear_bit());
-        self.write_byte_raw(OpCode::WriteRegister as u8);
-        register
-            .address()
-            .to_be_bytes()
-            .iter()
-            .for_each(|&b| self.write_byte_raw(b));
-        data.iter().for_each(|&b| self.write_byte_raw(b));
-        pwr.subghzspicr.write(|w| w.nss().set_bit());
+        self.with_nss(|spi| {
+            spi.write(&[OpCode::WriteRegister as u8, addr[0], addr[1]])?;
+            spi.write(data)?;
+            Ok(())
+        })?;
 
         self.poll_not_busy();
         Ok(())
@@ -465,9 +396,9 @@ impl SubGhz {
     /// ```no_run
     /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
     /// sg.set_initial_whitening(0xA5);
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_initial_whitening(&mut self, init: u8) -> Result<(), SubGhzError> {
+    pub fn set_initial_whitening(&mut self, init: u8) -> Result<(), Error> {
         self.write_register(Register::GWHITEINIRL, &[init])
     }
 
@@ -478,9 +409,9 @@ impl SubGhz {
     /// ```no_run
     /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
     /// sg.set_crc_polynomial(0x1D0F);
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_crc_polynomial(&mut self, polynomial: u16) -> Result<(), SubGhzError> {
+    pub fn set_crc_polynomial(&mut self, polynomial: u16) -> Result<(), Error> {
         self.write_register(Register::GCRCINIRH, &polynomial.to_be_bytes())
     }
 
@@ -491,9 +422,9 @@ impl SubGhz {
     /// ```no_run
     /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
     /// sg.set_initial_crc_polynomial(0x1021);
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_initial_crc_polynomial(&mut self, polynomial: u16) -> Result<(), SubGhzError> {
+    pub fn set_initial_crc_polynomial(&mut self, polynomial: u16) -> Result<(), Error> {
         self.write_register(Register::GCRCPOLRH, &polynomial.to_be_bytes())
     }
 
@@ -506,9 +437,9 @@ impl SubGhz {
     /// const SYNC_WORD: [u8; 8] = [0x79, 0x80, 0x0C, 0xC0, 0x29, 0x95, 0xF8, 0x4A];
     ///
     /// sg.set_sync_word(&SYNC_WORD);
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_sync_word(&mut self, sync_word: &[u8; 8]) -> Result<(), SubGhzError> {
+    pub fn set_sync_word(&mut self, sync_word: &[u8; 8]) -> Result<(), Error> {
         self.write_register(Register::GSYNC7, sync_word)
     }
 
@@ -522,9 +453,9 @@ impl SubGhz {
     ///
     /// sg.set_packet_type(PacketType::LoRa)?;
     /// sg.set_lora_sync_word(LoRaSyncWord::Public)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_lora_sync_word(&mut self, sync_word: LoRaSyncWord) -> Result<(), SubGhzError> {
+    pub fn set_lora_sync_word(&mut self, sync_word: LoRaSyncWord) -> Result<(), Error> {
         self.write_register(Register::LSYNCH, &sync_word.bytes())
     }
 
@@ -539,7 +470,7 @@ impl SubGhz {
     /// use stm32wl_hal::subghz::Ocp;
     ///
     /// sg.set_pa_ocp(Ocp::Max60m)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     ///
     /// Maximum 60mA for HP PA mode.
@@ -549,9 +480,9 @@ impl SubGhz {
     /// use stm32wl_hal::subghz::Ocp;
     ///
     /// sg.set_pa_ocp(Ocp::Max140m)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_pa_ocp(&mut self, ocp: Ocp) -> Result<(), SubGhzError> {
+    pub fn set_pa_ocp(&mut self, ocp: Ocp) -> Result<(), Error> {
         self.write_register(Register::PAOCP, &[ocp as u8])
     }
 
@@ -566,9 +497,9 @@ impl SubGhz {
     /// use stm32wl_hal::subghz::HseTrim;
     ///
     /// sg.set_hse_in_trim(HseTrim::MIN);
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_hse_in_trim(&mut self, trim: HseTrim) -> Result<(), SubGhzError> {
+    pub fn set_hse_in_trim(&mut self, trim: HseTrim) -> Result<(), Error> {
         self.write_register(Register::HSEINTRIM, &[trim.into()])
     }
 
@@ -583,9 +514,9 @@ impl SubGhz {
     /// use stm32wl_hal::subghz::HseTrim;
     ///
     /// sg.set_hse_out_trim(HseTrim::MIN);
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_hse_out_trim(&mut self, trim: HseTrim) -> Result<(), SubGhzError> {
+    pub fn set_hse_out_trim(&mut self, trim: HseTrim) -> Result<(), Error> {
         self.write_register(Register::HSEOUTTRIM, &[trim.into()])
     }
 }
@@ -609,9 +540,9 @@ impl SubGhz {
     ///
     /// sg.set_standby(StandbyClk::Rc)?;
     /// sg.set_sleep(SleepCfg::default())?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_sleep(&mut self, cfg: SleepCfg) -> Result<(), SubGhzError> {
+    pub fn set_sleep(&mut self, cfg: SleepCfg) -> Result<(), Error> {
         self.write(&[OpCode::SetSleep as u8, u8::from(cfg)])
     }
 
@@ -626,7 +557,7 @@ impl SubGhz {
     /// use stm32wl_hal::subghz::StandbyClk;
     ///
     /// sg.set_standby(StandbyClk::Rc)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     ///
     /// Put the radio into standby mode using the HSE32 clock.
@@ -636,9 +567,9 @@ impl SubGhz {
     /// use stm32wl_hal::subghz::StandbyClk;
     ///
     /// sg.set_standby(StandbyClk::Hse32)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_standby(&mut self, standby_clk: StandbyClk) -> Result<(), SubGhzError> {
+    pub fn set_standby(&mut self, standby_clk: StandbyClk) -> Result<(), Error> {
         self.write(&[OpCode::SetStandby as u8, u8::from(standby_clk)])
     }
 
@@ -659,11 +590,11 @@ impl SubGhz {
     ///
     /// sg.set_rf_frequency(&RfFreq::from_frequency(915_000_000))?;
     /// sg.set_fs()?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     ///
     /// [`set_rf_frequency`]: crate::subghz::SubGhz::set_rf_frequency
-    pub fn set_fs(&mut self) -> Result<(), SubGhzError> {
+    pub fn set_fs(&mut self) -> Result<(), Error> {
         self.write(&[OpCode::SetFs.into()])
     }
 
@@ -678,9 +609,9 @@ impl SubGhz {
     /// use stm32wl_hal::subghz::Timeout;
     ///
     /// sg.set_tx(Timeout::DISABLED)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_tx(&mut self, timeout: Timeout) -> Result<(), SubGhzError> {
+    pub fn set_tx(&mut self, timeout: Timeout) -> Result<(), Error> {
         let tobits: u32 = timeout.into_bits();
         self.write(&[
             OpCode::SetTx.into(),
@@ -702,9 +633,9 @@ impl SubGhz {
     /// use stm32wl_hal::subghz::Timeout;
     ///
     /// sg.set_rx(Timeout::from_duration_sat(Duration::from_secs(1)))?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_rx(&mut self, timeout: Timeout) -> Result<(), SubGhzError> {
+    pub fn set_rx(&mut self, timeout: Timeout) -> Result<(), Error> {
         let tobits: u32 = timeout.into_bits();
         self.write(&[
             OpCode::SetRx.into(),
@@ -725,12 +656,9 @@ impl SubGhz {
     /// use stm32wl_hal::subghz::RxTimeoutStop;
     ///
     /// sg.set_rx_timeout_stop(RxTimeoutStop::Preamble)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_rx_timeout_stop(
-        &mut self,
-        rx_timeout_stop: RxTimeoutStop,
-    ) -> Result<(), SubGhzError> {
+    pub fn set_rx_timeout_stop(&mut self, rx_timeout_stop: RxTimeoutStop) -> Result<(), Error> {
         self.write(&[
             OpCode::SetStopRxTimerOnPreamble.into(),
             rx_timeout_stop.into(),
@@ -777,7 +705,7 @@ impl SubGhz {
     ///
     /// sg.set_standby(StandbyClk::Rc)?;
     /// sg.set_rx_duty_cycle(RX_PERIOD, SLEEP_PERIOD)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     ///
     /// [`RxDone`]: crate::subghz::Irq::RxDone
@@ -787,7 +715,7 @@ impl SubGhz {
         &mut self,
         rx_period: Timeout,
         sleep_period: Timeout,
-    ) -> Result<(), SubGhzError> {
+    ) -> Result<(), Error> {
         let rx_period_bits: u32 = rx_period.into_bits();
         let sleep_period_bits: u32 = sleep_period.into_bits();
         self.write(&[
@@ -831,11 +759,11 @@ impl SubGhz {
     /// sg.set_standby(StandbyClk::Rc)?;
     /// sg.set_cad_params(&CAD_PARAMS)?;
     /// sg.set_cad()?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     ///
     /// [`set_cad_params`]: crate::subghz::SubGhz::set_cad_params
-    pub fn set_cad(&mut self) -> Result<(), SubGhzError> {
+    pub fn set_cad(&mut self) -> Result<(), Error> {
         self.write(&[OpCode::SetCad.into()])
     }
 
@@ -849,9 +777,9 @@ impl SubGhz {
     /// ```no_run
     /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
     /// sg.set_tx_continuous_wave()?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_tx_continuous_wave(&mut self) -> Result<(), SubGhzError> {
+    pub fn set_tx_continuous_wave(&mut self) -> Result<(), Error> {
         self.write(&[OpCode::SetTxContinuousWave as u8])
     }
 
@@ -868,9 +796,9 @@ impl SubGhz {
     /// ```no_run
     /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
     /// sg.set_tx_continuous_preamble()?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_tx_continuous_preamble(&mut self) -> Result<(), SubGhzError> {
+    pub fn set_tx_continuous_preamble(&mut self) -> Result<(), Error> {
         self.write(&[OpCode::SetTxContinuousPreamble as u8])
     }
 }
@@ -889,7 +817,7 @@ impl SubGhz {
     /// use stm32wl_hal::subghz::PacketType;
     ///
     /// sg.set_packet_type(PacketType::Fsk)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     ///
     /// LoRa (long range):
@@ -899,7 +827,7 @@ impl SubGhz {
     /// use stm32wl_hal::subghz::PacketType;
     ///
     /// sg.set_packet_type(PacketType::LoRa)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     ///
     /// BPSK (binary phase shift keying):
@@ -909,7 +837,7 @@ impl SubGhz {
     /// use stm32wl_hal::subghz::PacketType;
     ///
     /// sg.set_packet_type(PacketType::Bpsk)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     ///
     /// MSK (minimum shift keying):
@@ -919,9 +847,9 @@ impl SubGhz {
     /// use stm32wl_hal::subghz::PacketType;
     ///
     /// sg.set_packet_type(PacketType::Msk)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_packet_type(&self, packet_type: PacketType) -> Result<(), SubGhzError> {
+    pub fn set_packet_type(&mut self, packet_type: PacketType) -> Result<(), Error> {
         self.write(&[OpCode::SetPacketType as u8, packet_type as u8])
     }
 
@@ -935,9 +863,9 @@ impl SubGhz {
     ///
     /// sg.set_packet_type(PacketType::LoRa)?;
     /// assert_eq!(sg.packet_type()?, Ok(PacketType::LoRa));
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn packet_type(&self) -> Result<Result<PacketType, u8>, SubGhzError> {
+    pub fn packet_type(&mut self) -> Result<Result<PacketType, u8>, Error> {
         let pkt_type: [u8; 2] = self.read_n(OpCode::GetPacketType)?;
         Ok(PacketType::from_raw(pkt_type[1]))
     }
@@ -953,9 +881,9 @@ impl SubGhz {
     /// use stm32wl_hal::subghz::RfFreq;
     ///
     /// sg.set_rf_frequency(&RfFreq::F915)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_rf_frequency(&mut self, freq: &RfFreq) -> Result<(), SubGhzError> {
+    pub fn set_rf_frequency(&mut self, freq: &RfFreq) -> Result<(), Error> {
         self.write(freq.as_slice())
     }
 
@@ -980,9 +908,9 @@ impl SubGhz {
     ///
     /// sg.set_pa_config(&PA_CONFIG)?;
     /// sg.set_tx_params(&TX_PARAMS)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_tx_params(&mut self, params: &TxParams) -> Result<(), SubGhzError> {
+    pub fn set_tx_params(&mut self, params: &TxParams) -> Result<(), Error> {
         self.write(params.as_slice())
     }
 
@@ -1009,9 +937,9 @@ impl SubGhz {
     ///
     /// sg.set_pa_config(&PA_CONFIG)?;
     /// sg.set_tx_params(&TX_PARAMS)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_pa_config(&mut self, pa_config: &PaConfig) -> Result<(), SubGhzError> {
+    pub fn set_pa_config(&mut self, pa_config: &PaConfig) -> Result<(), Error> {
         self.write(pa_config.as_slice())
     }
 
@@ -1027,9 +955,9 @@ impl SubGhz {
     /// use stm32wl_hal::subghz::FallbackMode;
     ///
     /// sg.set_tx_rx_fallback_mode(FallbackMode::Standby)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_tx_rx_fallback_mode(&mut self, fm: FallbackMode) -> Result<(), SubGhzError> {
+    pub fn set_tx_rx_fallback_mode(&mut self, fm: FallbackMode) -> Result<(), Error> {
         self.write(&[OpCode::SetTxRxFallbackMode.into(), fm.into()])
     }
 
@@ -1053,9 +981,9 @@ impl SubGhz {
     /// sg.set_standby(StandbyClk::Rc)?;
     /// sg.set_cad_params(&CAD_PARAMS)?;
     /// sg.set_cad()?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_cad_params(&mut self, params: &CadParams) -> Result<(), SubGhzError> {
+    pub fn set_cad_params(&mut self, params: &CadParams) -> Result<(), Error> {
         self.write(params.as_slice())
     }
 
@@ -1072,12 +1000,12 @@ impl SubGhz {
     /// ```no_run
     /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
     /// sg.set_buffer_base_address(0, 0)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     ///
     /// [`read_buffer`]: SubGhz::read_buffer
     /// [`write_buffer`]: SubGhz::write_buffer
-    pub fn set_buffer_base_address(&mut self, tx: u8, rx: u8) -> Result<(), SubGhzError> {
+    pub fn set_buffer_base_address(&mut self, tx: u8, rx: u8) -> Result<(), Error> {
         self.write(&[OpCode::SetBufferBaseAddress as u8, tx, rx])
     }
 
@@ -1104,9 +1032,9 @@ impl SubGhz {
     ///
     /// sg.set_packet_type(PacketType::Fsk)?;
     /// sg.set_fsk_mod_params(&MOD_PARAMS)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_fsk_mod_params(&mut self, params: &FskModParams) -> Result<(), SubGhzError> {
+    pub fn set_fsk_mod_params(&mut self, params: &FskModParams) -> Result<(), Error> {
         self.write(params.as_slice())
     }
 
@@ -1128,9 +1056,9 @@ impl SubGhz {
     ///
     /// sg.set_packet_type(PacketType::LoRa)?;
     /// sg.set_lora_mod_params(&MOD_PARAMS)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_lora_mod_params(&mut self, params: &LoRaModParams) -> Result<(), SubGhzError> {
+    pub fn set_lora_mod_params(&mut self, params: &LoRaModParams) -> Result<(), Error> {
         self.write(params.as_slice())
     }
 
@@ -1146,9 +1074,9 @@ impl SubGhz {
     ///
     /// sg.set_packet_type(PacketType::Bpsk)?;
     /// sg.set_bpsk_mod_params(&MOD_PARAMS)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_bpsk_mod_params(&mut self, params: &BpskModParams) -> Result<(), SubGhzError> {
+    pub fn set_bpsk_mod_params(&mut self, params: &BpskModParams) -> Result<(), Error> {
         self.write(params.as_slice())
     }
 
@@ -1174,9 +1102,9 @@ impl SubGhz {
     ///
     /// sg.set_packet_type(PacketType::Fsk)?;
     /// sg.set_packet_params(&PKT_PARAMS)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_packet_params(&mut self, params: &GenericPacketParams) -> Result<(), SubGhzError> {
+    pub fn set_packet_params(&mut self, params: &GenericPacketParams) -> Result<(), Error> {
         self.write(params.as_slice())
     }
 
@@ -1190,9 +1118,9 @@ impl SubGhz {
     ///
     /// sg.set_packet_type(PacketType::Bpsk)?;
     /// sg.set_bpsk_packet_params(&BpskPacketParams::new().set_payload_len(64))?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_bpsk_packet_params(&mut self, params: &BpskPacketParams) -> Result<(), SubGhzError> {
+    pub fn set_bpsk_packet_params(&mut self, params: &BpskPacketParams) -> Result<(), Error> {
         self.write(params.as_slice())
     }
 
@@ -1213,9 +1141,9 @@ impl SubGhz {
     ///
     /// sg.set_packet_type(PacketType::LoRa)?;
     /// sg.set_lora_packet_params(&PKT_PARAMS)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_lora_packet_params(&mut self, params: &LoRaPacketParams) -> Result<(), SubGhzError> {
+    pub fn set_lora_packet_params(&mut self, params: &LoRaPacketParams) -> Result<(), Error> {
         self.write(params.as_slice())
     }
 
@@ -1234,9 +1162,9 @@ impl SubGhz {
     /// // ... setup the radio for LoRa RX
     ///
     /// sg.set_lora_symb_timeout(0)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_lora_symb_timeout(&mut self, n: u8) -> Result<(), SubGhzError> {
+    pub fn set_lora_symb_timeout(&mut self, n: u8) -> Result<(), Error> {
         self.write(&[OpCode::SetLoRaSymbTimeout.into(), n])
     }
 }
@@ -1254,9 +1182,9 @@ impl SubGhz {
     /// use stm32wl_hal::subghz::Status;
     ///
     /// let status: Status = sg.status()?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn status(&self) -> Result<Status, SubGhzError> {
+    pub fn status(&mut self) -> Result<Status, Error> {
         Ok(self.read_1(OpCode::GetStatus)?.into())
     }
 
@@ -1282,9 +1210,9 @@ impl SubGhz {
     ///         break;
     ///     }
     /// }
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn rx_buffer_status(&self) -> Result<(Status, u8, u8), SubGhzError> {
+    pub fn rx_buffer_status(&mut self) -> Result<(Status, u8, u8), Error> {
         let data: [u8; 3] = self.read_n(OpCode::GetRxBufferStatus)?;
         Ok((data[0].into(), data[1], data[2]))
     }
@@ -1309,9 +1237,9 @@ impl SubGhz {
     ///         break;
     ///     }
     /// }
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn fsk_packet_status(&self) -> Result<FskPacketStatus, SubGhzError> {
+    pub fn fsk_packet_status(&mut self) -> Result<FskPacketStatus, Error> {
         Ok(FskPacketStatus::from(self.read_n(OpCode::GetPacketStatus)?))
     }
 
@@ -1335,9 +1263,9 @@ impl SubGhz {
     ///         break;
     ///     }
     /// }
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn lora_packet_status(&self) -> Result<LoRaPacketStatus, SubGhzError> {
+    pub fn lora_packet_status(&mut self) -> Result<LoRaPacketStatus, Error> {
         Ok(LoRaPacketStatus::from(
             self.read_n(OpCode::GetPacketStatus)?,
         ))
@@ -1360,9 +1288,9 @@ impl SubGhz {
     /// sg.set_rx(Timeout::DISABLED)?;
     /// let (_, rssi) = sg.rssi_inst()?;
     /// writeln!(&mut uart, "RSSI: {} dBm", rssi);
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn rssi_inst(&self) -> Result<(Status, Ratio<i16>), SubGhzError> {
+    pub fn rssi_inst(&mut self) -> Result<(Status, Ratio<i16>), Error> {
         let data: [u8; 2] = self.read_n(OpCode::GetRssiInst)?;
         let status: Status = data[0].into();
         let rssi: Ratio<i16> = Ratio::new(i16::from(data[1]), -2);
@@ -1381,9 +1309,9 @@ impl SubGhz {
     /// let stats: Stats<FskStats> = sg.fsk_stats()?;
     /// // ... use stats
     /// sg.reset_stats();
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn fsk_stats(&self) -> Result<Stats<FskStats>, SubGhzError> {
+    pub fn fsk_stats(&mut self) -> Result<Stats<FskStats>, Error> {
         let data: [u8; 7] = self.read_n(OpCode::GetStats)?;
         Ok(Stats::from_raw_fsk(data))
     }
@@ -1399,9 +1327,9 @@ impl SubGhz {
     /// let stats: Stats<LoRaStats> = sg.lora_stats()?;
     /// // ... use stats
     /// sg.reset_stats();
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn lora_stats(&self) -> Result<Stats<LoRaStats>, SubGhzError> {
+    pub fn lora_stats(&mut self) -> Result<Stats<LoRaStats>, Error> {
         let data: [u8; 7] = self.read_n(OpCode::GetStats)?;
         Ok(Stats::from_raw_lora(data))
     }
@@ -1414,12 +1342,12 @@ impl SubGhz {
     /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
     ///
     /// sg.reset_stats();
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     ///
     /// [`lora_stats`]: crate::subghz::SubGhz::lora_stats
     /// [`fsk_stats`]: crate::subghz::SubGhz::fsk_stats
-    pub fn reset_stats(&mut self) -> Result<(), SubGhzError> {
+    pub fn reset_stats(&mut self) -> Result<(), Error> {
         const RESET_STATS: [u8; 7] = [0x00; 7];
         self.write(&RESET_STATS)
     }
@@ -1442,9 +1370,9 @@ impl SubGhz {
     ///     .irq_enable(IrqLine::Global, Irq::TxDone)
     ///     .irq_enable(IrqLine::Global, Irq::Timeout);
     /// sg.set_irq_cfg(&IRQ_CFG)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_irq_cfg(&mut self, cfg: &CfgDioIrq) -> Result<(), SubGhzError> {
+    pub fn set_irq_cfg(&mut self, cfg: &CfgDioIrq) -> Result<(), Error> {
         self.write(cfg.as_slice())
     }
 
@@ -1469,9 +1397,9 @@ impl SubGhz {
     ///         break;
     ///     }
     /// }
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn irq_status(&self) -> Result<(Status, u16), SubGhzError> {
+    pub fn irq_status(&mut self) -> Result<(Status, u16), Error> {
         let data: [u8; 3] = self.read_n(OpCode::GetIrqStatus)?;
         let irq_status: u16 = u16::from_be_bytes([data[1], data[2]]);
         Ok((data[0].into(), irq_status))
@@ -1488,12 +1416,12 @@ impl SubGhz {
     /// use stm32wl_hal::subghz::Irq;
     ///
     /// sg.clear_irq_status(Irq::TxDone.mask() | Irq::RxDone.mask())?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     ///
     /// [`TxDone`]: crate::subghz::Irq::TxDone
     /// [`RxDone`]: crate::subghz::Irq::RxDone
-    pub fn clear_irq_status(&mut self, mask: u16) -> Result<(), SubGhzError> {
+    pub fn clear_irq_status(&mut self, mask: u16) -> Result<(), Error> {
         self.write(&[
             OpCode::ClrIrqStatus as u8,
             ((mask >> 8) & 0xFF) as u8,
@@ -1526,9 +1454,9 @@ impl SubGhz {
     /// while sg.rfbusys() {
     ///     // ... insert some timeout code here
     /// }
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn calibrate(&mut self, cal: u8) -> Result<(), SubGhzError> {
+    pub fn calibrate(&mut self, cal: u8) -> Result<(), Error> {
         // bit 7 is reserved and must be kept at reset value.
         self.write(&[OpCode::Calibrate as u8, cal & 0x7F])
     }
@@ -1547,9 +1475,9 @@ impl SubGhz {
     ///
     /// sg.set_standby(StandbyClk::Rc)?;
     /// sg.calibrate_image(CalibrateImage::ISM_430_440)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn calibrate_image(&mut self, cal: CalibrateImage) -> Result<(), SubGhzError> {
+    pub fn calibrate_image(&mut self, cal: CalibrateImage) -> Result<(), Error> {
         self.write(&[OpCode::CalibrateImage as u8, cal.0, cal.1])
     }
 
@@ -1564,7 +1492,7 @@ impl SubGhz {
     /// use stm32wl_hal::subghz::RegMode;
     ///
     /// sg.set_regulator_mode(RegMode::Ldo)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     ///
     /// Use the switch mode power supply (SPMS):
@@ -1574,9 +1502,9 @@ impl SubGhz {
     /// use stm32wl_hal::subghz::RegMode;
     ///
     /// sg.set_regulator_mode(RegMode::Smps)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_regulator_mode(&mut self, reg_mode: RegMode) -> Result<(), SubGhzError> {
+    pub fn set_regulator_mode(&mut self, reg_mode: RegMode) -> Result<(), Error> {
         self.write(&[OpCode::SetRegulatorMode as u8, reg_mode as u8])
     }
 
@@ -1592,9 +1520,9 @@ impl SubGhz {
     /// if error_mask & OpError::PllLockError.mask() != 0 {
     ///     // ... handle PLL lock error
     /// }
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn op_error(&self) -> Result<(Status, u16), SubGhzError> {
+    pub fn op_error(&mut self) -> Result<(Status, u16), Error> {
         let data: [u8; 3] = self.read_n(OpCode::GetError)?;
         Ok((data[0].into(), u16::from_le_bytes([data[1], data[2]])))
     }
@@ -1612,11 +1540,11 @@ impl SubGhz {
     /// if error_mask != 0 {
     ///     sg.clear_error()?;
     /// }
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     ///
     /// [`op_error`]: crate::subghz::SubGhz::op_error
-    pub fn clear_error(&mut self) -> Result<(), SubGhzError> {
+    pub fn clear_error(&mut self) -> Result<(), Error> {
         self.write(&[OpCode::ClrError as u8, 0x00])
     }
 }
@@ -1639,9 +1567,9 @@ impl SubGhz {
     ///     .set_txco_trim(TcxoTrim::Volts1pt7)
     ///     .set_timeout(Timeout::from_duration_sat(Duration::from_millis(10)));
     /// sg.set_tcxo_mode(&TCXO_MODE)?;
-    /// # Ok::<(), stm32wl_hal::subghz::SubGhzError>(())
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_tcxo_mode(&mut self, tcxo_mode: &TcxoMode) -> Result<(), SubGhzError> {
+    pub fn set_tcxo_mode(&mut self, tcxo_mode: &TcxoMode) -> Result<(), Error> {
         self.write(tcxo_mode.as_slice())
     }
 }
@@ -1650,6 +1578,7 @@ impl SubGhz {
 ///
 /// See Table 41 "Sub-GHz radio SPI commands overview"
 #[repr(u8)]
+#[derive(Debug, Clone, Copy)]
 #[allow(dead_code)]
 pub(crate) enum OpCode {
     Calibrate = 0x89,

@@ -135,9 +135,8 @@ mod tests {
             let start: usize = cortex_m_rt::heap_start() as usize;
             let size: usize = 2048; // in bytes
             unsafe { ALLOCATOR.init(start, size) };
+            unsafe { Aes::unmask_irq() };
         }
-
-        unsafe { Aes::unmask_irq() };
 
         Aes::new(dp.AES, &mut rcc)
     }

@@ -121,9 +121,8 @@ mod tests {
             let start: usize = cortex_m_rt::heap_start() as usize;
             let size: usize = 2048; // in bytes
             unsafe { ALLOCATOR.init(start, size) };
+            unsafe { Pka::unmask_irq() };
         }
-
-        unsafe { Pka::unmask_irq() };
 
         Pka::new(dp.PKA, &mut rcc)
     }

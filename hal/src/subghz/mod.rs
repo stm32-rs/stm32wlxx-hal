@@ -1,4 +1,11 @@
 //! Sub-GHz radio operating in the 150 - 960 MHz ISM band
+//!
+//! ## LoRa user notice
+//!
+//! The Sub-GHz radio may have an undocumented erratum, see this ST community
+//! post for more information: [link]
+//!
+//! [link]: https://community.st.com/s/question/0D53W00000hR8kpSAC/stm32wl55-erratum-clairification
 
 mod cad_params;
 mod calibrate;
@@ -1174,8 +1181,9 @@ impl SubGhz {
 impl SubGhz {
     /// Get the radio status.
     ///
-    /// The hardware appears to have many bugs where this will return reserved
-    /// values.
+    /// The hardware (or documentation) appears to have many bugs where this
+    /// will return reserved values.
+    /// See this thread in the ST community for details: [link]
     ///
     /// ```no_run
     /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
@@ -1184,6 +1192,8 @@ impl SubGhz {
     /// let status: Status = sg.status()?;
     /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
+    ///
+    /// [link]: https://community.st.com/s/question/0D53W00000hR9GQSA0/stm32wl55-getstatus-command-returns-reserved-cmdstatus
     pub fn status(&mut self) -> Result<Status, Error> {
         Ok(self.read_1(OpCode::GetStatus)?.into())
     }

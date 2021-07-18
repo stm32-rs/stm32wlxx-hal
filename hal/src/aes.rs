@@ -232,7 +232,7 @@ impl Aes {
     /// let mut aes = Aes::new(dp.AES, &mut dp.RCC);
     /// ```
     ///
-    /// Asynchronous usage, requires the AES interrupt enabled in the NVIC:
+    /// Asynchronous usage requires the AES interrupt unmasked in the NVIC:
     ///
     /// ```no_run
     /// use stm32wl_hal::{aes::Aes, pac};
@@ -240,7 +240,7 @@ impl Aes {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let mut aes = Aes::new(dp.AES, &mut dp.RCC);
-    /// # #[cfg(not(feature = "stm32wl5x_cm0p"))]
+    /// # #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
     /// unsafe { Aes::unmask_irq() };
     /// ```
     pub fn new(aes: pac::AES, rcc: &mut pac::RCC) -> Aes {
@@ -310,11 +310,11 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// # #[cfg(not(feature = "stm32wl5x_cm0p"))]
+    /// # #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
     /// unsafe { stm32wl_hal::aes::Aes::unmask_irq() };
     /// ```
-    #[cfg(not(feature = "stm32wl5x_cm0p"))]
-    #[cfg_attr(docsrs, doc(cfg(not(feature = "stm32wl5x_cm0p"))))]
+    #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
+    #[cfg_attr(docsrs, doc(cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))))]
     pub unsafe fn unmask_irq() {
         pac::NVIC::unmask(pac::Interrupt::AES)
     }

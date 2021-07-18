@@ -19,8 +19,10 @@ defmt-rtt = "~0.2.0"
 defmt-test = "~0.2.0"
 panic-probe = { version = "~0.2.0", features = ["print-defmt"] }
 stm32wl-hal = { path = "../hal", features = ["stm32wl5x_cm4"] }
+ate = { path = "../ate", optional = true }
 
 [features]
+aio = ["ate", "stm32wl-hal/aio"]
 # set logging levels here
 default = ["defmt-trace"]
 

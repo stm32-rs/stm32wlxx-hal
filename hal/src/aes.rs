@@ -625,15 +625,13 @@ mod aio {
             AES_RESULT.store(dp.AES.sr.read().bits(), SeqCst);
 
             // clear and disable IRQs
+            #[rustfmt::skip]
             dp.AES.cr.modify(|_, w| {
-                w.ccfc()
-                    .clear()
-                    .errc()
-                    .clear()
-                    .ccfie()
-                    .disabled()
-                    .errie()
-                    .disabled()
+                w
+                    .ccfc().clear()
+                    .errc().clear()
+                    .ccfie().disabled()
+                    .errie().disabled()
             });
 
             AES_WAKER.wake();

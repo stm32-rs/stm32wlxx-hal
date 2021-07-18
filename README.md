@@ -11,11 +11,12 @@ There should be enough code for very basic:
 * LoRa TX
 * (G)FSK TX
 * (G)FSK RX
-* ECDSA signing
-* ECDSA verification
-* Cryptographically secure random number generation
-* AES encryption
-* AES decryption
+* SPI
+* ECDSA signing (polling + async)
+* ECDSA verification (polling + async)
+* Cryptographically secure random number generation (polling + async)
+* AES encryption (polling + async)
+* AES decryption (polling + async)
 
 ## Why upload incomplete code?
 
@@ -90,6 +91,7 @@ cargo test --features stm32wl5x_cm4
 
 All examples run on the NUCLEO-WL55JC2.
 Examples are located in the `examples` crate.
+The arguments got long for this, so a `run-ex` cargo alias is provided.
 
 ```bash
 cargo run-ex gpio-blink

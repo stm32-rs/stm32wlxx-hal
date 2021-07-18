@@ -1,5 +1,6 @@
 #![no_std]
 #![no_main]
+#![cfg_attr(feature = "aio", feature(alloc_error_handler))]
 
 use defmt_rtt as _; // global logger
 use panic_probe as _;
@@ -7,6 +8,64 @@ use stm32wl_hal::{
     pac, rcc,
     rng::{rand_core::RngCore, Rng},
 };
+
+#[cfg(feature = "aio")]
+use ate::alloc_cortex_m::CortexMHeap;
+
+#[global_allocator]
+#[cfg(feature = "aio")]
+static ALLOCATOR: CortexMHeap = CortexMHeap::empty();
+
+#[cfg_attr(feature = "aio", alloc_error_handler)]
+#[cfg(feature = "aio")]
+fn oom(_layout: core::alloc::Layout) -> ! {
+    cortex_m::interrupt::disable();
+
+    let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
+    let mut rcc: pac::RCC = dp.RCC;
+
+    use stm32wl_hal::gpio;
+    let gpiob: gpio::PortB = gpio::PortB::split(dp.GPIOB, &mut rcc);
+    let mut led1 = gpio::Output::default(gpiob.pb9);
+    let mut led2 = gpio::Output::default(gpiob.pb15);
+    let mut led3 = gpio::Output::default(gpiob.pb11);
+
+    led1.set_level_high();
+    led2.set_level_high();
+    led3.set_level_high();
+
+    use core::sync::atomic::{compiler_fence, Ordering::SeqCst};
+    loop {
+        compiler_fence(SeqCst);
+    }
+}
+
+#[cfg(feature = "aio")]
+async fn aio_random_enough_for_me_inner() {
+    let mut rng: Rng = unsafe { Rng::steal() };
+    let mut bytes: [u8; 33] = [0; 33];
+    rng.try_fill_bytes(&mut bytes).unwrap();
+    validate_randomness(&bytes)
+}
+
+/// This is not a cryptographically secure validation, this only ensures that
+/// the driver is operating nominally, is does not check for hardware
+/// correctness.
+fn validate_randomness(entropy: &[u8]) {
+    let mut sum: f64 = 0.0;
+    for byte in entropy.iter() {
+        sum += *byte as f64;
+    }
+
+    sum /= entropy.len() as f64;
+
+    const MID: f64 = 127.5;
+    const TOLERANCE: f64 = 15.0;
+    const LO: f64 = MID - TOLERANCE;
+    const HI: f64 = MID + TOLERANCE;
+
+    defmt::assert!(sum > LO && sum < HI, "{:?}", sum);
+}
 
 #[defmt_test::tests]
 mod tests {
@@ -21,30 +80,30 @@ mod tests {
 
         rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut rcc);
 
-        Rng::set_clock_source(&mut rcc, ClkSrc::Msi);
+        #[cfg(feature = "aio")]
+        {
+            let start: usize = cortex_m_rt::heap_start() as usize;
+            let size: usize = 2048; // in bytes
+            unsafe { ALLOCATOR.init(start, size) };
+            unsafe { Rng::unmask_irq() };
+        }
+
+        Rng::set_clock_source(&mut rcc, ClkSrc::MSI);
         Rng::new(dp.RNG, &mut rcc)
     }
 
-    /// This is not a cryptographically secure test, this only ensures that the
-    /// driver is operating nominally, is does not check for hardware
-    /// correctness.
     #[test]
     fn random_enough_for_me(rng: &mut Rng) {
-        let mut bytes: [u8; 32] = [0; 32];
+        let mut bytes: [u8; 35] = [0; 35];
         rng.try_fill_bytes(&mut bytes).unwrap();
+        validate_randomness(&bytes)
+    }
 
-        let mut sum: f64 = 0.0;
-        for byte in bytes.iter() {
-            sum += *byte as f64;
-        }
-
-        sum /= bytes.len() as f64;
-
-        const MID: f64 = 127.5;
-        const TOLERANCE: f64 = 15.0;
-        const LO: f64 = MID - TOLERANCE;
-        const HI: f64 = MID + TOLERANCE;
-
-        defmt::assert!(sum > LO && sum < HI, "{:?}", sum);
+    #[test]
+    #[cfg(feature = "aio")]
+    fn aio_random_enough_for_me(_rng: &mut Rng) {
+        let mut executor = ate::Executor::new();
+        executor.spawn(ate::Task::new(aio_random_enough_for_me_inner()));
+        executor.run();
     }
 }

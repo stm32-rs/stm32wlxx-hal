@@ -287,60 +287,62 @@ pub fn set_sysclk_to_msi_48megahertz(
     pwr: &mut pac::PWR,
     rcc: &mut pac::RCC,
 ) {
-    const VOS: Vos = Vos::Range1;
-    const MSI_RANGE: MsiRange = MsiRange::Range11;
-    const MSI_CALIBRATION: u8 = 0;
+    cortex_m::interrupt::free(|_| {
+        const VOS: Vos = Vos::Range1;
+        const MSI_RANGE: MsiRange = MsiRange::Range11;
+        const MSI_CALIBRATION: u8 = 0;
 
-    pwr.cr1.modify(|_, w| unsafe { w.vos().bits(VOS as u8) });
+        pwr.cr1.modify(|_, w| unsafe { w.vos().bits(VOS as u8) });
 
-    let sysclk_source: SysclkSource = SysclkSource::from_bits(rcc.cfgr.read().sws().bits());
-    let pll_config: PllSrc = PllSrc::from_bits(rcc.pllcfgr.read().pllsrc().bits());
+        let sysclk_source: SysclkSource = SysclkSource::from_bits(rcc.cfgr.read().sws().bits());
+        let pll_config: PllSrc = PllSrc::from_bits(rcc.pllcfgr.read().pllsrc().bits());
 
-    if !(sysclk_source.is_msi() || sysclk_source.is_pllrclk() && pll_config.is_msi()) {
+        if !(sysclk_source.is_msi() || sysclk_source.is_pllrclk() && pll_config.is_msi()) {
+            rcc.cfgr
+                .modify(|_, w| w.sw().bits(SysclkSource::Msi.into()));
+        }
+
+        if MSI_RANGE > MsiRange::from_rcc(rcc) {
+            rcc_set_flash_latency_from_msi_range(flash, rcc, &MSI_RANGE, VOS);
+            rcc.cr
+                .modify(|_, w| unsafe { w.msirgsel().set_bit().msirange().bits(MSI_RANGE.into()) });
+            rcc.icscr.modify(|_, w| w.msitrim().bits(MSI_CALIBRATION));
+        } else {
+            rcc.cr
+                .modify(|_, w| unsafe { w.msirgsel().set_bit().msirange().bits(MSI_RANGE.into()) });
+            rcc.icscr.modify(|_, w| w.msitrim().bits(MSI_CALIBRATION));
+            rcc_set_flash_latency_from_msi_range(flash, rcc, &MSI_RANGE, VOS);
+        }
+
+        // HCLK1 configuration
+        rcc.cfgr.modify(|_, w| unsafe { w.hpre().bits(0) });
+        while rcc.cfgr.read().hpref().bit_is_clear() {
+            compiler_fence(SeqCst);
+        }
+
+        // HCLK3 configuration
+        rcc.extcfgr.modify(|_, w| unsafe { w.shdhpre().bits(0) });
+        while rcc.extcfgr.read().shdhpref().bit_is_clear() {
+            compiler_fence(SeqCst);
+        }
+
+        // PCLK1 configuration
+        rcc.cfgr.modify(|_, w| unsafe { w.ppre1().bits(0) });
+        while rcc.cfgr.read().ppre1f().bit_is_clear() {
+            compiler_fence(SeqCst);
+        }
+
+        // PCLK2 configuration
+        rcc.cfgr.modify(|_, w| unsafe { w.ppre2().bits(0) });
+        while rcc.cfgr.read().ppre2f().bit_is_clear() {
+            compiler_fence(SeqCst);
+        }
+
+        assert!(rcc.cr.read().msirdy().bit_is_set());
         rcc.cfgr
             .modify(|_, w| w.sw().bits(SysclkSource::Msi.into()));
-    }
-
-    if MSI_RANGE > MsiRange::from_rcc(rcc) {
-        rcc_set_flash_latency_from_msi_range(flash, rcc, &MSI_RANGE, VOS);
-        rcc.cr
-            .modify(|_, w| unsafe { w.msirgsel().set_bit().msirange().bits(MSI_RANGE.into()) });
-        rcc.icscr.modify(|_, w| w.msitrim().bits(MSI_CALIBRATION));
-    } else {
-        rcc.cr
-            .modify(|_, w| unsafe { w.msirgsel().set_bit().msirange().bits(MSI_RANGE.into()) });
-        rcc.icscr.modify(|_, w| w.msitrim().bits(MSI_CALIBRATION));
-        rcc_set_flash_latency_from_msi_range(flash, rcc, &MSI_RANGE, VOS);
-    }
-
-    // HCLK1 configuration
-    rcc.cfgr.modify(|_, w| unsafe { w.hpre().bits(0) });
-    while rcc.cfgr.read().hpref().bit_is_clear() {
-        compiler_fence(SeqCst);
-    }
-
-    // HCLK3 configuration
-    rcc.extcfgr.modify(|_, w| unsafe { w.shdhpre().bits(0) });
-    while rcc.extcfgr.read().shdhpref().bit_is_clear() {
-        compiler_fence(SeqCst);
-    }
-
-    // PCLK1 configuration
-    rcc.cfgr.modify(|_, w| unsafe { w.ppre1().bits(0) });
-    while rcc.cfgr.read().ppre1f().bit_is_clear() {
-        compiler_fence(SeqCst);
-    }
-
-    // PCLK2 configuration
-    rcc.cfgr.modify(|_, w| unsafe { w.ppre2().bits(0) });
-    while rcc.cfgr.read().ppre2f().bit_is_clear() {
-        compiler_fence(SeqCst);
-    }
-
-    assert!(rcc.cr.read().msirdy().bit_is_set());
-    rcc.cfgr
-        .modify(|_, w| w.sw().bits(SysclkSource::Msi.into()));
-    while SysclkSource::try_from(rcc.cfgr.read().sws().bits()) != Ok(SysclkSource::Msi) {
-        compiler_fence(SeqCst);
-    }
+        while SysclkSource::try_from(rcc.cfgr.read().sws().bits()) != Ok(SysclkSource::Msi) {
+            compiler_fence(SeqCst);
+        }
+    })
 }

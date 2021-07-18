@@ -307,7 +307,7 @@ impl Rng {
     ///     rng::{ClkSrc, Rng},
     /// };
     ///
-    /// # async fn doctest() -> Result<(), stm32wl_hal::rng::Error>
+    /// # async fn doctest() -> Result<(), stm32wl_hal::rng::Error> {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// Rng::set_clock_source(&mut dp.RCC, ClkSrc::MSI);
@@ -349,7 +349,7 @@ impl Rng {
     ///     rng::{ClkSrc, Rng},
     /// };
     ///
-    /// # async fn doctest() -> Result<(), stm32wl_hal::rng::Error>
+    /// # async fn doctest() -> Result<(), stm32wl_hal::rng::Error> {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// Rng::set_clock_source(&mut dp.RCC, ClkSrc::MSI);

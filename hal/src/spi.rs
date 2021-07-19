@@ -80,7 +80,7 @@ trait SpiBase {
 
     fn enable_dma(&mut self) {
         self.cr2()
-            .modify(|_, w| w.txdmaen().enabled().rxdmaen().enabled().frxth().quarter());
+            .write(|w| w.txdmaen().enabled().rxdmaen().enabled().frxth().quarter());
     }
 
     fn write_word(&mut self, word: u8) -> Result<(), Error> {

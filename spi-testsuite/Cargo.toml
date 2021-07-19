@@ -1,0 +1,33 @@
+
+[package]
+authors = ["Alex M. <alexmgit@protonmail.com>"]
+name = "spi-testsuite"
+publish = false
+edition = "2018"
+version = "0.1.0"
+
+[[test]]
+name = "test"
+harness = false
+
+[dependencies]
+nb = "^1"
+cortex-m = "~0.7.2"
+cortex-m-rt = { version = "~0.6.13" }
+defmt = "~0.2.1"
+defmt-rtt = "~0.2.0"
+defmt-test = "~0.2.0"
+panic-probe = { version = "~0.2.0", features = ["print-defmt"] }
+stm32wl-hal = { path = "../hal", features = ["stm32wl5x_cm4"] }
+
+[features]
+# set logging levels here
+default = ["defmt-trace"]
+
+# do NOT modify these features
+defmt-default = []
+defmt-trace = []
+defmt-debug = []
+defmt-info = []
+defmt-warn = []
+defmt-error = []

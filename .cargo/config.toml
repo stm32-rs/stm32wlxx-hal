@@ -15,6 +15,7 @@ run-ex = "run -p examples --target thumbv7em-none-eabi --example"
 test-aes = "test -p aes-testsuite --target thumbv7em-none-eabi"
 test-pka = "test -p pka-testsuite --target thumbv7em-none-eabi"
 test-rng = "test -p rng-testsuite --target thumbv7em-none-eabi"
+test-spi = "test -p spi-testsuite --target thumbv7em-none-eabi"
 
 # e.g. cargo +nightly test-aes-aio
 test-aes-aio = "test -p aes-testsuite --target thumbv7em-none-eabi --features aio --release"

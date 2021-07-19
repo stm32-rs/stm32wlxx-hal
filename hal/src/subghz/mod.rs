@@ -41,7 +41,6 @@ use crate::spi::{BaudDiv, Spi3};
 
 pub use cad_params::{CadParams, ExitMode, NbCadSymbol};
 pub use calibrate::{Calibrate, CalibrateImage};
-use cortex_m::prelude::{_embedded_hal_blocking_spi_Transfer, _embedded_hal_blocking_spi_Write};
 pub use fallback_mode::FallbackMode;
 pub use hse_trim::HseTrim;
 pub use irq::{CfgDioIrq, Irq, IrqLine};
@@ -73,6 +72,8 @@ pub use value_error::ValueError;
 pub use num_rational;
 
 use num_rational::Ratio;
+
+use embedded_hal::blocking::spi::{Transfer, Write};
 
 /// Passthrough for SPI errors (for now)
 pub type Error = crate::spi::Error;
@@ -167,6 +168,10 @@ impl SubGhz {
             spi: Spi3::steal(),
             debug_pins: None,
         }
+    }
+
+    pub fn free(self) -> pac::SPI3 {
+        self.spi.free()
     }
 
     /// Disable the SPI3 (SubGHz SPI) clock.
@@ -301,9 +306,9 @@ impl SubGhz {
 
     /// Helper to ensure NSS is always set high; even upon an error
     #[inline(always)]
-    fn with_nss<F, R>(&mut self, mut f: F) -> R
+    fn with_nss<F>(&mut self, mut f: F) -> Result<(), Error>
     where
-        F: FnMut(&mut Spi3) -> R,
+        F: FnMut(&mut Spi3) -> Result<(), Error>,
     {
         Self::clear_nss();
         let result = f(&mut self.spi);

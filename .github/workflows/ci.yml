@@ -61,6 +61,7 @@ jobs:
           - "aes-testsuite"
           - "pka-testsuite"
           - "rng-testsuite"
+          - "spi-testsuite"
           - "subghz-testsuite-rx"
           - "subghz-testsuite-tx"
     steps:

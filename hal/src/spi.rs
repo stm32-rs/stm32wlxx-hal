@@ -279,7 +279,7 @@ macro_rules! impl_spi_base_for {
     };
 }
 
-use stm32wl::stm32wl5x_cm4::dmamux::c0cr::DMAREQ_ID_A::{
+use pac::dmamux::c0cr::DMAREQ_ID_A::{
     SPI1_RX_DMA, SPI1_TX_DMA, SPI2_RX_DMA, SPI2_TX_DMA, SUBGHZSPI_RX, SUBGHZSPI_TX,
 };
 

@@ -103,6 +103,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "aio")]
     fn aio_buffer_io(_: &mut SubGhz<DmaCh>) {
         let mut executor = ate::Executor::new();
         executor.spawn(ate::Task::new(aio_buffer_io_inner()));

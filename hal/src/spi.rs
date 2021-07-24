@@ -461,7 +461,7 @@ where
         rcc.apb2enr.read(); // delay after an RCC peripheral clock enabling
     }
 
-    fn toggle_reset(rcc: &mut pac::RCC) {
+    fn pulse_reset(rcc: &mut pac::RCC) {
         rcc.apb2rstr.modify(|_, w| w.spi1rst().set_bit());
         rcc.apb2rstr.modify(|_, w| w.spi1rst().clear_bit());
     }
@@ -476,7 +476,7 @@ where
         rcc: &mut pac::RCC,
     ) {
         Self::enable_clock(rcc);
-        Self::toggle_reset(rcc);
+        Self::pulse_reset(rcc);
         mosi.set_spi1_mosi_af();
         miso.set_spi1_miso_af();
         sck.set_spi1_sck_af();
@@ -707,7 +707,7 @@ where
         rcc.apb1enr1.read(); // delay after an RCC peripheral clock enabling
     }
 
-    fn toggle_reset(rcc: &mut pac::RCC) {
+    fn pulse_reset(rcc: &mut pac::RCC) {
         rcc.apb1rstr1.modify(|_, w| w.spi2s2rst().set_bit());
         rcc.apb1rstr1.modify(|_, w| w.spi2s2rst().clear_bit());
     }
@@ -722,7 +722,7 @@ where
         rcc: &mut pac::RCC,
     ) {
         Self::enable_clock(rcc);
-        Self::toggle_reset(rcc);
+        Self::pulse_reset(rcc);
         mosi.set_spi2_mosi_af();
         miso.set_spi2_miso_af();
         sck.set_spi2_sck_af();
@@ -948,15 +948,15 @@ impl<DMA> Spi3<DMA> {
         rcc.apb3enr.read(); // delay after an RCC peripheral clock enabling
     }
 
-    /// Toggle the SPI3 (SubGHz SPI) reset
-    pub fn toggle_reset(rcc: &mut pac::RCC) {
+    /// Pulse the SPI3 (SubGHz SPI) reset
+    pub fn pulse_reset(rcc: &mut pac::RCC) {
         rcc.apb3rstr.write(|w| w.subghzspirst().set_bit());
         rcc.apb3rstr.write(|w| w.subghzspirst().clear_bit());
     }
 
     fn init_no_dma(spi3: &mut pac::SPI3, div: BaudDiv, rcc: &mut pac::RCC) {
         Self::enable_clock(rcc);
-        Self::toggle_reset(rcc);
+        Self::pulse_reset(rcc);
 
         #[rustfmt::skip]
         spi3.cr1.write(|w|

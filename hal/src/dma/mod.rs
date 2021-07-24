@@ -207,10 +207,10 @@ impl DmaCh {
     /// (one per channel), and enabling the interrupt for a DMA channel will
     /// enable other IRQs in the same group:
     ///
-    /// * DMA1 channel 3:1 secure and non-secure interrupt (C2IMR2[2:0])
-    /// * DMA1 channel 7:4 secure and non-secure interrupt (C2IMR2[6:3])
-    /// * DMA2 channel 7:1 secure and non-secure interrupt (C2IMR2[14:8])
-    ///   DMAMUX1 overrun interrupt (C2IMR2[15])
+    /// * DMA1 channel 3:1 secure and non-secure interrupt (C2IMR2\[2:0\])
+    /// * DMA1 channel 7:4 secure and non-secure interrupt (C2IMR2\[6:3\])
+    /// * DMA2 channel 7:1 secure and non-secure interrupt (C2IMR2\[14:8\])
+    ///   DMAMUX1 overrun interrupt (C2IMR2\[15\])
     pub unsafe fn unmask_irq(&self) {
         pac::NVIC::unmask(self.irq)
     }

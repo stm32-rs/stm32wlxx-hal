@@ -985,7 +985,7 @@ impl Spi3<NoDmaCh> {
         }
     }
 
-    #[allow(clippy::clippy::missing_safety_doc)]
+    #[allow(clippy::missing_safety_doc)]
     pub unsafe fn steal() -> Spi3<NoDmaCh> {
         Spi3 {
             base: Spi3Base {
@@ -1020,7 +1020,7 @@ impl Spi3<DmaCh> {
         }
     }
 
-    #[allow(clippy::clippy::missing_safety_doc)]
+    #[allow(clippy::missing_safety_doc)]
     pub unsafe fn steal_with_dma(tx_dma: DmaCh, rx_dma: DmaCh) -> Spi3<DmaCh> {
         Spi3 {
             base: Spi3Base {

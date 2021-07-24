@@ -620,6 +620,7 @@ where
     ///     &mut dp.RCC,
     /// );
     /// ```
+    #[allow(clippy::too_many_arguments)]
     pub fn new_with_dma(
         mut spi1: pac::SPI1,
         mut mosi: MOSI,
@@ -864,6 +865,7 @@ where
     ///     &mut dp.RCC,
     /// );
     /// ```
+    #[allow(clippy::too_many_arguments)]
     pub fn new_with_dma(
         mut spi2: pac::SPI2,
         mut mosi: MOSI,
@@ -983,6 +985,7 @@ impl Spi3<NoDmaCh> {
         }
     }
 
+    #[allow(clippy::clippy::missing_safety_doc)]
     pub unsafe fn steal() -> Spi3<NoDmaCh> {
         Spi3 {
             base: Spi3Base {
@@ -1017,6 +1020,7 @@ impl Spi3<DmaCh> {
         }
     }
 
+    #[allow(clippy::clippy::missing_safety_doc)]
     pub unsafe fn steal_with_dma(tx_dma: DmaCh, rx_dma: DmaCh) -> Spi3<DmaCh> {
         Spi3 {
             base: Spi3Base {

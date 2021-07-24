@@ -1,13 +1,16 @@
 #![no_std]
 #![no_main]
+#![cfg_attr(feature = "aio", feature(alloc_error_handler))]
 
 use defmt_rtt as _; // global logger
 use panic_probe as _;
 
-use bsp::{hal, RfSwitch};
 use nucleo_wl55jc_bsp as bsp;
 
+use bsp::{hal, RfSwitch};
+
 use hal::{
+    dma::{AllDma, DmaCh},
     gpio::{PortA, PortC},
     pac,
     subghz::{
@@ -15,6 +18,50 @@ use hal::{
         Status, StatusMode, SubGhz, Timeout,
     },
 };
+
+#[cfg(feature = "aio")]
+use ate::alloc_cortex_m::CortexMHeap;
+
+#[global_allocator]
+#[cfg(feature = "aio")]
+static ALLOCATOR: CortexMHeap = CortexMHeap::empty();
+
+#[cfg_attr(feature = "aio", alloc_error_handler)]
+#[cfg(feature = "aio")]
+fn oom(_layout: core::alloc::Layout) -> ! {
+    cortex_m::interrupt::disable();
+
+    let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
+    let mut rcc: pac::RCC = dp.RCC;
+
+    use stm32wl_hal::gpio;
+    let gpiob: gpio::PortB = gpio::PortB::split(dp.GPIOB, &mut rcc);
+    let mut led1 = gpio::Output::default(gpiob.pb9);
+    let mut led2 = gpio::Output::default(gpiob.pb15);
+    let mut led3 = gpio::Output::default(gpiob.pb11);
+
+    led1.set_level_high();
+    led2.set_level_high();
+    led3.set_level_high();
+
+    use core::sync::atomic::{compiler_fence, Ordering::SeqCst};
+    loop {
+        compiler_fence(SeqCst);
+    }
+}
+
+#[cfg(feature = "aio")]
+async fn aio_buffer_io_inner() {
+    let mut sg = unsafe {
+        let dma = AllDma::steal();
+        SubGhz::steal_with_dma(dma.d1c1, dma.d2c1)
+    };
+    const DATA: [u8; 255] = [0xA5; 255];
+    let mut buf: [u8; 255] = [0; 255];
+    sg.aio_write_buffer(0, &DATA).await.unwrap();
+    sg.aio_read_buffer(0, &mut buf).await.unwrap();
+    assert_eq!(DATA, buf);
+}
 
 #[defmt_test::tests]
 mod tests {
@@ -26,7 +73,7 @@ mod tests {
     use super::*;
 
     #[init]
-    fn init() -> SubGhz {
+    fn init() -> SubGhz<DmaCh> {
         let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 
         let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
@@ -34,14 +81,37 @@ mod tests {
         let mut rfs: RfSwitch = RfSwitch::new(gpioc.pc3, gpioc.pc4, gpioc.pc5);
         rfs.set_rx();
 
-        let mut sg = SubGhz::new(dp.SPI3, &mut dp.RCC);
+        let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
+        let tx_dma: DmaCh = dma.d1c1;
+        let rx_dma: DmaCh = dma.d2c1;
+
+        #[cfg(feature = "aio")]
+        {
+            let start: usize = cortex_m_rt::heap_start() as usize;
+            let size: usize = 2048; // in bytes
+            unsafe { ALLOCATOR.init(start, size) };
+            unsafe {
+                tx_dma.unmask_irq();
+                rx_dma.unmask_irq();
+            }
+        }
+
+        let mut sg: SubGhz<DmaCh> = SubGhz::new_with_dma(dp.SPI3, tx_dma, rx_dma, &mut dp.RCC);
         sg.enable_spi_debug(gpioa.pa4, gpioa.pa5, gpioa.pa6, gpioa.pa7);
 
         sg
     }
 
     #[test]
-    fn fsk_rx(sg: &mut SubGhz) {
+    #[cfg(feature = "aio")]
+    fn aio_buffer_io(_: &mut SubGhz<DmaCh>) {
+        let mut executor = ate::Executor::new();
+        executor.spawn(ate::Task::new(aio_buffer_io_inner()));
+        executor.run();
+    }
+
+    #[test]
+    fn fsk_rx(sg: &mut SubGhz<DmaCh>) {
         sg.set_standby(StandbyClk::Rc).unwrap();
         let status: Status = sg.status().unwrap();
         assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));

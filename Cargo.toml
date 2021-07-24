@@ -8,7 +8,6 @@ members = [
     "nucleo-wl55jc-bsp",
     "pka-testsuite",
     "rng-testsuite",
-    "spi-testsuite",
     "subghz-testsuite-assets",
     "subghz-testsuite-rx",
     "subghz-testsuite-tx",

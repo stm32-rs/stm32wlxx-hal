@@ -74,6 +74,8 @@ pub struct DmaCh {
     ch: u8,
     /// zero-index mux channel number (0-13)
     mux_ch: u8,
+    /// interrupt number
+    irq: pac::Interrupt,
     // here be registers
     mux_cr: *mut u32,
     mux_rgcr: *mut u32,
@@ -99,18 +101,8 @@ impl DmaCh {
     /// You are also responsible for ensuring the DMA channel has been setup
     /// correctly.
     /// You are also responsible for ensuring the arguments are
-    /// valid (channel number is 1-7).
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use stm32wl_hal::dma::{DmaCh, DmaCtrl};
-    ///
-    /// // ... setup happens here
-    ///
-    /// let dma1ch1 = unsafe { DmaCh::steal(DmaCtrl::Dma1, 1) };
-    /// ```
-    pub const unsafe fn steal(ctrl: DmaCtrl, ch: u8) -> DmaCh {
+    /// valid: channel number is 1-7, interrupt matches the channel.
+    const unsafe fn new(ctrl: DmaCtrl, ch: u8, irq: pac::Interrupt) -> DmaCh {
         let mux_ch: u8 = match ctrl {
             DmaCtrl::Dma1 => ch - 1,
             DmaCtrl::Dma2 => ch + 6,
@@ -120,9 +112,14 @@ impl DmaCh {
         let ch: u8 = ch - 1;
         let ch_u: usize = ch as usize;
 
+        // TODO: enable when you can assert in const fn
+        // assert_ne!(ch, 0);
+        // assert!(ch <= 7);
+
         DmaCh {
             ch,
             mux_ch,
+            irq,
             mux_cr: (MUX_BASE + 0x4 * mux_ch_u) as *mut u32,
             mux_rgcr: (MUX_BASE + 0x100 + 0x4 * mux_ch_u) as *mut u32,
             isr: ctrl.base() as *const u32,
@@ -132,6 +129,11 @@ impl DmaCh {
             pa: (ctrl.base() + 0x10 + 0x14 * ch_u) as *mut u32,
             ma: (ctrl.base() + 0x14 + 0x14 * ch_u) as *mut u32,
         }
+    }
+
+    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
+    pub(crate) const fn mux_ch(&self) -> usize {
+        self.mux_ch as usize
     }
 
     /// Get the interrupt flags for the DMA channel.
@@ -145,7 +147,7 @@ impl DmaCh {
     /// ```no_run
     /// use stm32wl_hal::dma::flags;
     ///
-    /// # let dma = unsafe { stm32wl_hal::dma::DmaCh::steal(stm32wl_hal::dma::DmaCtrl::Dma1, 1) };
+    /// # let dma = unsafe { stm32wl_hal::dma::AllDma::steal().d1c1 };
     /// let xfer_cpl: bool = dma.flags() & flags::XFER_CPL != 0;
     /// ```
     pub fn flags(&self) -> u8 {
@@ -192,6 +194,43 @@ impl DmaCh {
     fn clr_sync_ovr(&mut self) {
         unsafe { write_volatile(MUX_CCFR_ADDR as *mut u32, 1 << self.mux_ch) };
     }
+
+    /// Unmask the DMA interrupt in the NVIC.
+    ///
+    /// # Safety
+    ///
+    /// This can break mask-based critical sections.
+    ///
+    /// # Cortex-M0+
+    ///
+    /// On the STM32WL5X Cortex-M0+ core the DMA interrupts are not independent
+    /// (one per channel), and enabling the interrupt for a DMA channel will
+    /// enable other IRQs in the same group:
+    ///
+    /// * DMA1 channel 3:1 secure and non-secure interrupt (C2IMR2\[2:0\])
+    /// * DMA1 channel 7:4 secure and non-secure interrupt (C2IMR2\[6:3\])
+    /// * DMA2 channel 7:1 secure and non-secure interrupt (C2IMR2\[14:8\])
+    ///   DMAMUX1 overrun interrupt (C2IMR2\[15\])
+    pub unsafe fn unmask_irq(&self) {
+        pac::NVIC::unmask(self.irq)
+    }
+
+    /// Mask the DMA interrupt in the NVIC.
+    pub fn mask_irq(&self) {
+        pac::NVIC::mask(self.irq)
+    }
+}
+
+/// Type marker to indicate a peripheral is not using DMA
+#[derive(Debug)]
+pub struct NoDmaCh {
+    _priv: (),
+}
+
+impl NoDmaCh {
+    pub(crate) const fn new() -> NoDmaCh {
+        NoDmaCh { _priv: () }
+    }
 }
 
 /// All DMA channels
@@ -226,6 +265,46 @@ pub struct AllDma {
     /// DMA controller 2 channel 7
     pub d2c7: DmaCh,
 }
+
+#[cfg(any(feature = "stm32wl5x_cm4", feature = "stm32wle5"))]
+const ALL_DMA: AllDma = unsafe {
+    AllDma {
+        d1c1: DmaCh::new(DmaCtrl::Dma1, 1, pac::Interrupt::DMA1_CH1),
+        d1c2: DmaCh::new(DmaCtrl::Dma1, 2, pac::Interrupt::DMA1_CH2),
+        d1c3: DmaCh::new(DmaCtrl::Dma1, 3, pac::Interrupt::DMA1_CH3),
+        d1c4: DmaCh::new(DmaCtrl::Dma1, 4, pac::Interrupt::DMA1_CH4),
+        d1c5: DmaCh::new(DmaCtrl::Dma1, 5, pac::Interrupt::DMA1_CH5),
+        d1c6: DmaCh::new(DmaCtrl::Dma1, 6, pac::Interrupt::DMA1_CH6),
+        d1c7: DmaCh::new(DmaCtrl::Dma1, 7, pac::Interrupt::DMA1_CH7),
+        d2c1: DmaCh::new(DmaCtrl::Dma2, 1, pac::Interrupt::DMA2_CH1),
+        d2c2: DmaCh::new(DmaCtrl::Dma2, 2, pac::Interrupt::DMA2_CH2),
+        d2c3: DmaCh::new(DmaCtrl::Dma2, 3, pac::Interrupt::DMA2_CH3),
+        d2c4: DmaCh::new(DmaCtrl::Dma2, 4, pac::Interrupt::DMA2_CH4),
+        d2c5: DmaCh::new(DmaCtrl::Dma2, 5, pac::Interrupt::DMA2_CH5),
+        d2c6: DmaCh::new(DmaCtrl::Dma2, 6, pac::Interrupt::DMA2_CH6),
+        d2c7: DmaCh::new(DmaCtrl::Dma2, 7, pac::Interrupt::DMA2_CH7),
+    }
+};
+
+#[cfg(feature = "stm32wl5x_cm0p")]
+const ALL_DMA: AllDma = unsafe {
+    AllDma {
+        d1c1: DmaCh::new(DmaCtrl::Dma1, 1, pac::Interrupt::DMA1_CH3_1),
+        d1c2: DmaCh::new(DmaCtrl::Dma1, 2, pac::Interrupt::DMA1_CH3_1),
+        d1c3: DmaCh::new(DmaCtrl::Dma1, 3, pac::Interrupt::DMA1_CH3_1),
+        d1c4: DmaCh::new(DmaCtrl::Dma1, 4, pac::Interrupt::DMA1_CH7_4),
+        d1c5: DmaCh::new(DmaCtrl::Dma1, 5, pac::Interrupt::DMA1_CH7_4),
+        d1c6: DmaCh::new(DmaCtrl::Dma1, 6, pac::Interrupt::DMA1_CH7_4),
+        d1c7: DmaCh::new(DmaCtrl::Dma1, 7, pac::Interrupt::DMA1_CH7_4),
+        d2c1: DmaCh::new(DmaCtrl::Dma2, 1, pac::Interrupt::DMA2_CH7_1_DMAMUX1_OVR),
+        d2c2: DmaCh::new(DmaCtrl::Dma2, 2, pac::Interrupt::DMA2_CH7_1_DMAMUX1_OVR),
+        d2c3: DmaCh::new(DmaCtrl::Dma2, 3, pac::Interrupt::DMA2_CH7_1_DMAMUX1_OVR),
+        d2c4: DmaCh::new(DmaCtrl::Dma2, 4, pac::Interrupt::DMA2_CH7_1_DMAMUX1_OVR),
+        d2c5: DmaCh::new(DmaCtrl::Dma2, 5, pac::Interrupt::DMA2_CH7_1_DMAMUX1_OVR),
+        d2c6: DmaCh::new(DmaCtrl::Dma2, 6, pac::Interrupt::DMA2_CH7_1_DMAMUX1_OVR),
+        d2c7: DmaCh::new(DmaCtrl::Dma2, 7, pac::Interrupt::DMA2_CH7_1_DMAMUX1_OVR),
+    }
+};
 
 impl AllDma {
     /// Split the DMA registers into individual channels.
@@ -272,25 +351,115 @@ impl AllDma {
                 .dma1rst().clear_bit()
         });
 
-        const RET: AllDma = unsafe {
-            AllDma {
-                d1c1: DmaCh::steal(DmaCtrl::Dma1, 1),
-                d1c2: DmaCh::steal(DmaCtrl::Dma1, 2),
-                d1c3: DmaCh::steal(DmaCtrl::Dma1, 3),
-                d1c4: DmaCh::steal(DmaCtrl::Dma1, 4),
-                d1c5: DmaCh::steal(DmaCtrl::Dma1, 5),
-                d1c6: DmaCh::steal(DmaCtrl::Dma1, 6),
-                d1c7: DmaCh::steal(DmaCtrl::Dma1, 7),
-                d2c1: DmaCh::steal(DmaCtrl::Dma2, 1),
-                d2c2: DmaCh::steal(DmaCtrl::Dma2, 2),
-                d2c3: DmaCh::steal(DmaCtrl::Dma2, 3),
-                d2c4: DmaCh::steal(DmaCtrl::Dma2, 4),
-                d2c5: DmaCh::steal(DmaCtrl::Dma2, 5),
-                d2c6: DmaCh::steal(DmaCtrl::Dma2, 6),
-                d2c7: DmaCh::steal(DmaCtrl::Dma2, 7),
-            }
-        };
+        ALL_DMA
+    }
 
-        RET
+    /// Steal all DMA channels.
+    ///
+    /// This will **not** initialize the DMA peripheral or the DMAMUX.
+    ///
+    /// # Safety
+    ///
+    /// This will create a steal all DMA channels, bypassing the singleton
+    /// checks that normally occur.
+    /// You are responsible for ensuring that the driver has exclusive access to
+    /// each DMA channel.
+    /// You are also responsible for ensuring the DMA channel has been setup
+    /// correctly.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal::dma::AllDma;
+    ///
+    /// // ... setup occurs here
+    ///
+    /// let dma: AllDma = unsafe { AllDma::steal() };
+    /// ```
+    pub const unsafe fn steal() -> AllDma {
+        ALL_DMA
+    }
+}
+
+#[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
+pub(crate) mod aio {
+    use core::{
+        sync::atomic::{AtomicU8, Ordering::SeqCst},
+        task::Poll,
+    };
+    use futures_util::task::AtomicWaker;
+
+    #[allow(clippy::declare_interior_mutable_const)]
+    const WAKER: AtomicWaker = AtomicWaker::new();
+    #[allow(clippy::declare_interior_mutable_const)]
+    const FLAGS: AtomicU8 = AtomicU8::new(0);
+
+    static DMA_WAKER: [AtomicWaker; 14] = [WAKER; 14];
+    static DMA_FLAGS: [AtomicU8; 14] = [FLAGS; 14];
+
+    pub fn poll(mux_ch: usize, cx: &mut core::task::Context<'_>) -> Poll<Result<(), super::Error>> {
+        DMA_WAKER[mux_ch].register(cx.waker());
+        match DMA_FLAGS[mux_ch].load(SeqCst) {
+            0 => core::task::Poll::Pending,
+            _ => {
+                DMA_WAKER[mux_ch].take();
+                let flags: u8 = DMA_FLAGS[mux_ch].swap(0, SeqCst);
+                if flags & super::flags::XFER_ERR != 0 {
+                    Poll::Ready(Err(super::Error::Xfer))
+                } else {
+                    Poll::Ready(Ok(()))
+                }
+            }
+        }
+    }
+
+    #[cfg(all(target_arch = "arm", target_os = "none"))]
+    mod irq {
+        use super::{
+            super::{Cr, DmaCh, ALL_DMA},
+            DMA_FLAGS, DMA_WAKER,
+        };
+        use crate::pac::interrupt;
+        use core::sync::atomic::Ordering::SeqCst;
+
+        macro_rules! dma_irq_handler {
+            ($name:ident, $dma:ident) => {
+                #[interrupt]
+                #[allow(non_snake_case)]
+                fn $name() {
+                    let mut dma: DmaCh = ALL_DMA.$dma;
+                    const DMA_IDX: usize = ALL_DMA.$dma.mux_ch as usize;
+
+                    debug_assert_eq!(DMA_FLAGS[DMA_IDX].load(SeqCst), 0);
+
+                    // store result
+                    DMA_FLAGS[DMA_IDX].store(dma.flags(), SeqCst);
+
+                    // disable DMA
+                    dma.set_cr(Cr::DISABLE);
+
+                    // clear flags
+                    dma.clear_all_flags();
+
+                    // wake
+                    DMA_WAKER[DMA_IDX].wake();
+                }
+            };
+        }
+
+        dma_irq_handler!(DMA1_CH1, d1c1);
+        dma_irq_handler!(DMA1_CH2, d1c2);
+        dma_irq_handler!(DMA1_CH3, d1c3);
+        dma_irq_handler!(DMA1_CH4, d1c4);
+        dma_irq_handler!(DMA1_CH5, d1c5);
+        dma_irq_handler!(DMA1_CH6, d1c6);
+        dma_irq_handler!(DMA1_CH7, d1c7);
+        dma_irq_handler!(DMA2_CH1, d2c1);
+        dma_irq_handler!(DMA2_CH2, d2c2);
+        dma_irq_handler!(DMA2_CH3, d2c3);
+        dma_irq_handler!(DMA2_CH4, d2c4);
+        dma_irq_handler!(DMA2_CH5, d2c5);
+        dma_irq_handler!(DMA2_CH6, d2c6);
+        dma_irq_handler!(DMA2_CH7, d2c7);
     }
 }

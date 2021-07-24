@@ -442,7 +442,7 @@ mod aio {
     static RNG_RESULT: AtomicU32 = AtomicU32::new(0);
 
     pub fn poll(cx: &mut core::task::Context<'_>) -> Poll<Result<(), super::Error>> {
-        RNG_WAKER.register(&cx.waker());
+        RNG_WAKER.register(cx.waker());
         match RNG_RESULT.load(SeqCst) {
             0 => core::task::Poll::Pending,
             _ => {

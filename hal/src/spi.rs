@@ -2,7 +2,7 @@
 #![deny(missing_docs)]
 
 use crate::{
-    dma::{self, DmaCh},
+    dma::{self, DmaCh, NoDmaCh},
     gpio, pac,
 };
 
@@ -24,26 +24,126 @@ pub enum Error {
     Crc,
     /// NSS mode fault
     ModeFault,
-    /// RX FIFO overrun
+    /// FIFO overrun
     Overrun,
-    /// DMA error
+    /// RX DMA error
     ///
-    /// This can only occur on SPI transfers that use the DMA.
-    Dma,
-}
-
-impl From<dma::Error> for Error {
-    fn from(e: dma::Error) -> Self {
-        match e {
-            dma::Error::Xfer => Error::Dma,
-        }
-    }
+    /// This can only occur on SPI transfers that use the RX DMA.
+    RxDma,
+    /// TX DMA error
+    ///
+    /// This can only occur on SPI transfers that use the TX DMA.
+    TxDma,
 }
 
 const DR_OFFSET: usize = 0xC;
 const SPI1_BASE: usize = 0x4001_3000;
 const SPI2_BASE: usize = 0x4000_3800;
 const SPI3_BASE: usize = 0x5801_0000;
+
+#[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
+async fn aio_write_with_dma<BASE: SpiBase>(
+    spi: &mut BASE,
+    tx_dma: &mut DmaCh,
+    rx_dma: &mut DmaCh,
+    words: &[u8],
+) -> Result<(), Error> {
+    const RX_CR: dma::Cr = dma::Cr::RESET
+        .set_dir_from_periph()
+        .set_xfer_cpl_irq_en(true)
+        .set_xfer_err_irq_en(true)
+        .set_mem_inc(false)
+        .set_enable(true);
+    const TX_CR: dma::Cr = dma::Cr::RESET
+        .set_dir_from_mem()
+        .set_mem_inc(true)
+        .set_enable(true);
+
+    let garbage: [u8; 1] = [0];
+
+    rx_dma.set_mem_addr(garbage.as_ptr() as u32);
+    tx_dma.set_mem_addr(words.as_ptr() as u32);
+
+    let ndt: u32 = words.len() as u32;
+    rx_dma.set_num_data_xfer(ndt);
+    tx_dma.set_num_data_xfer(ndt);
+
+    // RX MUST come before TX
+    rx_dma.set_cr(RX_CR);
+    tx_dma.set_cr(TX_CR);
+
+    // wait for RX DMA to complete
+    let rx_dma_result: Result<(), crate::dma::Error> =
+        futures::future::poll_fn(|cx| dma::aio::poll(rx_dma.mux_ch(), cx)).await;
+
+    // RX is disabled in ISR
+    tx_dma.set_cr(dma::Cr::DISABLE);
+
+    // RX flags are cleared in ISR
+    tx_dma.clear_all_flags();
+
+    if rx_dma_result.is_err() {
+        Err(Error::RxDma)
+    } else {
+        spi.status()?;
+        if tx_dma.flags() & dma::flags::XFER_ERR != 0 {
+            Err(Error::TxDma)
+        } else {
+            Ok(())
+        }
+    }
+}
+
+#[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
+async fn aio_transfer_with_dma<BASE: SpiBase>(
+    spi: &mut BASE,
+    tx_dma: &mut DmaCh,
+    rx_dma: &mut DmaCh,
+    words: &mut [u8],
+) -> Result<(), Error> {
+    const RX_CR: dma::Cr = dma::Cr::RESET
+        .set_dir_from_periph()
+        .set_xfer_cpl_irq_en(true)
+        .set_xfer_err_irq_en(true)
+        .set_mem_inc(true)
+        .set_enable(true);
+    const TX_CR: dma::Cr = dma::Cr::RESET
+        .set_dir_from_mem()
+        .set_mem_inc(true)
+        .set_enable(true);
+
+    rx_dma.set_mem_addr(words.as_ptr() as u32);
+    tx_dma.set_mem_addr(words.as_ptr() as u32);
+
+    let ndt: u32 = words.len() as u32;
+    rx_dma.set_num_data_xfer(ndt);
+    tx_dma.set_num_data_xfer(ndt);
+
+    // RX MUST come before TX
+    rx_dma.set_cr(RX_CR);
+    tx_dma.set_cr(TX_CR);
+
+    // wait for RX DMA to complete
+    let rx_dma_result: Result<(), crate::dma::Error> =
+        futures::future::poll_fn(|cx| dma::aio::poll(rx_dma.mux_ch(), cx)).await;
+
+    // RX is disabled in ISR
+    tx_dma.set_cr(dma::Cr::DISABLE);
+
+    // RX flags are cleared in ISR
+    tx_dma.clear_all_flags();
+
+    if rx_dma_result.is_err() {
+        Err(Error::RxDma)
+    } else {
+        spi.status()?;
+        if tx_dma.flags() & dma::flags::XFER_ERR != 0 {
+            Err(Error::TxDma)
+        } else {
+            Ok(())
+        }
+    }
+}
 
 trait SpiBase {
     const DR: usize;
@@ -78,9 +178,21 @@ trait SpiBase {
         Ok(())
     }
 
-    fn enable_dma(&mut self) {
+    fn one_time_dma_setup(&mut self, tx_dma: &mut DmaCh, rx_dma: &mut DmaCh) {
         self.cr2()
             .write(|w| w.txdmaen().enabled().rxdmaen().enabled().frxth().quarter());
+
+        tx_dma.set_cr(dma::Cr::DISABLE);
+        rx_dma.set_cr(dma::Cr::DISABLE);
+
+        rx_dma.clear_all_flags();
+        tx_dma.clear_all_flags();
+
+        rx_dma.set_periph_addr(Self::DR as u32);
+        tx_dma.set_periph_addr(Self::DR as u32);
+
+        rx_dma.set_mux_cr_reqid(Self::DMA_RX_ID);
+        tx_dma.set_mux_cr_reqid(Self::DMA_TX_ID);
     }
 
     fn write_word(&mut self, word: u8) -> Result<(), Error> {
@@ -122,44 +234,37 @@ trait SpiBase {
         rx_dma: &mut DmaCh,
         words: &[u8],
     ) -> Result<(), Error> {
-        const RX_CR: dma::Cr = dma::Cr::RESET.set_dir_from_periph().set_mem_inc(false);
-        const TX_CR: dma::Cr = dma::Cr::RESET.set_dir_from_mem().set_mem_inc(true);
-
-        // setup DMAs without enabling
-        rx_dma.set_cr(RX_CR);
-        tx_dma.set_cr(TX_CR);
-
-        rx_dma.clear_all_flags();
-        tx_dma.clear_all_flags();
+        const RX_CR: dma::Cr = dma::Cr::RESET
+            .set_dir_from_periph()
+            .set_mem_inc(false)
+            .set_enable(true);
+        const TX_CR: dma::Cr = dma::Cr::RESET
+            .set_dir_from_mem()
+            .set_mem_inc(true)
+            .set_enable(true);
 
         let garbage: [u8; 1] = [0];
 
         rx_dma.set_mem_addr(garbage.as_ptr() as u32);
         tx_dma.set_mem_addr(words.as_ptr() as u32);
 
-        rx_dma.set_periph_addr(Self::DR as u32);
-        tx_dma.set_periph_addr(Self::DR as u32);
-
         let ndt: u32 = words.len() as u32;
         rx_dma.set_num_data_xfer(ndt);
         tx_dma.set_num_data_xfer(ndt);
 
-        rx_dma.set_mux_cr_reqid(Self::DMA_RX_ID);
-        tx_dma.set_mux_cr_reqid(Self::DMA_TX_ID);
-
         // RX MUST come before TX
-        rx_dma.set_cr(RX_CR.set_enable(true));
-        tx_dma.set_cr(TX_CR.set_enable(true));
+        rx_dma.set_cr(RX_CR);
+        tx_dma.set_cr(TX_CR);
 
         let ret: Result<(), Error> = loop {
             let status = self.status()?;
             let tx_dma_flags: u8 = tx_dma.flags();
             let rx_dma_flags: u8 = rx_dma.flags();
             if tx_dma_flags & dma::flags::XFER_ERR != 0 {
-                break Err(Error::Dma);
+                break Err(Error::TxDma);
             }
             if rx_dma_flags & dma::flags::XFER_ERR != 0 {
-                break Err(Error::Dma);
+                break Err(Error::RxDma);
             }
             if status.bsy().is_not_busy()
                 && tx_dma_flags & dma::flags::XFER_CPL != 0
@@ -169,10 +274,12 @@ trait SpiBase {
             }
         };
 
-        // DMA disable must come BEFORE memory barrier
         // TX must come before RX
         tx_dma.set_cr(dma::Cr::DISABLE);
         rx_dma.set_cr(dma::Cr::DISABLE);
+
+        rx_dma.clear_all_flags();
+        tx_dma.clear_all_flags();
 
         ret
     }
@@ -183,15 +290,14 @@ trait SpiBase {
         rx_dma: &mut DmaCh,
         words: &'w mut [u8],
     ) -> Result<&'w [u8], Error> {
-        const RX_CR: dma::Cr = dma::Cr::RESET.set_dir_from_periph().set_mem_inc(true);
-        const TX_CR: dma::Cr = dma::Cr::RESET.set_dir_from_mem().set_mem_inc(true);
-
-        // setup DMAs without enabling
-        rx_dma.set_cr(RX_CR);
-        tx_dma.set_cr(TX_CR);
-
-        rx_dma.clear_all_flags();
-        tx_dma.clear_all_flags();
+        const RX_CR: dma::Cr = dma::Cr::RESET
+            .set_dir_from_periph()
+            .set_mem_inc(true)
+            .set_enable(true);
+        const TX_CR: dma::Cr = dma::Cr::RESET
+            .set_dir_from_mem()
+            .set_mem_inc(true)
+            .set_enable(true);
 
         rx_dma.set_mem_addr(words.as_ptr() as u32);
         tx_dma.set_mem_addr(words.as_ptr() as u32);
@@ -203,22 +309,19 @@ trait SpiBase {
         rx_dma.set_num_data_xfer(ndt);
         tx_dma.set_num_data_xfer(ndt);
 
-        rx_dma.set_mux_cr_reqid(Self::DMA_RX_ID);
-        tx_dma.set_mux_cr_reqid(Self::DMA_TX_ID);
-
         // RX MUST come before TX
-        rx_dma.set_cr(RX_CR.set_enable(true));
-        tx_dma.set_cr(TX_CR.set_enable(true));
+        rx_dma.set_cr(RX_CR);
+        tx_dma.set_cr(TX_CR);
 
         let ret: Result<&'w [u8], Error> = loop {
             let status = self.status()?;
             let tx_dma_flags: u8 = tx_dma.flags();
             let rx_dma_flags: u8 = rx_dma.flags();
             if tx_dma_flags & dma::flags::XFER_ERR != 0 {
-                break Err(Error::Dma);
+                break Err(Error::TxDma);
             }
             if rx_dma_flags & dma::flags::XFER_ERR != 0 {
-                break Err(Error::Dma);
+                break Err(Error::RxDma);
             }
             if status.bsy().is_not_busy()
                 && tx_dma_flags & dma::flags::XFER_CPL != 0
@@ -233,10 +336,13 @@ trait SpiBase {
         tx_dma.set_cr(dma::Cr::DISABLE);
         rx_dma.set_cr(dma::Cr::DISABLE);
 
-        // memory in dst may have changed, but the compiler does not know it
+        rx_dma.clear_all_flags();
+        tx_dma.clear_all_flags();
+
+        // tell the compiler the memory in dst may have changed
         compiler_fence(SeqCst);
+        // tell the cpu the memory in dst may have changed
         cortex_m::asm::dmb();
-        compiler_fence(SeqCst);
 
         ret
     }
@@ -303,36 +409,24 @@ const fn cpol_from_polarity(polarity: Polarity) -> bool {
 
 /// SPI1 driver
 #[derive(Debug)]
-pub struct Spi1<MOSI, MISO, SCK> {
+pub struct Spi1<MOSI, MISO, SCK, DMA> {
     base: Spi1Base,
     mosi: MOSI,
     miso: MISO,
     sck: SCK,
-}
-
-/// SPI1 driver with DMA operations
-#[derive(Debug)]
-pub struct Spi1Dma<MOSI, MISO, SCK> {
-    spi1: Spi1<MOSI, MISO, SCK>,
-    tx_dma: DmaCh,
-    rx_dma: DmaCh,
+    tx_dma: DMA,
+    rx_dma: DMA,
 }
 
 /// SPI2 driver
 #[derive(Debug)]
-pub struct Spi2<MOSI, MISO, SCK> {
+pub struct Spi2<MOSI, MISO, SCK, DMA> {
     base: Spi2Base,
     mosi: MOSI,
     miso: MISO,
     sck: SCK,
-}
-
-/// SPI2 driver with DMA operations
-#[derive(Debug)]
-pub struct Spi2Dma<MOSI, MISO, SCK> {
-    spi2: Spi2<MOSI, MISO, SCK>,
-    tx_dma: DmaCh,
-    rx_dma: DmaCh,
+    tx_dma: DMA,
+    rx_dma: DMA,
 }
 
 /// SPI3 driver
@@ -344,63 +438,45 @@ pub struct Spi2Dma<MOSI, MISO, SCK> {
 /// for the SPI driver with hardware that everyone using this HAL will have.
 #[derive(Debug)]
 #[doc(hidden)]
-pub struct Spi3 {
+pub struct Spi3<DMA> {
     base: Spi3Base,
+    tx_dma: DMA,
+    rx_dma: DMA,
 }
 
-/// SPI3 driver with DMA operations
-#[derive(Debug)]
-#[doc(hidden)]
-pub struct Spi3Dma {
-    spi3: Spi3,
-    tx_dma: DmaCh,
-    rx_dma: DmaCh,
-}
-
-impl<MOSI, MISO, SCK> Spi1<MOSI, MISO, SCK>
+impl<MOSI, MISO, SCK, DMA> Spi1<MOSI, MISO, SCK, DMA>
 where
     MOSI: gpio::sealed::Spi1Mosi,
     MISO: gpio::sealed::Spi1Miso,
     SCK: gpio::sealed::Spi1Sck,
 {
-    /// Create a new `Spi1` driver.
-    ///
-    /// This will enable clocks and reset the SPI1 peripheral.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     gpio::{pins, PortA},
-    ///     pac,
-    ///     spi::{BaudDiv, Spi1, MODE_0},
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let spi: Spi1<pins::A7, pins::A6, pins::A5> = Spi1::new(
-    ///     dp.SPI1,
-    ///     pa.pa7,
-    ///     pa.pa6,
-    ///     pa.pa5,
-    ///     MODE_0,
-    ///     BaudDiv::DIV4,
-    ///     &mut dp.RCC,
-    /// );
-    /// ```
-    pub fn new(
-        spi1: pac::SPI1,
-        mut mosi: MOSI,
-        mut miso: MISO,
-        mut sck: SCK,
+    /// Disable the SPI1 clock
+    pub fn disable_clock(rcc: &mut pac::RCC) {
+        rcc.apb2enr.modify(|_, w| w.spi1en().disabled());
+    }
+
+    /// Enable the SPI1 clock
+    pub fn enable_clock(rcc: &mut pac::RCC) {
+        rcc.apb2enr.modify(|_, w| w.spi1en().enabled());
+        rcc.apb2enr.read(); // delay after an RCC peripheral clock enabling
+    }
+
+    fn toggle_reset(rcc: &mut pac::RCC) {
+        rcc.apb2rstr.modify(|_, w| w.spi1rst().set_bit());
+        rcc.apb2rstr.modify(|_, w| w.spi1rst().clear_bit());
+    }
+
+    fn init_no_dma(
+        spi1: &mut pac::SPI1,
+        mosi: &mut MOSI,
+        miso: &mut MISO,
+        sck: &mut SCK,
         mode: Mode,
         div: BaudDiv,
         rcc: &mut pac::RCC,
-    ) -> Spi1<MOSI, MISO, SCK> {
+    ) {
         Self::enable_clock(rcc);
         Self::toggle_reset(rcc);
-
         mosi.set_spi1_mosi_af();
         miso.set_spi1_miso_af();
         sck.set_spi1_sck_af();
@@ -416,14 +492,60 @@ where
                 .cpol().bit(cpol_from_polarity(mode.polarity))
                 .cpha().bit(cpha_from_phase(mode.phase))
         );
+    }
+}
 
-        // cr2 register reset values are sane for now
+impl<MOSI, MISO, SCK> Spi1<MOSI, MISO, SCK, NoDmaCh>
+where
+    MOSI: gpio::sealed::Spi1Mosi,
+    MISO: gpio::sealed::Spi1Miso,
+    SCK: gpio::sealed::Spi1Sck,
+{
+    /// Create a new `Spi1` driver.
+    ///
+    /// This will enable clocks and reset the SPI1 peripheral.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     dma::NoDmaCh,
+    ///     gpio::{pins, PortA},
+    ///     pac,
+    ///     spi::{BaudDiv, Spi1, MODE_0},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let spi: Spi1<pins::A7, pins::A6, pins::A5, NoDmaCh> = Spi1::new(
+    ///     dp.SPI1,
+    ///     pa.pa7,
+    ///     pa.pa6,
+    ///     pa.pa5,
+    ///     MODE_0,
+    ///     BaudDiv::DIV4,
+    ///     &mut dp.RCC,
+    /// );
+    /// ```
+    pub fn new(
+        mut spi1: pac::SPI1,
+        mut mosi: MOSI,
+        mut miso: MISO,
+        mut sck: SCK,
+        mode: Mode,
+        div: BaudDiv,
+        rcc: &mut pac::RCC,
+    ) -> Spi1<MOSI, MISO, SCK, NoDmaCh> {
+        Self::init_no_dma(&mut spi1, &mut mosi, &mut miso, &mut sck, mode, div, rcc);
 
         Spi1 {
             base: Spi1Base { pac: spi1 },
             mosi,
             miso,
             sck,
+            tx_dma: NoDmaCh::new(),
+            rx_dma: NoDmaCh::new(),
         }
     }
 
@@ -433,6 +555,7 @@ where
     ///
     /// ```no_run
     /// use stm32wl_hal::{
+    ///     dma::NoDmaCh,
     ///     gpio::{pins, PortA},
     ///     pac,
     ///     spi::{BaudDiv, Spi1, MODE_0},
@@ -441,7 +564,7 @@ where
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let spi: Spi1<pins::A7, pins::A6, pins::A5> = Spi1::new(
+    /// let spi: Spi1<pins::A7, pins::A6, pins::A5, NoDmaCh> = Spi1::new(
     ///     dp.SPI1,
     ///     pa.pa7,
     ///     pa.pa6,
@@ -458,153 +581,148 @@ where
     pub fn free(self) -> (pac::SPI1, MOSI, MISO, SCK) {
         (self.base.pac, self.mosi, self.miso, self.sck)
     }
-
-    /// Disable the SPI1 clock
-    pub fn disable_clock(rcc: &mut pac::RCC) {
-        rcc.apb2enr.modify(|_, w| w.spi1en().disabled());
-    }
-
-    /// Enable the SPI1 clock
-    pub fn enable_clock(rcc: &mut pac::RCC) {
-        rcc.apb2enr.modify(|_, w| w.spi1en().enabled());
-        rcc.apb2enr.read(); // delay after an RCC peripheral clock enabling
-    }
-
-    fn toggle_reset(rcc: &mut pac::RCC) {
-        rcc.apb2rstr.modify(|_, w| w.spi1rst().set_bit());
-        rcc.apb2rstr.modify(|_, w| w.spi1rst().clear_bit());
-    }
 }
 
-impl<MOSI, MISO, SCK> Spi1Dma<MOSI, MISO, SCK> {
-    /// Crate a new `Spi1Dma` driver from a `Spi1` driver.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     dma::AllDma,
-    ///     gpio::{pins, PortA},
-    ///     pac,
-    ///     spi::{BaudDiv, Spi1, Spi1Dma, MODE_0},
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
-    ///
-    /// let spi1 = Spi1Dma::new(
-    ///     Spi1::new(
-    ///         dp.SPI1,
-    ///         pa.pa7,
-    ///         pa.pa6,
-    ///         pa.pa5,
-    ///         MODE_0,
-    ///         BaudDiv::DIV4,
-    ///         &mut dp.RCC,
-    ///     ),
-    ///     dma.d1c1,
-    ///     dma.d2c1,
-    /// );
-    /// ```
-    pub fn new(
-        mut spi1: Spi1<MOSI, MISO, SCK>,
-        tx_dma: DmaCh,
-        rx_dma: DmaCh,
-    ) -> Spi1Dma<MOSI, MISO, SCK> {
-        spi1.base.enable_dma();
-        Spi1Dma {
-            spi1,
-            tx_dma,
-            rx_dma,
-        }
-    }
-
-    /// Free the DMA channels and the `Spi1` driver.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     dma::AllDma,
-    ///     gpio::{pins, PortA},
-    ///     pac,
-    ///     spi::{BaudDiv, Spi1, Spi1Dma, MODE_0},
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
-    ///
-    /// let spi1_dma = Spi1Dma::new(
-    ///     Spi1::new(
-    ///         dp.SPI1,
-    ///         pa.pa7,
-    ///         pa.pa6,
-    ///         pa.pa5,
-    ///         MODE_0,
-    ///         BaudDiv::DIV4,
-    ///         &mut dp.RCC,
-    ///     ),
-    ///     dma.d1c1,
-    ///     dma.d2c1,
-    /// );
-    ///
-    /// // use SPI bus
-    ///
-    /// let (spi1, d1c1, d2c2) = spi1_dma.free();
-    /// ```
-    pub fn free(self) -> (Spi1<MOSI, MISO, SCK>, DmaCh, DmaCh) {
-        (self.spi1, self.tx_dma, self.rx_dma)
-    }
-}
-
-impl<MOSI, MISO, SCK> Spi2<MOSI, MISO, SCK>
+impl<MOSI, MISO, SCK> Spi1<MOSI, MISO, SCK, DmaCh>
 where
-    MOSI: gpio::sealed::Spi2Mosi,
-    MISO: gpio::sealed::Spi2Miso,
-    SCK: gpio::sealed::Spi2Sck,
+    MOSI: gpio::sealed::Spi1Mosi,
+    MISO: gpio::sealed::Spi1Miso,
+    SCK: gpio::sealed::Spi1Sck,
 {
-    /// Create a new `Spi2` driver.
+    /// Create a new `Spi1` driver with DMA operations.
     ///
-    /// This will enable clocks and reset the SPI2 peripheral.
+    /// This will enable clocks and reset the SPI1 peripheral.
     ///
     /// # Example
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{pins, PortB},
+    ///     dma::{AllDma, DmaCh},
+    ///     gpio::{pins, PortA},
     ///     pac,
-    ///     spi::{BaudDiv, Spi2, MODE_0},
+    ///     spi::{BaudDiv, Spi1, MODE_0},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
-    /// let pb: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let spi: Spi2<pins::B15, pins::B14, pins::B13> = Spi2::new(
-    ///     dp.SPI2,
-    ///     pb.pb15,
-    ///     pb.pb14,
-    ///     pb.pb13,
+    /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
+    ///
+    /// let spi: Spi1<pins::A7, pins::A6, pins::A5, DmaCh> = Spi1::new_with_dma(
+    ///     dp.SPI1,
+    ///     pa.pa7,
+    ///     pa.pa6,
+    ///     pa.pa5,
+    ///     dma.d1c1,
+    ///     dma.d2c1,
     ///     MODE_0,
     ///     BaudDiv::DIV4,
     ///     &mut dp.RCC,
     /// );
     /// ```
-    pub fn new(
-        spi2: pac::SPI2,
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_with_dma(
+        mut spi1: pac::SPI1,
         mut mosi: MOSI,
         mut miso: MISO,
         mut sck: SCK,
+        mut tx_dma: DmaCh,
+        mut rx_dma: DmaCh,
         mode: Mode,
         div: BaudDiv,
         rcc: &mut pac::RCC,
-    ) -> Spi2<MOSI, MISO, SCK> {
+    ) -> Spi1<MOSI, MISO, SCK, DmaCh> {
+        Self::init_no_dma(&mut spi1, &mut mosi, &mut miso, &mut sck, mode, div, rcc);
+        let mut base: Spi1Base = Spi1Base { pac: spi1 };
+        base.one_time_dma_setup(&mut tx_dma, &mut rx_dma);
+        Spi1 {
+            base,
+            mosi,
+            miso,
+            sck,
+            tx_dma,
+            rx_dma,
+        }
+    }
+
+    /// Free the GPIOs and DMA channels from the SPI driver.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     dma::{AllDma, DmaCh},
+    ///     gpio::{pins, PortA},
+    ///     pac,
+    ///     spi::{BaudDiv, Spi1, MODE_0},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
+    ///
+    /// let spi: Spi1<pins::A7, pins::A6, pins::A5, DmaCh> = Spi1::new_with_dma(
+    ///     dp.SPI1,
+    ///     pa.pa7,
+    ///     pa.pa6,
+    ///     pa.pa5,
+    ///     dma.d1c1,
+    ///     dma.d2c1,
+    ///     MODE_0,
+    ///     BaudDiv::DIV4,
+    ///     &mut dp.RCC,
+    /// );
+    ///
+    /// // use SPI bus
+    ///
+    /// let (spi1, pa7, pa6, pa5, tx_dma, rx_dma) = spi.free();
+    /// ```
+    pub fn free(self) -> (pac::SPI1, MOSI, MISO, SCK, DmaCh, DmaCh) {
+        (
+            self.base.pac,
+            self.mosi,
+            self.miso,
+            self.sck,
+            self.tx_dma,
+            self.rx_dma,
+        )
+    }
+}
+
+impl<MOSI, MISO, SCK, DMA> Spi2<MOSI, MISO, SCK, DMA>
+where
+    MOSI: gpio::sealed::Spi2Mosi,
+    MISO: gpio::sealed::Spi2Miso,
+    SCK: gpio::sealed::Spi2Sck,
+{
+    /// Disable the SPI2 clock
+    pub fn disable_clock(rcc: &mut pac::RCC) {
+        rcc.apb1enr1.modify(|_, w| w.spi2s2en().disabled());
+    }
+
+    /// Enable the SPI2 clock
+    pub fn enable_clock(rcc: &mut pac::RCC) {
+        rcc.apb1enr1.modify(|_, w| w.spi2s2en().enabled());
+        rcc.apb1enr1.read(); // delay after an RCC peripheral clock enabling
+    }
+
+    fn toggle_reset(rcc: &mut pac::RCC) {
+        rcc.apb1rstr1.modify(|_, w| w.spi2s2rst().set_bit());
+        rcc.apb1rstr1.modify(|_, w| w.spi2s2rst().clear_bit());
+    }
+
+    fn init_no_dma(
+        spi2: &mut pac::SPI2,
+        mosi: &mut MOSI,
+        miso: &mut MISO,
+        sck: &mut SCK,
+        mode: Mode,
+        div: BaudDiv,
+        rcc: &mut pac::RCC,
+    ) {
         Self::enable_clock(rcc);
         Self::toggle_reset(rcc);
-
         mosi.set_spi2_mosi_af();
         miso.set_spi2_miso_af();
         sck.set_spi2_sck_af();
@@ -620,14 +738,59 @@ where
                 .cpol().bit(cpol_from_polarity(mode.polarity))
                 .cpha().bit(cpha_from_phase(mode.phase))
         );
+    }
+}
 
-        // cr2 register reset values are sane for now
-
+impl<MOSI, MISO, SCK> Spi2<MOSI, MISO, SCK, NoDmaCh>
+where
+    MOSI: gpio::sealed::Spi2Mosi,
+    MISO: gpio::sealed::Spi2Miso,
+    SCK: gpio::sealed::Spi2Sck,
+{
+    /// Create a new `Spi2` driver.
+    ///
+    /// This will enable clocks and reset the SPI2 peripheral.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     dma::NoDmaCh,
+    ///     gpio::{pins, PortB},
+    ///     pac,
+    ///     spi::{BaudDiv, Spi2, MODE_0},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let pb: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    /// let spi: Spi2<pins::B15, pins::B14, pins::B13, NoDmaCh> = Spi2::new(
+    ///     dp.SPI2,
+    ///     pb.pb15,
+    ///     pb.pb14,
+    ///     pb.pb13,
+    ///     MODE_0,
+    ///     BaudDiv::DIV4,
+    ///     &mut dp.RCC,
+    /// );
+    /// ```
+    pub fn new(
+        mut spi2: pac::SPI2,
+        mut mosi: MOSI,
+        mut miso: MISO,
+        mut sck: SCK,
+        mode: Mode,
+        div: BaudDiv,
+        rcc: &mut pac::RCC,
+    ) -> Spi2<MOSI, MISO, SCK, NoDmaCh> {
+        Self::init_no_dma(&mut spi2, &mut mosi, &mut miso, &mut sck, mode, div, rcc);
         Spi2 {
             base: Spi2Base { pac: spi2 },
             mosi,
             miso,
             sck,
+            tx_dma: NoDmaCh::new(),
+            rx_dma: NoDmaCh::new(),
         }
     }
 
@@ -637,6 +800,7 @@ where
     ///
     /// ```no_run
     /// use stm32wl_hal::{
+    ///     dma::NoDmaCh,
     ///     gpio::{pins, PortB},
     ///     pac,
     ///     spi::{BaudDiv, Spi2, MODE_0},
@@ -645,7 +809,7 @@ where
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let pb: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let spi: Spi2<pins::B15, pins::B14, pins::B13> = Spi2::new(
+    /// let spi: Spi2<pins::B15, pins::B14, pins::B13, NoDmaCh> = Spi2::new(
     ///     dp.SPI2,
     ///     pb.pb15,
     ///     pb.pb14,
@@ -662,35 +826,26 @@ where
     pub fn free(self) -> (pac::SPI2, MOSI, MISO, SCK) {
         (self.base.pac, self.mosi, self.miso, self.sck)
     }
-
-    /// Disable the SPI2 clock
-    pub fn disable_clock(rcc: &mut pac::RCC) {
-        rcc.apb1enr1.modify(|_, w| w.spi2s2en().disabled());
-    }
-
-    /// Enable the SPI2 clock
-    pub fn enable_clock(rcc: &mut pac::RCC) {
-        rcc.apb1enr1.modify(|_, w| w.spi2s2en().enabled());
-        rcc.apb1enr1.read(); // delay after an RCC peripheral clock enabling
-    }
-
-    fn toggle_reset(rcc: &mut pac::RCC) {
-        rcc.apb1rstr1.modify(|_, w| w.spi2s2rst().set_bit());
-        rcc.apb1rstr1.modify(|_, w| w.spi2s2rst().clear_bit());
-    }
 }
 
-impl<MOSI, MISO, SCK> Spi2Dma<MOSI, MISO, SCK> {
-    /// Crate a new `Spi2Dma` driver from a `Spi2` driver.
+impl<MOSI, MISO, SCK> Spi2<MOSI, MISO, SCK, DmaCh>
+where
+    MOSI: gpio::sealed::Spi2Mosi,
+    MISO: gpio::sealed::Spi2Miso,
+    SCK: gpio::sealed::Spi2Sck,
+{
+    /// Create a new `Spi2` driver with DMA operations.
+    ///
+    /// This will enable clocks and reset the SPI2 peripheral.
     ///
     /// # Example
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     dma::AllDma,
+    ///     dma::{AllDma, DmaCh},
     ///     gpio::{pins, PortB},
     ///     pac,
-    ///     spi::{BaudDiv, Spi2, Spi2Dma, MODE_0},
+    ///     spi::{BaudDiv, Spi2, MODE_0},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -698,43 +853,53 @@ impl<MOSI, MISO, SCK> Spi2Dma<MOSI, MISO, SCK> {
     /// let pb: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
     /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
     ///
-    /// let spi1 = Spi2Dma::new(
-    ///     Spi2::new(
-    ///         dp.SPI2,
-    ///         pb.pb15,
-    ///         pb.pb14,
-    ///         pb.pb13,
-    ///         MODE_0,
-    ///         BaudDiv::DIV4,
-    ///         &mut dp.RCC,
-    ///     ),
+    /// let spi: Spi2<pins::B15, pins::B14, pins::B13, DmaCh> = Spi2::new_with_dma(
+    ///     dp.SPI2,
+    ///     pb.pb15,
+    ///     pb.pb14,
+    ///     pb.pb13,
     ///     dma.d1c1,
     ///     dma.d2c1,
+    ///     MODE_0,
+    ///     BaudDiv::DIV4,
+    ///     &mut dp.RCC,
     /// );
     /// ```
-    pub fn new(
-        mut spi2: Spi2<MOSI, MISO, SCK>,
-        tx_dma: DmaCh,
-        rx_dma: DmaCh,
-    ) -> Spi2Dma<MOSI, MISO, SCK> {
-        spi2.base.enable_dma();
-        Spi2Dma {
-            spi2,
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_with_dma(
+        mut spi2: pac::SPI2,
+        mut mosi: MOSI,
+        mut miso: MISO,
+        mut sck: SCK,
+        mut tx_dma: DmaCh,
+        mut rx_dma: DmaCh,
+        mode: Mode,
+        div: BaudDiv,
+        rcc: &mut pac::RCC,
+    ) -> Spi2<MOSI, MISO, SCK, DmaCh> {
+        Self::init_no_dma(&mut spi2, &mut mosi, &mut miso, &mut sck, mode, div, rcc);
+        let mut base: Spi2Base = Spi2Base { pac: spi2 };
+        base.one_time_dma_setup(&mut tx_dma, &mut rx_dma);
+        Spi2 {
+            base,
+            mosi,
+            miso,
+            sck,
             tx_dma,
             rx_dma,
         }
     }
 
-    /// Free the DMA channels and the `Spi2` driver.
+    /// Free the GPIOs and DMA channels from the SPI driver.
     ///
     /// # Example
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     dma::AllDma,
+    ///     dma::{AllDma, DmaCh},
     ///     gpio::{pins, PortB},
     ///     pac,
-    ///     spi::{BaudDiv, Spi2, Spi2Dma, MODE_0},
+    ///     spi::{BaudDiv, Spi2, MODE_0},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -742,32 +907,54 @@ impl<MOSI, MISO, SCK> Spi2Dma<MOSI, MISO, SCK> {
     /// let pb: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
     /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
     ///
-    /// let spi2_dma = Spi2Dma::new(
-    ///     Spi2::new(
-    ///         dp.SPI2,
-    ///         pb.pb15,
-    ///         pb.pb14,
-    ///         pb.pb13,
-    ///         MODE_0,
-    ///         BaudDiv::DIV4,
-    ///         &mut dp.RCC,
-    ///     ),
+    /// let spi: Spi2<pins::B15, pins::B14, pins::B13, DmaCh> = Spi2::new_with_dma(
+    ///     dp.SPI2,
+    ///     pb.pb15,
+    ///     pb.pb14,
+    ///     pb.pb13,
     ///     dma.d1c1,
     ///     dma.d2c1,
+    ///     MODE_0,
+    ///     BaudDiv::DIV4,
+    ///     &mut dp.RCC,
     /// );
     ///
     /// // use SPI bus
     ///
-    /// let (spi2, d1c1, d2c2) = spi2_dma.free();
+    /// let (spi2, pb15, pb14, pb13, tx_dma, rx_dma) = spi.free();
     /// ```
-    pub fn free(self) -> (Spi2<MOSI, MISO, SCK>, DmaCh, DmaCh) {
-        (self.spi2, self.tx_dma, self.rx_dma)
+    pub fn free(self) -> (pac::SPI2, MOSI, MISO, SCK, DmaCh, DmaCh) {
+        (
+            self.base.pac,
+            self.mosi,
+            self.miso,
+            self.sck,
+            self.tx_dma,
+            self.rx_dma,
+        )
     }
 }
 
-impl Spi3 {
-    #[allow(missing_docs)]
-    pub fn new(spi3: pac::SPI3, div: BaudDiv, rcc: &mut pac::RCC) -> Spi3 {
+#[allow(missing_docs)] // struct is hidden
+impl<DMA> Spi3<DMA> {
+    /// Disable the SPI3 (SubGHz SPI) clock
+    pub fn disable_clock(rcc: &mut pac::RCC) {
+        rcc.apb3enr.modify(|_, w| w.subghzspien().disabled());
+    }
+
+    /// Enable the SPI3 (SubGHz SPI) clock
+    pub fn enable_clock(rcc: &mut pac::RCC) {
+        rcc.apb3enr.modify(|_, w| w.subghzspien().enabled());
+        rcc.apb3enr.read(); // delay after an RCC peripheral clock enabling
+    }
+
+    /// Toggle the SPI3 (SubGHz SPI) reset
+    pub fn toggle_reset(rcc: &mut pac::RCC) {
+        rcc.apb3rstr.write(|w| w.subghzspirst().set_bit());
+        rcc.apb3rstr.write(|w| w.subghzspirst().clear_bit());
+    }
+
+    fn init_no_dma(spi3: &mut pac::SPI3, div: BaudDiv, rcc: &mut pac::RCC) {
         Self::enable_clock(rcc);
         Self::toggle_reset(rcc);
 
@@ -783,62 +970,83 @@ impl Spi3 {
                 .cpol().idle_low()
                 .cpha().first_edge()
         );
+    }
+}
+
+#[allow(missing_docs)] // struct is hidden
+impl Spi3<NoDmaCh> {
+    pub fn new(mut spi3: pac::SPI3, div: BaudDiv, rcc: &mut pac::RCC) -> Spi3<NoDmaCh> {
+        Self::init_no_dma(&mut spi3, div, rcc);
 
         Spi3 {
             base: Spi3Base { pac: spi3 },
+            tx_dma: NoDmaCh::new(),
+            rx_dma: NoDmaCh::new(),
         }
     }
 
-    #[allow(missing_docs)]
-    pub unsafe fn steal() -> Spi3 {
+    #[allow(clippy::missing_safety_doc)]
+    pub unsafe fn steal() -> Spi3<NoDmaCh> {
         Spi3 {
             base: Spi3Base {
                 pac: pac::Peripherals::steal().SPI3,
             },
+            tx_dma: NoDmaCh::new(),
+            rx_dma: NoDmaCh::new(),
         }
     }
 
-    #[allow(missing_docs)]
     pub fn free(self) -> pac::SPI3 {
         self.base.pac
     }
-
-    /// Disable the SPI3 (SubGHz SPI) clock
-    pub fn disable_clock(rcc: &mut pac::RCC) {
-        rcc.apb3enr.modify(|_, w| w.subghzspien().disabled());
-    }
-
-    /// Enable the SPI3 (SubGHz SPI) clock
-    pub fn enable_clock(rcc: &mut pac::RCC) {
-        rcc.apb3enr.modify(|_, w| w.subghzspien().enabled());
-        rcc.apb3enr.read(); // delay after an RCC peripheral clock enabling
-    }
-
-    /// Toggle the SPI3 (SubGHz SPI) reset
-    pub fn toggle_reset(rcc: &mut pac::RCC) {
-        rcc.apb1rstr1.modify(|_, w| w.spi2s2rst().set_bit());
-        rcc.apb1rstr1.modify(|_, w| w.spi2s2rst().clear_bit());
-    }
 }
 
-impl Spi3Dma {
-    #[allow(missing_docs)]
-    pub fn new(mut spi3: Spi3, tx_dma: DmaCh, rx_dma: DmaCh) -> Spi3Dma {
-        spi3.base.enable_dma();
-        Spi3Dma {
-            spi3,
+#[allow(missing_docs)] // struct is hidden
+impl Spi3<DmaCh> {
+    pub fn new(
+        mut spi3: pac::SPI3,
+        mut tx_dma: DmaCh,
+        mut rx_dma: DmaCh,
+        div: BaudDiv,
+        rcc: &mut pac::RCC,
+    ) -> Spi3<DmaCh> {
+        Self::init_no_dma(&mut spi3, div, rcc);
+        let mut base: Spi3Base = Spi3Base { pac: spi3 };
+        base.one_time_dma_setup(&mut tx_dma, &mut rx_dma);
+        Spi3 {
+            base,
             tx_dma,
             rx_dma,
         }
     }
 
-    #[allow(missing_docs)]
-    pub fn free(self) -> (Spi3, DmaCh, DmaCh) {
-        (self.spi3, self.tx_dma, self.rx_dma)
+    #[allow(clippy::missing_safety_doc)]
+    pub unsafe fn steal_with_dma(tx_dma: DmaCh, rx_dma: DmaCh) -> Spi3<DmaCh> {
+        Spi3 {
+            base: Spi3Base {
+                pac: pac::Peripherals::steal().SPI3,
+            },
+            tx_dma,
+            rx_dma,
+        }
+    }
+
+    pub fn free(self) -> (pac::SPI3, DmaCh, DmaCh) {
+        (self.base.pac, self.tx_dma, self.rx_dma)
+    }
+
+    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
+    pub async fn aio_write_with_dma(&mut self, words: &[u8]) -> Result<(), Error> {
+        aio_write_with_dma(&mut self.base, &mut self.tx_dma, &mut self.rx_dma, words).await
+    }
+
+    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
+    pub async fn aio_transfer_with_dma(&mut self, words: &mut [u8]) -> Result<(), Error> {
+        aio_transfer_with_dma(&mut self.base, &mut self.tx_dma, &mut self.rx_dma, words).await
     }
 }
 
-impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Transfer<u8> for Spi1<MOSI, MISO, SCK>
+impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Transfer<u8> for Spi1<MOSI, MISO, SCK, NoDmaCh>
 where
     MOSI: gpio::sealed::Spi1Mosi,
     MISO: gpio::sealed::Spi1Miso,
@@ -852,7 +1060,7 @@ where
     }
 }
 
-impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Write<u8> for Spi1<MOSI, MISO, SCK>
+impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Write<u8> for Spi1<MOSI, MISO, SCK, NoDmaCh>
 where
     MOSI: gpio::sealed::Spi1Mosi,
     MISO: gpio::sealed::Spi1Miso,
@@ -866,29 +1074,37 @@ where
     }
 }
 
-impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Transfer<u8> for Spi1Dma<MOSI, MISO, SCK> {
+impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Transfer<u8> for Spi1<MOSI, MISO, SCK, DmaCh>
+where
+    MOSI: gpio::sealed::Spi1Mosi,
+    MISO: gpio::sealed::Spi1Miso,
+    SCK: gpio::sealed::Spi1Sck,
+{
     type Error = Error;
 
     #[inline(always)]
     fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
-        self.spi1
-            .base
+        self.base
             .transfer_with_dma(&mut self.tx_dma, &mut self.rx_dma, words)
     }
 }
 
-impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Write<u8> for Spi1Dma<MOSI, MISO, SCK> {
+impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Write<u8> for Spi1<MOSI, MISO, SCK, DmaCh>
+where
+    MOSI: gpio::sealed::Spi1Mosi,
+    MISO: gpio::sealed::Spi1Miso,
+    SCK: gpio::sealed::Spi1Sck,
+{
     type Error = Error;
 
     #[inline(always)]
     fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
-        self.spi1
-            .base
+        self.base
             .write_with_dma(&mut self.tx_dma, &mut self.rx_dma, words)
     }
 }
 
-impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Transfer<u8> for Spi2<MOSI, MISO, SCK>
+impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Transfer<u8> for Spi2<MOSI, MISO, SCK, NoDmaCh>
 where
     MOSI: gpio::sealed::Spi2Mosi,
     MISO: gpio::sealed::Spi2Miso,
@@ -902,7 +1118,7 @@ where
     }
 }
 
-impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Write<u8> for Spi2<MOSI, MISO, SCK>
+impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Write<u8> for Spi2<MOSI, MISO, SCK, NoDmaCh>
 where
     MOSI: gpio::sealed::Spi2Mosi,
     MISO: gpio::sealed::Spi2Miso,
@@ -916,29 +1132,37 @@ where
     }
 }
 
-impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Transfer<u8> for Spi2Dma<MOSI, MISO, SCK> {
+impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Transfer<u8> for Spi2<MOSI, MISO, SCK, DmaCh>
+where
+    MOSI: gpio::sealed::Spi2Mosi,
+    MISO: gpio::sealed::Spi2Miso,
+    SCK: gpio::sealed::Spi2Sck,
+{
     type Error = Error;
 
     #[inline(always)]
     fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
-        self.spi2
-            .base
+        self.base
             .transfer_with_dma(&mut self.tx_dma, &mut self.rx_dma, words)
     }
 }
 
-impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Write<u8> for Spi2Dma<MOSI, MISO, SCK> {
+impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Write<u8> for Spi2<MOSI, MISO, SCK, DmaCh>
+where
+    MOSI: gpio::sealed::Spi2Mosi,
+    MISO: gpio::sealed::Spi2Miso,
+    SCK: gpio::sealed::Spi2Sck,
+{
     type Error = Error;
 
     #[inline(always)]
     fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
-        self.spi2
-            .base
+        self.base
             .write_with_dma(&mut self.tx_dma, &mut self.rx_dma, words)
     }
 }
 
-impl embedded_hal::blocking::spi::Transfer<u8> for Spi3 {
+impl embedded_hal::blocking::spi::Transfer<u8> for Spi3<NoDmaCh> {
     type Error = Error;
 
     #[inline(always)]
@@ -947,7 +1171,7 @@ impl embedded_hal::blocking::spi::Transfer<u8> for Spi3 {
     }
 }
 
-impl embedded_hal::blocking::spi::Write<u8> for Spi3 {
+impl embedded_hal::blocking::spi::Write<u8> for Spi3<NoDmaCh> {
     type Error = Error;
 
     #[inline(always)]
@@ -956,24 +1180,22 @@ impl embedded_hal::blocking::spi::Write<u8> for Spi3 {
     }
 }
 
-impl embedded_hal::blocking::spi::Transfer<u8> for Spi3Dma {
+impl embedded_hal::blocking::spi::Transfer<u8> for Spi3<DmaCh> {
     type Error = Error;
 
     #[inline(always)]
     fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
-        self.spi3
-            .base
+        self.base
             .transfer_with_dma(&mut self.tx_dma, &mut self.rx_dma, words)
     }
 }
 
-impl embedded_hal::blocking::spi::Write<u8> for Spi3Dma {
+impl embedded_hal::blocking::spi::Write<u8> for Spi3<DmaCh> {
     type Error = Error;
 
     #[inline(always)]
     fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
-        self.spi3
-            .base
+        self.base
             .write_with_dma(&mut self.tx_dma, &mut self.rx_dma, words)
     }
 }

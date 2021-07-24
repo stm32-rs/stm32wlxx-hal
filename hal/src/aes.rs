@@ -598,7 +598,7 @@ mod aio {
     static AES_RESULT: AtomicU32 = AtomicU32::new(0);
 
     pub fn poll(cx: &mut core::task::Context<'_>) -> Poll<Result<(), super::Error>> {
-        AES_WAKER.register(&cx.waker());
+        AES_WAKER.register(cx.waker());
         match AES_RESULT.load(SeqCst) {
             0 => core::task::Poll::Pending,
             _ => {

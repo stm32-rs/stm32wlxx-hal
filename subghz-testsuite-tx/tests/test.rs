@@ -8,6 +8,7 @@ use bsp::{hal, RfSwitch};
 use nucleo_wl55jc_bsp as bsp;
 
 use hal::{
+    dma::NoDmaCh,
     gpio::{PortA, PortC},
     pac,
     subghz::{
@@ -25,7 +26,7 @@ mod tests {
     use super::*;
 
     #[init]
-    fn init() -> SubGhz {
+    fn init() -> SubGhz<NoDmaCh> {
         let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 
         let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
@@ -40,7 +41,7 @@ mod tests {
     }
 
     #[test]
-    fn fsk_tx(sg: &mut SubGhz) {
+    fn fsk_tx(sg: &mut SubGhz<NoDmaCh>) {
         sg.set_standby(StandbyClk::Rc).unwrap();
         let status: Status = sg.status().unwrap();
         assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));

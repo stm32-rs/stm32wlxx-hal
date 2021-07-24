@@ -656,7 +656,7 @@ mod aio {
     static PKA_RESULT: AtomicU32 = AtomicU32::new(0);
 
     pub(super) fn poll(cx: &mut core::task::Context<'_>) -> Poll<Result<(), super::Error>> {
-        PKA_WAKER.register(&cx.waker());
+        PKA_WAKER.register(cx.waker());
         match PKA_RESULT.load(SeqCst) {
             0 => core::task::Poll::Pending,
             _ => {

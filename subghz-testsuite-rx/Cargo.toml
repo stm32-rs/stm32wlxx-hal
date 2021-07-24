@@ -18,10 +18,12 @@ defmt-rtt = "~0.2.0"
 defmt-test = "~0.2.0"
 panic-probe = { version = "~0.2.0", features = ["print-defmt" ] }
 nucleo-wl55jc-bsp = { path = "../nucleo-wl55jc-bsp" }
+stm32wl-hal = { path = "../hal", features = ["stm32wl5x_cm4"] }
 subghz-testsuite-assets = { path = "../subghz-testsuite-assets" }
+ate = { path = "../ate", optional = true }
 
 [features]
-# set logging levels here
+aio = ["ate", "stm32wl-hal/aio"]
 default = ["defmt-trace"]
 
 # do NOT modify these features

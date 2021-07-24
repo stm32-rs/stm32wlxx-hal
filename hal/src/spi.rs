@@ -41,7 +41,7 @@ const SPI1_BASE: usize = 0x4001_3000;
 const SPI2_BASE: usize = 0x4000_3800;
 const SPI3_BASE: usize = 0x5801_0000;
 
-#[cfg(all(feature = "aio", not(feature = "stm32wlx_cm0p")))]
+#[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
 async fn aio_write_with_dma<BASE: SpiBase>(
     spi: &mut BASE,
     tx_dma: &mut DmaCh,
@@ -94,7 +94,7 @@ async fn aio_write_with_dma<BASE: SpiBase>(
     }
 }
 
-#[cfg(all(feature = "aio", not(feature = "stm32wlx_cm0p")))]
+#[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
 async fn aio_transfer_with_dma<BASE: SpiBase>(
     spi: &mut BASE,
     tx_dma: &mut DmaCh,
@@ -1031,12 +1031,12 @@ impl Spi3<DmaCh> {
         (self.base.pac, self.tx_dma, self.rx_dma)
     }
 
-    #[cfg(all(feature = "aio", not(feature = "stm32wlx_cm0p")))]
+    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
     pub async fn aio_write_with_dma(&mut self, words: &[u8]) -> Result<(), Error> {
         aio_write_with_dma(&mut self.base, &mut self.tx_dma, &mut self.rx_dma, words).await
     }
 
-    #[cfg(all(feature = "aio", not(feature = "stm32wlx_cm0p")))]
+    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
     pub async fn aio_transfer_with_dma(&mut self, words: &mut [u8]) -> Result<(), Error> {
         aio_transfer_with_dma(&mut self.base, &mut self.tx_dma, &mut self.rx_dma, words).await
     }

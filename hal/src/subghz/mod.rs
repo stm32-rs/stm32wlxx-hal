@@ -99,6 +99,42 @@ impl DebugPins {
     }
 }
 
+#[derive(Debug)]
+struct Nss {
+    _priv: (),
+}
+
+impl Nss {
+    pub fn new() -> Nss {
+        Self::clear();
+        Nss { _priv: () }
+    }
+
+    /// Clear NSS, enabling SPI transactions
+    #[inline(always)]
+    fn clear() {
+        unsafe { pac::Peripherals::steal() }
+            .PWR
+            .subghzspicr
+            .write(|w| w.nss().clear_bit())
+    }
+
+    /// Set NSS, disabling SPI transactions
+    #[inline(always)]
+    fn set() {
+        unsafe { pac::Peripherals::steal() }
+            .PWR
+            .subghzspicr
+            .write(|w| w.nss().set_bit())
+    }
+}
+
+impl Drop for Nss {
+    fn drop(&mut self) {
+        Self::set()
+    }
+}
+
 /// Sub-GHz radio peripheral
 #[derive(Debug)]
 pub struct SubGhz<DMA> {
@@ -230,24 +266,6 @@ impl<DMA> SubGhz<DMA> {
             }
         }
     }
-
-    /// Clear NSS, enabling SPI transactions
-    #[inline(always)]
-    fn clear_nss() {
-        unsafe { pac::Peripherals::steal() }
-            .PWR
-            .subghzspicr
-            .write(|w| w.nss().clear_bit())
-    }
-
-    /// Set NSS, disabling SPI transactions
-    #[inline(always)]
-    fn set_nss() {
-        unsafe { pac::Peripherals::steal() }
-            .PWR
-            .subghzspicr
-            .write(|w| w.nss().set_bit())
-    }
 }
 
 impl<DMA> SubGhz<DMA>
@@ -255,35 +273,23 @@ where
     Spi3<DMA>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
         + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
-    /// Helper to ensure NSS is always set high; even upon an error
-    #[inline(always)]
-    fn with_nss<F>(&mut self, mut f: F) -> Result<(), Error>
-    where
-        F: FnMut(&mut Spi3<DMA>) -> Result<(), Error>,
-    {
-        Self::clear_nss();
-        let result = f(&mut self.spi);
-        Self::set_nss();
-        result
-    }
-
     fn read(&mut self, opcode: OpCode, data: &mut [u8]) -> Result<(), Error> {
         self.poll_not_busy();
-
-        self.with_nss(|spi| {
-            spi.write(&[opcode as u8])?;
-            spi.transfer(data)?;
-            Ok(())
-        })?;
-
+        {
+            let _nss: Nss = Nss::new();
+            self.spi.write(&[opcode as u8])?;
+            self.spi.transfer(data)?;
+        }
         self.poll_not_busy();
-
         Ok(())
     }
 
     fn write(&mut self, data: &[u8]) -> Result<(), Error> {
         self.poll_not_busy();
-        self.with_nss(|spi| spi.write(data))?;
+        {
+            let _nss: Nss = Nss::new();
+            self.spi.write(data)?;
+        }
         self.poll_not_busy();
         Ok(())
     }
@@ -324,8 +330,8 @@ impl SubGhz<NoDmaCh> {
 
         let spi: Spi3<NoDmaCh> = Spi3::<NoDmaCh>::new(spi, BaudDiv::DIV2, rcc);
 
-        Self::clear_nss();
-        Self::set_nss();
+        Nss::clear();
+        Nss::set();
 
         unsafe { Self::clear_radio_busy() };
 
@@ -424,8 +430,8 @@ impl SubGhz<DmaCh> {
 
         let spi: Spi3<DmaCh> = Spi3::<DmaCh>::new(spi, tx_dma, rx_dma, BaudDiv::DIV2, rcc);
 
-        Self::clear_nss();
-        Self::set_nss();
+        Nss::clear();
+        Nss::set();
 
         unsafe { Self::clear_radio_busy() };
 
@@ -476,13 +482,13 @@ impl SubGhz<DmaCh> {
     pub async fn aio_write_buffer(&mut self, offset: u8, data: &[u8]) -> Result<(), Error> {
         self.poll_not_busy();
 
-        // TODO: NSS DTOR
-        Self::clear_nss();
-        self.spi
-            .aio_write_with_dma(&[OpCode::WriteBuffer as u8, offset])
-            .await?;
-        self.spi.aio_write_with_dma(data).await?;
-        Self::set_nss();
+        {
+            let _nss: Nss = Nss::new();
+            self.spi
+                .aio_write_with_dma(&[OpCode::WriteBuffer as u8, offset])
+                .await?;
+            self.spi.aio_write_with_dma(data).await?;
+        }
 
         self.poll_not_busy();
         Ok(())
@@ -492,14 +498,14 @@ impl SubGhz<DmaCh> {
         let mut status_buf: [u8; 1] = [0];
         self.poll_not_busy();
 
-        // TODO: NSS DTOR
-        Self::clear_nss();
-        self.spi
-            .aio_write_with_dma(&[OpCode::ReadBuffer as u8, offset])
-            .await?;
-        self.spi.aio_transfer_with_dma(&mut status_buf).await?;
-        self.spi.aio_transfer_with_dma(buf).await?;
-        Self::set_nss();
+        {
+            let _nss: Nss = Nss::new();
+            self.spi
+                .aio_write_with_dma(&[OpCode::ReadBuffer as u8, offset])
+                .await?;
+            self.spi.aio_transfer_with_dma(&mut status_buf).await?;
+            self.spi.aio_transfer_with_dma(buf).await?;
+        }
 
         self.poll_not_busy();
         Ok(status_buf[0].into())
@@ -516,11 +522,11 @@ where
     pub fn write_buffer(&mut self, offset: u8, data: &[u8]) -> Result<(), Error> {
         self.poll_not_busy();
 
-        self.with_nss(|spi| {
-            spi.write(&[OpCode::WriteBuffer as u8, offset])?;
-            spi.write(data)?;
-            Ok(())
-        })?;
+        {
+            let _nss: Nss = Nss::new();
+            self.spi.write(&[OpCode::WriteBuffer as u8, offset])?;
+            self.spi.write(data)?;
+        }
 
         self.poll_not_busy();
         Ok(())
@@ -530,12 +536,12 @@ where
         let mut status_buf: [u8; 1] = [0];
         self.poll_not_busy();
 
-        self.with_nss(|spi| {
-            spi.write(&[OpCode::ReadBuffer as u8, offset])?;
-            spi.transfer(&mut status_buf)?;
-            spi.transfer(buf)?;
-            Ok(())
-        })?;
+        {
+            let _nss: Nss = Nss::new();
+            self.spi.write(&[OpCode::ReadBuffer as u8, offset])?;
+            self.spi.transfer(&mut status_buf)?;
+            self.spi.transfer(buf)?;
+        }
 
         self.poll_not_busy();
         Ok(status_buf[0].into())
@@ -553,11 +559,12 @@ where
         let addr: [u8; 2] = register.address().to_be_bytes();
         self.poll_not_busy();
 
-        self.with_nss(|spi| {
-            spi.write(&[OpCode::WriteRegister as u8, addr[0], addr[1]])?;
-            spi.write(data)?;
-            Ok(())
-        })?;
+        {
+            let _nss: Nss = Nss::new();
+            self.spi
+                .write(&[OpCode::WriteRegister as u8, addr[0], addr[1]])?;
+            self.spi.write(data)?;
+        }
 
         self.poll_not_busy();
         Ok(())

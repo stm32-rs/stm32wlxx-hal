@@ -36,9 +36,9 @@ pub mod subghz;
 #[cfg(feature = "rt")]
 #[cfg_attr(docsrs, doc(cfg(feature = "rt")))]
 /// Startup code and minimal runtime for Cortex-M microcontrollers
-pub use cortex_m_rt as rt;
+pub use cortex_m_rt;
 
 /// Cortex-M CPU peripherals
-pub use cortex_m as cm;
+pub use cortex_m;
 /// Embedded-hal trait abstractions
-pub use embedded_hal as eh;
+pub use embedded_hal;

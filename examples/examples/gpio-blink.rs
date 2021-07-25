@@ -3,19 +3,13 @@
 #![no_std]
 #![no_main]
 
+use cortex_m::{delay::Delay, peripheral::syst::SystClkSource};
 use panic_rtt_target as _;
 use rtt_target::rprintln;
 use stm32wl_hal::{
     gpio::{Level, Output, PortB},
-    pac,
+    pac, rcc,
 };
-
-// Note: This is a bad delay function because it will not be consistent.
-fn wait_a_little() {
-    for _ in 0..6000 {
-        cortex_m::asm::nop()
-    }
-}
 
 #[cortex_m_rt::entry]
 fn main() -> ! {
@@ -32,22 +26,25 @@ fn main() -> ! {
     rprintln!("Hello from rprintln!");
 
     let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
 
     let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
     let mut led1 = Output::default(gpiob.pb9);
     let mut led2 = Output::default(gpiob.pb15);
     let mut led3 = Output::default(gpiob.pb11);
 
+    let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
+
     rprintln!("Starting blinky");
 
     loop {
         for &level in &[Level::High, Level::Low] {
             led1.set_level(level);
-            wait_a_little();
+            delay.delay_ms(600);
             led2.set_level(level);
-            wait_a_little();
+            delay.delay_ms(600);
             led3.set_level(level);
-            wait_a_little();
+            delay.delay_ms(600);
         }
     }
 }

@@ -411,6 +411,7 @@ pub fn hclk1_hz(rcc: &pac::RCC) -> u32 {
     hclk1(rcc, cfgr).to_integer()
 }
 
+#[cfg(any(feature = "stm32wl5x_cm4", feature = "stm32wl5x_cm0p"))]
 fn hclk2(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R) -> Ratio<u32> {
     let div: u32 = pre_div(rcc.extcfgr.read().c2hpre().bits()).into();
     sysclk(rcc, cfgr) / div
@@ -430,6 +431,11 @@ fn hclk2(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R) -> Ratio<u32> {
 /// // without any initialization hclk2 will be 4MHz
 /// assert_eq!(hclk2_hz(&dp.RCC), 4_000_000);
 /// ```
+#[cfg(any(feature = "stm32wl5x_cm4", feature = "stm32wl5x_cm0p"))]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "stm32wl5x_cm4", feature = "stm32wl5x_cm0p")))
+)]
 pub fn hclk2_hz(rcc: &pac::RCC) -> u32 {
     let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
     hclk2(rcc, cfgr).to_integer()

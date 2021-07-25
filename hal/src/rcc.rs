@@ -350,7 +350,9 @@ pub fn set_sysclk_to_msi_48megahertz(
     })
 }
 
-/// Calculate the current system clock frequency in hertz
+/// Calculate the current system clock frequency in hertz.
+///
+/// Fractional frequencies will be rounded down.
 ///
 /// # Example
 ///

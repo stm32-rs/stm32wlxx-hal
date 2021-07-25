@@ -477,6 +477,7 @@ pub fn cpu1_systick_hz(rcc: &pac::RCC, src: SystClkSource) -> u32 {
     cpu1_systick(rcc, cfgr, src).to_integer()
 }
 
+#[cfg(any(feature = "stm32wl5x_cm4", feature = "stm32wl5x_cm0p"))]
 fn cpu2_systick(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R, src: SystClkSource) -> Ratio<u32> {
     let hclk2: Ratio<u32> = hclk2(rcc, cfgr);
     match src {

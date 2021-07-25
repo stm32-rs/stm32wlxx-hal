@@ -5,6 +5,8 @@ use core::{
     sync::atomic::{compiler_fence, Ordering::SeqCst},
 };
 
+use num_rational::Ratio;
+
 use crate::pac;
 
 fn rcc_set_flash_latency_from_msi_range(
@@ -203,11 +205,12 @@ impl MsiRange {
     /// The unwraps in this function are desired because the other values are
     /// reserved.
     pub fn from_rcc(rcc: &pac::RCC) -> MsiRange {
+        use pac::rcc::cr::MSIRGSEL_A::{CR, CSR};
+
         let cr = rcc.cr.read();
-        if cr.msirgsel().bit_is_set() {
-            cr.msirange().bits().try_into().unwrap()
-        } else {
-            rcc.csr.read().msisrange().bits().try_into().unwrap()
+        match cr.msirgsel().variant() {
+            CSR => rcc.csr.read().msisrange().bits().try_into().unwrap(),
+            CR => cr.msirange().bits().try_into().unwrap(),
         }
     }
 }
@@ -345,4 +348,58 @@ pub fn set_sysclk_to_msi_48megahertz(
             compiler_fence(SeqCst);
         }
     })
+}
+
+/// Calculate the current system clock frequency in hertz.
+///
+/// Fractional frequencies will be rounded down.
+///
+/// # Example
+///
+/// ```no_run
+/// use stm32wl_hal::{pac, rcc::sysclk_hz};
+///
+/// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+///
+/// // without any initialization sysclk will be set to MSI at 4MHz
+/// assert_eq!(sysclk_hz(&dp.RCC), 4_000_000);
+/// ```
+pub fn sysclk_hz(rcc: &pac::RCC) -> u32 {
+    use pac::rcc::{
+        cfgr::SWS_A::{HSE32, HSI16, MSI, PLLR},
+        cr::HSEPRE_A::{DIV1, DIV2},
+        pllcfgr::PLLSRC_A as PLLSRC,
+    };
+
+    match rcc.cfgr.read().sws().variant() {
+        MSI => MsiRange::from_rcc(rcc).as_hertz(),
+        HSI16 => 16_000_000,
+        HSE32 => match rcc.cr.read().hsepre().variant() {
+            DIV1 => 32_000_000,
+            DIV2 => 16_000_000,
+        },
+        PLLR => {
+            let pllcfg = rcc.pllcfgr.read();
+            let src_freq: u32 = match pllcfg.pllsrc().variant() {
+                // technically unreachable
+                PLLSRC::NOCLOCK => return 0,
+                PLLSRC::MSI => MsiRange::from_rcc(rcc).as_hertz(),
+                PLLSRC::HSI16 => 16_000_000,
+                PLLSRC::HSE32 => match rcc.cr.read().hsepre().variant() {
+                    DIV1 => 32_000_000,
+                    DIV2 => 16_000_000,
+                },
+            };
+
+            let n_div_m: Ratio<u32> = {
+                let pll_m: u32 = pllcfg.pllm().bits().saturating_add(1).into();
+                let pll_n: u32 = pllcfg.plln().bits().into();
+                Ratio::new(pll_n, pll_m)
+            };
+            let vco_freq: Ratio<u32> = n_div_m * src_freq;
+            let pll_r: u32 = pllcfg.pllr().bits().saturating_add(1).into();
+
+            (vco_freq / pll_r).to_integer()
+        }
+    }
 }

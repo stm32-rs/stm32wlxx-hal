@@ -468,7 +468,7 @@ fn cpu1_systick(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R, src: SystClkSource) -> 
 /// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
 ///
 /// // constructor will set the clock source to core
-/// // note: this code is only valid is running on CPU1
+/// // note: this code is only valid if running on CPU1
 /// let mut delay: Delay = Delay::new(cp.SYST, cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
 /// delay.delay_ms(100);
 /// ```
@@ -505,7 +505,7 @@ fn cpu2_systick(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R, src: SystClkSource) -> 
 /// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
 ///
 /// // constructor will set the clock source to core
-/// // note: this code is only valid is running on CPU2
+/// // note: this code is only valid if running on CPU2
 /// let mut delay: Delay = Delay::new(cp.SYST, cpu2_systick_hz(&dp.RCC, SystClkSource::Core));
 /// delay.delay_ms(100);
 /// ```

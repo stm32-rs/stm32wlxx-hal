@@ -113,13 +113,19 @@ jobs:
           toolchain: stable
           target: thumbv7em-none-eabi
       - name: "Build"
-        run: cargo build -p nucleo-wl55jc-bsp --target thumbv7em-none-eabi
+        run: |
+          cargo build -p nucleo-wl55jc-bsp \
+          --target thumbv7em-none-eabi \
+          --features stm32wl5x_cm4
       - uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
           target: x86_64-unknown-linux-gnu
       - name: "Test"
-        run: cargo test -p nucleo-wl55jc-bsp --target x86_64-unknown-linux-gnu
+        run: |
+          cargo test -p nucleo-wl55jc-bsp \
+          --target x86_64-unknown-linux-gnu \
+          --features stm32wl5x_cm4
 
   build_examples:
     name: Examples Compile

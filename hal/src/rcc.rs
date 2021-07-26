@@ -4,7 +4,7 @@ use core::{
     convert::{TryFrom, TryInto},
     sync::atomic::{compiler_fence, Ordering::SeqCst},
 };
-
+use cortex_m::peripheral::syst::SystClkSource;
 use num_rational::Ratio;
 
 use crate::pac;
@@ -12,26 +12,24 @@ use crate::pac;
 fn rcc_set_flash_latency_from_msi_range(
     flash: &pac::FLASH,
     rcc: &pac::RCC,
-    msi_range: &MsiRange,
+    msi_range: MsiRange,
     vos: Vos,
 ) {
     let msi_freq: u32 = msi_range.as_hertz();
     let div: u32 = u32::from(hclk3_prescaler_div(rcc));
     let flash_clk_src_freq: u32 = msi_freq / div;
 
-    let latency: u8 = FlashLatency::from_hertz(vos, flash_clk_src_freq).into();
+    let latency: FlashLatency = FlashLatency::from_hertz(vos, flash_clk_src_freq);
 
-    flash
-        .acr
-        .modify(|_, w| unsafe { w.latency().bits(latency) });
+    flash.acr.modify(|_, w| w.latency().variant(latency.into()));
 
-    while flash.acr.read().latency().bits() != latency {
+    while flash.acr.read().latency().bits() != (latency as u8) {
         compiler_fence(SeqCst);
     }
 }
 
 #[repr(u8)]
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 enum FlashLatency {
     /// Zero wait state.
     Zero = 0b000,
@@ -64,95 +62,17 @@ impl From<FlashLatency> for u8 {
     }
 }
 
-#[repr(u8)]
-#[derive(Debug, PartialEq, Eq)]
-enum SysclkSource {
-    Msi = 0b00,
-    Hsi16 = 0b01,
-    Hse32 = 0b10,
-    Pllrclk = 0b11,
-}
-
-impl SysclkSource {
-    pub fn from_bits(bits: u8) -> SysclkSource {
-        match bits & 0b11 {
-            0b00 => SysclkSource::Msi,
-            0b01 => SysclkSource::Hsi16,
-            0b10 => SysclkSource::Hse32,
-            0b11 => SysclkSource::Pllrclk,
-            _ => unreachable!(),
-        }
-    }
-
-    /// Returns `true` if the sysclk_source is [`Msi`].
-    pub fn is_msi(&self) -> bool {
-        matches!(self, Self::Msi)
-    }
-
-    /// Returns `true` if the sysclk_source is [`Hsi16`].
-    #[allow(dead_code)]
-    pub fn is_hsi16(&self) -> bool {
-        matches!(self, Self::Hsi16)
-    }
-
-    /// Returns `true` if the sysclk_source is [`Hse32`].
-    #[allow(dead_code)]
-    pub fn is_hse32(&self) -> bool {
-        matches!(self, Self::Hse32)
-    }
-
-    /// Returns `true` if the sysclk_source is [`Pllrclk`].
-    pub fn is_pllrclk(&self) -> bool {
-        matches!(self, Self::Pllrclk)
-    }
-}
-
-impl TryFrom<u8> for SysclkSource {
-    type Error = u8;
-
-    fn try_from(bits: u8) -> Result<Self, Self::Error> {
-        match bits {
-            0b00 => Ok(SysclkSource::Msi),
-            0b01 => Ok(SysclkSource::Hsi16),
-            0b10 => Ok(SysclkSource::Hse32),
-            0b11 => Ok(SysclkSource::Pllrclk),
-            _ => Err(bits),
+impl From<FlashLatency> for pac::flash::acr::LATENCY_A {
+    fn from(fl: FlashLatency) -> Self {
+        match fl {
+            FlashLatency::Zero => pac::flash::acr::LATENCY_A::WS0,
+            FlashLatency::One => pac::flash::acr::LATENCY_A::WS1,
+            FlashLatency::Two => pac::flash::acr::LATENCY_A::WS2,
         }
     }
 }
 
-impl From<SysclkSource> for u8 {
-    fn from(src: SysclkSource) -> Self {
-        src as u8
-    }
-}
-
-#[repr(u8)]
-enum PllSrc {
-    None = 0b00,
-    Msi = 0b01,
-    Hsi16 = 0b10,
-    Hse32 = 0b11,
-}
-
-impl PllSrc {
-    pub fn from_bits(bits: u8) -> PllSrc {
-        match bits & 0b11 {
-            0b00 => PllSrc::None,
-            0b01 => PllSrc::Msi,
-            0b10 => PllSrc::Hsi16,
-            0b11 => PllSrc::Hse32,
-            _ => unreachable!(),
-        }
-    }
-
-    /// Returns `true` if the pll_src is [`Msi`].
-    fn is_msi(&self) -> bool {
-        matches!(self, Self::Msi)
-    }
-}
-
-/// MSI clock ranges.
+/// MSI clock ranges
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
 enum MsiRange {
@@ -248,8 +168,33 @@ impl TryFrom<u8> for MsiRange {
     }
 }
 
+impl From<MsiRange> for pac::rcc::cr::MSIRANGE_A {
+    fn from(mr: MsiRange) -> Self {
+        match mr {
+            MsiRange::Range0 => pac::rcc::cr::MSIRANGE_A::RANGE100K,
+            MsiRange::Range1 => pac::rcc::cr::MSIRANGE_A::RANGE200K,
+            MsiRange::Range2 => pac::rcc::cr::MSIRANGE_A::RANGE400K,
+            MsiRange::Range3 => pac::rcc::cr::MSIRANGE_A::RANGE800K,
+            MsiRange::Range4 => pac::rcc::cr::MSIRANGE_A::RANGE1M,
+            MsiRange::Range5 => pac::rcc::cr::MSIRANGE_A::RANGE2M,
+            MsiRange::Range6 => pac::rcc::cr::MSIRANGE_A::RANGE4M,
+            MsiRange::Range7 => pac::rcc::cr::MSIRANGE_A::RANGE8M,
+            MsiRange::Range8 => pac::rcc::cr::MSIRANGE_A::RANGE16M,
+            MsiRange::Range9 => pac::rcc::cr::MSIRANGE_A::RANGE24M,
+            MsiRange::Range10 => pac::rcc::cr::MSIRANGE_A::RANGE32M,
+            MsiRange::Range11 => pac::rcc::cr::MSIRANGE_A::RANGE48M,
+        }
+    }
+}
+
 fn hclk3_prescaler_div(rcc: &pac::RCC) -> u16 {
-    match rcc.extcfgr.read().shdhpre().bits() {
+    pre_div(rcc.extcfgr.read().shdhpre().bits())
+}
+
+/// Prescaler divisor.
+/// Works for SHDHPRE, C2HPRE, HPRE.
+const fn pre_div(pre: u8) -> u16 {
+    match pre {
         0b0001 => 3,
         0b0010 => 5,
         0b0101 => 6,
@@ -267,18 +212,101 @@ fn hclk3_prescaler_div(rcc: &pac::RCC) -> u16 {
     }
 }
 
-/// Voltage scaling.
+/// Voltage scaling
 ///
-/// See table 58 "Clock source frequency" in the reference manual.
-#[derive(Debug, PartialEq, Eq)]
+/// See RM0453 rev 1 section 6.1.4 dynamic voltage scaling management
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[repr(u8)]
-#[allow(dead_code)]
 enum Vos {
+    /// High-performance range
+    ///
+    /// The main regulator provides a typical output voltage at 1.2 V.
+    /// The system clock  frequency can be up to 64 MHz.
+    /// The Flash memory access time for read access is minimum.
+    /// Write and erase operations are possible.
     Range1 = 0b01,
+    /// Low-power range
+    ///
+    /// The main regulator provides a typical output voltage at 1.0 V.
+    /// The system clock frequency can be up to 16 MHz.
+    /// The Flash memory access time for a read access is increased as compared
+    /// to range 1.
+    /// Write and erase operations are possible.
+    #[allow(dead_code)]
     Range2 = 0b10,
 }
 
-/// Set the sysclk to the MSI source at 48MHz.
+impl From<Vos> for pac::pwr::cr1::VOS_A {
+    fn from(vos: Vos) -> Self {
+        match vos {
+            Vos::Range1 => pac::pwr::cr1::VOS_A::V1_2,
+            Vos::Range2 => pac::pwr::cr1::VOS_A::V1_0,
+        }
+    }
+}
+
+fn set_sysclk_from_msi_range(
+    flash: &mut pac::FLASH,
+    pwr: &mut pac::PWR,
+    rcc: &mut pac::RCC,
+    range: MsiRange,
+    vos: Vos,
+    _cs: &cortex_m::interrupt::CriticalSection,
+) {
+    const MSI_CALIBRATION: u8 = 0;
+
+    pwr.cr1.modify(|_, w| w.vos().variant(vos.into()));
+
+    let cfgr = rcc.cfgr.read();
+
+    if !(cfgr.sws().is_msi() || cfgr.sws().is_pllr() && rcc.pllcfgr.read().pllsrc().is_msi()) {
+        rcc.cfgr.modify(|_, w| w.sw().msi());
+    }
+
+    if range > MsiRange::from_rcc(rcc) {
+        rcc_set_flash_latency_from_msi_range(flash, rcc, range, vos);
+        rcc.cr
+            .modify(|_, w| w.msirgsel().cr().msirange().variant(range.into()));
+        rcc.icscr.modify(|_, w| w.msitrim().bits(MSI_CALIBRATION));
+    } else {
+        rcc.cr
+            .modify(|_, w| w.msirgsel().cr().msirange().variant(range.into()));
+        rcc.icscr.modify(|_, w| w.msitrim().bits(MSI_CALIBRATION));
+        rcc_set_flash_latency_from_msi_range(flash, rcc, range, vos);
+    }
+
+    // HCLK1 configuration
+    rcc.cfgr.modify(|_, w| w.hpre().div1());
+    while rcc.cfgr.read().hpref().is_not_applied() {
+        compiler_fence(SeqCst);
+    }
+
+    // HCLK3 configuration
+    rcc.extcfgr.modify(|_, w| w.shdhpre().div1());
+    while rcc.extcfgr.read().shdhpref().is_not_applied() {
+        compiler_fence(SeqCst);
+    }
+
+    // PCLK1 configuration
+    rcc.cfgr.modify(|_, w| w.ppre1().div1());
+    while rcc.cfgr.read().ppre1f().is_not_applied() {
+        compiler_fence(SeqCst);
+    }
+
+    // PCLK2 configuration
+    rcc.cfgr.modify(|_, w| w.ppre2().div1());
+    while rcc.cfgr.read().ppre2f().is_not_applied() {
+        compiler_fence(SeqCst);
+    }
+
+    assert!(rcc.cr.read().msirdy().bit_is_set());
+    rcc.cfgr.modify(|_, w| w.sw().msi());
+    while !rcc.cfgr.read().sws().is_msi() {
+        compiler_fence(SeqCst);
+    }
+}
+
+/// Set the sysclk to the MSI source at 48MHz
 ///
 /// This function is currently a hack.
 /// In the future this should look more like other HALs:
@@ -290,67 +318,57 @@ pub fn set_sysclk_to_msi_48megahertz(
     pwr: &mut pac::PWR,
     rcc: &mut pac::RCC,
 ) {
-    cortex_m::interrupt::free(|_| {
-        const VOS: Vos = Vos::Range1;
-        const MSI_RANGE: MsiRange = MsiRange::Range11;
-        const MSI_CALIBRATION: u8 = 0;
-
-        pwr.cr1.modify(|_, w| unsafe { w.vos().bits(VOS as u8) });
-
-        let sysclk_source: SysclkSource = SysclkSource::from_bits(rcc.cfgr.read().sws().bits());
-        let pll_config: PllSrc = PllSrc::from_bits(rcc.pllcfgr.read().pllsrc().bits());
-
-        if !(sysclk_source.is_msi() || sysclk_source.is_pllrclk() && pll_config.is_msi()) {
-            rcc.cfgr
-                .modify(|_, w| w.sw().bits(SysclkSource::Msi.into()));
-        }
-
-        if MSI_RANGE > MsiRange::from_rcc(rcc) {
-            rcc_set_flash_latency_from_msi_range(flash, rcc, &MSI_RANGE, VOS);
-            rcc.cr
-                .modify(|_, w| unsafe { w.msirgsel().set_bit().msirange().bits(MSI_RANGE.into()) });
-            rcc.icscr.modify(|_, w| w.msitrim().bits(MSI_CALIBRATION));
-        } else {
-            rcc.cr
-                .modify(|_, w| unsafe { w.msirgsel().set_bit().msirange().bits(MSI_RANGE.into()) });
-            rcc.icscr.modify(|_, w| w.msitrim().bits(MSI_CALIBRATION));
-            rcc_set_flash_latency_from_msi_range(flash, rcc, &MSI_RANGE, VOS);
-        }
-
-        // HCLK1 configuration
-        rcc.cfgr.modify(|_, w| unsafe { w.hpre().bits(0) });
-        while rcc.cfgr.read().hpref().bit_is_clear() {
-            compiler_fence(SeqCst);
-        }
-
-        // HCLK3 configuration
-        rcc.extcfgr.modify(|_, w| unsafe { w.shdhpre().bits(0) });
-        while rcc.extcfgr.read().shdhpref().bit_is_clear() {
-            compiler_fence(SeqCst);
-        }
-
-        // PCLK1 configuration
-        rcc.cfgr.modify(|_, w| unsafe { w.ppre1().bits(0) });
-        while rcc.cfgr.read().ppre1f().bit_is_clear() {
-            compiler_fence(SeqCst);
-        }
-
-        // PCLK2 configuration
-        rcc.cfgr.modify(|_, w| unsafe { w.ppre2().bits(0) });
-        while rcc.cfgr.read().ppre2f().bit_is_clear() {
-            compiler_fence(SeqCst);
-        }
-
-        assert!(rcc.cr.read().msirdy().bit_is_set());
-        rcc.cfgr
-            .modify(|_, w| w.sw().bits(SysclkSource::Msi.into()));
-        while SysclkSource::try_from(rcc.cfgr.read().sws().bits()) != Ok(SysclkSource::Msi) {
-            compiler_fence(SeqCst);
-        }
+    cortex_m::interrupt::free(|cs| {
+        set_sysclk_from_msi_range(flash, pwr, rcc, MsiRange::Range11, Vos::Range1, cs)
     })
 }
 
-/// Calculate the current system clock frequency in hertz.
+fn sysclk(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R) -> Ratio<u32> {
+    use pac::rcc::{
+        cfgr::SWS_A::{HSE32, HSI16, MSI, PLLR},
+        cr::HSEPRE_A::{DIV1, DIV2},
+        pllcfgr::PLLSRC_A as PLLSRC,
+    };
+
+    match cfgr.sws().variant() {
+        MSI => Ratio::new_raw(MsiRange::from_rcc(rcc).as_hertz(), 1),
+        HSI16 => Ratio::new_raw(16_000_000, 1),
+        HSE32 => match rcc.cr.read().hsepre().variant() {
+            DIV1 => Ratio::new_raw(32_000_000, 1),
+            DIV2 => Ratio::new_raw(16_000_000, 1),
+        },
+        PLLR => {
+            let pllcfg = rcc.pllcfgr.read();
+            let src_freq: u32 = match pllcfg.pllsrc().variant() {
+                // cannot be executing this code if there is no clock
+                PLLSRC::NOCLOCK => unreachable!(),
+                PLLSRC::MSI => MsiRange::from_rcc(rcc).as_hertz(),
+                PLLSRC::HSI16 => 16_000_000,
+                PLLSRC::HSE32 => match rcc.cr.read().hsepre().variant() {
+                    DIV1 => 32_000_000,
+                    DIV2 => 16_000_000,
+                },
+            };
+
+            let pll_m: u32 = pllcfg.pllm().bits().wrapping_add(1).into();
+            let pll_n: u32 = pllcfg.plln().bits().into();
+            let pll_r: u32 = pllcfg.pllr().bits().wrapping_add(1).into();
+
+            // proof that this will not panic:
+            //
+            // pll_n is max 127, src_freq is max 32_000_000
+            // max numer is 4_064_000_000 (less than u32::MAX)
+            //
+            // pll_m is max 8, pll_r is max 8
+            // max denom is 64 (less than u32::MAX)
+            //
+            // pll_m and pll_r are both min 1 (denom cannot be zero)
+            Ratio::new(pll_n * src_freq, pll_m * pll_r)
+        }
+    }
+}
+
+/// Calculate the current system clock frequency in hertz
 ///
 /// Fractional frequencies will be rounded down.
 ///
@@ -361,45 +379,142 @@ pub fn set_sysclk_to_msi_48megahertz(
 ///
 /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 ///
-/// // without any initialization sysclk will be set to MSI at 4MHz
+/// // without any initialization sysclk will be 4MHz
 /// assert_eq!(sysclk_hz(&dp.RCC), 4_000_000);
 /// ```
 pub fn sysclk_hz(rcc: &pac::RCC) -> u32 {
-    use pac::rcc::{
-        cfgr::SWS_A::{HSE32, HSI16, MSI, PLLR},
-        cr::HSEPRE_A::{DIV1, DIV2},
-        pllcfgr::PLLSRC_A as PLLSRC,
-    };
+    let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
+    sysclk(rcc, cfgr).to_integer()
+}
 
-    match rcc.cfgr.read().sws().variant() {
-        MSI => MsiRange::from_rcc(rcc).as_hertz(),
-        HSI16 => 16_000_000,
-        HSE32 => match rcc.cr.read().hsepre().variant() {
-            DIV1 => 32_000_000,
-            DIV2 => 16_000_000,
-        },
-        PLLR => {
-            let pllcfg = rcc.pllcfgr.read();
-            let src_freq: u32 = match pllcfg.pllsrc().variant() {
-                // technically unreachable
-                PLLSRC::NOCLOCK => return 0,
-                PLLSRC::MSI => MsiRange::from_rcc(rcc).as_hertz(),
-                PLLSRC::HSI16 => 16_000_000,
-                PLLSRC::HSE32 => match rcc.cr.read().hsepre().variant() {
-                    DIV1 => 32_000_000,
-                    DIV2 => 16_000_000,
-                },
-            };
+fn hclk1(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R) -> Ratio<u32> {
+    let div: u32 = pre_div(cfgr.hpre().bits()).into();
+    sysclk(rcc, cfgr) / div
+}
 
-            let n_div_m: Ratio<u32> = {
-                let pll_m: u32 = pllcfg.pllm().bits().saturating_add(1).into();
-                let pll_n: u32 = pllcfg.plln().bits().into();
-                Ratio::new(pll_n, pll_m)
-            };
-            let vco_freq: Ratio<u32> = n_div_m * src_freq;
-            let pll_r: u32 = pllcfg.pllr().bits().saturating_add(1).into();
+/// Calculate the current hclk1 frequency in hertz
+///
+/// Fractional frequencies will be rounded down.
+///
+/// # Example
+///
+/// ```no_run
+/// use stm32wl_hal::{pac, rcc::hclk1_hz};
+///
+/// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+///
+/// // without any initialization hclk1 will be 4MHz
+/// assert_eq!(hclk1_hz(&dp.RCC), 4_000_000);
+/// ```
+pub fn hclk1_hz(rcc: &pac::RCC) -> u32 {
+    let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
+    hclk1(rcc, cfgr).to_integer()
+}
 
-            (vco_freq / pll_r).to_integer()
-        }
+#[cfg(any(feature = "stm32wl5x_cm4", feature = "stm32wl5x_cm0p"))]
+fn hclk2(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R) -> Ratio<u32> {
+    let div: u32 = pre_div(rcc.extcfgr.read().c2hpre().bits()).into();
+    sysclk(rcc, cfgr) / div
+}
+
+/// Calculate the current hclk1 frequency in hertz
+///
+/// Fractional frequencies will be rounded down.
+///
+/// # Example
+///
+/// ```no_run
+/// use stm32wl_hal::{pac, rcc::hclk2_hz};
+///
+/// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+///
+/// // without any initialization hclk2 will be 4MHz
+/// assert_eq!(hclk2_hz(&dp.RCC), 4_000_000);
+/// ```
+#[cfg(any(feature = "stm32wl5x_cm4", feature = "stm32wl5x_cm0p"))]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "stm32wl5x_cm4", feature = "stm32wl5x_cm0p")))
+)]
+pub fn hclk2_hz(rcc: &pac::RCC) -> u32 {
+    let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
+    hclk2(rcc, cfgr).to_integer()
+}
+
+fn cpu1_systick(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R, src: SystClkSource) -> Ratio<u32> {
+    let hclk1: Ratio<u32> = hclk1(rcc, cfgr);
+    match src {
+        SystClkSource::Core => hclk1,
+        SystClkSource::External => hclk1 / 8,
     }
+}
+
+/// Calculate the current CPU1 systick frequency in hertz
+///
+/// Fractional frequencies will be rounded down.
+///
+/// # Example
+///
+/// Created a systick based delay structure.
+///
+/// ```no_run
+/// use stm32wl_hal::{
+///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
+///     pac,
+///     rcc::cpu1_systick_hz,
+/// };
+///
+/// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+/// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
+///
+/// // constructor will set the clock source to core
+/// // note: this code is only valid is running on CPU1
+/// let mut delay: Delay = Delay::new(cp.SYST, cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
+/// delay.delay_ms(100);
+/// ```
+pub fn cpu1_systick_hz(rcc: &pac::RCC, src: SystClkSource) -> u32 {
+    let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
+    cpu1_systick(rcc, cfgr, src).to_integer()
+}
+
+#[cfg(any(feature = "stm32wl5x_cm4", feature = "stm32wl5x_cm0p"))]
+fn cpu2_systick(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R, src: SystClkSource) -> Ratio<u32> {
+    let hclk2: Ratio<u32> = hclk2(rcc, cfgr);
+    match src {
+        SystClkSource::Core => hclk2,
+        SystClkSource::External => hclk2 / 8,
+    }
+}
+
+/// Calculate the current CPU2 systick frequency in hertz
+///
+/// Fractional frequencies will be rounded down.
+///
+/// # Example
+///
+/// Created a systick based delay structure.
+///
+/// ```no_run
+/// use stm32wl_hal::{
+///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
+///     pac,
+///     rcc::cpu2_systick_hz,
+/// };
+///
+/// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+/// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
+///
+/// // constructor will set the clock source to core
+/// // note: this code is only valid is running on CPU2
+/// let mut delay: Delay = Delay::new(cp.SYST, cpu2_systick_hz(&dp.RCC, SystClkSource::Core));
+/// delay.delay_ms(100);
+/// ```
+#[cfg(any(feature = "stm32wl5x_cm4", feature = "stm32wl5x_cm0p"))]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "stm32wl5x_cm4", feature = "stm32wl5x_cm0p")))
+)]
+pub fn cpu2_systick_hz(rcc: &pac::RCC, src: SystClkSource) -> u32 {
+    let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
+    cpu2_systick(rcc, cfgr, src).to_integer()
 }

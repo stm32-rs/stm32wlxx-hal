@@ -11,8 +11,11 @@ keywords = ["arm", "cortex-m", "stm32", "hal"]
 categories = ["embedded", "hardware-support", "no-std"]
 repository = "https://github.com/newAM/stm32wl-hal"
 
-[dependencies]
+[features]
+rt = ["stm32wl-hal/rt"]
+aio = ["stm32wl-hal/aio"]
+# CM0+ not yet supported
+stm32wl5x_cm4 = ["stm32wl-hal/stm32wl5x_cm4"]
 
 [dependencies.stm32wl-hal]
 path = "../hal"
-features = ["stm32wl5x_cm4"]

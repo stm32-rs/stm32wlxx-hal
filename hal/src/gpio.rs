@@ -890,8 +890,8 @@ impl Level {
     /// ```
     /// use stm32wl_hal::gpio::Level;
     ///
-    /// assert_eq!(Level::High.is_high(), false);
-    /// assert_eq!(Level::Low.is_high(), true);
+    /// assert_eq!(Level::Low.is_low(), true);
+    /// assert_eq!(Level::High.is_low(), false);
     /// ```
     pub fn is_low(&self) -> bool {
         matches!(self, Self::Low)

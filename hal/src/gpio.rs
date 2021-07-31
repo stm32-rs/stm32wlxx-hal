@@ -618,7 +618,7 @@ impl PortA {
     /// occur.
     /// You are responsible for ensuring that the driver has exclusive access to
     /// the GPIOs.
-    /// You are also responsible for ensuring the GPIOs peripheral has been
+    /// You are also responsible for ensuring the GPIO peripheral has been
     /// setup correctly.
     ///
     /// # Example
@@ -728,7 +728,7 @@ impl PortB {
     /// occur.
     /// You are responsible for ensuring that the driver has exclusive access to
     /// the GPIOs.
-    /// You are also responsible for ensuring the GPIOs peripheral has been
+    /// You are also responsible for ensuring the GPIO peripheral has been
     /// setup correctly.
     ///
     /// # Example
@@ -826,7 +826,7 @@ impl PortC {
     /// occur.
     /// You are responsible for ensuring that the driver has exclusive access to
     /// the GPIOs.
-    /// You are also responsible for ensuring the GPIOs peripheral has been
+    /// You are also responsible for ensuring the GPIO peripheral has been
     /// setup correctly.
     ///
     /// # Example

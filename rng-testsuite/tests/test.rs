@@ -60,7 +60,7 @@ fn validate_randomness(entropy: &[u8]) {
     sum /= entropy.len() as f64;
 
     const MID: f64 = 127.5;
-    const TOLERANCE: f64 = 15.0;
+    const TOLERANCE: f64 = MID / 2;
     const LO: f64 = MID - TOLERANCE;
     const HI: f64 = MID + TOLERANCE;
 

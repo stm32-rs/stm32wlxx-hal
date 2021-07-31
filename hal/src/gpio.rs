@@ -630,6 +630,8 @@ impl PortA {
     ///
     /// let gpioa: PortA = unsafe { PortA::steal() };
     /// ```
+    ///
+    /// [`new`]: crate::gpio::PortA::new
     pub unsafe fn steal() -> Self {
         Self::GPIOS
     }
@@ -738,6 +740,8 @@ impl PortB {
     ///
     /// let gpioa: PortB = unsafe { PortB::steal() };
     /// ```
+    ///
+    /// [`new`]: crate::gpio::PortB::new
     pub unsafe fn steal() -> Self {
         Self::GPIOS
     }
@@ -834,6 +838,8 @@ impl PortC {
     ///
     /// let gpioa: PortC = unsafe { PortC::steal() };
     /// ```
+    ///
+    /// [`new`]: crate::gpio::PortC::new
     pub unsafe fn steal() -> Self {
         Self::GPIOS
     }

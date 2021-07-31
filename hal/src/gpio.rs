@@ -561,6 +561,25 @@ pub struct PortA {
 }
 
 impl PortA {
+    const GPIOS: PortA = PortA {
+        pa0: pins::A0::new(),
+        pa1: pins::A1::new(),
+        pa2: pins::A2::new(),
+        pa3: pins::A3::new(),
+        pa4: pins::A4::new(),
+        pa5: pins::A5::new(),
+        pa6: pins::A6::new(),
+        pa7: pins::A7::new(),
+        pa8: pins::A8::new(),
+        pa9: pins::A9::new(),
+        pa10: pins::A10::new(),
+        pa11: pins::A11::new(),
+        pa12: pins::A12::new(),
+        pa13: pins::A13::new(),
+        pa14: pins::A14::new(),
+        pa15: pins::A15::new(),
+    };
+
     /// Reset GPIO port A and split the port into individual pins.
     ///
     /// This will enable clocks and reset the GPIO port.
@@ -585,26 +604,34 @@ impl PortA {
         Self::enable_clock(rcc);
         rcc.ahb2rstr.modify(|_, w| w.gpioarst().set_bit());
         rcc.ahb2rstr.modify(|_, w| w.gpioarst().clear_bit());
-        const RET: PortA = PortA {
-            pa0: pins::A0::new(),
-            pa1: pins::A1::new(),
-            pa2: pins::A2::new(),
-            pa3: pins::A3::new(),
-            pa4: pins::A4::new(),
-            pa5: pins::A5::new(),
-            pa6: pins::A6::new(),
-            pa7: pins::A7::new(),
-            pa8: pins::A8::new(),
-            pa9: pins::A9::new(),
-            pa10: pins::A10::new(),
-            pa11: pins::A11::new(),
-            pa12: pins::A12::new(),
-            pa13: pins::A13::new(),
-            pa14: pins::A14::new(),
-            pa15: pins::A15::new(),
-        };
 
-        RET
+        Self::GPIOS
+    }
+
+    /// Steal the port A GPIOs from whatever is currently using them.
+    ///
+    /// This will **not** initialize the GPIOs (unlike [`new`]).
+    ///
+    /// # Safety
+    ///
+    /// This will create new GPIOs, bypassing the singleton checks that normally
+    /// occur.
+    /// You are responsible for ensuring that the driver has exclusive access to
+    /// the GPIOs.
+    /// You are also responsible for ensuring the GPIOs peripheral has been
+    /// setup correctly.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal::gpio::PortA;
+    ///
+    /// // ... setup happens here
+    ///
+    /// let gpioa: PortA = unsafe { PortA::steal() };
+    /// ```
+    pub unsafe fn steal() -> Self {
+        Self::GPIOS
     }
 
     /// Disable the GPIOA clock.
@@ -642,6 +669,25 @@ pub struct PortB {
 }
 
 impl PortB {
+    const GPIOS: PortB = PortB {
+        pb0: pins::B0::new(),
+        pb1: pins::B1::new(),
+        pb2: pins::B2::new(),
+        pb3: pins::B3::new(),
+        pb4: pins::B4::new(),
+        pb5: pins::B5::new(),
+        pb6: pins::B6::new(),
+        pb7: pins::B7::new(),
+        pb8: pins::B8::new(),
+        pb9: pins::B9::new(),
+        pb10: pins::B10::new(),
+        pb11: pins::B11::new(),
+        pb12: pins::B12::new(),
+        pb13: pins::B13::new(),
+        pb14: pins::B14::new(),
+        pb15: pins::B15::new(),
+    };
+
     /// Reset GPIO port B and split the port into individual pins.
     ///
     /// This will enable clocks and reset the GPIO port.
@@ -666,26 +712,34 @@ impl PortB {
         Self::enable_clock(rcc);
         rcc.ahb2rstr.modify(|_, w| w.gpiobrst().set_bit());
         rcc.ahb2rstr.modify(|_, w| w.gpiobrst().clear_bit());
-        const RET: PortB = PortB {
-            pb0: pins::B0::new(),
-            pb1: pins::B1::new(),
-            pb2: pins::B2::new(),
-            pb3: pins::B3::new(),
-            pb4: pins::B4::new(),
-            pb5: pins::B5::new(),
-            pb6: pins::B6::new(),
-            pb7: pins::B7::new(),
-            pb8: pins::B8::new(),
-            pb9: pins::B9::new(),
-            pb10: pins::B10::new(),
-            pb11: pins::B11::new(),
-            pb12: pins::B12::new(),
-            pb13: pins::B13::new(),
-            pb14: pins::B14::new(),
-            pb15: pins::B15::new(),
-        };
 
-        RET
+        Self::GPIOS
+    }
+
+    /// Steal the port B GPIOs from whatever is currently using them.
+    ///
+    /// This will **not** initialize the GPIOs (unlike [`new`]).
+    ///
+    /// # Safety
+    ///
+    /// This will create new GPIOs, bypassing the singleton checks that normally
+    /// occur.
+    /// You are responsible for ensuring that the driver has exclusive access to
+    /// the GPIOs.
+    /// You are also responsible for ensuring the GPIOs peripheral has been
+    /// setup correctly.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal::gpio::PortB;
+    ///
+    /// // ... setup happens here
+    ///
+    /// let gpioa: PortB = unsafe { PortB::steal() };
+    /// ```
+    pub unsafe fn steal() -> Self {
+        Self::GPIOS
     }
 
     /// Disable the GPIOB clock.
@@ -717,6 +771,19 @@ pub struct PortC {
 }
 
 impl PortC {
+    const GPIOS: PortC = PortC {
+        pc0: pins::C0::new(),
+        pc1: pins::C1::new(),
+        pc2: pins::C2::new(),
+        pc3: pins::C3::new(),
+        pc4: pins::C4::new(),
+        pc5: pins::C5::new(),
+        pc6: pins::C6::new(),
+        pc13: pins::C13::new(),
+        pc14: pins::C14::new(),
+        pc15: pins::C15::new(),
+    };
+
     /// Reset GPIO port C and split the port into individual pins.
     ///
     /// This will enable clocks and reset the GPIO port.
@@ -742,20 +809,33 @@ impl PortC {
         rcc.ahb2rstr.modify(|_, w| w.gpiocrst().set_bit());
         rcc.ahb2rstr.modify(|_, w| w.gpiocrst().clear_bit());
 
-        const RET: PortC = PortC {
-            pc0: pins::C0::new(),
-            pc1: pins::C1::new(),
-            pc2: pins::C2::new(),
-            pc3: pins::C3::new(),
-            pc4: pins::C4::new(),
-            pc5: pins::C5::new(),
-            pc6: pins::C6::new(),
-            pc13: pins::C13::new(),
-            pc14: pins::C14::new(),
-            pc15: pins::C15::new(),
-        };
+        Self::GPIOS
+    }
 
-        RET
+    /// Steal the port C GPIOs from whatever is currently using them.
+    ///
+    /// This will **not** initialize the GPIOs (unlike [`new`]).
+    ///
+    /// # Safety
+    ///
+    /// This will create new GPIOs, bypassing the singleton checks that normally
+    /// occur.
+    /// You are responsible for ensuring that the driver has exclusive access to
+    /// the GPIOs.
+    /// You are also responsible for ensuring the GPIOs peripheral has been
+    /// setup correctly.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal::gpio::PortC;
+    ///
+    /// // ... setup happens here
+    ///
+    /// let gpioa: PortC = unsafe { PortC::steal() };
+    /// ```
+    pub unsafe fn steal() -> Self {
+        Self::GPIOS
     }
 
     /// Disable the GPIOC clock.
@@ -795,6 +875,34 @@ impl Level {
             Level::Low => Level::High,
             Level::High => Level::Low,
         }
+    }
+
+    /// Returns `true` if the level is low.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal::gpio::Level;
+    ///
+    /// assert_eq!(Level::High.is_high(), false);
+    /// assert_eq!(Level::Low.is_high(), true);
+    /// ```
+    pub fn is_low(&self) -> bool {
+        matches!(self, Self::Low)
+    }
+
+    /// Returns `true` if the level is high.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal::gpio::Level;
+    ///
+    /// assert_eq!(Level::High.is_high(), true);
+    /// assert_eq!(Level::Low.is_high(), false);
+    /// ```
+    pub fn is_high(&self) -> bool {
+        matches!(self, Self::High)
     }
 }
 

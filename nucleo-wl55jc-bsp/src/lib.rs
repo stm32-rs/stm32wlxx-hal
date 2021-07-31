@@ -1,11 +1,13 @@
 //! NUCLEO-WL55JC board support package.
 
 #![cfg_attr(not(test), no_std)]
-#![forbid(unsafe_code, missing_docs)]
+#![forbid(missing_docs)]
+
+pub mod led;
 
 pub use stm32wl_hal as hal;
 
-use hal::gpio::{pins, Level, Output, OutputArgs, OutputType, Pull, Speed};
+use hal::gpio::{self, pins, Level, Output, OutputArgs};
 
 /// RF switch.
 #[derive(Debug)]
@@ -21,9 +23,10 @@ impl RfSwitch {
     /// # Example
     ///
     /// ```no_run
-    /// use bsp::hal::{gpio::PortC, pac};
-    /// use bsp::RfSwitch;
-    /// use nucleo_wl55jc_bsp as bsp;
+    /// use nucleo_wl55jc_bsp::{
+    ///     hal::{gpio::PortC, pac},
+    ///     RfSwitch,
+    /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
@@ -32,10 +35,10 @@ impl RfSwitch {
     /// ```
     pub fn new(c3: pins::C3, c4: pins::C4, c5: pins::C5) -> RfSwitch {
         const ARGS: OutputArgs = OutputArgs {
-            speed: Speed::Fast,
-            level: Level::High,
-            ot: OutputType::PushPull,
-            pull: Pull::None,
+            speed: gpio::Speed::Fast,
+            level: gpio::Level::High,
+            ot: gpio::OutputType::PushPull,
+            pull: gpio::Pull::None,
         };
         RfSwitch {
             fe_ctrl1: Output::new(c4, &ARGS),
@@ -45,6 +48,21 @@ impl RfSwitch {
     }
 
     /// Set the RF switch to receive.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use nucleo_wl55jc_bsp::{
+    ///     hal::{gpio::PortC, pac},
+    ///     RfSwitch,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+    /// let mut rfs = RfSwitch::new(gpioc.pc3, gpioc.pc4, gpioc.pc5);
+    /// rfs.set_rx()
+    /// ```
     pub fn set_rx(&mut self) {
         self.fe_ctrl1.set_level(Level::High);
         self.fe_ctrl2.set_level(Level::Low);
@@ -52,6 +70,21 @@ impl RfSwitch {
     }
 
     /// Set the RF switch to low power transmit.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use nucleo_wl55jc_bsp::{
+    ///     hal::{gpio::PortC, pac},
+    ///     RfSwitch,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+    /// let mut rfs = RfSwitch::new(gpioc.pc3, gpioc.pc4, gpioc.pc5);
+    /// rfs.set_tx_lp()
+    /// ```
     pub fn set_tx_lp(&mut self) {
         self.fe_ctrl1.set_level(Level::High);
         self.fe_ctrl2.set_level(Level::High);
@@ -59,6 +92,21 @@ impl RfSwitch {
     }
 
     /// Set the RF switch to high power transmit.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use nucleo_wl55jc_bsp::{
+    ///     hal::{gpio::PortC, pac},
+    ///     RfSwitch,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+    /// let mut rfs = RfSwitch::new(gpioc.pc3, gpioc.pc4, gpioc.pc5);
+    /// rfs.set_tx_hp()
+    /// ```
     pub fn set_tx_hp(&mut self) {
         self.fe_ctrl2.set_level(Level::High);
         self.fe_ctrl1.set_level(Level::Low);

@@ -610,7 +610,7 @@ impl PortA {
 
     /// Steal the port A GPIOs from whatever is currently using them.
     ///
-    /// This will **not** initialize the GPIOs (unlike [`new`]).
+    /// This will **not** initialize the GPIOs (unlike [`split`]).
     ///
     /// # Safety
     ///
@@ -630,8 +630,6 @@ impl PortA {
     ///
     /// let gpioa: PortA = unsafe { PortA::steal() };
     /// ```
-    ///
-    /// [`new`]: crate::gpio::PortA::new
     pub unsafe fn steal() -> Self {
         Self::GPIOS
     }
@@ -720,7 +718,7 @@ impl PortB {
 
     /// Steal the port B GPIOs from whatever is currently using them.
     ///
-    /// This will **not** initialize the GPIOs (unlike [`new`]).
+    /// This will **not** initialize the GPIOs (unlike [`split`]).
     ///
     /// # Safety
     ///
@@ -740,8 +738,6 @@ impl PortB {
     ///
     /// let gpioa: PortB = unsafe { PortB::steal() };
     /// ```
-    ///
-    /// [`new`]: crate::gpio::PortB::new
     pub unsafe fn steal() -> Self {
         Self::GPIOS
     }
@@ -818,7 +814,7 @@ impl PortC {
 
     /// Steal the port C GPIOs from whatever is currently using them.
     ///
-    /// This will **not** initialize the GPIOs (unlike [`new`]).
+    /// This will **not** initialize the GPIOs (unlike [`split`]).
     ///
     /// # Safety
     ///
@@ -838,8 +834,6 @@ impl PortC {
     ///
     /// let gpioa: PortC = unsafe { PortC::steal() };
     /// ```
-    ///
-    /// [`new`]: crate::gpio::PortC::new
     pub unsafe fn steal() -> Self {
         Self::GPIOS
     }

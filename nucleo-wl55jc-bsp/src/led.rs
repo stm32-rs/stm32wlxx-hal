@@ -68,7 +68,7 @@ impl Red {
 
     /// Steal the LED from whatever is currently using it.
     ///
-    /// This will **not** initialize the GPIO (unlike [`new`]).
+    /// This will **not** initialize the GPIO peripheral.
     ///
     /// # Safety
     ///
@@ -155,7 +155,7 @@ impl Green {
 
     /// Steal the LED from whatever is currently using it.
     ///
-    /// This will **not** initialize the GPIO (unlike [`new`]).
+    /// This will **not** initialize the GPIO peripheral.
     ///
     /// # Safety
     ///
@@ -242,7 +242,7 @@ impl Blue {
 
     /// Steal the LED from whatever is currently using it.
     ///
-    /// This will **not** initialize the GPIO (unlike [`new`]).
+    /// This will **not** initialize the GPIO peripheral.
     ///
     /// # Safety
     ///

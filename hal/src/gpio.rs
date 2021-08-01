@@ -976,12 +976,11 @@ where
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{pins, Output, PortC, self},
+    ///     gpio::{self, pins, Output, PortC},
     ///     pac,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-
     ///
     /// const OUTPUT_ARGS: gpio::OutputArgs = gpio::OutputArgs {
     ///     level: gpio::Level::Low,

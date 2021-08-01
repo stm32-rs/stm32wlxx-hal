@@ -126,7 +126,6 @@ impl Uid64 {
     ///
     /// This is always 0x15 for this device.
     ///
-    ///
     /// # Example
     ///
     /// ```no_run

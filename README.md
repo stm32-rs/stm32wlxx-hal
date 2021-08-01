@@ -108,13 +108,12 @@ There is no asynchronous executor provided, you must build your own.
 `async` support may be dropped at any time for any reason.
 
 Enabling `async` requires:
-1. Nightly rust
-2. The "aio" feature
-3. Release mode
+1. nightly rust (non-async features compile on stable)
+2. `--features aio`
 
 For example, if you wanted to run the AES testsuite with AIO you would use:
 ```text
-cargo +nightly test -p aes-testsuite --target thumbv7em-none-eabi --features aio --release
+cargo +nightly test -p aes-testsuite --target thumbv7em-none-eabi --features aio
 ```
 
 [newAM/nucleo-wl55jc2-rs]: https://github.com/newAM/nucleo-wl55jc2-rs

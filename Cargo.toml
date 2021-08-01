@@ -15,7 +15,7 @@ members = [
 default-members = ["hal"]
 
 [profile.dev]
-opt-level = 2
+opt-level = 3
 
 [profile.release]
 debug = 2

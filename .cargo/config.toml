@@ -17,14 +17,14 @@ test-pka = "test -p pka-testsuite --target thumbv7em-none-eabi"
 test-rng = "test -p rng-testsuite --target thumbv7em-none-eabi"
 
 # e.g. cargo +nightly test-aes-aio
-test-aes-aio = "test -p aes-testsuite --target thumbv7em-none-eabi --features aio --release"
-test-pka-aio = "test -p pka-testsuite --target thumbv7em-none-eabi --features aio --release"
-test-rng-aio = "test -p rng-testsuite --target thumbv7em-none-eabi --features aio --release"
+test-aes-aio = "test -p aes-testsuite --target thumbv7em-none-eabi --features aio"
+test-pka-aio = "test -p pka-testsuite --target thumbv7em-none-eabi --features aio"
+test-rng-aio = "test -p rng-testsuite --target thumbv7em-none-eabi --features aio"
 
 # e.g.
 # cargo test-subghz-rx -- --probe 001D00145553500A20393256
 # cargo test-subghz-tx -- --probe 002900205553500A20393256
-test-subghz-rx-aio = "test -p subghz-testsuite-rx --target thumbv7em-none-eabi --features aio --release"
+test-subghz-rx-aio = "test -p subghz-testsuite-rx --target thumbv7em-none-eabi --features aio"
 test-subghz-rx = "test -p subghz-testsuite-rx --target thumbv7em-none-eabi"
 test-subghz-tx = "test -p subghz-testsuite-tx --target thumbv7em-none-eabi"
 

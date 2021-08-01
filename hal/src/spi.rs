@@ -193,6 +193,8 @@ trait SpiBase {
 
         rx_dma.set_mux_cr_reqid(Self::DMA_RX_ID);
         tx_dma.set_mux_cr_reqid(Self::DMA_TX_ID);
+
+        unsafe { rx_dma.unmask_irq() };
     }
 
     fn write_word(&mut self, word: u8) -> Result<(), Error> {
@@ -688,6 +690,26 @@ where
             self.rx_dma,
         )
     }
+
+    /// Asynchronously write with the DMA.
+    ///
+    /// In a perfect world this would be in an async trait, unfortunately
+    /// async traits require more workarounds than I am comforatable with right
+    /// now.
+    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
+    pub async fn aio_write_with_dma(&mut self, words: &[u8]) -> Result<(), Error> {
+        aio_write_with_dma(&mut self.base, &mut self.tx_dma, &mut self.rx_dma, words).await
+    }
+
+    /// Asynchronously transfer with the DMA.
+    ///
+    /// In a perfect world this would be in an async trait, unfortunately
+    /// async traits require more workarounds than I am comforatable with right
+    /// now.
+    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
+    pub async fn aio_transfer_with_dma(&mut self, words: &mut [u8]) -> Result<(), Error> {
+        aio_transfer_with_dma(&mut self.base, &mut self.tx_dma, &mut self.rx_dma, words).await
+    }
 }
 
 impl<MOSI, MISO, SCK, DMA> Spi2<MOSI, MISO, SCK, DMA>
@@ -932,6 +954,26 @@ where
             self.tx_dma,
             self.rx_dma,
         )
+    }
+
+    /// Asynchronously write with the DMA.
+    ///
+    /// In a perfect world this would be in an async trait, unfortunately
+    /// async traits require more workarounds than I am comforatable with right
+    /// now.
+    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
+    pub async fn aio_write_with_dma(&mut self, words: &[u8]) -> Result<(), Error> {
+        aio_write_with_dma(&mut self.base, &mut self.tx_dma, &mut self.rx_dma, words).await
+    }
+
+    /// Asynchronously transfer with the DMA.
+    ///
+    /// In a perfect world this would be in an async trait, unfortunately
+    /// async traits require more workarounds than I am comforatable with right
+    /// now.
+    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
+    pub async fn aio_transfer_with_dma(&mut self, words: &mut [u8]) -> Result<(), Error> {
+        aio_transfer_with_dma(&mut self.base, &mut self.tx_dma, &mut self.rx_dma, words).await
     }
 }
 

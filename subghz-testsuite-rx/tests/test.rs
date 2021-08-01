@@ -90,10 +90,6 @@ mod tests {
             let start: usize = cortex_m_rt::heap_start() as usize;
             let size: usize = 2048; // in bytes
             unsafe { ALLOCATOR.init(start, size) };
-            unsafe {
-                tx_dma.unmask_irq();
-                rx_dma.unmask_irq();
-            }
         }
 
         let mut sg: SubGhz<DmaCh> = SubGhz::new_with_dma(dp.SPI3, tx_dma, rx_dma, &mut dp.RCC);

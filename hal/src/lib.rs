@@ -27,6 +27,7 @@ cfg_if::cfg_if! {
 pub mod aes;
 pub mod dma;
 pub mod gpio;
+pub mod info;
 pub mod pka;
 pub mod rcc;
 pub mod rng;

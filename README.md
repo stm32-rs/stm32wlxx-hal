@@ -38,6 +38,8 @@ The on-target tests use [defmt-test].
 
 * `cargo install flip-link` ([flip-link])
 * `cargo install probe-run` ([probe-run])
+    * **Note:** Install my fork ([newAM/probe-run]) with fixes for the stm32wl,
+      see #74 for details.
 * `rustup target add --toolchain stable thumbv7m-none-eabi` ([rustup])
 * (Linux users only) udev rules are available at [newAM/nucleo-wl55jc2-rs]
 * Connect the nucleo board to your PC via USB.
@@ -108,17 +110,17 @@ There is no asynchronous executor provided, you must build your own.
 `async` support may be dropped at any time for any reason.
 
 Enabling `async` requires:
-1. Nightly rust
-2. The "aio" feature
-3. Release mode
+1. nightly rust (non-async code compiles on stable)
+2. `--features aio`
 
 For example, if you wanted to run the AES testsuite with AIO you would use:
 ```text
-cargo +nightly test -p aes-testsuite --target thumbv7em-none-eabi --features aio --release
+cargo +nightly test -p aes-testsuite --target thumbv7em-none-eabi --features aio
 ```
 
-[newAM/nucleo-wl55jc2-rs]: https://github.com/newAM/nucleo-wl55jc2-rs
 [defmt-test]: https://crates.io/crates/defmt-test
 [flip-link]: https://github.com/knurling-rs/flip-link
+[newAM/nucleo-wl55jc2-rs]: https://github.com/newAM/nucleo-wl55jc2-rs
+[newAM/probe-run]: https://github.com/newAM/probe-run
 [probe-run]: https://github.com/knurling-rs/probe-run
 [rustup]: https://rustup.rs/

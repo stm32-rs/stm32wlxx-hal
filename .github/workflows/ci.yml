@@ -99,8 +99,7 @@ jobs:
           -p ${{ matrix.workspace }} \
           --target thumbv7em-none-eabi \
           --features aio \
-          --no-run \
-          --release
+          --no-run
 
   build_test_bsp:
     name: Build and Test BSP

@@ -9,9 +9,9 @@ use core::{
 
 /// 96-bit unique device identifier
 ///
-/// **Note:** There are two UIDs, the other is [`Uid64`].
-///
 /// Returned by [`uid`].
+///
+/// **Note:** There are two UIDs, the other is [`Uid64`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Uid {
     uid: [u32; 3],
@@ -196,9 +196,9 @@ pub fn package() -> Result<Package, u8> {
 
 /// IEEE 64-bit unique device ID (UID64)
 ///
-/// **Note:** There are two UIDs, the other is [`Uid`].
-///
 /// Returned by [`uid64`].
+///
+/// **Note:** There are two UIDs, the other is [`Uid`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Uid64 {
     uid: u64,

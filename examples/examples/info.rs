@@ -24,6 +24,7 @@ fn main() -> ! {
     rprintln!("Flash size: {} KiB", info::flash_size_kibibyte());
     rprintln!("Package: {:?}", info::package());
     rprintln!("UID64: {}", info::uid64());
+    rprintln!("UID: {}", info::uid());
 
     rprintln!("Exiting");
 

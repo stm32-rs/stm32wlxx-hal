@@ -37,8 +37,9 @@ On-target tests use the NUCLEO-WL55JC2, you can find a place purchase this
 The on-target tests use [defmt-test].
 
 * `cargo install flip-link` ([flip-link])
-* `cargo install probe-run` ([probe-run])
-    * **Note:** Install my fork ([newAM/probe-run]) with fixes for the stm32wl,
+* `cargo install --git https://github.com/knurling-rs/probe-run.git`
+  ([probe-run], [newAM/probe-run])
+    * **Note:** My fork contains unreleased fixes for the stm32wl,
       see #74 for details.
 * `rustup target add --toolchain stable thumbv7m-none-eabi` ([rustup])
 * (Linux users only) udev rules are available at [newAM/nucleo-wl55jc2-rs]

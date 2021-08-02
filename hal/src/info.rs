@@ -79,7 +79,7 @@ impl Uid {
     /// ```no_run
     /// use stm32wl_hal::info::uid;
     ///
-    /// let lot: u8 = uid().lot();
+    /// let lot: [u8; 7] = uid().lot();
     /// ```
     pub fn lot(&self) -> [u8; 7] {
         [

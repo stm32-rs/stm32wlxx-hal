@@ -3,8 +3,116 @@
 use core::{
     convert::{TryFrom, TryInto},
     fmt::Display,
+    mem::transmute,
     ptr::read_volatile,
 };
+
+/// 96-bit unique device identifier
+///
+/// Returned by [`uid`].
+///
+/// **Note:** There are two UIDs, the other is [`Uid64`].
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+pub struct Uid {
+    uid: [u32; 3],
+}
+
+impl From<[u32; 3]> for Uid {
+    fn from(uid: [u32; 3]) -> Self {
+        Uid { uid }
+    }
+}
+
+impl From<Uid> for [u32; 3] {
+    fn from(uid: Uid) -> Self {
+        uid.uid
+    }
+}
+
+impl From<Uid> for [u8; 12] {
+    fn from(uid: Uid) -> Self {
+        unsafe { transmute::<[u32; 3], [u8; 12]>(uid.uid) }
+    }
+}
+
+impl Display for Uid {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("Uid")
+            .field("coord", &self.coord())
+            .field("wafer", &self.wafer())
+            .field("lot", &self.lot())
+            .finish()
+    }
+}
+
+impl Uid {
+    /// X-Y coordinates on the wafer
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::info::uid;
+    ///
+    /// let coord: u32 = uid().coord();
+    /// ```
+    pub const fn coord(&self) -> u32 {
+        self.uid[0]
+    }
+
+    /// Wafer number
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::info::uid;
+    ///
+    /// let wafer: u8 = uid().wafer();
+    /// ```
+    pub const fn wafer(&self) -> u8 {
+        self.uid[1] as u8
+    }
+
+    /// Lot number
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::info::uid;
+    ///
+    /// let lot: [u8; 7] = uid().lot();
+    /// ```
+    pub const fn lot(&self) -> [u8; 7] {
+        [
+            (self.uid[1] >> 8) as u8,
+            (self.uid[1] >> 16) as u8,
+            (self.uid[1] >> 24) as u8,
+            self.uid[2] as u8,
+            (self.uid[2] >> 8) as u8,
+            (self.uid[2] >> 16) as u8,
+            (self.uid[2] >> 24) as u8,
+        ]
+    }
+}
+
+/// Get the 96-bit unique device identifier
+///
+/// # Example
+///
+/// ```no_run
+/// use stm32wl_hal::info::{uid, Uid};
+///
+/// let uid: Uid = uid();
+/// ```
+pub fn uid() -> Uid {
+    unsafe {
+        [
+            read_volatile(0x1FFF_7590 as *const u32),
+            read_volatile(0x1FFF_7594 as *const u32),
+            read_volatile(0x1FFF_7598 as *const u32),
+        ]
+    }
+    .into()
+}
 
 /// Flash size in kibibytes
 ///
@@ -38,7 +146,6 @@ pub fn flash_size() -> u32 {
 ///
 /// Returned by [`package`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
-#[non_exhaustive]
 #[repr(u8)]
 pub enum Package {
     /// [UFBGA73](https://en.wikipedia.org/wiki/Ball_grid_array)
@@ -59,6 +166,12 @@ impl TryFrom<u8> for Package {
             0b01010 => Ok(Package::UFQFPN48),
             _ => Err(value),
         }
+    }
+}
+
+impl From<Package> for u8 {
+    fn from(p: Package) -> Self {
+        p as u8
     }
 }
 
@@ -84,6 +197,8 @@ pub fn package() -> Result<Package, u8> {
 /// IEEE 64-bit unique device ID (UID64)
 ///
 /// Returned by [`uid64`].
+///
+/// **Note:** There are two UIDs, the other is [`Uid`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Uid64 {
     uid: u64,
@@ -107,7 +222,7 @@ impl Uid64 {
 
     /// Company ID
     ///
-    /// This is 0x0080E1 for STMicroelectronics.
+    /// This is `0x0080E1` for STMicroelectronics.
     ///
     /// **Note:** Only the first 24 bits are used.
     ///
@@ -124,7 +239,7 @@ impl Uid64 {
 
     /// Device ID
     ///
-    /// This is always 0x15 for this device.
+    /// This is always `0x15` for this device.
     ///
     /// # Example
     ///

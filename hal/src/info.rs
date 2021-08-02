@@ -46,7 +46,7 @@ impl Display for Uid {
 }
 
 impl Uid {
-    /// X-Y coordinates on the wafer.
+    /// X-Y coordinates on the wafer
     ///
     /// # Example
     ///
@@ -55,11 +55,11 @@ impl Uid {
     ///
     /// let coord: u32 = uid().coord();
     /// ```
-    pub fn coord(&self) -> u32 {
+    pub const fn coord(&self) -> u32 {
         self.uid[0]
     }
 
-    /// Wafer number.
+    /// Wafer number
     ///
     /// # Example
     ///
@@ -68,11 +68,11 @@ impl Uid {
     ///
     /// let wafer: u8 = uid().wafer();
     /// ```
-    pub fn wafer(&self) -> u8 {
+    pub const fn wafer(&self) -> u8 {
         self.uid[1] as u8
     }
 
-    /// Lot number.
+    /// Lot number
     ///
     /// # Example
     ///
@@ -81,7 +81,7 @@ impl Uid {
     ///
     /// let lot: [u8; 7] = uid().lot();
     /// ```
-    pub fn lot(&self) -> [u8; 7] {
+    pub const fn lot(&self) -> [u8; 7] {
         [
             (self.uid[1] >> 8) as u8,
             (self.uid[1] >> 16) as u8,
@@ -94,7 +94,15 @@ impl Uid {
     }
 }
 
-/// Get the 96-bit unique device identifier.
+/// Get the 96-bit unique device identifier
+///
+/// # Example
+///
+/// ```no_run
+/// use stm32wl_hal::info::uid;
+///
+/// let uid: Uid = uid();
+/// ```
 pub fn uid() -> Uid {
     unsafe {
         [
@@ -214,7 +222,7 @@ impl Uid64 {
 
     /// Company ID
     ///
-    /// This is 0x0080E1 for STMicroelectronics.
+    /// This is `0x0080E1` for STMicroelectronics.
     ///
     /// **Note:** Only the first 24 bits are used.
     ///
@@ -231,7 +239,7 @@ impl Uid64 {
 
     /// Device ID
     ///
-    /// This is always 0x15 for this device.
+    /// This is always `0x15` for this device.
     ///
     /// # Example
     ///

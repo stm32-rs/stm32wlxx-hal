@@ -99,7 +99,7 @@ impl Uid {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::info::uid;
+/// use stm32wl_hal::info::{uid, Uid};
 ///
 /// let uid: Uid = uid();
 /// ```

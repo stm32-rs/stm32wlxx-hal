@@ -3,10 +3,10 @@
 #![no_std]
 #![no_main]
 
-use cortex_m::{delay::Delay, peripheral::syst::SystClkSource};
 use panic_rtt_target as _;
 use rtt_target::rprintln;
 use stm32wl_hal::{
+    cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
     gpio::{Level, Output, PortB},
     pac, rcc,
 };

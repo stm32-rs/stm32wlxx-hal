@@ -453,7 +453,7 @@ where
     SCK: gpio::sealed::Spi1Sck,
 {
     /// Disable the SPI1 clock
-    pub fn disable_clock(rcc: &mut pac::RCC) {
+    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.apb2enr.modify(|_, w| w.spi1en().disabled());
     }
 
@@ -719,7 +719,7 @@ where
     SCK: gpio::sealed::Spi2Sck,
 {
     /// Disable the SPI2 clock
-    pub fn disable_clock(rcc: &mut pac::RCC) {
+    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.apb1enr1.modify(|_, w| w.spi2s2en().disabled());
     }
 
@@ -980,7 +980,7 @@ where
 #[allow(missing_docs)] // struct is hidden
 impl<DMA> Spi3<DMA> {
     /// Disable the SPI3 (SubGHz SPI) clock
-    pub fn disable_clock(rcc: &mut pac::RCC) {
+    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.apb3enr.modify(|_, w| w.subghzspien().disabled());
     }
 

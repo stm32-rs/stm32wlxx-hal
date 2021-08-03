@@ -637,7 +637,7 @@ impl PortA {
     }
 
     /// Disable the GPIOA clock.
-    pub fn disable_clock(rcc: &mut pac::RCC) {
+    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpioaen().disabled());
     }
 
@@ -747,7 +747,7 @@ impl PortB {
     }
 
     /// Disable the GPIOB clock.
-    pub fn disable_clock(rcc: &mut pac::RCC) {
+    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpioben().disabled());
     }
 
@@ -845,7 +845,7 @@ impl PortC {
     }
 
     /// Disable the GPIOC clock.
-    pub fn disable_clock(rcc: &mut pac::RCC) {
+    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpiocen().disabled());
     }
 

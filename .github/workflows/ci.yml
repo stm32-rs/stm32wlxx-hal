@@ -58,6 +58,7 @@ jobs:
     strategy:
       matrix:
         workspace:
+          - "adc-testsuite"
           - "aes-testsuite"
           - "pka-testsuite"
           - "rng-testsuite"
@@ -83,6 +84,7 @@ jobs:
     strategy:
       matrix:
         workspace:
+          - "adc-testsuite"
           - "aes-testsuite"
           - "pka-testsuite"
           - "rng-testsuite"

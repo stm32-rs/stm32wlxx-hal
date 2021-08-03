@@ -24,6 +24,9 @@ cfg_if::cfg_if! {
     }
 }
 
+#[cfg(not(feature = "stm32wl5x_cm0p"))]
+#[cfg_attr(docsrs, doc(cfg(not(feature = "stm32wl5x_cm0p"))))]
+pub mod adc;
 pub mod aes;
 pub mod dma;
 pub mod gpio;

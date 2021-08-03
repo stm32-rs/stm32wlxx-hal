@@ -144,7 +144,7 @@ pub struct SubGhz<DMA> {
 
 impl<DMA> SubGhz<DMA> {
     /// Disable the SPI3 (SubGHz SPI) clock.
-    pub fn disable_spi_clock(rcc: &mut pac::RCC) {
+    pub unsafe fn disable_spi_clock(rcc: &mut pac::RCC) {
         Spi3::<NoDmaCh>::disable_clock(rcc)
     }
 

@@ -11,7 +11,7 @@ cd "$SCRIPT_DIR/.."
 for testsuite in *-testsuite
 do
     if [[ -v 1 ]]; then
-        cargo test \
+        cargo +nightly test \
             -p "$testsuite" \
             --target thumbv7em-none-eabi \
             --features "$1" \

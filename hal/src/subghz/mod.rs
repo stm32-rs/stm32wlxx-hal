@@ -147,6 +147,15 @@ fn baud_div(rcc: &pac::RCC) -> BaudDiv {
     }
 }
 
+/// Returns `true` if the radio is busy.
+///
+/// See RM0453 Rev 1 Section 6.3 Page 228 "Radio busy management" for more
+/// details.
+pub fn rfbusys() -> bool {
+    let dp = unsafe { pac::Peripherals::steal() };
+    dp.PWR.sr2.read().rfbusys().bit_is_set()
+}
+
 /// Sub-GHz radio peripheral
 #[derive(Debug)]
 pub struct SubGhz<DMA> {
@@ -245,20 +254,10 @@ impl<DMA> SubGhz<DMA> {
         self.debug_pins.is_some()
     }
 
-    /// Returns `true` if RFBUSYS is high.
-    ///
-    /// This indicates the radio is busy.
-    ///
-    /// See section 6.3 "Radio busy management" for more details.
-    pub fn rfbusys() -> bool {
-        let dp = unsafe { pac::Peripherals::steal() };
-        dp.PWR.sr2.read().rfbusys().bit_is_set()
-    }
-
     fn poll_not_busy(&self) {
         // TODO: this is a terrible timeout
         let mut count: u32 = 1_000_000;
-        while Self::rfbusys() {
+        while rfbusys() {
             count -= 1;
             if count == 0 {
                 let dp = unsafe { pac::Peripherals::steal() };
@@ -337,7 +336,7 @@ impl SubGhz<NoDmaCh> {
         Nss::clear();
         // wait until we know the radio got the NSS
         // at high clock speeds the radio can miss an NSS pulse
-        while !Self::rfbusys() {}
+        while !rfbusys() {}
         Nss::set();
 
         SubGhz {
@@ -437,7 +436,7 @@ impl SubGhz<DmaCh> {
         Nss::clear();
         // wait until we know the radio got the NSS
         // at high clock speeds the radio can miss an NSS pulse
-        while !Self::rfbusys() {}
+        while !rfbusys() {}
         Nss::set();
 
         SubGhz {
@@ -1652,11 +1651,11 @@ where
     ///
     /// ```no_run
     /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{Calibrate, StandbyClk};
+    /// use stm32wl_hal::subghz::{rfbusys, Calibrate, StandbyClk, SubGhz};
     ///
     /// sg.set_standby(StandbyClk::Rc)?;
     /// sg.calibrate(Calibrate::Rc13M.mask() | Calibrate::Pll.mask())?;
-    /// while sg.rfbusys() {
+    /// while rfbusys() {
     ///     // ... insert some timeout code here
     /// }
     /// # Ok::<(), stm32wl_hal::subghz::Error>(())

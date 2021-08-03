@@ -6,7 +6,6 @@ authors = ["Alex M. <alexmgit@protonmail.com>"]
 edition = "2018"
 
 [dependencies]
-cortex-m-rt = "0.6" 
 defmt = "0.2"
 defmt-rtt = "0.2"
 defmt-test = "0.2"

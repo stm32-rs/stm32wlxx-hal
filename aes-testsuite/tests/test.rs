@@ -100,7 +100,7 @@ mod tests {
 
         #[cfg(feature = "aio")]
         {
-            let start: usize = cortex_m_rt::heap_start() as usize;
+            let start: usize = stm32wl_hal::cortex_m_rt::heap_start() as usize;
             let size: usize = 2048; // in bytes
             unsafe { ate::ALLOCATOR.init(start, size) };
             unsafe { Aes::unmask_irq() };

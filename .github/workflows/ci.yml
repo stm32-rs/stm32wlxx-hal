@@ -229,13 +229,14 @@ jobs:
           toolchain: nightly
       - run: |
           cd hal
-          cargo +nightly rustdoc --features aio,stm32wl5x_cm4
+          cargo +nightly rustdoc --features aio,stm32wl5x_cm4 -- -Z unstable-options --enable-index-page
       - name: deploy
         if: ${{ github.ref == 'refs/heads/main' }}
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./target/doc
+          force_orphan: true
 
   release_hal:
     name: crates.io hal release

@@ -1,5 +1,8 @@
 # stm32wl-hal
 
+[![CI](https://github.com/newAM/stm32wl-hal/workflows/CI/badge.svg)](https://github.com/newAM/stm32wl-hal/actions)
+[![docs](https://img.shields.io/badge/docs-gh--pages-blue)](https://newam.github.io/stm32wl-hal/stm32wl_hal/index.html)
+
 Embedded rust HAL (hardware abstraction layer) for the STM32WL.
 
 This is a **work in progress**, it is unstable, incomplete, and (mostly) untested.
@@ -11,7 +14,7 @@ There should be enough code for very basic:
 * LoRa TX
 * (G)FSK TX
 * (G)FSK RX
-* SPI
+* SPI (polling + async DMA)
 * ECDSA signing (polling + async)
 * ECDSA verification (polling + async)
 * Cryptographically secure random number generation (polling + async)

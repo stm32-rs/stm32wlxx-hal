@@ -6,11 +6,12 @@
 use panic_rtt_target as _;
 use rtt_target::rprintln;
 use stm32wl_hal::{
+    self as hal,
     gpio::{pins, Input, Level, PortC, Pull},
     pac,
 };
 
-#[cortex_m_rt::entry]
+#[hal::cortex_m_rt::entry]
 fn main() -> ! {
     let channels = rtt_target::rtt_init! {
         up: {

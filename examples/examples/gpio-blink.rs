@@ -3,15 +3,16 @@
 #![no_std]
 #![no_main]
 
-use cortex_m::{delay::Delay, peripheral::syst::SystClkSource};
 use panic_rtt_target as _;
 use rtt_target::rprintln;
 use stm32wl_hal::{
+    self as hal,
+    cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
     gpio::{Level, Output, PortB},
     pac, rcc,
 };
 
-#[cortex_m_rt::entry]
+#[hal::cortex_m_rt::entry]
 fn main() -> ! {
     let channels = rtt_target::rtt_init! {
         up: {

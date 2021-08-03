@@ -5,9 +5,9 @@
 
 use panic_rtt_target as _;
 use rtt_target::rprintln;
-use stm32wl_hal::info;
+use stm32wl_hal::{self as hal, info};
 
-#[cortex_m_rt::entry]
+#[hal::cortex_m_rt::entry]
 fn main() -> ! {
     let channels = rtt_target::rtt_init! {
         up: {
@@ -29,6 +29,6 @@ fn main() -> ! {
     rprintln!("Exiting");
 
     loop {
-        cortex_m::asm::bkpt();
+        hal::cortex_m::asm::bkpt();
     }
 }

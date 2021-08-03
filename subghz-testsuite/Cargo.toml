@@ -1,6 +1,6 @@
 [package]
 authors = ["Alex M. <alexmgit@protonmail.com>"]
-name = "subghz-testsuite-tx"
+name = "subghz-testsuite"
 publish = false
 edition = "2018"
 version = "0.1.0"
@@ -10,15 +10,16 @@ name = "test"
 harness = false
 
 [dependencies]
+static_assertions = "1"
 defmt = "0.2"
 defmt-rtt = "0.2"
 defmt-test = "0.2"
 panic-probe = { version = "0.2", features = ["print-defmt" ] }
-nucleo-wl55jc-bsp = { path = "../nucleo-wl55jc-bsp" }
-subghz-testsuite-assets = { path = "../subghz-testsuite-assets" }
+nucleo-wl55jc-bsp = { path = "../nucleo-wl55jc-bsp", features = ["stm32wl5x_cm4"] }
+ate = { path = "../ate", optional = true }
 
 [features]
-# set logging levels here
+aio = ["ate", "nucleo-wl55jc-bsp/aio"]
 default = ["defmt-trace"]
 
 # do NOT modify these features

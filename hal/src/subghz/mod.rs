@@ -135,6 +135,18 @@ impl Drop for Nss {
     }
 }
 
+fn baud_div(rcc: &pac::RCC) -> BaudDiv {
+    // see RM0453 rev 1 section 7.2.13 page 291
+    // The sub-GHz radio SPI clock is derived from the PCLK3 clock.
+    // The SUBGHZSPI_SCK frequency is obtained by PCLK3 divided by two.
+    // The SUBGHZSPI_SCK clock maximum speed must not exceed 16 MHz.
+    if crate::rcc::hclk3_hz(rcc) > 32_000_000 {
+        BaudDiv::DIV4
+    } else {
+        BaudDiv::DIV2
+    }
+}
+
 /// Sub-GHz radio peripheral
 #[derive(Debug)]
 pub struct SubGhz<DMA> {
@@ -156,13 +168,6 @@ impl<DMA> SubGhz<DMA> {
     fn pulse_radio_reset(rcc: &mut pac::RCC) {
         rcc.csr.modify(|_, w| w.rfrst().set_bit());
         rcc.csr.modify(|_, w| w.rfrst().clear_bit());
-    }
-
-    unsafe fn clear_radio_busy() {
-        pac::Peripherals::steal()
-            .PWR
-            .scr
-            .write(|w| w.cwrfbusyf().set_bit());
     }
 
     /// Enable debug of the SubGHz SPI bus over physical pins.
@@ -245,7 +250,7 @@ impl<DMA> SubGhz<DMA> {
     /// This indicates the radio is busy.
     ///
     /// See section 6.3 "Radio busy management" for more details.
-    pub fn rfbusys(&self) -> bool {
+    pub fn rfbusys() -> bool {
         let dp = unsafe { pac::Peripherals::steal() };
         dp.PWR.sr2.read().rfbusys().bit_is_set()
     }
@@ -253,7 +258,7 @@ impl<DMA> SubGhz<DMA> {
     fn poll_not_busy(&self) {
         // TODO: this is a terrible timeout
         let mut count: u32 = 1_000_000;
-        while self.rfbusys() {
+        while Self::rfbusys() {
             count -= 1;
             if count == 0 {
                 let dp = unsafe { pac::Peripherals::steal() };
@@ -325,15 +330,15 @@ impl SubGhz<NoDmaCh> {
     /// let sg = SubGhz::new(dp.SPI3, &mut dp.RCC);
     /// ```
     pub fn new(spi: pac::SPI3, rcc: &mut pac::RCC) -> SubGhz<NoDmaCh> {
-        Self::enable_spi_clock(rcc);
         Self::pulse_radio_reset(rcc);
 
-        let spi: Spi3<NoDmaCh> = Spi3::<NoDmaCh>::new(spi, BaudDiv::DIV2, rcc);
+        let spi: Spi3<NoDmaCh> = Spi3::<NoDmaCh>::new(spi, baud_div(rcc), rcc);
 
         Nss::clear();
+        // wait until we know the radio got the NSS
+        // at high clock speeds the radio can miss an NSS pulse
+        while !Self::rfbusys() {}
         Nss::set();
-
-        unsafe { Self::clear_radio_busy() };
 
         SubGhz {
             spi,
@@ -425,15 +430,15 @@ impl SubGhz<DmaCh> {
         rx_dma: DmaCh,
         rcc: &mut pac::RCC,
     ) -> SubGhz<DmaCh> {
-        Self::enable_spi_clock(rcc);
         Self::pulse_radio_reset(rcc);
 
-        let spi: Spi3<DmaCh> = Spi3::<DmaCh>::new(spi, tx_dma, rx_dma, BaudDiv::DIV2, rcc);
+        let spi: Spi3<DmaCh> = Spi3::<DmaCh>::new(spi, tx_dma, rx_dma, baud_div(rcc), rcc);
 
         Nss::clear();
+        // wait until we know the radio got the NSS
+        // at high clock speeds the radio can miss an NSS pulse
+        while !Self::rfbusys() {}
         Nss::set();
-
-        unsafe { Self::clear_radio_busy() };
 
         SubGhz {
             spi,
@@ -800,9 +805,9 @@ where
         let tobits: u32 = timeout.into_bits();
         self.write(&[
             OpCode::SetTx.into(),
-            ((tobits >> 16) & 0xFF) as u8,
-            ((tobits >> 8) & 0xFF) as u8,
-            (tobits & 0xFF) as u8,
+            (tobits >> 16) as u8,
+            (tobits >> 8) as u8,
+            tobits as u8,
         ])
     }
 
@@ -824,9 +829,9 @@ where
         let tobits: u32 = timeout.into_bits();
         self.write(&[
             OpCode::SetRx.into(),
-            ((tobits >> 16) & 0xFF) as u8,
-            ((tobits >> 8) & 0xFF) as u8,
-            (tobits & 0xFF) as u8,
+            (tobits >> 16) as u8,
+            (tobits >> 8) as u8,
+            tobits as u8,
         ])
     }
 
@@ -905,12 +910,12 @@ where
         let sleep_period_bits: u32 = sleep_period.into_bits();
         self.write(&[
             OpCode::SetRxDutyCycle.into(),
-            ((rx_period_bits >> 16) & 0xFF) as u8,
-            ((rx_period_bits >> 8) & 0xFF) as u8,
-            (rx_period_bits & 0xFF) as u8,
-            ((sleep_period_bits >> 16) & 0xFF) as u8,
-            ((sleep_period_bits >> 8) & 0xFF) as u8,
-            (sleep_period_bits & 0xFF) as u8,
+            (rx_period_bits >> 16) as u8,
+            (rx_period_bits >> 8) as u8,
+            rx_period_bits as u8,
+            (sleep_period_bits >> 16) as u8,
+            (sleep_period_bits >> 8) as u8,
+            sleep_period_bits as u8,
         ])
     }
 
@@ -1622,11 +1627,7 @@ where
     /// [`TxDone`]: crate::subghz::Irq::TxDone
     /// [`RxDone`]: crate::subghz::Irq::RxDone
     pub fn clear_irq_status(&mut self, mask: u16) -> Result<(), Error> {
-        self.write(&[
-            OpCode::ClrIrqStatus as u8,
-            ((mask >> 8) & 0xFF) as u8,
-            (mask & 0xFF) as u8,
-        ])
+        self.write(&[OpCode::ClrIrqStatus as u8, (mask >> 8) as u8, mask as u8])
     }
 }
 

@@ -9,9 +9,7 @@ members = [
     "nucleo-wl55jc-bsp",
     "pka-testsuite",
     "rng-testsuite",
-    "subghz-testsuite-assets",
-    "subghz-testsuite-rx",
-    "subghz-testsuite-tx",
+    "subghz-testsuite",
 ]
 default-members = ["hal"]
 

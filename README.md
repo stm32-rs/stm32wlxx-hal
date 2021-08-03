@@ -67,20 +67,18 @@ $ cargo test -p pka-testsuite --target thumbv7em-none-eabi
 #### SubGhz Tests
 
 These tests require two nucleo boards, one for transmitting, and one for
-receiving.
+receiving.  Run the `subghz-testsuite` twice on two different boards.
 
-Run `subghz-testsuite-rx` before `subghz-testsuite-tx`.
-
-Assuming both are connected to the same system you will have to pass a specific
-probe to each.
+Assuming both boards are connected to the same system you will have to pass a
+specific probe to each.
 
 ```text
 $ probe-run --list-probes
 The following devices were found:
 [0]: STLink V3 (VID: 0483, PID: 374e, Serial: 001D00145553500A20393256, STLink)
-[1]: STLink V3 (VID: 0483, PID: 374e, Serial: 002900205553500A20393256, STLink)
-$ cargo test -p subghz-testsuite-rx --target thumbv7em-none-eabi -- --probe 001D00145553500A20393256
-$ cargo test -p subghz-testsuite-tx --target thumbv7em-none-eabi -- --probe 002900205553500A20393256
+[1]: STLink V3 (VID: 0483, PID: 374e, Serial: 001600345553500A20393256, STLink)
+$ cargo test -p subghz-testsuite --target thumbv7em-none-eabi -- --probe 001D00145553500A20393256
+$ cargo test -p subghz-testsuite --target thumbv7em-none-eabi -- --probe 001600345553500A20393256
 ```
 
 ## Unit Tests

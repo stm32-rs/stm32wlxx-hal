@@ -287,7 +287,7 @@ impl Pka {
     }
 
     /// Disable the PKA clock.
-    pub fn disable_clock(rcc: &mut pac::RCC) {
+    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.ahb3enr.modify(|_, w| w.pkaen().disabled());
     }
 

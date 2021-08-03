@@ -50,7 +50,7 @@ async fn aio_temperature_inner() {
 
     let temp: i16 = adc.aio_temperature(&mut delay).await.to_integer();
     defmt::info!("Temperature: {} °C", temp);
-    assert!(temp > 30);
+    assert!(temp > 25);
     assert!(temp < 70);
 }
 
@@ -172,7 +172,7 @@ mod tests {
     fn temperature(ta: &mut TestArgs) {
         let temp: i16 = ta.adc.temperature(&mut ta.delay).to_integer();
         defmt::info!("Temperature: {} °C", temp);
-        assert!(temp > 30);
+        assert!(temp > 25);
         assert!(temp < 70);
     }
 

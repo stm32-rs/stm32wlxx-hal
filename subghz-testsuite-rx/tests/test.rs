@@ -1,6 +1,5 @@
 #![no_std]
 #![no_main]
-#![cfg_attr(feature = "aio", feature(alloc_error_handler))]
 
 use defmt_rtt as _; // global logger
 use panic_probe as _;

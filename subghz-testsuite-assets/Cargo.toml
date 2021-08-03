@@ -1,9 +1,0 @@
-[package]
-authors = ["Alex M. <alexmgit@protonmail.com>"]
-name = "subghz-testsuite-assets"
-publish = false
-edition = "2018"
-version = "0.1.0"
-
-[dependencies]
-stm32wl-hal = { path = "../hal", features = ["stm32wl5x_cm4"] }

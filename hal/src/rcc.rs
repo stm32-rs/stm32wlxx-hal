@@ -417,7 +417,7 @@ fn hclk2(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R) -> Ratio<u32> {
     sysclk(rcc, cfgr) / div
 }
 
-/// Calculate the current hclk1 frequency in hertz
+/// Calculate the current hclk2 frequency in hertz
 ///
 /// Fractional frequencies will be rounded down.
 ///
@@ -439,6 +439,30 @@ fn hclk2(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R) -> Ratio<u32> {
 pub fn hclk2_hz(rcc: &pac::RCC) -> u32 {
     let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
     hclk2(rcc, cfgr).to_integer()
+}
+
+fn hclk3(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R) -> Ratio<u32> {
+    let div: u32 = pre_div(rcc.extcfgr.read().shdhpre().bits()).into();
+    sysclk(rcc, cfgr) / div
+}
+
+/// Calculate the current hclk3 frequency in hertz
+///
+/// Fractional frequencies will be rounded down.
+///
+/// # Example
+///
+/// ```no_run
+/// use stm32wl_hal::{pac, rcc::hclk3_hz};
+///
+/// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+///
+/// // without any initialization hclk3 will be 4MHz
+/// assert_eq!(hclk3_hz(&dp.RCC), 4_000_000);
+/// ```
+pub fn hclk3_hz(rcc: &pac::RCC) -> u32 {
+    let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
+    hclk3(rcc, cfgr).to_integer()
 }
 
 fn cpu1_systick(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R, src: SystClkSource) -> Ratio<u32> {
@@ -469,6 +493,7 @@ fn cpu1_systick(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R, src: SystClkSource) -> 
 ///
 /// // constructor will set the clock source to core
 /// // note: this code is only valid if running on CPU1
+/// //       cpu_systick_hz is better in this use-case
 /// let mut delay: Delay = Delay::new(cp.SYST, cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
 /// delay.delay_ms(100);
 /// ```
@@ -506,6 +531,7 @@ fn cpu2_systick(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R, src: SystClkSource) -> 
 ///
 /// // constructor will set the clock source to core
 /// // note: this code is only valid if running on CPU2
+/// //       cpu_systick_hz is better in this use-case
 /// let mut delay: Delay = Delay::new(cp.SYST, cpu2_systick_hz(&dp.RCC, SystClkSource::Core));
 /// delay.delay_ms(100);
 /// ```
@@ -517,4 +543,39 @@ fn cpu2_systick(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R, src: SystClkSource) -> 
 pub fn cpu2_systick_hz(rcc: &pac::RCC, src: SystClkSource) -> u32 {
     let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
     cpu2_systick(rcc, cfgr, src).to_integer()
+}
+
+/// Calculate the current CPU systick frequency in hertz.
+///
+/// This will automatically select the correct CPU based on the feature
+/// flag passed to the HAL.
+///
+/// # Example
+///
+/// Created a systick based delay structure.
+///
+/// ```no_run
+/// use stm32wl_hal::{
+///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
+///     pac,
+///     rcc::cpu_systick_hz,
+/// };
+///
+/// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+/// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
+///
+/// // constructor will set the clock source to core
+/// let mut delay: Delay = Delay::new(cp.SYST, cpu_systick_hz(&dp.RCC, SystClkSource::Core));
+/// delay.delay_ms(100);
+/// ```
+pub fn cpu_systick_hz(rcc: &pac::RCC, src: SystClkSource) -> u32 {
+    #[cfg(feature = "stm32wl5x_cm0p")]
+    {
+        cpu2_systick_hz(rcc, src)
+    }
+
+    #[cfg(not(feature = "stm32wl5x_cm0p"))]
+    {
+        cpu1_systick_hz(rcc, src)
+    }
 }

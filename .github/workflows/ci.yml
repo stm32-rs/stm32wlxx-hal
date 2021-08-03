@@ -55,15 +55,6 @@ jobs:
     name: Testsuite Compile
     runs-on: ubuntu-latest
     env: {"RUSTFLAGS": "-D warnings"}
-    strategy:
-      matrix:
-        workspace:
-          - "adc-testsuite"
-          - "aes-testsuite"
-          - "pka-testsuite"
-          - "rng-testsuite"
-          - "subghz-testsuite-rx"
-          - "subghz-testsuite-tx"
     steps:
       - uses: actions/checkout@v2.3.4
       - uses: actions-rs/toolchain@v1.0.7
@@ -71,37 +62,21 @@ jobs:
           toolchain: stable
           target: thumbv7em-none-eabi
       - name: cargo test
-        run: |
-          cargo test \
-          -p ${{ matrix.workspace }} \
-          --target thumbv7em-none-eabi \
-          --no-run
+        run: bash ci/testsuite-compile.sh
 
   build_testsuite_aio:
     name: Testsuite Compile async
     runs-on: ubuntu-latest
     env: {"RUSTFLAGS": "-D warnings"}
-    strategy:
-      matrix:
-        workspace:
-          - "adc-testsuite"
-          - "aes-testsuite"
-          - "pka-testsuite"
-          - "rng-testsuite"
-          - "subghz-testsuite-rx"
     steps:
       - uses: actions/checkout@v2.3.4
       - uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: nightly
           target: thumbv7em-none-eabi
+          default: true
       - name: cargo test
-        run: |
-          cargo +nightly test \
-          -p ${{ matrix.workspace }} \
-          --target thumbv7em-none-eabi \
-          --features aio \
-          --no-run
+        run: bash ci/testsuite-compile.sh aio
 
   build_test_bsp:
     name: Build and Test BSP

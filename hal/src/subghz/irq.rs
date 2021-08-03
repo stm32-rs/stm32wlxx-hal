@@ -35,7 +35,7 @@ pub enum Irq {
     /// * Packet type: LoRa
     /// * Operation: RX
     HeaderErr = (1 << 5),
-    /// Dual mening error.
+    /// Dual meaning error.
     ///
     /// For GFSK RX this indicates a preamble, syncword, address, CRC, or length
     /// error.
@@ -67,8 +67,8 @@ impl Irq {
     /// ```
     /// use stm32wl_hal::subghz::Irq;
     ///
-    /// assert_eq!(Irq::TxDone.mask(), 0x0001u16);
-    /// assert_eq!(Irq::Timeout.mask(), 0x0200u16);
+    /// assert_eq!(Irq::TxDone.mask(), 0x0001);
+    /// assert_eq!(Irq::Timeout.mask(), 0x0200);
     /// ```
     pub const fn mask(self) -> u16 {
         self as u16

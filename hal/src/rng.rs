@@ -295,6 +295,151 @@ impl Rng {
         Ok(())
     }
 
+    /// Try to generate a random `u8`.
+    ///
+    /// This is not efficient if you need to generate a lot of entropy, this is
+    /// provided as a convenience function that wraps
+    /// [`try_fill_u8`](crate::rng::Rng::try_fill_u8)
+    /// for testing and prototyping.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     pac,
+    ///     rng::{ClkSrc, Rng},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// Rng::set_clock_source(&mut dp.RCC, ClkSrc::MSI);
+    /// let mut rng = Rng::new(dp.RNG, &mut dp.RCC);
+    ///
+    /// let rand_value: u8 = rng.try_u8()?;
+    /// # Ok::<(), stm32wl_hal::rng::Error>(())
+    /// ```
+    pub fn try_u8(&mut self) -> Result<u8, Error> {
+        let mut buf: [u8; 1] = [0];
+        self.try_fill_u8(&mut buf)?;
+        Ok(buf[0])
+    }
+
+    /// Try to generate a random `u16`.
+    ///
+    /// This is not efficient if you need to generate a lot of entropy, this is
+    /// provided as a convenience function that wraps
+    /// [`try_fill_u8`](crate::rng::Rng::try_fill_u8)
+    /// for testing and prototyping.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     pac,
+    ///     rng::{ClkSrc, Rng},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// Rng::set_clock_source(&mut dp.RCC, ClkSrc::MSI);
+    /// let mut rng = Rng::new(dp.RNG, &mut dp.RCC);
+    ///
+    /// let rand_value: u16 = rng.try_u16()?;
+    /// # Ok::<(), stm32wl_hal::rng::Error>(())
+    /// ```
+    pub fn try_u16(&mut self) -> Result<u16, Error> {
+        let mut buf: [u8; 2] = [0; 2];
+        self.try_fill_u8(&mut buf)?;
+        Ok(u16::from_le_bytes(buf))
+    }
+
+    /// Try to generate a random `u32`.
+    ///
+    /// This is not efficient if you need to generate a lot of entropy, this is
+    /// provided as a convenience function that wraps
+    /// [`try_fill_u32`](crate::rng::Rng::try_fill_u32)
+    /// for testing and prototyping.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     pac,
+    ///     rng::{ClkSrc, Rng},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// Rng::set_clock_source(&mut dp.RCC, ClkSrc::MSI);
+    /// let mut rng = Rng::new(dp.RNG, &mut dp.RCC);
+    ///
+    /// let rand_value: u32 = rng.try_u32()?;
+    /// # Ok::<(), stm32wl_hal::rng::Error>(())
+    /// ```
+    pub fn try_u32(&mut self) -> Result<u32, Error> {
+        let mut buf: [u32; 1] = [0; 1];
+        self.try_fill_u32(&mut buf)?;
+        Ok(buf[0])
+    }
+
+    /// Try to generate a random `u64`.
+    ///
+    /// This is not efficient if you need to generate a lot of entropy, this is
+    /// provided as a convenience function that wraps
+    /// [`try_fill_u8`](crate::rng::Rng::try_fill_u8)
+    /// for testing and prototyping.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     pac,
+    ///     rng::{ClkSrc, Rng},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// Rng::set_clock_source(&mut dp.RCC, ClkSrc::MSI);
+    /// let mut rng = Rng::new(dp.RNG, &mut dp.RCC);
+    ///
+    /// let rand_value: u64 = rng.try_u64()?;
+    /// # Ok::<(), stm32wl_hal::rng::Error>(())
+    /// ```
+    pub fn try_u64(&mut self) -> Result<u64, Error> {
+        let mut buf: [u8; 8] = [0; 8];
+        self.try_fill_u8(&mut buf)?;
+        Ok(u64::from_le_bytes(buf))
+    }
+
+    /// Try to generate a random `u128`.
+    ///
+    /// This is not efficient if you need to generate a lot of entropy, this is
+    /// provided as a convenience function that wraps
+    /// [`try_fill_u8`](crate::rng::Rng::try_fill_u8)
+    /// for testing and prototyping.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     pac,
+    ///     rng::{ClkSrc, Rng},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// Rng::set_clock_source(&mut dp.RCC, ClkSrc::MSI);
+    /// let mut rng = Rng::new(dp.RNG, &mut dp.RCC);
+    ///
+    /// let rand_value: u128 = rng.try_u128()?;
+    /// # Ok::<(), stm32wl_hal::rng::Error>(())
+    /// ```
+    pub fn try_u128(&mut self) -> Result<u128, Error> {
+        let mut buf: [u8; 16] = [0; 16];
+        self.try_fill_u8(&mut buf)?;
+        Ok(u128::from_le_bytes(buf))
+    }
+
     /// Try to fill the destination buffer with random data, asynchronously.
     ///
     /// This is the native data size for the RNG.

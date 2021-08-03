@@ -74,6 +74,7 @@ jobs:
         with:
           toolchain: nightly
           target: thumbv7em-none-eabi
+          default: true
       - name: cargo test
         run: bash ci/testsuite-compile.sh aio
 

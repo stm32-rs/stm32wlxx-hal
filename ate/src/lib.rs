@@ -1,12 +1,14 @@
 //! Asynchronous Test Executor
 
 #![no_std]
+#![feature(alloc_error_handler)]
 
 extern crate alloc;
 
 pub use alloc_cortex_m;
 
 use alloc::{boxed::Box, collections::BTreeMap, sync::Arc, task::Wake};
+use alloc_cortex_m::CortexMHeap;
 use core::{
     future::Future,
     pin::Pin,
@@ -14,6 +16,33 @@ use core::{
     task::{Context, Poll, Waker},
 };
 use crossbeam_queue::ArrayQueue;
+use hal::{gpio, pac};
+use stm32wl_hal as hal;
+
+#[global_allocator]
+pub static ALLOCATOR: CortexMHeap = CortexMHeap::empty();
+
+#[alloc_error_handler]
+fn oom(_layout: core::alloc::Layout) -> ! {
+    hal::cortex_m::interrupt::disable();
+
+    let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
+    let mut rcc: pac::RCC = dp.RCC;
+
+    let gpiob: gpio::PortB = gpio::PortB::split(dp.GPIOB, &mut rcc);
+    let mut led1 = gpio::Output::default(gpiob.pb9);
+    let mut led2 = gpio::Output::default(gpiob.pb15);
+    let mut led3 = gpio::Output::default(gpiob.pb11);
+
+    led1.set_level_high();
+    led2.set_level_high();
+    led3.set_level_high();
+
+    use core::sync::atomic::{compiler_fence, Ordering::SeqCst};
+    loop {
+        compiler_fence(SeqCst);
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 struct TaskId(u32);

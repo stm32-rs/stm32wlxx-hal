@@ -10,13 +10,6 @@ use stm32wl_hal::{
     rcc,
 };
 
-#[cfg(feature = "aio")]
-use ate::alloc_cortex_m::CortexMHeap;
-
-#[global_allocator]
-#[cfg(feature = "aio")]
-static ALLOCATOR: CortexMHeap = CortexMHeap::empty();
-
 // Message hash
 const HASH: [u32; 8] = [
     0x44acf6b7, 0xe36c1342, 0xc2c58972, 0x04fe0950, 0x4e1e2efb, 0x1a900377, 0xdbc4e7a6, 0xa133ec56,
@@ -53,30 +46,6 @@ const PUB_KEY: EcdsaPublicKey<8> = EcdsaPublicKey {
         0xa89a4ca9,
     ],
 };
-
-#[cfg_attr(feature = "aio", alloc_error_handler)]
-#[cfg(feature = "aio")]
-fn oom(_layout: core::alloc::Layout) -> ! {
-    cortex_m::interrupt::disable();
-
-    let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
-    let mut rcc: pac::RCC = dp.RCC;
-
-    use stm32wl_hal::gpio;
-    let gpiob: gpio::PortB = gpio::PortB::split(dp.GPIOB, &mut rcc);
-    let mut led1 = gpio::Output::default(gpiob.pb9);
-    let mut led2 = gpio::Output::default(gpiob.pb15);
-    let mut led3 = gpio::Output::default(gpiob.pb11);
-
-    led1.set_level_high();
-    led2.set_level_high();
-    led3.set_level_high();
-
-    use core::sync::atomic::{compiler_fence, Ordering::SeqCst};
-    loop {
-        compiler_fence(SeqCst);
-    }
-}
 
 #[cfg(feature = "aio")]
 async fn aio_ecdsa_sign_inner() {
@@ -120,7 +89,7 @@ mod tests {
         {
             let start: usize = cortex_m_rt::heap_start() as usize;
             let size: usize = 2048; // in bytes
-            unsafe { ALLOCATOR.init(start, size) };
+            unsafe { ate::ALLOCATOR.init(start, size) };
             unsafe { Pka::unmask_irq() };
         }
 

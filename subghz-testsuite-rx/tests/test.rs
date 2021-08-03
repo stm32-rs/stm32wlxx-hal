@@ -20,37 +20,6 @@ use hal::{
 };
 
 #[cfg(feature = "aio")]
-use ate::alloc_cortex_m::CortexMHeap;
-
-#[global_allocator]
-#[cfg(feature = "aio")]
-static ALLOCATOR: CortexMHeap = CortexMHeap::empty();
-
-#[cfg_attr(feature = "aio", alloc_error_handler)]
-#[cfg(feature = "aio")]
-fn oom(_layout: core::alloc::Layout) -> ! {
-    cortex_m::interrupt::disable();
-
-    let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
-    let mut rcc: pac::RCC = dp.RCC;
-
-    use stm32wl_hal::gpio;
-    let gpiob: gpio::PortB = gpio::PortB::split(dp.GPIOB, &mut rcc);
-    let mut led1 = gpio::Output::default(gpiob.pb9);
-    let mut led2 = gpio::Output::default(gpiob.pb15);
-    let mut led3 = gpio::Output::default(gpiob.pb11);
-
-    led1.set_level_high();
-    led2.set_level_high();
-    led3.set_level_high();
-
-    use core::sync::atomic::{compiler_fence, Ordering::SeqCst};
-    loop {
-        compiler_fence(SeqCst);
-    }
-}
-
-#[cfg(feature = "aio")]
 async fn aio_buffer_io_inner() {
     let mut sg = unsafe {
         let dma = AllDma::steal();
@@ -89,7 +58,7 @@ mod tests {
         {
             let start: usize = cortex_m_rt::heap_start() as usize;
             let size: usize = 2048; // in bytes
-            unsafe { ALLOCATOR.init(start, size) };
+            unsafe { ate::ALLOCATOR.init(start, size) };
         }
 
         let mut sg: SubGhz<DmaCh> = SubGhz::new_with_dma(dp.SPI3, tx_dma, rx_dma, &mut dp.RCC);

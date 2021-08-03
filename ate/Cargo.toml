@@ -15,5 +15,8 @@ features = ["alloc"]
 version = "0.3"
 default-features = false
 
-[dependencies]
-alloc-cortex-m = "0.4"
+[dependencies.alloc-cortex-m]
+version = "0.4"
+
+[dependencies.stm32wl-hal]
+path = "../hal"

@@ -14,7 +14,8 @@ use bsp::{
     hal::{
         dma::{AllDma, DmaCh},
         gpio::{PortA, PortC},
-        pac, rcc,
+        pac::{self, DWT},
+        rcc,
         rng::{self, Rng},
         subghz::{
             AddrComp, CalibrateImage, CmdStatus, CodingRate, CrcType, FskBandwidth, FskBitrate,
@@ -26,6 +27,9 @@ use bsp::{
     },
     RfSwitch,
 };
+
+const FREQ: u32 = 48_000_000;
+const CYC_PER_MS: u32 = FREQ / 1000;
 
 use core::time::Duration;
 
@@ -145,7 +149,7 @@ async fn aio_wait_irq_inner() {
 fn tx_or_panic(sg: &mut SubGhz<DmaCh>, rfs: &mut RfSwitch) {
     rfs.set_tx_lp();
     sg.set_tx(Timeout::DISABLED).unwrap();
-    let mut tx_loop_cnt: u32 = 0;
+    let start_cc: u32 = DWT::get_cycle_count();
     loop {
         let status: Status = sg.status().unwrap();
         if status.cmd() == Ok(CmdStatus::Complete) {
@@ -153,9 +157,9 @@ fn tx_or_panic(sg: &mut SubGhz<DmaCh>, rfs: &mut RfSwitch) {
             defmt::info!("TX done");
             break;
         }
-        tx_loop_cnt = tx_loop_cnt.saturating_add(1);
+        let elapsed_ms: u32 = start_cc.wrapping_sub(DWT::get_cycle_count()) / CYC_PER_MS;
         assert!(
-            tx_loop_cnt < 10000,
+            elapsed_ms > 200,
             "Timeout waiting for TX completion status={}",
             status
         );
@@ -220,7 +224,7 @@ fn ping_pong(sg: &mut SubGhz<DmaCh>, rng: &mut Rng, rfs: &mut RfSwitch, pkt: Pac
         defmt::debug!("RX for {:?} ms", timeout.as_duration().as_millis());
         sg.set_rx(timeout).unwrap();
 
-        let mut rx_loop_cnt: u32 = 0;
+        let start_cc: u32 = DWT::get_cycle_count();
         loop {
             let (status, irq_status) = sg.irq_status().unwrap();
 
@@ -273,9 +277,9 @@ fn ping_pong(sg: &mut SubGhz<DmaCh>, rng: &mut Rng, rfs: &mut RfSwitch, pkt: Pac
                 assert_ne!(status.cmd(), Ok(CmdStatus::ProcessingError));
                 assert_ne!(status.cmd(), Ok(CmdStatus::ExecutionFailure));
 
-                rx_loop_cnt = rx_loop_cnt.saturating_add(1);
+                let elapsed_ms: u32 = start_cc.wrapping_sub(DWT::get_cycle_count()) / CYC_PER_MS;
                 assert!(
-                    rx_loop_cnt < 10000,
+                    elapsed_ms > 200,
                     "Timeout waiting for RX completion status={}",
                     status
                 );
@@ -299,9 +303,14 @@ mod tests {
 
     #[init]
     fn init() -> TestArgs {
+        let mut cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
         let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 
+        cp.DCB.enable_trace();
+        cp.DWT.enable_cycle_counter();
+
         rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC);
+        assert_eq!(rcc::sysclk_hz(&dp.RCC), FREQ);
 
         let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
         let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);

@@ -19,9 +19,9 @@ use bsp::{
         subghz::{
             AddrComp, CalibrateImage, CmdStatus, CodingRate, CrcType, FskBandwidth, FskBitrate,
             FskFdev, FskModParams, FskPulseShape, GenericPacketParams, HeaderType, Irq,
-            LoRaBandwidth, LoRaModParams, LoRaPacketParams, Ocp, PaConfig, PaSel, PacketType,
-            PreambleDetection, RampTime, RegMode, RfFreq, SpreadingFactor, StandbyClk, Status,
-            StatusMode, SubGhz, TcxoMode, TcxoTrim, Timeout, TxParams,
+            LoRaBandwidth, LoRaModParams, LoRaPacketParams, LoRaSyncWord, Ocp, PaConfig, PaSel,
+            PacketType, PreambleDetection, RampTime, RegMode, RfFreq, SpreadingFactor, StandbyClk,
+            Status, StatusMode, SubGhz, TcxoMode, TcxoTrim, Timeout, TxParams,
         },
     },
     RfSwitch,
@@ -179,7 +179,6 @@ fn ping_pong(sg: &mut SubGhz<DmaCh>, rng: &mut Rng, rfs: &mut RfSwitch, pkt: Pac
     sg.set_pa_config(&PA_CONFIG).unwrap();
     sg.set_pa_ocp(Ocp::Max60m).unwrap();
     sg.set_tx_params(&TX_PARAMS).unwrap();
-    sg.set_sync_word(&SYNC_WORD).unwrap();
 
     let status: Status = sg.status().unwrap();
     assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
@@ -187,10 +186,12 @@ fn ping_pong(sg: &mut SubGhz<DmaCh>, rng: &mut Rng, rfs: &mut RfSwitch, pkt: Pac
     sg.set_packet_type(pkt).unwrap();
     match pkt {
         PacketType::Fsk => {
+            sg.set_sync_word(&SYNC_WORD).unwrap();
             sg.set_fsk_mod_params(&FSK_MOD_PARAMS).unwrap();
             sg.set_packet_params(&FSK_PACKET_PARAMS).unwrap();
         }
         PacketType::LoRa => {
+            sg.set_lora_sync_word(LoRaSyncWord::Public).unwrap();
             sg.set_lora_mod_params(&LORA_MOD_PARAMS).unwrap();
             sg.set_lora_packet_params(&LORA_PACKET_PARAMS).unwrap();
         }
@@ -271,7 +272,6 @@ fn ping_pong(sg: &mut SubGhz<DmaCh>, rng: &mut Rng, rfs: &mut RfSwitch, pkt: Pac
                 assert_ne!(status.cmd(), Ok(CmdStatus::Avaliable));
                 assert_ne!(status.cmd(), Ok(CmdStatus::ProcessingError));
                 assert_ne!(status.cmd(), Ok(CmdStatus::ExecutionFailure));
-                assert_ne!(status.cmd(), Ok(CmdStatus::Complete));
 
                 rx_loop_cnt = rx_loop_cnt.saturating_add(1);
                 assert!(

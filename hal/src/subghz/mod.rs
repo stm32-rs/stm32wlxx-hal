@@ -270,6 +270,11 @@ impl<DMA> SubGhz<DMA> {
             }
         }
     }
+
+    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
+    async fn aio_poll_not_busy(&self) {
+        futures::future::poll_fn(aio::poll_busy).await
+    }
 }
 
 impl<DMA> SubGhz<DMA>
@@ -278,7 +283,6 @@ where
         + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     fn read(&mut self, opcode: OpCode, data: &mut [u8]) -> Result<(), Error> {
-        self.poll_not_busy();
         {
             let _nss: Nss = Nss::new();
             self.spi.write(&[opcode as u8])?;
@@ -289,7 +293,6 @@ where
     }
 
     fn write(&mut self, data: &[u8]) -> Result<(), Error> {
-        self.poll_not_busy();
         {
             let _nss: Nss = Nss::new();
             self.spi.write(data)?;
@@ -309,6 +312,42 @@ where
     fn read_n<const N: usize>(&mut self, opcode: OpCode) -> Result<[u8; N], Error> {
         let mut buf: [u8; N] = [0; N];
         self.read(opcode, &mut buf)?;
+        Ok(buf)
+    }
+}
+
+#[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
+impl SubGhz<DmaCh> {
+    async fn aio_read(&mut self, opcode: OpCode, data: &mut [u8]) -> Result<(), Error> {
+        {
+            let _nss: Nss = Nss::new();
+            self.spi.aio_write_with_dma(&[opcode as u8]).await?;
+            self.spi.aio_transfer_with_dma(data).await?;
+        }
+        self.aio_poll_not_busy().await;
+        Ok(())
+    }
+
+    async fn aio_write(&mut self, data: &[u8]) -> Result<(), Error> {
+        {
+            let _nss: Nss = Nss::new();
+            self.spi.aio_write_with_dma(data).await?;
+        }
+        self.aio_poll_not_busy().await;
+        Ok(())
+    }
+
+    /// Read one byte from the sub-Ghz radio.
+    async fn aio_read_1(&mut self, opcode: OpCode) -> Result<u8, Error> {
+        let mut buf: [u8; 1] = [0; 1];
+        self.aio_read(opcode, &mut buf).await?;
+        Ok(buf[0])
+    }
+
+    /// Read a fixed number of bytes from the sub-Ghz radio.
+    async fn aio_read_n<const N: usize>(&mut self, opcode: OpCode) -> Result<[u8; N], Error> {
+        let mut buf: [u8; N] = [0; N];
+        self.aio_read(opcode, &mut buf).await?;
         Ok(buf)
     }
 }
@@ -439,6 +478,11 @@ impl SubGhz<DmaCh> {
         while !rfbusys() {}
         Nss::set();
 
+        let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
+        dp.EXTI.ftsr2.write(|w| w.ft45().enabled());
+        dp.EXTI.c1imr2.write(|w| w.im45().unmasked());
+        unsafe { pac::NVIC::unmask(pac::Interrupt::RADIO_IRQ_BUSY) };
+
         SubGhz {
             spi,
             debug_pins: None,
@@ -484,8 +528,6 @@ impl SubGhz<DmaCh> {
 #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
 impl SubGhz<DmaCh> {
     pub async fn aio_write_buffer(&mut self, offset: u8, data: &[u8]) -> Result<(), Error> {
-        self.poll_not_busy();
-
         {
             let _nss: Nss = Nss::new();
             self.spi
@@ -494,13 +536,13 @@ impl SubGhz<DmaCh> {
             self.spi.aio_write_with_dma(data).await?;
         }
 
-        self.poll_not_busy();
+        self.aio_poll_not_busy().await;
+
         Ok(())
     }
 
     pub async fn aio_read_buffer(&mut self, offset: u8, buf: &mut [u8]) -> Result<Status, Error> {
         let mut status_buf: [u8; 1] = [0];
-        self.poll_not_busy();
 
         {
             let _nss: Nss = Nss::new();
@@ -511,7 +553,7 @@ impl SubGhz<DmaCh> {
             self.spi.aio_transfer_with_dma(buf).await?;
         }
 
-        self.poll_not_busy();
+        self.aio_poll_not_busy().await;
         Ok(status_buf[0].into())
     }
 }
@@ -524,8 +566,6 @@ where
         + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     pub fn write_buffer(&mut self, offset: u8, data: &[u8]) -> Result<(), Error> {
-        self.poll_not_busy();
-
         {
             let _nss: Nss = Nss::new();
             self.spi.write(&[OpCode::WriteBuffer as u8, offset])?;
@@ -538,7 +578,6 @@ where
 
     pub fn read_buffer(&mut self, offset: u8, buf: &mut [u8]) -> Result<Status, Error> {
         let mut status_buf: [u8; 1] = [0];
-        self.poll_not_busy();
 
         {
             let _nss: Nss = Nss::new();
@@ -561,7 +600,6 @@ where
 {
     fn write_register(&mut self, register: Register, data: &[u8]) -> Result<(), Error> {
         let addr: [u8; 2] = register.address().to_be_bytes();
-        self.poll_not_busy();
 
         {
             let _nss: Nss = Nss::new();
@@ -1584,7 +1622,7 @@ where
     ///
     /// # Example
     ///
-    /// Wait for TX to complete or time out.
+    /// Wait for TX to complete or timeout.
     ///
     /// ```no_run
     /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
@@ -1627,6 +1665,84 @@ where
     /// [`RxDone`]: crate::subghz::Irq::RxDone
     pub fn clear_irq_status(&mut self, mask: u16) -> Result<(), Error> {
         self.write(&[OpCode::ClrIrqStatus as u8, (mask >> 8) as u8, mask as u8])
+    }
+}
+
+// 5.8.6
+/// IRQ commands
+impl SubGhz<DmaCh> {
+    /// Set the interrupt configuration.
+    ///
+    /// # Example
+    ///
+    /// Enable TX and timeout interrupts globally.
+    ///
+    /// ```no_run
+    /// # async fn doctest() -> Result<(), stm32wl_hal::subghz::Error> {
+    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
+    /// use stm32wl_hal::subghz::{CfgDioIrq, Irq, IrqLine};
+    ///
+    /// const IRQ_CFG: CfgDioIrq = CfgDioIrq::new()
+    ///     .irq_enable(IrqLine::Global, Irq::TxDone)
+    ///     .irq_enable(IrqLine::Global, Irq::Timeout);
+    /// sg.aio_set_irq_cfg(&IRQ_CFG).await?;
+    /// # Ok(()) }
+    /// ```
+    pub async fn aio_set_irq_cfg(&mut self, cfg: &CfgDioIrq) -> Result<(), Error> {
+        self.aio_write(cfg.as_slice()).await
+    }
+
+    /// Get the IRQ status.
+    ///
+    /// # Example
+    ///
+    /// Wait for TX to complete or timeout.
+    ///
+    /// ```no_run
+    /// # async fn doctest() -> Result<(), stm32wl_hal::subghz::Error> {
+    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
+    /// use stm32wl_hal::subghz::Irq;
+    ///
+    /// loop {
+    ///     let (_, irq_status) = sg.aio_irq_status().await?;
+    ///     if irq_status & Irq::TxDone.mask() != 0 {
+    ///         // handle TX done
+    ///         break;
+    ///     }
+    ///     if irq_status & Irq::Timeout.mask() != 0 {
+    ///         // handle timeout
+    ///         break;
+    ///     }
+    /// }
+    /// # Ok(()) }
+    /// ```
+    pub async fn aio_irq_status(&mut self) -> Result<(Status, u16), Error> {
+        let data: [u8; 3] = self.aio_read_n(OpCode::GetIrqStatus).await?;
+        let irq_status: u16 = u16::from_be_bytes([data[1], data[2]]);
+        Ok((data[0].into(), irq_status))
+    }
+
+    /// Clear the IRQ status.
+    ///
+    /// # Example
+    ///
+    /// Clear the [`TxDone`] and [`RxDone`] interrupts.
+    ///
+    /// ```no_run
+    /// # async fn doctest() -> Result<(), stm32wl_hal::subghz::Error> {
+    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
+    /// use stm32wl_hal::subghz::Irq;
+    ///
+    /// sg.aio_clear_irq_status(Irq::TxDone.mask() | Irq::RxDone.mask())
+    ///     .await?;
+    /// # Ok(()) }
+    /// ```
+    ///
+    /// [`TxDone`]: crate::subghz::Irq::TxDone
+    /// [`RxDone`]: crate::subghz::Irq::RxDone
+    pub async fn aio_clear_irq_status(&mut self, mask: u16) -> Result<(), Error> {
+        self.aio_write(&[OpCode::ClrIrqStatus as u8, (mask >> 8) as u8, mask as u8])
+            .await
     }
 }
 
@@ -1864,5 +1980,63 @@ pub(crate) enum Register {
 impl Register {
     pub const fn address(self) -> u16 {
         self as u16
+    }
+}
+
+#[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
+mod aio {
+    use super::rfbusys;
+    use core::{
+        sync::atomic::{AtomicBool, Ordering::SeqCst},
+        task::Poll,
+    };
+    use futures_util::task::AtomicWaker;
+
+    static SG_WAKER: AtomicWaker = AtomicWaker::new();
+    static SG_IRQ_PENDING: AtomicBool = AtomicBool::new(false);
+
+    pub fn poll_busy(cx: &mut core::task::Context<'_>) -> Poll<()> {
+        SG_WAKER.register(cx.waker());
+        match rfbusys() {
+            true => core::task::Poll::Pending,
+            false => {
+                SG_WAKER.take();
+                Poll::Ready(())
+            }
+        }
+    }
+
+    pub fn poll_irq_pending(cx: &mut core::task::Context<'_>) -> Poll<()> {
+        SG_WAKER.register(cx.waker());
+        match SG_IRQ_PENDING.load(SeqCst) {
+            false => core::task::Poll::Pending,
+            true => {
+                SG_IRQ_PENDING.store(false, SeqCst);
+                SG_WAKER.take();
+                Poll::Ready(())
+            }
+        }
+    }
+
+    #[cfg(all(target_arch = "arm", target_os = "none"))]
+    mod irq {
+        use super::{SeqCst, SG_IRQ_PENDING, SG_WAKER};
+        use crate::pac::{self, interrupt};
+
+        #[interrupt]
+        #[allow(non_snake_case)]
+        fn RADIO_IRQ_BUSY() {
+            let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
+
+            if dp.EXTI.pr2.read().pif45().bit_is_set() {
+                // interrupt triggered by RFBUSY high -> low
+                dp.EXTI.pr2.write(|w| w.pif45().set_bit());
+            } else {
+                // interrupt triggered by radio IRQ
+                SG_IRQ_PENDING.store(true, SeqCst);
+            }
+
+            SG_WAKER.wake();
+        }
     }
 }

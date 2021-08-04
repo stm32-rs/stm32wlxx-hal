@@ -17,10 +17,10 @@ use bsp::{
         pac, rcc,
         rng::{self, Rng},
         subghz::{
-            AddrComp, CalibrateImage, CfgDioIrq, CmdStatus, CrcType, FskBandwidth, FskBitrate,
-            FskFdev, FskModParams, FskPulseShape, GenericPacketParams, HeaderType, Irq, IrqLine,
-            Ocp, PaConfig, PaSel, PacketType, PreambleDetection, RampTime, RegMode, RfFreq,
-            StandbyClk, Status, StatusMode, SubGhz, TcxoMode, TcxoTrim, Timeout, TxParams,
+            AddrComp, CalibrateImage, CmdStatus, CrcType, FskBandwidth, FskBitrate, FskFdev,
+            FskModParams, FskPulseShape, GenericPacketParams, HeaderType, Irq, Ocp, PaConfig,
+            PaSel, PacketType, PreambleDetection, RampTime, RegMode, RfFreq, StandbyClk, Status,
+            StatusMode, SubGhz, TcxoMode, TcxoTrim, Timeout, TxParams,
         },
     },
     RfSwitch,
@@ -89,6 +89,45 @@ async fn aio_buffer_io_inner() {
     assert_eq!(DATA, buf.as_slice());
 }
 
+#[cfg(feature = "aio")]
+async fn aio_wait_irq_inner() {
+    let mut sg = unsafe {
+        let dma = AllDma::steal();
+        SubGhz::steal_with_dma(dma.d1c1, dma.d2c1)
+    };
+
+    sg.aio_set_standby(StandbyClk::Rc).await.unwrap();
+    let status: Status = sg.aio_status().await.unwrap();
+    assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
+
+    sg.aio_set_tcxo_mode(&TCXO_MODE).await.unwrap();
+    sg.aio_set_regulator_mode(RegMode::Ldo).await.unwrap();
+    sg.aio_set_sync_word(&SYNC_WORD).await.unwrap();
+    sg.aio_set_packet_type(PacketType::Fsk).await.unwrap();
+    sg.aio_set_fsk_mod_params(&MOD_PARAMS).await.unwrap();
+    sg.aio_set_packet_params(&PACKET_PARAMS).await.unwrap();
+    sg.aio_calibrate_image(CalibrateImage::ISM_430_440)
+        .await
+        .unwrap();
+    sg.aio_set_rf_frequency(&RF_FREQ).await.unwrap();
+
+    use bsp::hal::subghz::CfgIrq;
+
+    const IRQ_CFG: CfgIrq = CfgIrq::new()
+        .irq_enable(Irq::RxDone)
+        .irq_enable(Irq::Timeout);
+    sg.aio_set_irq_cfg(&IRQ_CFG).await.unwrap();
+
+    let status: Status = sg.status().unwrap();
+    assert_ne!(status.cmd(), Ok(CmdStatus::Timeout));
+
+    // this will fail to RX immediately (15 micros timeout)
+    sg.aio_set_rx(Timeout::MIN).await.unwrap();
+
+    let (_, irq) = sg.aio_wait_irq().await.unwrap();
+    defmt::assert_eq!(Irq::Timeout.mask(), irq);
+}
+
 fn tx_or_panic(sg: &mut SubGhz<DmaCh>, rfs: &mut RfSwitch) {
     rfs.set_tx_lp();
     sg.set_tx(Timeout::DISABLED).unwrap();
@@ -111,7 +150,6 @@ fn tx_or_panic(sg: &mut SubGhz<DmaCh>, rfs: &mut RfSwitch) {
 
 #[defmt_test::tests]
 mod tests {
-
     use super::*;
 
     struct TestArgs {
@@ -175,6 +213,14 @@ mod tests {
         assert_eq!(DATA, unsafe { BUF });
     }
 
+    #[test]
+    #[cfg(feature = "aio")]
+    fn aio_wait_irq(_: &mut TestArgs) {
+        let mut executor = ate::Executor::new();
+        executor.spawn(ate::Task::new(aio_wait_irq_inner()));
+        executor.run();
+    }
+
     /// This test should be run simultaneously on two boards.
     ///
     /// Both radios transmit `b"PING"`.
@@ -209,11 +255,6 @@ mod tests {
         sg.set_rf_frequency(&RF_FREQ).unwrap();
 
         sg.write_buffer(TX_BUF_OFFSET, PING_DATA_BYTES).unwrap();
-
-        const IRQ_CFG: CfgDioIrq = CfgDioIrq::new()
-            .irq_enable(IrqLine::Global, Irq::RxDone)
-            .irq_enable(IrqLine::Global, Irq::Timeout);
-        sg.set_irq_cfg(&IRQ_CFG).unwrap();
 
         const MAX_ATTEMPTS: u32 = 100;
         let mut attempt: u32 = 0;

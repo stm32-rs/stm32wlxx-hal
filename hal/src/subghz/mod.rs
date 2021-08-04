@@ -283,7 +283,14 @@ impl<DMA> SubGhz<DMA> {
     fn setup_rfbusy_irq() {
         let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
         dp.EXTI.ftsr2.modify(|_, w| w.ft45().enabled());
-        dp.EXTI.c1imr2.modify(|_, w| w.im45().unmasked());
+        #[cfg(not(feature = "stm32wle5"))]
+        {
+            dp.EXTI.c1imr2.modify(|_, w| w.im45().unmasked());
+        }
+        #[cfg(feature = "stm32wle5")]
+        {
+            dp.EXTI.imr2.modify(|_, w| w.im45().unmasked());
+        }
     }
 
     fn poll_not_busy(&self) {

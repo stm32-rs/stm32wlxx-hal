@@ -7,10 +7,6 @@ use core::{ptr::read_volatile, time::Duration};
 
 use embedded_hal::blocking::delay::DelayUs;
 
-// pub use pac::adc::smpr::SMP1_A as SampleTime;
-pub use pac::adc::smpr::SMPSEL0_A as SampleSel;
-pub use pac::rcc::ccipr::ADCSEL_A as AdcClk;
-
 // DS13293 rev 1 table 12
 // TS ADC raw data acquired at 30 °C (± 5 °C),
 // VDDA = VREF+ = 3.3 V (± 10 mV)

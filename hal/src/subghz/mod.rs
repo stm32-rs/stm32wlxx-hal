@@ -2855,6 +2855,10 @@ impl SubGhz<DmaCh> {
     ///
     /// Interrupts will be cleared when the future is `Ready`.
     ///
+    /// If this method returns an error you will need to manually unmask the
+    /// IRQ with [`unmask_irq`](crate::subghz::unmask_irq) after correcting
+    /// the error.
+    ///
     /// # Example
     ///
     /// ```no_run
@@ -2878,13 +2882,30 @@ impl SubGhz<DmaCh> {
         dp.PWR.cr3.modify(|_, w| w.ewrfirq().enabled());
         futures::future::poll_fn(aio::poll_irq_pending).await;
 
-        let (status, irq_status) = self.aio_irq_status().await?;
-        self.aio_clear_irq_status(irq_status).await?;
+        // expanded to remove dependency on interrupt-based radio busy while
+        // IRQs are masked
+        let mut data: [u8; 3] = [0; 3];
+        {
+            let _nss: Nss = Nss::new();
+            self.spi
+                .aio_write_with_dma(&[OpCode::GetIrqStatus as u8])
+                .await?;
+            self.spi.aio_transfer_with_dma(&mut data).await?;
+        }
+        self.poll_not_busy();
+
+        {
+            let _nss: Nss = Nss::new();
+            self.spi
+                .aio_write_with_dma(&[OpCode::ClrIrqStatus as u8, data[1], data[2]])
+                .await?;
+        }
+        self.poll_not_busy();
 
         // IRQ handler disables IRQs, re-enable
         unsafe { unmask_irq() };
 
-        Ok((status, irq_status))
+        Ok((data[0].into(), u16::from_be_bytes([data[1], data[2]])))
     }
 
     /// Clear the IRQ status.

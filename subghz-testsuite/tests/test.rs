@@ -96,29 +96,31 @@ async fn aio_wait_irq_inner() {
         SubGhz::steal_with_dma(dma.d1c1, dma.d2c1)
     };
 
-    sg.set_standby(StandbyClk::Rc).unwrap();
-    let status: Status = sg.status().unwrap();
+    sg.aio_set_standby(StandbyClk::Rc).await.unwrap();
+    let status: Status = sg.aio_status().await.unwrap();
     assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
 
-    sg.set_tcxo_mode(&TCXO_MODE).unwrap();
-    sg.set_regulator_mode(RegMode::Ldo).unwrap();
-    sg.set_sync_word(&SYNC_WORD).unwrap();
-    sg.set_packet_type(PacketType::Fsk).unwrap();
-    sg.set_fsk_mod_params(&MOD_PARAMS).unwrap();
-    sg.set_packet_params(&PACKET_PARAMS).unwrap();
-    sg.calibrate_image(CalibrateImage::ISM_430_440).unwrap();
-    sg.set_rf_frequency(&RF_FREQ).unwrap();
+    sg.aio_set_tcxo_mode(&TCXO_MODE).await.unwrap();
+    sg.aio_set_regulator_mode(RegMode::Ldo).await.unwrap();
+    sg.aio_set_sync_word(&SYNC_WORD).await.unwrap();
+    sg.aio_set_packet_type(PacketType::Fsk).await.unwrap();
+    sg.aio_set_fsk_mod_params(&MOD_PARAMS).await.unwrap();
+    sg.aio_set_packet_params(&PACKET_PARAMS).await.unwrap();
+    sg.aio_calibrate_image(CalibrateImage::ISM_430_440)
+        .await
+        .unwrap();
+    sg.aio_set_rf_frequency(&RF_FREQ).await.unwrap();
 
     const IRQ_CFG: CfgIrq = CfgIrq::new()
         .irq_enable(Irq::RxDone)
         .irq_enable(Irq::Timeout);
-    sg.set_irq_cfg(&IRQ_CFG).unwrap();
+    sg.aio_set_irq_cfg(&IRQ_CFG).await.unwrap();
 
     let status: Status = sg.status().unwrap();
     assert_ne!(status.cmd(), Ok(CmdStatus::Timeout));
 
     // this will fail to RX immediately (15 micros timeout)
-    sg.set_rx(Timeout::MIN).unwrap();
+    sg.aio_set_rx(Timeout::MIN).await.unwrap();
 
     let (_, irq) = sg.aio_wait_irq().await.unwrap();
     defmt::assert_eq!(Irq::Timeout.mask(), irq);

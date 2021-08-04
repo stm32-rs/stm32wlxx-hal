@@ -46,7 +46,7 @@ pub use cad_params::{CadParams, ExitMode, NbCadSymbol};
 pub use calibrate::{Calibrate, CalibrateImage};
 pub use fallback_mode::FallbackMode;
 pub use hse_trim::HseTrim;
-pub use irq::{CfgDioIrq, Irq, IrqLine};
+pub use irq::{CfgIrq, Irq};
 pub use lora_sync_word::LoRaSyncWord;
 pub use mod_params::BpskModParams;
 pub use mod_params::{CodingRate, LoRaBandwidth, LoRaModParams, SpreadingFactor};
@@ -1602,19 +1602,19 @@ where
     ///
     /// # Example
     ///
-    /// Enable TX and timeout interrupts globally.
+    /// Enable TX and timeout interrupts.
     ///
     /// ```no_run
     /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{CfgDioIrq, Irq, IrqLine};
+    /// use stm32wl_hal::subghz::{CfgIrq, Irq};
     ///
-    /// const IRQ_CFG: CfgDioIrq = CfgDioIrq::new()
-    ///     .irq_enable(IrqLine::Global, Irq::TxDone)
-    ///     .irq_enable(IrqLine::Global, Irq::Timeout);
+    /// const IRQ_CFG: CfgIrq = CfgIrq::new()
+    ///     .irq_enable(Irq::TxDone)
+    ///     .irq_enable(Irq::Timeout);
     /// sg.set_irq_cfg(&IRQ_CFG)?;
     /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_irq_cfg(&mut self, cfg: &CfgDioIrq) -> Result<(), Error> {
+    pub fn set_irq_cfg(&mut self, cfg: &CfgIrq) -> Result<(), Error> {
         self.write(cfg.as_slice())
     }
 
@@ -1630,6 +1630,7 @@ where
     ///
     /// loop {
     ///     let (_, irq_status) = sg.irq_status()?;
+    ///     sg.clear_irq_status(irq_status)?;
     ///     if irq_status & Irq::TxDone.mask() != 0 {
     ///         // handle TX done
     ///         break;
@@ -1670,29 +1671,31 @@ where
 
 // 5.8.6
 /// IRQ commands
+#[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
 impl SubGhz<DmaCh> {
     /// Set the interrupt configuration.
     ///
     /// # Example
     ///
-    /// Enable TX and timeout interrupts globally.
+    /// Enable TX and timeout interrupts.
     ///
     /// ```no_run
     /// # async fn doctest() -> Result<(), stm32wl_hal::subghz::Error> {
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{CfgDioIrq, Irq, IrqLine};
+    /// # use stm32wl_hal::{subghz::SubGhz, dma::AllDma};
+    /// # let mut sg = unsafe { SubGhz::steal_with_dma(AllDma::steal().d1c1, AllDma::steal().d2c1) };
+    /// use stm32wl_hal::subghz::{CfgIrq, Irq};
     ///
-    /// const IRQ_CFG: CfgDioIrq = CfgDioIrq::new()
-    ///     .irq_enable(IrqLine::Global, Irq::TxDone)
-    ///     .irq_enable(IrqLine::Global, Irq::Timeout);
+    /// const IRQ_CFG: CfgIrq = CfgIrq::new()
+    ///     .irq_enable(Irq::TxDone)
+    ///     .irq_enable(Irq::Timeout);
     /// sg.aio_set_irq_cfg(&IRQ_CFG).await?;
     /// # Ok(()) }
     /// ```
-    pub async fn aio_set_irq_cfg(&mut self, cfg: &CfgDioIrq) -> Result<(), Error> {
+    pub async fn aio_set_irq_cfg(&mut self, cfg: &CfgIrq) -> Result<(), Error> {
         self.aio_write(cfg.as_slice()).await
     }
 
-    /// Get the IRQ status.
+    /// Get the instantaneous IRQ status.
     ///
     /// # Example
     ///
@@ -1700,11 +1703,13 @@ impl SubGhz<DmaCh> {
     ///
     /// ```no_run
     /// # async fn doctest() -> Result<(), stm32wl_hal::subghz::Error> {
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
+    /// # use stm32wl_hal::{subghz::SubGhz, dma::AllDma};
+    /// # let mut sg = unsafe { SubGhz::steal_with_dma(AllDma::steal().d1c1, AllDma::steal().d2c1) };
     /// use stm32wl_hal::subghz::Irq;
     ///
     /// loop {
     ///     let (_, irq_status) = sg.aio_irq_status().await?;
+    ///     sg.aio_clear_irq_status(irq_status).await?;
     ///     if irq_status & Irq::TxDone.mask() != 0 {
     ///         // handle TX done
     ///         break;
@@ -1722,6 +1727,38 @@ impl SubGhz<DmaCh> {
         Ok((data[0].into(), irq_status))
     }
 
+    /// Wait until an interrupt is set, then return the interrupt status.
+    ///
+    /// Interrupts will be cleared when the future is `Ready`.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # async fn doctest() -> Result<(), stm32wl_hal::subghz::Error> {
+    /// # use stm32wl_hal::{subghz::SubGhz, dma::AllDma};
+    /// # let mut sg = unsafe { SubGhz::steal_with_dma(AllDma::steal().d1c1, AllDma::steal().d2c1) };
+    /// use stm32wl_hal::subghz::Irq;
+    ///
+    /// let (_, irq_status) = sg.aio_wait_irq().await?;
+    /// assert_ne!(irq_status, 0);
+    /// if irq_status & Irq::TxDone.mask() != 0 {
+    ///     // handle TX done
+    /// }
+    /// if irq_status & Irq::Timeout.mask() != 0 {
+    ///     // handle timeout
+    /// }
+    /// # Ok(()) }
+    /// ```
+    pub async fn aio_wait_irq(&mut self) -> Result<(Status, u16), Error> {
+        let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
+        dp.PWR.cr3.modify(|_, w| w.ewrfirq().enabled());
+        futures::future::poll_fn(aio::poll_irq_pending).await;
+
+        let (status, irq_status) = self.aio_irq_status().await?;
+        self.aio_clear_irq_status(irq_status).await?;
+        Ok((status, irq_status))
+    }
+
     /// Clear the IRQ status.
     ///
     /// # Example
@@ -1730,7 +1767,8 @@ impl SubGhz<DmaCh> {
     ///
     /// ```no_run
     /// # async fn doctest() -> Result<(), stm32wl_hal::subghz::Error> {
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
+    /// # use stm32wl_hal::{subghz::SubGhz, dma::AllDma};
+    /// # let mut sg = unsafe { SubGhz::steal_with_dma(AllDma::steal().d1c1, AllDma::steal().d2c1) };
     /// use stm32wl_hal::subghz::Irq;
     ///
     /// sg.aio_clear_irq_status(Irq::TxDone.mask() | Irq::RxDone.mask())
@@ -1993,7 +2031,7 @@ mod aio {
     use futures_util::task::AtomicWaker;
 
     static SG_WAKER: AtomicWaker = AtomicWaker::new();
-    static SG_IRQ_PENDING: AtomicBool = AtomicBool::new(false);
+    static SG_IRQ: AtomicBool = AtomicBool::new(false);
 
     pub fn poll_busy(cx: &mut core::task::Context<'_>) -> Poll<()> {
         SG_WAKER.register(cx.waker());
@@ -2008,10 +2046,10 @@ mod aio {
 
     pub fn poll_irq_pending(cx: &mut core::task::Context<'_>) -> Poll<()> {
         SG_WAKER.register(cx.waker());
-        match SG_IRQ_PENDING.load(SeqCst) {
+        match SG_IRQ.load(SeqCst) {
             false => core::task::Poll::Pending,
             true => {
-                SG_IRQ_PENDING.store(false, SeqCst);
+                SG_IRQ.store(false, SeqCst);
                 SG_WAKER.take();
                 Poll::Ready(())
             }
@@ -2020,7 +2058,7 @@ mod aio {
 
     #[cfg(all(target_arch = "arm", target_os = "none"))]
     mod irq {
-        use super::{SeqCst, SG_IRQ_PENDING, SG_WAKER};
+        use super::{SeqCst, SG_IRQ, SG_WAKER};
         use crate::pac::{self, interrupt};
 
         #[interrupt]
@@ -2033,7 +2071,13 @@ mod aio {
                 dp.EXTI.pr2.write(|w| w.pif45().set_bit());
             } else {
                 // interrupt triggered by radio IRQ
-                SG_IRQ_PENDING.store(true, SeqCst);
+                // we cannot use the async functions within this handler
+                // and we also cannot mask the IRQ without a SPI transfer
+                // best thing for now is to disable in the NVIC
+                // this will have the annoying side effect of blocking
+                // the RF busy IRQ
+                pac::NVIC::mask(pac::Interrupt::RADIO_IRQ_BUSY);
+                SG_IRQ.store(true, SeqCst);
             }
 
             SG_WAKER.wake();

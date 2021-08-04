@@ -12,7 +12,7 @@ use stm32wl_hal::{
 async fn aio_random_enough_for_me_inner() {
     let mut rng: Rng = unsafe { Rng::steal() };
     let mut bytes: [u8; 33] = [0; 33];
-    rng.try_fill_bytes(&mut bytes).unwrap();
+    rng.aio_try_fill_u8(&mut bytes).await.unwrap();
     validate_randomness(&bytes)
 }
 

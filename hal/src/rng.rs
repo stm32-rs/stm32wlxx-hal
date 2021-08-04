@@ -1,4 +1,17 @@
 //! True random number generator
+//!
+//! # Performance
+//!
+//! Comparison with the [chacha] algorithm seeded by hardware.
+//!
+//! | Source        | Cycles per `[u32; 4]` |
+//! |---------------|-----------------------|
+//! | `ChaCha20Rng` | 2,875                 |
+//! | `ChaCha12Rng` | 1,764                 |
+//! | `ChaCha8Rng`  | 1,216                 |
+//! | HW            | 410                   |
+//!
+//! [chacha]: https://crates.io/crates/chacha20
 
 use crate::pac;
 

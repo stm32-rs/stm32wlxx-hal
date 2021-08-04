@@ -5,7 +5,7 @@ use defmt_rtt as _; // global logger
 use panic_probe as _;
 use stm32wl_hal::{
     pac, rcc,
-    rng::{rand_core::RngCore, Rng},
+    rng::{rand_core::RngCore, ClkSrc, Rng},
 };
 
 #[cfg(feature = "aio")]
@@ -37,8 +37,6 @@ fn validate_randomness(entropy: &[u8]) {
 
 #[defmt_test::tests]
 mod tests {
-    use stm32wl_hal::rng::ClkSrc;
-
     use super::*;
 
     #[init]
@@ -58,6 +56,59 @@ mod tests {
 
         Rng::set_clock_source(&mut rcc, ClkSrc::MSI);
         Rng::new(dp.RNG, &mut rcc)
+    }
+
+    /// Not really a test, just a benchmark
+    #[test]
+    fn cha_cha(rng: &mut Rng) {
+        defmt::warn!("Test results are only valid for release mode");
+        use rand_chacha::{rand_core::SeedableRng, ChaCha12Rng, ChaCha20Rng, ChaCha8Rng};
+
+        let mut seed: [u8; 32] = [0; 32];
+
+        rng.try_fill_u8(&mut seed).unwrap();
+        let mut cha20: ChaCha20Rng = ChaCha20Rng::from_seed([0u8; 32]);
+        rng.try_fill_u8(&mut seed).unwrap();
+        let mut cha12: ChaCha12Rng = ChaCha12Rng::from_seed([0u8; 32]);
+        rng.try_fill_u8(&mut seed).unwrap();
+        let mut cha8: ChaCha8Rng = ChaCha8Rng::from_seed([0u8; 32]);
+
+        let mut cp = pac::CorePeripherals::take().unwrap();
+        cp.DCB.enable_trace();
+        cp.DWT.enable_cycle_counter();
+
+        const NUM_BLK: usize = 200;
+        const BUF_SIZE: usize = NUM_BLK * 4 * 4;
+        static mut BUF: [u8; BUF_SIZE] = [0; BUF_SIZE];
+
+        let start: u32 = pac::DWT::get_cycle_count();
+        let ret = cha20.try_fill_bytes(unsafe { &mut BUF });
+        let end: u32 = pac::DWT::get_cycle_count();
+        ret.unwrap();
+        let cha20cyc: u32 = end.wrapping_sub(start);
+
+        let start: u32 = pac::DWT::get_cycle_count();
+        let ret = cha12.try_fill_bytes(unsafe { &mut BUF });
+        let end: u32 = pac::DWT::get_cycle_count();
+        ret.unwrap();
+        let cha12cyc: u32 = end.wrapping_sub(start);
+
+        let start: u32 = pac::DWT::get_cycle_count();
+        let ret = cha8.try_fill_bytes(unsafe { &mut BUF });
+        let end: u32 = pac::DWT::get_cycle_count();
+        ret.unwrap();
+        let cha8cyc: u32 = end.wrapping_sub(start);
+
+        let start: u32 = pac::DWT::get_cycle_count();
+        let ret = rng.try_fill_bytes(unsafe { &mut BUF });
+        let end: u32 = pac::DWT::get_cycle_count();
+        ret.unwrap();
+        let rngcyc: u32 = end.wrapping_sub(start);
+
+        defmt::info!("ChaCha20: {}", (cha20cyc as f32) / (NUM_BLK as f32));
+        defmt::info!("ChaCha12: {}", (cha12cyc as f32) / (NUM_BLK as f32));
+        defmt::info!("ChaCha8: {}", (cha8cyc as f32) / (NUM_BLK as f32));
+        defmt::info!("HW: {}", (rngcyc as f32) / (NUM_BLK as f32));
     }
 
     #[test]

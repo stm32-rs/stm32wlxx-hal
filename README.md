@@ -11,10 +11,9 @@ This is a **work in progress**, it is unstable, incomplete, and (mostly) unteste
 
 There should be enough code for very basic:
 
-* LoRa TX
-* (G)FSK TX
-* (G)FSK RX
-* SPI (polling + async DMA)
+* LoRa TX + RX (polling + async)
+* (G)FSK TX + RX (polling + async)
+* SPI (polling + async)
 * ECDSA signing (polling + async)
 * ECDSA verification (polling + async)
 * Cryptographically secure random number generation (polling + async)
@@ -99,6 +98,15 @@ The arguments got long for this, so a `run-ex` cargo alias is provided.
 ```bash
 cargo run-ex gpio-blink
 ```
+
+## Reference Documentation
+
+* [stm32wl5x reference manual](https://www.st.com/resource/en/reference_manual/rm0453-stm32wl5x-advanced-armbased-32bit-mcus-with-subghz-radio-solution-stmicroelectronics.pdf)
+* [stm32wlex reference manual](https://www.st.com/resource/en/reference_manual/rm0461-stm32wlex-advanced-armbased-32bit-mcus-with-subghz-radio-solution-stmicroelectronics.pdf)
+* [stm32wle5c8 datasheet](https://www.st.com/resource/en/datasheet/stm32wle5c8.pdf)
+* [stm32wl55cc datasheet](https://www.st.com/resource/en/datasheet/stm32wl55cc.pdf)
+* [stm32wl55xx stm32wl54xx erratum](https://www.st.com/resource/en/errata_sheet/es0500-stm32wl55xx-stm32wl54xx-device-errata-stmicroelectronics.pdf)
+* [stm32wle5xx stm32wle4xx erratum](https://www.st.com/resource/en/errata_sheet/es0506-stm32wle5xx-stm32wle4xx-device-errata-stmicroelectronics.pdf)
 
 ## async
 

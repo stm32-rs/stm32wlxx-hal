@@ -147,6 +147,32 @@ fn baud_div(rcc: &pac::RCC) -> BaudDiv {
     }
 }
 
+/// Unmask the SubGHz IRQ in the NVIC.
+///
+/// # Safety
+///
+/// This can break mask-based critical sections.
+///
+/// # Example
+///
+/// ```no_run
+/// unsafe { stm32wl_hal::subghz::unmask_irq() };
+/// ```
+pub unsafe fn unmask_irq() {
+    pac::NVIC::unmask(pac::Interrupt::RADIO_IRQ_BUSY)
+}
+
+/// Mask the SubGHz IRQ in the NVIC.
+///
+/// # Example
+///
+/// ```no_run
+/// stm32wl_hal::subghz::mask_irq();
+/// ```
+pub fn mask_irq() {
+    pac::NVIC::mask(pac::Interrupt::RADIO_IRQ_BUSY)
+}
+
 /// Returns `true` if the radio is busy.
 ///
 /// See RM0453 Rev 1 Section 6.3 Page 228 "Radio busy management" for more
@@ -252,6 +278,12 @@ impl<DMA> SubGhz<DMA> {
     /// ```
     pub fn spi_debug_enabled(&self) -> bool {
         self.debug_pins.is_some()
+    }
+
+    fn setup_rfbusy_irq() {
+        let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
+        dp.EXTI.ftsr2.modify(|_, w| w.ft45().enabled());
+        dp.EXTI.c1imr2.modify(|_, w| w.im45().unmasked());
     }
 
     fn poll_not_busy(&self) {
@@ -428,8 +460,6 @@ impl SubGhz<DmaCh> {
     ///
     /// # Example
     ///
-    /// Initialize for use with polling.
-    ///
     /// ```no_run
     /// use stm32wl_hal::{dma::AllDma, pac, subghz::SubGhz};
     ///
@@ -438,29 +468,6 @@ impl SubGhz<DmaCh> {
     /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
     ///
     /// let sg = SubGhz::new_with_dma(dp.SPI3, dma.d1c1, dma.d2c1, &mut dp.RCC);
-    /// ```
-    ///
-    /// Initialize for use with `async` functions.
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     dma::{AllDma, DmaCh},
-    ///     pac,
-    ///     subghz::SubGhz,
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
-    /// let tx_dma: DmaCh = dma.d1c1;
-    /// let rx_dma: DmaCh = dma.d2c1;
-    ///
-    /// unsafe {
-    ///     tx_dma.unmask_irq();
-    ///     rx_dma.unmask_irq();
-    /// }
-    ///
-    /// let sg = SubGhz::new_with_dma(dp.SPI3, tx_dma, rx_dma, &mut dp.RCC);
     /// ```
     pub fn new_with_dma(
         spi: pac::SPI3,
@@ -478,10 +485,8 @@ impl SubGhz<DmaCh> {
         while !rfbusys() {}
         Nss::set();
 
-        let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
-        dp.EXTI.ftsr2.write(|w| w.ft45().enabled());
-        dp.EXTI.c1imr2.write(|w| w.im45().unmasked());
-        unsafe { pac::NVIC::unmask(pac::Interrupt::RADIO_IRQ_BUSY) };
+        Self::setup_rfbusy_irq();
+        unsafe { unmask_irq() };
 
         SubGhz {
             spi,
@@ -2868,6 +2873,10 @@ impl SubGhz<DmaCh> {
 
         let (status, irq_status) = self.aio_irq_status().await?;
         self.aio_clear_irq_status(irq_status).await?;
+
+        // IRQ handler disables IRQs, re-enable
+        unsafe { unmask_irq() };
+
         Ok((status, irq_status))
     }
 
@@ -3326,7 +3335,7 @@ mod aio {
 
     #[cfg(all(target_arch = "arm", target_os = "none"))]
     mod irq {
-        use super::{SeqCst, SG_IRQ, SG_WAKER};
+        use super::{super::mask_irq, SeqCst, SG_IRQ, SG_WAKER};
         use crate::pac::{self, interrupt};
 
         #[interrupt]
@@ -3344,7 +3353,7 @@ mod aio {
                 // best thing for now is to disable in the NVIC
                 // this will have the annoying side effect of blocking
                 // the RF busy IRQ
-                pac::NVIC::mask(pac::Interrupt::RADIO_IRQ_BUSY);
+                mask_irq();
                 SG_IRQ.store(true, SeqCst);
             }
 

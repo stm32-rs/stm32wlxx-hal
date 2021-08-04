@@ -17,10 +17,10 @@ use bsp::{
         pac, rcc,
         rng::{self, Rng},
         subghz::{
-            AddrComp, CalibrateImage, CfgIrq, CmdStatus, CrcType, FskBandwidth, FskBitrate,
-            FskFdev, FskModParams, FskPulseShape, GenericPacketParams, HeaderType, Irq, Ocp,
-            PaConfig, PaSel, PacketType, PreambleDetection, RampTime, RegMode, RfFreq, StandbyClk,
-            Status, StatusMode, SubGhz, TcxoMode, TcxoTrim, Timeout, TxParams,
+            AddrComp, CalibrateImage, CmdStatus, CrcType, FskBandwidth, FskBitrate, FskFdev,
+            FskModParams, FskPulseShape, GenericPacketParams, HeaderType, Irq, Ocp, PaConfig,
+            PaSel, PacketType, PreambleDetection, RampTime, RegMode, RfFreq, StandbyClk, Status,
+            StatusMode, SubGhz, TcxoMode, TcxoTrim, Timeout, TxParams,
         },
     },
     RfSwitch,
@@ -110,6 +110,8 @@ async fn aio_wait_irq_inner() {
         .await
         .unwrap();
     sg.aio_set_rf_frequency(&RF_FREQ).await.unwrap();
+
+    use bsp::hal::subghz::CfgIrq;
 
     const IRQ_CFG: CfgIrq = CfgIrq::new()
         .irq_enable(Irq::RxDone)

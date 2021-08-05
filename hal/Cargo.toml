@@ -30,7 +30,7 @@ default-features = false
 
 [dependencies.stm32wl]
 git = "https://github.com/newAM/stm32wl-rs.git"
-rev = "447cde3f6028f99d41af256365a771ebb88e1628"
+rev = "239ceea719f2e26b70e8680f87a31b4a309b5ff8"
 
 [dependencies.cortex-m-rt]
 version = "0.6"

@@ -4,6 +4,7 @@ members = [
     "adc-testsuite",
     "aes-testsuite",
     "ate",
+    "dac-testsuite",
     "examples",
     "hal",
     "nucleo-wl55jc-bsp",

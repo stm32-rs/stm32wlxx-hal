@@ -1,0 +1,78 @@
+#![no_std]
+#![no_main]
+
+use defmt_rtt as _; // global logger
+use panic_probe as _;
+use stm32wl_hal::{
+    adc::{self, Adc},
+    cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
+    dac::{Dac, ModeChip, ModePin},
+    gpio::PortA,
+    pac, rcc,
+};
+
+#[defmt_test::tests]
+mod tests {
+    use super::*;
+
+    struct TestArgs {
+        adc: Adc,
+        dac: Dac,
+        delay: Delay,
+    }
+
+    #[init]
+    fn init() -> TestArgs {
+        let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+        let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
+
+        rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC);
+
+        let delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
+
+        dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+        while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+
+        dp.RCC.csr.modify(|_, w| w.lsion().on());
+        while dp.RCC.csr.read().lsirdy().is_not_ready() {}
+
+        let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+        let mut dac: Dac = Dac::new(dp.DAC, &mut dp.RCC);
+        let adc: Adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+
+        dac.set_mode_pin(gpioa.pa10.into(), ModePin::NormChipBuf);
+
+        TestArgs { adc, dac, delay }
+    }
+
+    #[test]
+    fn pin_output(ta: &mut TestArgs) {
+        ta.dac.setup_soft_trigger();
+        ta.dac.soft_trigger(2048);
+        defmt::assert_eq!(ta.dac.out(), 2048);
+
+        // insert a delay here if you want to poke around with a voltmeter
+        // should be appx 1.65V
+        // ta.delay.delay_ms(10_000);
+    }
+
+    #[test]
+    fn loopback(ta: &mut TestArgs) {
+        ta.adc.start_disable();
+        while !ta.adc.is_disabled() {}
+        ta.adc.calibrate(&mut ta.delay);
+
+        ta.dac.disable();
+        ta.dac.set_mode_chip(ModeChip::Norm).unwrap();
+        ta.dac.setup_soft_trigger();
+        ta.dac.soft_trigger(1024);
+
+        let out: u16 = ta.dac.out();
+        let sample: u16 = ta.adc.dac();
+        defmt::info!("DAC out: {}", out);
+        defmt::info!("ADC in: {}", sample);
+        let delta: i32 = (i32::from(sample) - i32::from(ta.dac.out())).abs();
+
+        defmt::assert!(delta < 20);
+    }
+}

@@ -1,6 +1,10 @@
 //! Analog to digital converter
+#![cfg_attr(feature = "stm32wl5x_cm0p", allow(dead_code))]
+#![cfg_attr(feature = "stm32wl5x_cm0p", allow(unused_imports))]
 
 pub use num_rational::Ratio;
+
+use crate::gpio;
 
 use super::pac;
 use core::{ptr::read_volatile, time::Duration};
@@ -79,6 +83,7 @@ pub enum Clk {
     PClk,
 }
 
+#[cfg(not(feature = "stm32wl5x_cm0p"))]
 impl Clk {
     const fn ckmode(&self) -> pac::adc::cfgr2::CKMODE_A {
         match self {
@@ -196,10 +201,14 @@ impl Ch {
 
 /// Analog to digital converter driver
 #[derive(Debug)]
+#[cfg(not(feature = "stm32wl5x_cm0p"))]
+#[cfg_attr(docsrs, doc(cfg(not(feature = "stm32wl5x_cm0p"))))]
 pub struct Adc {
     adc: pac::ADC,
 }
 
+#[cfg(not(feature = "stm32wl5x_cm0p"))]
+#[cfg_attr(docsrs, doc(cfg(not(feature = "stm32wl5x_cm0p"))))]
 impl Adc {
     /// Create a new ADC driver from a ADC peripheral.
     ///
@@ -267,7 +276,7 @@ impl Adc {
     /// # Safety
     ///
     /// 1. Ensure that the code stealing the ADC has exclusive access to the
-    ///    peripheral.  Singleton checks are bypassed with this method.
+    ///    peripheral. Singleton checks are bypassed with this method.
     /// 2. You are responsible for setting up the ADC correctly.
     ///
     /// # Example
@@ -563,9 +572,7 @@ impl Adc {
     ///
     /// See section 18.3.8 page 542 "Channel selection"
     fn set_chsel(&mut self, ch: u32) {
-        self.adc
-            .chselr0()
-            .write(|w| unsafe { w.chsel().bits(ch & 0x13FFF) });
+        self.adc.chselr0().write(|w| unsafe { w.chsel().bits(ch) });
     }
 
     fn cfg_ch_seq(&mut self, ch: u32) {
@@ -582,7 +589,9 @@ impl Adc {
 
     fn data(&self) -> u16 {
         while self.adc.isr.read().eoc().is_not_complete() {}
-        self.adc.dr.read().data().bits()
+        let data: u16 = self.adc.dr.read().data().bits();
+        self.adc.isr.write(|w| w.eoc().set_bit());
+        data
     }
 
     #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
@@ -636,6 +645,7 @@ impl Adc {
 
         // takes 401 cycles at 48MHz sysclk, ADC at 16MHz with HSI
         while self.adc.cr.read().adcal().is_calibrating() {}
+        self.adc.isr.write(|w| w.eocal().set_bit());
     }
 
     /// Asynchronously Calibrate the ADC for additional accuracy.
@@ -923,6 +933,90 @@ impl Adc {
         let data: u16 = self.aio_data().await;
         self.adc.ccr.modify(|_, w| w.vrefen().disabled());
         data
+    }
+
+    /// Sample the DAC output.
+    ///
+    /// This will enable the ADC if not already enabled.
+    ///
+    /// The DAC must be configured to output to chip peripherals for this to
+    /// work as expected.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
+    ///     dac::{Dac, ModeChip},
+    ///     pac, rcc,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
+    ///
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// adc.calibrate(&mut delay);
+    ///
+    /// let mut dac: Dac = Dac::new(dp.DAC, &mut dp.RCC);
+    /// dac.set_mode_chip(ModeChip::Norm);
+    ///
+    /// dac.setup_soft_trigger();
+    /// dac.soft_trigger(1234);
+    /// // should be in the same ballpark as the DAC output
+    /// // calibrate the ADC for additional accuracy
+    /// let sample: u16 = adc.dac();
+    /// ```
+    pub fn dac(&mut self) -> u16 {
+        self.enable();
+        self.cfg_ch_seq(Ch::Dac.mask());
+        self.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+        self.adc.cr.write(|w| w.adstart().set_bit());
+        self.data()
+    }
+
+    /// Sample a GPIO pin.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
+    ///     gpio::{pins::B4, Analog, PortB},
+    ///     pac, rcc,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
+    ///
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// adc.calibrate(&mut delay);
+    ///
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    /// let b4: Analog<B4> = Analog::new(gpiob.pb4);
+    ///
+    /// let sample: u16 = adc.pin(&b4);
+    /// ```
+    #[allow(unused_variables)]
+    pub fn pin<P: gpio::sealed::AdcCh>(&mut self, pin: &gpio::Analog<P>) -> u16 {
+        self.enable();
+        self.cfg_ch_seq(P::ADC_CH.mask());
+        self.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+        self.adc.cr.write(|w| w.adstart().set_bit());
+        self.data()
     }
 }
 

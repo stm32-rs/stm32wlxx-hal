@@ -46,6 +46,10 @@ version = "0.3"
 default-features = false
 optional = true
 
+[dependencies.defmt]
+version = "0.2"
+optional = true
+
 [package.metadata.docs.rs]
 all-features = false
 features = ["aio", "stm32wl5x_cm4"]

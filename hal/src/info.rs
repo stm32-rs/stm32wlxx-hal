@@ -13,6 +13,7 @@ use core::{
 ///
 /// **Note:** There are two UIDs, the other is [`Uid64`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Uid {
     uid: [u32; 3],
 }
@@ -146,6 +147,7 @@ pub fn flash_size() -> u32 {
 ///
 /// Returned by [`package`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum Package {
     /// [UFBGA73](https://en.wikipedia.org/wiki/Ball_grid_array)
@@ -200,6 +202,7 @@ pub fn package() -> Result<Package, u8> {
 ///
 /// **Note:** There are two UIDs, the other is [`Uid`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Uid64 {
     uid: u64,
 }

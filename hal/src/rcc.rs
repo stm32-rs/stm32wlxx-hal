@@ -491,9 +491,9 @@ fn cpu1_systick(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R, src: SystClkSource) -> 
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 /// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
 ///
-/// // constructor will set the clock source to core
+/// // Delay constructor will set the clock source to core
 /// // note: this code is only valid if running on CPU1
-/// //       cpu_systick_hz is better in this use-case
+/// //       cpu_systick_hz is better for this use-case
 /// let mut delay: Delay = Delay::new(cp.SYST, cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
 /// delay.delay_ms(100);
 /// ```
@@ -529,9 +529,9 @@ fn cpu2_systick(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R, src: SystClkSource) -> 
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 /// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
 ///
-/// // constructor will set the clock source to core
+/// // Delay constructor will set the clock source to core
 /// // note: this code is only valid if running on CPU2
-/// //       cpu_systick_hz is better in this use-case
+/// //       cpu_systick_hz is better for this use-case
 /// let mut delay: Delay = Delay::new(cp.SYST, cpu2_systick_hz(&dp.RCC, SystClkSource::Core));
 /// delay.delay_ms(100);
 /// ```
@@ -564,7 +564,7 @@ pub fn cpu2_systick_hz(rcc: &pac::RCC, src: SystClkSource) -> u32 {
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 /// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
 ///
-/// // constructor will set the clock source to core
+/// // Delay constructor will set the clock source to core
 /// let mut delay: Delay = Delay::new(cp.SYST, cpu_systick_hz(&dp.RCC, SystClkSource::Core));
 /// delay.delay_ms(100);
 /// ```
@@ -577,5 +577,35 @@ pub fn cpu_systick_hz(rcc: &pac::RCC, src: SystClkSource) -> u32 {
     #[cfg(not(feature = "stm32wl5x_cm0p"))]
     {
         cpu1_systick_hz(rcc, src)
+    }
+}
+
+/// Calculate the LSI clock frequency in hertz.
+///
+/// The LSI is either 32 kHz without the LSI prescaler or 128 Hz with the LSI
+/// prescaler.
+///
+/// # Example
+///
+/// ```no_run
+/// use stm32wl_hal::rcc::lsi_hz;
+///
+/// // LSI is not divided at power on
+/// assert_eq!(lsi_hz(), 32_000);
+/// ```
+pub fn lsi_hz() -> u16 {
+    use pac::rcc::csr::LSIPRE_A::{DIV1, DIV128};
+    const LSI_BASE_HZ: u16 = 32_000;
+
+    // safety: volatile read with no side effects to an always-on domain
+    match unsafe { pac::Peripherals::steal() }
+        .RCC
+        .csr
+        .read()
+        .lsipre()
+        .variant()
+    {
+        DIV1 => LSI_BASE_HZ / 1,
+        DIV128 => LSI_BASE_HZ / 128,
     }
 }

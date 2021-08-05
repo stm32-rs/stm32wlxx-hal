@@ -166,6 +166,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "dac-testsuite"
+version = "0.1.0"
+dependencies = [
+ "ate",
+ "defmt",
+ "defmt-rtt",
+ "defmt-test",
+ "panic-probe",
+ "stm32wl-hal",
+]
+
+[[package]]
 name = "defmt"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -242,10 +254,8 @@ version = "0.1.0"
 dependencies = [
  "defmt",
  "defmt-rtt",
- "defmt-test",
  "nucleo-wl55jc-bsp",
- "panic-rtt-target",
- "rtt-target",
+ "panic-probe",
  "stm32wl-hal",
 ]
 
@@ -409,16 +419,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "panic-rtt-target"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d6ab67bc881453e4c90f958c657c1303670ea87bc1a16e87fd71a40f656dce9"
-dependencies = [
- "cortex-m 0.7.3",
- "rtt-target",
-]
-
-[[package]]
 name = "pin-project-lite"
 version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -502,16 +502,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rtt-target"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "065d6058bb1204f51a562a67209e1817cf714759d5cf845aa45c75fa7b0b9d9b"
-dependencies = [
- "cortex-m 0.7.3",
- "ufmt-write",
-]
-
-[[package]]
 name = "rustc_version"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -571,6 +561,7 @@ dependencies = [
  "cfg-if",
  "cortex-m 0.7.3",
  "cortex-m-rt",
+ "defmt",
  "embedded-hal",
  "futures",
  "futures-util",
@@ -608,12 +599,6 @@ name = "typenum"
 version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "879f6906492a7cd215bfa4cf595b600146ccfac0c79bcbd1f3000162af5e8b06"
-
-[[package]]
-name = "ufmt-write"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e87a2ed6b42ec5e28cc3b94c09982969e9227600b2e3dcbc1db927a84c06bd69"
 
 [[package]]
 name = "unicode-xid"

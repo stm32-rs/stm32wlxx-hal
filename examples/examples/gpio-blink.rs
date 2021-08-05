@@ -3,8 +3,8 @@
 #![no_std]
 #![no_main]
 
-use panic_rtt_target as _;
-use rtt_target::rprintln;
+use defmt_rtt as _; // global logger
+use panic_probe as _; // panic handler
 use stm32wl_hal::{
     self as hal,
     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
@@ -14,18 +14,6 @@ use stm32wl_hal::{
 
 #[hal::cortex_m_rt::entry]
 fn main() -> ! {
-    let channels = rtt_target::rtt_init! {
-        up: {
-            0: {
-                size: 4096
-                mode: BlockIfFull
-                name: "Terminal"
-            }
-        }
-    };
-    rtt_target::set_print_channel(channels.up.0);
-    rprintln!("Hello from rprintln!");
-
     let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
 
@@ -36,7 +24,7 @@ fn main() -> ! {
 
     let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
 
-    rprintln!("Starting blinky");
+    defmt::info!("Starting blinky");
 
     loop {
         for &level in &[Level::High, Level::Low] {

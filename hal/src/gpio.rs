@@ -1,6 +1,6 @@
 //! General purpose input-output pins
 
-use crate::pac;
+use crate::{adc, pac};
 use core::ptr::{read_volatile, write_volatile};
 use cortex_m::interrupt::CriticalSection;
 
@@ -142,7 +142,7 @@ impl<const BASE: usize, const N: u8> Pin<BASE, N> {
 }
 
 pub(crate) mod sealed {
-    use super::{CriticalSection, Level, OutputType, Pull, Speed};
+    use super::{adc, CriticalSection, Level, OutputType, Pull, Speed};
 
     /// GPIO modes.
     #[repr(u8)]
@@ -238,6 +238,11 @@ pub(crate) mod sealed {
         /// Initialize the GPIO pin for use as debug SubGHz NSS
         fn set_subghz_spi_nss_af(&mut self);
     }
+
+    /// Indicate a GPIO pin can be sampled by the ADC
+    pub trait AdcCh {
+        const ADC_CH: adc::Ch;
+    }
 }
 
 /// GPIO pins
@@ -252,7 +257,7 @@ pub mod pins {
     const GPIOB_BASE: usize = 0x4800_0400;
     const GPIOC_BASE: usize = 0x4800_0800;
 
-    use super::{CriticalSection, Level, OutputType, Pin, Pull, Speed};
+    use super::{adc, CriticalSection, Level, OutputType, Pin, Pull, Speed};
 
     macro_rules! gpio_struct {
         ($name:ident, $base:expr, $n:expr, $doc:expr) => {
@@ -535,6 +540,43 @@ pub mod pins {
         fn set_subghz_spi_mosi_af(&mut self) {
             self.pin.set_alternate_function(13)
         }
+    }
+
+    impl super::sealed::AdcCh for A10 {
+        const ADC_CH: adc::Ch = adc::Ch::In6;
+    }
+    impl super::sealed::AdcCh for A11 {
+        const ADC_CH: adc::Ch = adc::Ch::In7;
+    }
+    impl super::sealed::AdcCh for A12 {
+        const ADC_CH: adc::Ch = adc::Ch::In8;
+    }
+    impl super::sealed::AdcCh for A13 {
+        const ADC_CH: adc::Ch = adc::Ch::In9;
+    }
+    impl super::sealed::AdcCh for A14 {
+        const ADC_CH: adc::Ch = adc::Ch::In10;
+    }
+    impl super::sealed::AdcCh for A15 {
+        const ADC_CH: adc::Ch = adc::Ch::In11;
+    }
+    impl super::sealed::AdcCh for B1 {
+        const ADC_CH: adc::Ch = adc::Ch::In5;
+    }
+    impl super::sealed::AdcCh for B2 {
+        const ADC_CH: adc::Ch = adc::Ch::In4;
+    }
+    impl super::sealed::AdcCh for B3 {
+        const ADC_CH: adc::Ch = adc::Ch::In2;
+    }
+    impl super::sealed::AdcCh for B4 {
+        const ADC_CH: adc::Ch = adc::Ch::In3;
+    }
+    impl super::sealed::AdcCh for B13 {
+        const ADC_CH: adc::Ch = adc::Ch::In0;
+    }
+    impl super::sealed::AdcCh for B14 {
+        const ADC_CH: adc::Ch = adc::Ch::In1;
     }
 }
 
@@ -858,6 +900,7 @@ impl PortC {
 
 /// Digital input or output level.
 #[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Clone, Copy, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Level {
     /// GPIO logic low.
     Low,
@@ -1174,7 +1217,7 @@ where
     }
 }
 
-/// Input pin.
+/// Input pin
 #[derive(Debug)]
 pub struct Input<P> {
     pin: P,
@@ -1238,7 +1281,7 @@ where
     ///
     /// # Example
     ///
-    /// Configure a GPIO as an output, then free it.
+    /// Configure a GPIO as an input, then free it.
     ///
     /// ```no_run
     /// use stm32wl_hal::{
@@ -1282,5 +1325,76 @@ where
     /// ```
     pub fn level(&self) -> Level {
         self.pin.input_level()
+    }
+}
+
+/// Analog pin
+#[derive(Debug)]
+pub struct Analog<P> {
+    pin: P,
+}
+
+impl<P> Analog<P>
+where
+    P: sealed::PinOps + sealed::AdcCh,
+{
+    /// Create a new analog pin from a GPIO.
+    ///
+    /// # Example
+    ///
+    /// Configure GPIO PB14 as an analog pin (ADC_IN1).
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, Analog, PortB, Pull},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    /// let mut pb14: Analog<pins::B14> = Analog::new(gpiob.pb14);
+    /// ```
+    pub fn new(mut pin: P) -> Self {
+        cortex_m::interrupt::free(|cs| unsafe {
+            pin.set_mode(cs, sealed::Mode::Analog);
+        });
+        Analog { pin }
+    }
+
+    /// Free the GPIO pin.
+    ///
+    /// This will reconfigure the GPIO as a floating input.
+    ///
+    /// # Example
+    ///
+    /// Configure a GPIO as an analog pin, then free it.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, Analog, PortB, Pull},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    /// let pb14: Analog<pins::B14> = Analog::new(gpiob.pb14);
+    /// let pb14: pins::B14 = pb14.free();
+    /// ```
+    pub fn free(mut self) -> P {
+        cortex_m::interrupt::free(|cs| unsafe {
+            self.pin.set_mode(cs, sealed::Mode::Input);
+        });
+        self.pin
+    }
+}
+
+impl<P> From<P> for Analog<P>
+where
+    P: sealed::PinOps + sealed::AdcCh,
+{
+    fn from(p: P) -> Self {
+        Analog::new(p)
     }
 }

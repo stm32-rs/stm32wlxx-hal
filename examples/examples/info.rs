@@ -3,30 +3,16 @@
 #![no_std]
 #![no_main]
 
-use panic_rtt_target as _;
-use rtt_target::rprintln;
+use defmt_rtt as _; // global logger
+use panic_probe as _; // panic handler
 use stm32wl_hal::{self as hal, info};
 
 #[hal::cortex_m_rt::entry]
 fn main() -> ! {
-    let channels = rtt_target::rtt_init! {
-        up: {
-            0: {
-                size: 4096
-                mode: BlockIfFull
-                name: "Terminal"
-            }
-        }
-    };
-    rtt_target::set_print_channel(channels.up.0);
-    rprintln!("Hello from rprintln!");
-
-    rprintln!("Flash size: {} KiB", info::flash_size_kibibyte());
-    rprintln!("Package: {:?}", info::package());
-    rprintln!("UID64: {}", info::uid64());
-    rprintln!("UID: {}", info::uid());
-
-    rprintln!("Exiting");
+    defmt::info!("Flash size: {} KiB", info::flash_size_kibibyte());
+    defmt::info!("Package: {:?}", info::package());
+    defmt::info!("UID64: {}", info::uid64());
+    defmt::info!("UID: {}", info::uid());
 
     loop {
         hal::cortex_m::asm::bkpt();

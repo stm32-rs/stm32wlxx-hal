@@ -160,11 +160,17 @@ impl Dac {
 
     /// Unmask the DAC interrupt.
     ///
+    /// # Safety
+    ///
+    /// This can break mask-based critical sections.
+    ///
     /// # Example
     ///
     /// ```no_run
     /// unsafe { stm32wl_hal::dac::Dac::unmask_irq() };
     /// ```
+    #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
+    #[cfg_attr(docsrs, doc(cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))))]
     pub unsafe fn unmask_irq() {
         pac::NVIC::unmask(pac::Interrupt::DAC)
     }
@@ -174,9 +180,11 @@ impl Dac {
     /// # Example
     ///
     /// ```no_run
-    /// unsafe { stm32wl_hal::dac::Dac::mask_irq() };
+    /// stm32wl_hal::dac::Dac::mask_irq();
     /// ```
-    pub unsafe fn mask_irq() {
+    #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
+    #[cfg_attr(docsrs, doc(cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))))]
+    pub fn mask_irq() {
         pac::NVIC::mask(pac::Interrupt::DAC)
     }
 
@@ -353,10 +361,7 @@ impl Dac {
         debug_assert!(cr.cen1().bit_is_clear());
         debug_assert!(cr.en1().bit_is_clear());
         self.dac.mcr.write(|w| w.mode1().variant(mode.into()));
-        match self.out.take() {
-            Some(analog) => Some(analog),
-            None => None,
-        }
+        self.out.take()
     }
 
     /// Setup the DAC for use with a software trigger.

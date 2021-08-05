@@ -1,4 +1,6 @@
 //! Analog to digital converter
+#![cfg_attr(feature = "stm32wl5x_cm0p", allow(dead_code))]
+#![cfg_attr(feature = "stm32wl5x_cm0p", allow(unused_imports))]
 
 pub use num_rational::Ratio;
 
@@ -81,6 +83,7 @@ pub enum Clk {
     PClk,
 }
 
+#[cfg(not(feature = "stm32wl5x_cm0p"))]
 impl Clk {
     const fn ckmode(&self) -> pac::adc::cfgr2::CKMODE_A {
         match self {
@@ -198,10 +201,14 @@ impl Ch {
 
 /// Analog to digital converter driver
 #[derive(Debug)]
+#[cfg(not(feature = "stm32wl5x_cm0p"))]
+#[cfg_attr(docsrs, doc(cfg(not(feature = "stm32wl5x_cm0p"))))]
 pub struct Adc {
     adc: pac::ADC,
 }
 
+#[cfg(not(feature = "stm32wl5x_cm0p"))]
+#[cfg_attr(docsrs, doc(cfg(not(feature = "stm32wl5x_cm0p"))))]
 impl Adc {
     /// Create a new ADC driver from a ADC peripheral.
     ///

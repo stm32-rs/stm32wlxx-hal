@@ -129,8 +129,8 @@ impl MsiRange {
 
         let cr = rcc.cr.read();
         match cr.msirgsel().variant() {
-            CSR => rcc.csr.read().msisrange().bits().try_into().unwrap(),
-            CR => cr.msirange().bits().try_into().unwrap(),
+            CSR => unwrap!(rcc.csr.read().msisrange().bits().try_into()),
+            CR => unwrap!(cr.msirange().bits().try_into()),
         }
     }
 }

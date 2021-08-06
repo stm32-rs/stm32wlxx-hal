@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 
+use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use panic_probe as _;
 use stm32wl_hal::{
@@ -60,8 +61,8 @@ mod tests {
 
     #[init]
     fn init() -> TestArgs {
-        let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-        let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
+        let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
+        let cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
 
         rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC);
 
@@ -84,22 +85,22 @@ mod tests {
 
     #[test]
     fn enable(ta: &mut TestArgs) {
-        assert!(ta.adc.is_disabled());
-        assert!(!ta.adc.is_enabled());
+        defmt::assert!(ta.adc.is_disabled());
+        defmt::assert!(!ta.adc.is_enabled());
 
         // test disable -> enable and enable -> enable
         for _ in 0..2 {
             ta.adc.enable();
-            assert!(!ta.adc.is_disabled());
-            assert!(ta.adc.is_enabled());
+            defmt::assert!(!ta.adc.is_disabled());
+            defmt::assert!(ta.adc.is_enabled());
         }
 
         // test enable -> disable and disable -> disable
         for _ in 0..2 {
             ta.adc.start_disable();
             while !ta.adc.is_disabled() {}
-            assert!(ta.adc.is_disabled());
-            assert!(!ta.adc.is_enabled());
+            defmt::assert!(ta.adc.is_disabled());
+            defmt::assert!(!ta.adc.is_enabled());
         }
     }
 
@@ -125,7 +126,7 @@ mod tests {
         let delta: i16 = (vref as i16) - (vref_cal as i16);
         defmt::info!("vref post-calibration: {} Δ {}", vref, delta.abs());
 
-        assert!(delta.abs() < uncal_delta.abs());
+        defmt::assert!(delta.abs() < uncal_delta.abs());
     }
 
     #[test]
@@ -140,8 +141,8 @@ mod tests {
     fn temperature(ta: &mut TestArgs) {
         let temp: i16 = ta.adc.temperature(&mut ta.delay).to_integer();
         defmt::info!("Temperature: {} °C", temp);
-        assert!(temp > 25);
-        assert!(temp < 70);
+        defmt::assert!(temp > 25);
+        defmt::assert!(temp < 70);
     }
 
     #[test]

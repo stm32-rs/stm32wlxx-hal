@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 
+use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use panic_probe as _;
 use stm32wl_hal::{
@@ -55,17 +56,9 @@ const KEY: Key = Key::K128(Key128::from_u128(0));
 async fn aio_decrypt_ecb_inner() {
     let mut aes: Aes = unsafe { Aes::steal() };
     for (plaintext, ciphertext) in PLAINTEXT_CHIPHERTEXT.iter() {
-        let result: [u32; 4] = aes
-            .aio_decrypt_ecb(&KEY, &u128_to_u32(*ciphertext))
-            .await
-            .unwrap();
+        let result: [u32; 4] = unwrap!(aes.aio_decrypt_ecb(&KEY, &u128_to_u32(*ciphertext)).await);
         let plaintext_u32: [u32; 4] = u128_to_u32(*plaintext);
-        assert!(
-            result == plaintext_u32,
-            "\nResult:   {:08X?}\nExpected: {:08X?}\n",
-            result,
-            plaintext_u32
-        );
+        defmt::assert_eq!(result, plaintext_u32);
     }
 }
 
@@ -73,17 +66,9 @@ async fn aio_decrypt_ecb_inner() {
 async fn aio_encrypt_ecb_inner() {
     let mut aes: Aes = unsafe { Aes::steal() };
     for (plaintext, ciphertext) in PLAINTEXT_CHIPHERTEXT.iter() {
-        let result: [u32; 4] = aes
-            .aio_encrypt_ecb(&KEY, &u128_to_u32(*plaintext))
-            .await
-            .unwrap();
+        let result: [u32; 4] = unwrap!(aes.aio_encrypt_ecb(&KEY, &u128_to_u32(*plaintext)).await);
         let ciphertext_u32: [u32; 4] = u128_to_u32(*ciphertext);
-        assert!(
-            result == ciphertext_u32,
-            "\nResult:   {:08X?}\nExpected: {:08X?}\n",
-            result,
-            ciphertext_u32
-        );
+        defmt::assert_eq!(result, ciphertext_u32);
     }
 }
 
@@ -93,7 +78,7 @@ mod tests {
 
     #[init]
     fn init() -> Aes {
-        let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+        let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
         let mut rcc = dp.RCC;
 
         rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut rcc);
@@ -112,28 +97,18 @@ mod tests {
     #[test]
     fn encrypt_ecb(aes: &mut Aes) {
         for (plaintext, ciphertext) in PLAINTEXT_CHIPHERTEXT.iter() {
-            let result: [u32; 4] = aes.encrypt_ecb(&KEY, &u128_to_u32(*plaintext)).unwrap();
+            let result: [u32; 4] = unwrap!(aes.encrypt_ecb(&KEY, &u128_to_u32(*plaintext)));
             let ciphertext_u32: [u32; 4] = u128_to_u32(*ciphertext);
-            assert!(
-                result == ciphertext_u32,
-                "\nResult:   {:08X?}\nExpected: {:08X?}\n",
-                result,
-                ciphertext_u32
-            );
+            defmt::assert_eq!(result, ciphertext_u32);
         }
     }
 
     #[test]
     fn decrypt_ecb(aes: &mut Aes) {
         for (plaintext, ciphertext) in PLAINTEXT_CHIPHERTEXT.iter() {
-            let result: [u32; 4] = aes.decrypt_ecb(&KEY, &u128_to_u32(*ciphertext)).unwrap();
+            let result: [u32; 4] = unwrap!(aes.decrypt_ecb(&KEY, &u128_to_u32(*ciphertext)));
             let plaintext_u32: [u32; 4] = u128_to_u32(*plaintext);
-            assert!(
-                result == plaintext_u32,
-                "\nResult:   {:08X?}\nExpected: {:08X?}\n",
-                result,
-                plaintext_u32
-            );
+            defmt::assert_eq!(result, plaintext_u32);
         }
     }
 

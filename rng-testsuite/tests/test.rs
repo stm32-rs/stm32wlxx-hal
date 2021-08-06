@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 
+use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use panic_probe as _;
 use stm32wl_hal::{
@@ -12,7 +13,7 @@ use stm32wl_hal::{
 async fn aio_random_enough_for_me_inner() {
     let mut rng: Rng = unsafe { Rng::steal() };
     let mut bytes: [u8; 33] = [0; 33];
-    rng.aio_try_fill_u8(&mut bytes).await.unwrap();
+    unwrap!(rng.aio_try_fill_u8(&mut bytes).await);
     validate_randomness(&bytes)
 }
 
@@ -41,7 +42,7 @@ mod tests {
 
     #[init]
     fn init() -> Rng {
-        let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+        let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
         let mut rcc = dp.RCC;
 
         rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut rcc);
@@ -66,14 +67,14 @@ mod tests {
 
         let mut seed: [u8; 32] = [0; 32];
 
-        rng.try_fill_u8(&mut seed).unwrap();
+        unwrap!(rng.try_fill_u8(&mut seed));
         let mut cha20: ChaCha20Rng = ChaCha20Rng::from_seed([0u8; 32]);
-        rng.try_fill_u8(&mut seed).unwrap();
+        unwrap!(rng.try_fill_u8(&mut seed));
         let mut cha12: ChaCha12Rng = ChaCha12Rng::from_seed([0u8; 32]);
-        rng.try_fill_u8(&mut seed).unwrap();
+        unwrap!(rng.try_fill_u8(&mut seed));
         let mut cha8: ChaCha8Rng = ChaCha8Rng::from_seed([0u8; 32]);
 
-        let mut cp = pac::CorePeripherals::take().unwrap();
+        let mut cp = unwrap!(pac::CorePeripherals::take());
         cp.DCB.enable_trace();
         cp.DWT.enable_cycle_counter();
 
@@ -84,25 +85,25 @@ mod tests {
         let start: u32 = pac::DWT::get_cycle_count();
         let ret = cha20.try_fill_bytes(unsafe { &mut BUF });
         let end: u32 = pac::DWT::get_cycle_count();
-        ret.unwrap();
+        unwrap!(ret);
         let cha20cyc: u32 = end.wrapping_sub(start);
 
         let start: u32 = pac::DWT::get_cycle_count();
         let ret = cha12.try_fill_bytes(unsafe { &mut BUF });
         let end: u32 = pac::DWT::get_cycle_count();
-        ret.unwrap();
+        unwrap!(ret);
         let cha12cyc: u32 = end.wrapping_sub(start);
 
         let start: u32 = pac::DWT::get_cycle_count();
         let ret = cha8.try_fill_bytes(unsafe { &mut BUF });
         let end: u32 = pac::DWT::get_cycle_count();
-        ret.unwrap();
+        unwrap!(ret);
         let cha8cyc: u32 = end.wrapping_sub(start);
 
         let start: u32 = pac::DWT::get_cycle_count();
         let ret = rng.try_fill_bytes(unsafe { &mut BUF });
         let end: u32 = pac::DWT::get_cycle_count();
-        ret.unwrap();
+        unwrap!(ret);
         let rngcyc: u32 = end.wrapping_sub(start);
 
         defmt::info!("ChaCha20: {}", (cha20cyc as f32) / (NUM_BLK as f32));
@@ -114,7 +115,7 @@ mod tests {
     #[test]
     fn random_enough_for_me(rng: &mut Rng) {
         let mut bytes: [u8; 35] = [0; 35];
-        rng.try_fill_bytes(&mut bytes).unwrap();
+        unwrap!(rng.try_fill_bytes(&mut bytes));
         validate_randomness(&bytes)
     }
 

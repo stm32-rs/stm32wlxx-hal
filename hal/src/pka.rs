@@ -10,6 +10,7 @@ use core::{
 
 /// PKA errors.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 enum Error {
     /// Address access is out of range (unmapped address).
     Address,
@@ -37,6 +38,7 @@ impl Error {
 
 /// Errors from an ECDSA signing operation.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum EcdsaSignError {
     /// Address access is out of range (unmapped address).
     Address,
@@ -77,6 +79,7 @@ impl EcdsaSignError {
 
 /// Errors from an ECDSA verify operation.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum EcdsaVerifyError {
     /// Address access is out of range (unmapped address).
     Address,
@@ -110,6 +113,7 @@ impl EcdsaVerifyError {
 #[derive(Debug)]
 #[repr(u8)]
 #[allow(dead_code)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 enum PkaOpcode {
     /// Montgomery parameter computation then modular exponentiation.
     MontgomeryParameterExponentiation = 0b000000,
@@ -583,6 +587,7 @@ impl Pka {
 /// Sign bit for ECDSA coefficient signing and verification.
 #[repr(u32)]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Sign {
     /// Positive.
     Pos = 0,
@@ -603,6 +608,18 @@ pub struct EcdsaSignature<const MODULUS_SIZE: usize> {
     pub r_sign: [u32; MODULUS_SIZE],
     /// Signature part s.
     pub s_sign: [u32; MODULUS_SIZE],
+}
+
+#[cfg(feature = "defmt")]
+impl<const MODULUS_SIZE: usize> defmt::Format for EcdsaSignature<MODULUS_SIZE> {
+    fn format(&self, fmt: defmt::Formatter) {
+        defmt::write!(
+            fmt,
+            "EcdsaSignature {{ r_sign: {}, s_sign: {} }}",
+            self.r_sign.as_ref(),
+            self.s_sign.as_ref()
+        )
+    }
 }
 
 /// ECDSA public key.

@@ -17,6 +17,7 @@ pub use pac::spi1::cr1::BR_A as BaudDiv;
 
 /// SPI errors
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error {
     /// Frame format error
     Framing,

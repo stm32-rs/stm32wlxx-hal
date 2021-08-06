@@ -65,6 +65,7 @@ const MUX_RGCFR_ADDR: usize = MUX_BASE + 0x144;
 
 /// DMA errors
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error {
     /// Transfer error
     Xfer,

@@ -4,6 +4,7 @@
 #[cfg(feature = "aio")]
 extern crate alloc;
 
+use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use panic_probe as _;
 
@@ -104,9 +105,9 @@ async fn aio_buffer_io_inner() {
     };
     const DATA: [u8; 255] = [0xA5; 255];
     let mut buf: alloc::vec::Vec<u8> = alloc::vec![0; 255];
-    sg.aio_write_buffer(0, &DATA).await.unwrap();
-    sg.aio_read_buffer(0, &mut buf).await.unwrap();
-    assert_eq!(DATA, buf.as_slice());
+    unwrap!(sg.aio_write_buffer(0, &DATA).await);
+    unwrap!(sg.aio_read_buffer(0, &mut buf).await);
+    defmt::assert_eq!(DATA.as_ref(), buf.as_slice());
 }
 
 // WARNING will wrap-around eventually, use this for relative timing only
@@ -119,42 +120,40 @@ async fn aio_wait_irq_inner() {
         SubGhz::steal_with_dma(dma.d1c1, dma.d2c1)
     };
 
-    sg.aio_set_standby(StandbyClk::Rc).await.unwrap();
-    let status: Status = sg.aio_status().await.unwrap();
-    assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
+    unwrap!(sg.aio_set_standby(StandbyClk::Rc).await);
+    let status: Status = unwrap!(sg.aio_status().await);
+    defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
 
-    sg.aio_set_tcxo_mode(&TCXO_MODE).await.unwrap();
-    sg.aio_set_regulator_mode(RegMode::Ldo).await.unwrap();
-    sg.aio_set_sync_word(&SYNC_WORD).await.unwrap();
-    sg.aio_set_packet_type(PacketType::Fsk).await.unwrap();
-    sg.aio_set_fsk_mod_params(&FSK_MOD_PARAMS).await.unwrap();
-    sg.aio_set_packet_params(&FSK_PACKET_PARAMS).await.unwrap();
-    sg.aio_calibrate_image(CalibrateImage::ISM_430_440)
-        .await
-        .unwrap();
-    sg.aio_set_rf_frequency(&RF_FREQ).await.unwrap();
+    unwrap!(sg.aio_set_tcxo_mode(&TCXO_MODE).await);
+    unwrap!(sg.aio_set_regulator_mode(RegMode::Ldo).await);
+    unwrap!(sg.aio_set_sync_word(&SYNC_WORD).await);
+    unwrap!(sg.aio_set_packet_type(PacketType::Fsk).await);
+    unwrap!(sg.aio_set_fsk_mod_params(&FSK_MOD_PARAMS).await);
+    unwrap!(sg.aio_set_packet_params(&FSK_PACKET_PARAMS).await);
+    unwrap!(sg.aio_calibrate_image(CalibrateImage::ISM_430_440).await);
+    unwrap!(sg.aio_set_rf_frequency(&RF_FREQ).await);
 
     const IRQ_CFG: CfgIrq = CfgIrq::new()
         .irq_enable(Irq::RxDone)
         .irq_enable(Irq::Timeout);
-    sg.aio_set_irq_cfg(&IRQ_CFG).await.unwrap();
+    unwrap!(sg.aio_set_irq_cfg(&IRQ_CFG).await);
 
-    let status: Status = sg.status().unwrap();
-    assert_ne!(status.cmd(), Ok(CmdStatus::Timeout));
+    let status: Status = unwrap!(sg.status());
+    defmt::assert_ne!(status.cmd(), Ok(CmdStatus::Timeout));
 
     // this will fail to RX immediately (15 micros timeout)
-    sg.aio_set_rx(Timeout::MIN).await.unwrap();
+    unwrap!(sg.aio_set_rx(Timeout::MIN).await);
 
-    let (_, irq) = sg.aio_wait_irq().await.unwrap();
+    let (_, irq) = unwrap!(sg.aio_wait_irq().await);
     defmt::assert_eq!(Irq::Timeout.mask(), irq);
 }
 
 fn tx_or_panic(sg: &mut SubGhz<DmaCh>, rfs: &mut RfSwitch) {
     rfs.set_tx_lp();
-    sg.set_tx(Timeout::DISABLED).unwrap();
+    unwrap!(sg.set_tx(Timeout::DISABLED));
     let start_cc: u32 = DWT::get_cycle_count();
     loop {
-        let status: Status = sg.status().unwrap();
+        let status: Status = unwrap!(sg.status());
         if status.cmd() == Ok(CmdStatus::Complete) {
             rfs.set_rx();
             defmt::info!("TX done");
@@ -162,7 +161,7 @@ fn tx_or_panic(sg: &mut SubGhz<DmaCh>, rfs: &mut RfSwitch) {
         }
 
         let elapsed_s: u32 = DWT::get_cycle_count().wrapping_sub(start_cc) / CYC_PER_SEC;
-        assert!(
+        defmt::assert!(
             elapsed_s < 1,
             "Timeout waiting for TX completion status={}",
             status
@@ -176,46 +175,45 @@ fn tx_or_panic(sg: &mut SubGhz<DmaCh>, rfs: &mut RfSwitch) {
 ///
 /// The first radio to recieve `b"PING"` transmits `b"PONG"` in reply.
 fn ping_pong(sg: &mut SubGhz<DmaCh>, rng: &mut Rng, rfs: &mut RfSwitch, pkt: PacketType) {
-    sg.set_standby(StandbyClk::Rc).unwrap();
-    let status: Status = sg.status().unwrap();
-    assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
+    unwrap!(sg.set_standby(StandbyClk::Rc));
+    let status: Status = unwrap!(sg.status());
+    defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
 
-    sg.set_tcxo_mode(&TCXO_MODE).unwrap();
-    sg.set_regulator_mode(RegMode::Ldo).unwrap();
-    sg.set_buffer_base_address(TX_BUF_OFFSET, RX_BUF_OFFSET)
-        .unwrap();
-    sg.set_pa_config(&PA_CONFIG).unwrap();
-    sg.set_pa_ocp(Ocp::Max60m).unwrap();
-    sg.set_tx_params(&TX_PARAMS).unwrap();
+    unwrap!(sg.set_tcxo_mode(&TCXO_MODE));
+    unwrap!(sg.set_regulator_mode(RegMode::Ldo));
+    unwrap!(sg.set_buffer_base_address(TX_BUF_OFFSET, RX_BUF_OFFSET));
+    unwrap!(sg.set_pa_config(&PA_CONFIG));
+    unwrap!(sg.set_pa_ocp(Ocp::Max60m));
+    unwrap!(sg.set_tx_params(&TX_PARAMS));
 
-    let status: Status = sg.status().unwrap();
-    assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
+    let status: Status = unwrap!(sg.status());
+    defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
 
-    sg.set_packet_type(pkt).unwrap();
+    unwrap!(sg.set_packet_type(pkt));
     match pkt {
         PacketType::Fsk => {
-            sg.set_sync_word(&SYNC_WORD).unwrap();
-            sg.set_fsk_mod_params(&FSK_MOD_PARAMS).unwrap();
-            sg.set_packet_params(&FSK_PACKET_PARAMS).unwrap();
+            unwrap!(sg.set_sync_word(&SYNC_WORD));
+            unwrap!(sg.set_fsk_mod_params(&FSK_MOD_PARAMS));
+            unwrap!(sg.set_packet_params(&FSK_PACKET_PARAMS));
         }
         PacketType::LoRa => {
-            sg.set_lora_sync_word(LoRaSyncWord::Public).unwrap();
-            sg.set_lora_mod_params(&LORA_MOD_PARAMS).unwrap();
-            sg.set_lora_packet_params(&LORA_PACKET_PARAMS).unwrap();
+            unwrap!(sg.set_lora_sync_word(LoRaSyncWord::Public));
+            unwrap!(sg.set_lora_mod_params(&LORA_MOD_PARAMS));
+            unwrap!(sg.set_lora_packet_params(&LORA_PACKET_PARAMS));
         }
-        PacketType::Bpsk => todo!(),
-        PacketType::Msk => todo!(),
+        PacketType::Bpsk => defmt::todo!(),
+        PacketType::Msk => defmt::todo!(),
     }
 
-    sg.calibrate_image(CalibrateImage::ISM_430_440).unwrap();
-    sg.set_rf_frequency(&RF_FREQ).unwrap();
+    unwrap!(sg.calibrate_image(CalibrateImage::ISM_430_440));
+    unwrap!(sg.set_rf_frequency(&RF_FREQ));
 
-    sg.write_buffer(TX_BUF_OFFSET, PING_DATA_BYTES).unwrap();
+    unwrap!(sg.write_buffer(TX_BUF_OFFSET, PING_DATA_BYTES));
 
     const IRQ_CFG: CfgIrq = CfgIrq::new()
         .irq_enable(Irq::RxDone)
         .irq_enable(Irq::Timeout);
-    sg.set_irq_cfg(&IRQ_CFG).unwrap();
+    unwrap!(sg.set_irq_cfg(&IRQ_CFG));
 
     const MAX_ATTEMPTS: u32 = 100;
     let mut attempt: u32 = 0;
@@ -224,18 +222,18 @@ fn ping_pong(sg: &mut SubGhz<DmaCh>, rng: &mut Rng, rfs: &mut RfSwitch, pkt: Pac
 
         // 45 - 300 ms
         let timeout: Timeout = {
-            let rand_u8: u8 = rng.try_u8().unwrap();
+            let rand_u8: u8 = unwrap!(rng.try_u8());
             let millis: u64 = u64::from(rand_u8).saturating_add(45);
             let dur: Duration = Duration::from_millis(millis);
             Timeout::from_duration_sat(dur)
         };
 
         defmt::debug!("RX for {:?} ms", timeout.as_duration().as_millis());
-        sg.set_rx(timeout).unwrap();
+        unwrap!(sg.set_rx(timeout));
 
         let start_cc: u32 = DWT::get_cycle_count();
         loop {
-            let (status, irq_status) = sg.irq_status().unwrap();
+            let (status, irq_status) = unwrap!(sg.irq_status());
 
             if irq_status != 0 {
                 defmt::debug!("IRQ status: 0x{:04X}", irq_status);
@@ -245,29 +243,29 @@ fn ping_pong(sg: &mut SubGhz<DmaCh>, rng: &mut Rng, rfs: &mut RfSwitch, pkt: Pac
 
             if irq_status & Irq::Timeout.mask() != 0 {
                 defmt::info!("RX timeout {} ms", elapsed_ms);
-                assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
-                sg.clear_irq_status(irq_status).unwrap();
+                defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
+                unwrap!(sg.clear_irq_status(irq_status));
 
                 tx_or_panic(sg, rfs);
                 break;
             } else if irq_status & Irq::RxDone.mask() != 0 {
                 defmt::info!("RX done");
-                assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
-                sg.clear_irq_status(irq_status).unwrap();
+                defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
+                unwrap!(sg.clear_irq_status(irq_status));
 
-                let (status, len, ptr) = sg.rx_buffer_status().unwrap();
-                assert_eq!(len, DATA_LEN);
-                assert_eq!(status.cmd(), Ok(CmdStatus::Avaliable));
-                assert_eq!(ptr, RX_BUF_OFFSET);
-                assert_eq!(irq_status, 0b10);
+                let (status, len, ptr) = unwrap!(sg.rx_buffer_status());
+                defmt::assert_eq!(len, DATA_LEN);
+                defmt::assert_eq!(status.cmd(), Ok(CmdStatus::Avaliable));
+                defmt::assert_eq!(ptr, RX_BUF_OFFSET);
+                defmt::assert_eq!(irq_status, 0b10);
                 let mut data_buf: [u8; DATA_LEN as usize] = [0; DATA_LEN as usize];
-                sg.read_buffer(ptr, &mut data_buf).unwrap();
+                unwrap!(sg.read_buffer(ptr, &mut data_buf));
                 match data_buf.as_ref() {
                     PING_DATA_BYTES => {
                         defmt::info!("received PING");
 
                         // respond with pong
-                        sg.write_buffer(TX_BUF_OFFSET, PONG_DATA_BYTES).unwrap();
+                        unwrap!(sg.write_buffer(TX_BUF_OFFSET, PONG_DATA_BYTES));
 
                         // assume the other radio will get it in 10 transmissions
                         for _ in 0..10 {
@@ -277,21 +275,23 @@ fn ping_pong(sg: &mut SubGhz<DmaCh>, rng: &mut Rng, rfs: &mut RfSwitch, pkt: Pac
                     PONG_DATA_BYTES => {
                         defmt::info!("received PONG");
                     }
-                    _ => panic!(
+                    _ => defmt::panic!(
                         "Unknown data: {:?} PING={:?} PONG={:?}",
-                        data_buf, PING_DATA_BYTES, PONG_DATA_BYTES
+                        data_buf,
+                        PING_DATA_BYTES,
+                        PONG_DATA_BYTES
                     ),
                 }
 
                 rfs.set_rx();
                 return;
             } else {
-                assert_eq!(irq_status, 0);
-                assert_ne!(status.cmd(), Ok(CmdStatus::Avaliable));
-                assert_ne!(status.cmd(), Ok(CmdStatus::ProcessingError));
-                assert_ne!(status.cmd(), Ok(CmdStatus::ExecutionFailure));
+                defmt::assert_eq!(irq_status, 0);
+                defmt::assert_ne!(status.cmd(), Ok(CmdStatus::Avaliable));
+                defmt::assert_ne!(status.cmd(), Ok(CmdStatus::ProcessingError));
+                defmt::assert_ne!(status.cmd(), Ok(CmdStatus::ExecutionFailure));
 
-                assert!(
+                defmt::assert!(
                     elapsed_ms < 1_000,
                     "Timeout waiting for RX completion status={}",
                     status
@@ -300,7 +300,7 @@ fn ping_pong(sg: &mut SubGhz<DmaCh>, rng: &mut Rng, rfs: &mut RfSwitch, pkt: Pac
         }
 
         attempt = attempt.saturating_add(1);
-        assert!(attempt < MAX_ATTEMPTS);
+        defmt::assert!(attempt < MAX_ATTEMPTS);
     }
 }
 
@@ -316,11 +316,11 @@ mod tests {
 
     #[init]
     fn init() -> TestArgs {
-        let mut cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
-        let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+        let mut cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
+        let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
 
         rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC);
-        assert_eq!(rcc::sysclk_hz(&dp.RCC), FREQ);
+        defmt::assert_eq!(rcc::sysclk_hz(&dp.RCC), FREQ);
 
         let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
         let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
@@ -363,9 +363,9 @@ mod tests {
     fn buffer_io(ta: &mut TestArgs) {
         const DATA: [u8; 255] = [0x5A; 255];
         static mut BUF: [u8; 255] = [0; 255];
-        ta.sg.write_buffer(0, &DATA).unwrap();
-        ta.sg.read_buffer(0, unsafe { &mut BUF }).unwrap();
-        assert_eq!(DATA, unsafe { BUF });
+        unwrap!(ta.sg.write_buffer(0, &DATA));
+        unwrap!(ta.sg.read_buffer(0, unsafe { &mut BUF }));
+        defmt::assert_eq!(DATA.as_ref(), unsafe { BUF }.as_ref());
     }
 
     #[test]

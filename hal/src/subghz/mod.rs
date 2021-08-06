@@ -316,6 +316,7 @@ where
         + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     fn read(&mut self, opcode: OpCode, data: &mut [u8]) -> Result<(), Error> {
+        self.poll_not_busy();
         {
             let _nss: Nss = Nss::new();
             self.spi.write(&[opcode as u8])?;
@@ -326,6 +327,7 @@ where
     }
 
     fn write(&mut self, data: &[u8]) -> Result<(), Error> {
+        self.poll_not_busy();
         {
             let _nss: Nss = Nss::new();
             self.spi.write(data)?;
@@ -352,6 +354,7 @@ where
 #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
 impl SubGhz<DmaCh> {
     async fn aio_read(&mut self, opcode: OpCode, data: &mut [u8]) -> Result<(), Error> {
+        self.aio_poll_not_busy().await;
         {
             let _nss: Nss = Nss::new();
             self.spi.aio_write_with_dma(&[opcode as u8]).await?;
@@ -362,6 +365,7 @@ impl SubGhz<DmaCh> {
     }
 
     async fn aio_write(&mut self, data: &[u8]) -> Result<(), Error> {
+        self.aio_poll_not_busy().await;
         {
             let _nss: Nss = Nss::new();
             self.spi.aio_write_with_dma(data).await?;
@@ -539,6 +543,7 @@ impl SubGhz<DmaCh> {
 #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
 impl SubGhz<DmaCh> {
     pub async fn aio_write_buffer(&mut self, offset: u8, data: &[u8]) -> Result<(), Error> {
+        self.aio_poll_not_busy().await;
         {
             let _nss: Nss = Nss::new();
             self.spi
@@ -546,7 +551,6 @@ impl SubGhz<DmaCh> {
                 .await?;
             self.spi.aio_write_with_dma(data).await?;
         }
-
         self.aio_poll_not_busy().await;
 
         Ok(())
@@ -555,6 +559,7 @@ impl SubGhz<DmaCh> {
     pub async fn aio_read_buffer(&mut self, offset: u8, buf: &mut [u8]) -> Result<Status, Error> {
         let mut status_buf: [u8; 1] = [0];
 
+        self.aio_poll_not_busy().await;
         {
             let _nss: Nss = Nss::new();
             self.spi
@@ -563,8 +568,8 @@ impl SubGhz<DmaCh> {
             self.spi.aio_transfer_with_dma(&mut status_buf).await?;
             self.spi.aio_transfer_with_dma(buf).await?;
         }
-
         self.aio_poll_not_busy().await;
+
         Ok(status_buf[0].into())
     }
 }
@@ -577,27 +582,29 @@ where
         + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     pub fn write_buffer(&mut self, offset: u8, data: &[u8]) -> Result<(), Error> {
+        self.poll_not_busy();
         {
             let _nss: Nss = Nss::new();
             self.spi.write(&[OpCode::WriteBuffer as u8, offset])?;
             self.spi.write(data)?;
         }
-
         self.poll_not_busy();
+
         Ok(())
     }
 
     pub fn read_buffer(&mut self, offset: u8, buf: &mut [u8]) -> Result<Status, Error> {
         let mut status_buf: [u8; 1] = [0];
 
+        self.poll_not_busy();
         {
             let _nss: Nss = Nss::new();
             self.spi.write(&[OpCode::ReadBuffer as u8, offset])?;
             self.spi.transfer(&mut status_buf)?;
             self.spi.transfer(buf)?;
         }
-
         self.poll_not_busy();
+
         Ok(status_buf[0].into())
     }
 }
@@ -612,14 +619,15 @@ where
     fn write_register(&mut self, register: Register, data: &[u8]) -> Result<(), Error> {
         let addr: [u8; 2] = register.address().to_be_bytes();
 
+        self.poll_not_busy();
         {
             let _nss: Nss = Nss::new();
             self.spi
                 .write(&[OpCode::WriteRegister as u8, addr[0], addr[1]])?;
             self.spi.write(data)?;
         }
-
         self.poll_not_busy();
+
         Ok(())
     }
 
@@ -762,6 +770,7 @@ impl SubGhz<DmaCh> {
     async fn aio_write_register(&mut self, register: Register, data: &[u8]) -> Result<(), Error> {
         let addr: [u8; 2] = register.address().to_be_bytes();
 
+        self.aio_poll_not_busy().await;
         {
             let _nss: Nss = Nss::new();
             self.spi
@@ -769,8 +778,8 @@ impl SubGhz<DmaCh> {
                 .await?;
             self.spi.aio_write_with_dma(data).await?;
         }
-
         self.aio_poll_not_busy().await;
+
         Ok(())
     }
 
@@ -2884,6 +2893,8 @@ impl SubGhz<DmaCh> {
         // expanded to remove dependency on interrupt-based radio busy while
         // IRQs are masked
         let mut data: [u8; 3] = [0; 3];
+
+        self.poll_not_busy();
         {
             let _nss: Nss = Nss::new();
             self.spi
@@ -2892,7 +2903,6 @@ impl SubGhz<DmaCh> {
             self.spi.aio_transfer_with_dma(&mut data).await?;
         }
         self.poll_not_busy();
-
         {
             let _nss: Nss = Nss::new();
             self.spi

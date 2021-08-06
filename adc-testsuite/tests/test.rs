@@ -6,7 +6,7 @@ use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use panic_probe as _;
 use stm32wl_hal::{
-    adc::{self, Adc, SampleTime},
+    adc::{self, Adc},
     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
     pac, rcc,
 };
@@ -37,7 +37,7 @@ async fn aio_temperature_inner() {
     adc.aio_enable().await;
     adc.enable_tsen();
     delay.delay_us(adc::TS_START_MAX.as_micros() as u32);
-    adc.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+    adc.set_max_sample_time();
     let temp: i16 = adc.aio_temperature().await.to_integer();
     validate_temperature(temp);
 }
@@ -51,7 +51,7 @@ async fn aio_vref_inner() {
 
     adc.aio_enable().await;
     adc.enable_vref();
-    adc.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+    adc.set_max_sample_time();
     let pre: u16 = adc.aio_vref().await;
     adc.aio_calibrate(&mut delay).await;
     adc.aio_enable().await;
@@ -173,8 +173,7 @@ mod tests {
 
         ta.adc.enable();
         ta.adc.enable_vref();
-        ta.adc
-            .set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+        ta.adc.set_max_sample_time();
         let pre: u16 = ta.adc.vref();
 
         ta.adc.calibrate(&mut ta.delay);
@@ -196,8 +195,7 @@ mod tests {
     fn temperature(ta: &mut TestArgs) {
         ta.adc.enable_tsen();
         ta.delay.delay_us(adc::TS_START_MAX.as_micros() as u32);
-        ta.adc
-            .set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+        ta.adc.set_max_sample_time();
         let temp: i16 = ta.adc.temperature().to_integer();
         validate_temperature(temp);
     }
@@ -215,8 +213,7 @@ mod tests {
         ta.adc.calibrate(&mut ta.delay);
         ta.adc.enable();
         ta.adc.enable_vbat();
-        ta.adc
-            .set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+        ta.adc.set_max_sample_time();
         let sample: u16 = ta.adc.vbat();
         const EXPECTED: i16 = 4096 / 3;
 

@@ -114,7 +114,7 @@ impl Clk {
 /// ADC sample times
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u8)]
-pub enum SampleTime {
+pub enum Ts {
     /// 1.5 ADC clock cycles
     Cyc1 = 0,
     /// 3.5 ADC clock cycles
@@ -133,20 +133,45 @@ pub enum SampleTime {
     Cyc160 = 7,
 }
 
-impl Default for SampleTime {
+impl Default for Ts {
+    /// Reset value of the sample time.
     fn default() -> Self {
-        SampleTime::Cyc1
+        Ts::Cyc1
     }
 }
 
-impl From<SampleTime> for u8 {
-    fn from(st: SampleTime) -> Self {
+impl Ts {
+    /// Maximum sample time, 160.5 ADC clock cycles.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal::adc::Ts;
+    ///
+    /// assert_eq!(Ts::MAX, Ts::Cyc160);
+    /// ```
+    pub const MAX: Self = Self::Cyc160;
+
+    /// Minimum sample time, 1.5 ADC clock cycles.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal::adc::Ts;
+    ///
+    /// assert_eq!(Ts::MIN, Ts::Cyc1);
+    /// ```
+    pub const MIN: Self = Self::Cyc1;
+}
+
+impl From<Ts> for u8 {
+    fn from(st: Ts) -> Self {
         st as u8
     }
 }
 
-impl From<SampleTime> for u32 {
-    fn from(st: SampleTime) -> Self {
+impl From<Ts> for u32 {
+    fn from(st: Ts) -> Self {
         st as u32
     }
 }
@@ -420,7 +445,7 @@ impl Adc {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     self as hal,
-    ///     adc::{self, Adc, SampleTime},
+    ///     adc::{self, Adc, Ts},
     ///     gpio::pins::{B13, B14},
     ///     pac,
     /// };
@@ -434,8 +459,8 @@ impl Adc {
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// adc.set_sample_times(
     ///     B14::ADC_CH.mask() | B13::ADC_CH.mask() | adc::Ch::Vbat.mask(),
-    ///     SampleTime::Cyc160,
-    ///     SampleTime::Cyc39,
+    ///     Ts::Cyc160,
+    ///     Ts::Cyc39,
     /// );
     /// ```
     ///
@@ -443,11 +468,46 @@ impl Adc {
     /// [`In1`]: crate::adc::Ch::In1
     /// [`B13`]: crate::gpio::pins::B13
     /// [`B14`]: crate::gpio::pins::B14
-    pub fn set_sample_times(&mut self, mask: u32, sel0: SampleTime, sel1: SampleTime) {
+    pub fn set_sample_times(&mut self, mask: u32, sel0: Ts, sel1: Ts) {
         debug_assert!(self.adc.cr.read().adstart().is_not_active());
         self.adc.smpr.write(|w| unsafe {
             w.bits((mask & CH_MASK) << 8 | u32::from(sel1) << 4 | u32::from(sel0))
         })
+    }
+
+    /// Sets all channels to the maximum sample time.
+    ///
+    /// This is a helper for testing and rapid prototyping purpose because
+    /// [`set_sample_times`] is verbose.
+    ///
+    /// This method is equivalent to this:
+    ///
+    /// ```no_run
+    /// # let mut adc = unsafe { stm32wl_hal::adc::Adc::steal() };
+    /// use stm32wl_hal::adc::Ts;
+    ///
+    /// adc.set_sample_times(0, Ts::Cyc160, Ts::Cyc160);
+    /// ```
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// adc.set_max_sample_time();
+    /// ```
+    pub fn set_max_sample_time(&mut self) {
+        self.set_sample_times(0, Ts::Cyc160, Ts::Cyc160);
     }
 
     /// Returns `true` if the ADC is enabled.
@@ -846,7 +906,7 @@ impl Adc {
     /// You must set a sampling time with
     /// [`set_sample_times`](Adc::set_sample_times) greater than or equal to
     /// [`TS_MIN_SAMPLE`] before calling this method.
-    /// When in doubt use the maximum sampling time, [`SampleTime::Cyc160`].
+    /// When in doubt use the maximum sampling time, [`Ts::Cyc160`].
     ///
     /// # Calibration
     ///
@@ -861,7 +921,7 @@ impl Adc {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     adc::{self, Adc, SampleTime},
+    ///     adc::{self, Adc},
     ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
     ///     pac, rcc,
     /// };
@@ -879,7 +939,7 @@ impl Adc {
     /// adc.enable();
     /// adc.enable_tsen();
     /// delay.delay_us(adc::TS_START_MAX.as_micros() as u32);
-    /// adc.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+    /// adc.set_max_sample_time();
     ///
     /// let tj: i16 = adc.temperature().to_integer();
     /// ```
@@ -913,7 +973,7 @@ impl Adc {
     /// You must set a sampling time with
     /// [`set_sample_times`](Adc::set_sample_times) greater than or equal to
     /// [`TS_MIN_SAMPLE`] before calling this method.
-    /// When in doubt use the maximum sampling time, [`SampleTime::Cyc160`].
+    /// When in doubt use the maximum sampling time, [`Ts::Cyc160`].
     ///
     /// # Calibration
     ///
@@ -929,7 +989,7 @@ impl Adc {
     /// ```no_run
     /// # async fn doctest() {
     /// use stm32wl_hal::{
-    ///     adc::{self, Adc, SampleTime},
+    ///     adc::{self, Adc},
     ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
     ///     pac, rcc,
     /// };
@@ -947,7 +1007,7 @@ impl Adc {
     /// adc.aio_enable().await;
     /// adc.enable_tsen();
     /// delay.delay_us(adc::TS_START_MAX.as_micros() as u32);
-    /// adc.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+    /// adc.set_max_sample_time();
     ///
     /// let tj: i16 = adc.aio_temperature().await.to_integer();
     /// # }
@@ -1003,7 +1063,7 @@ impl Adc {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     adc::{self, Adc, SampleTime},
+    ///     adc::{self, Adc},
     ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
     ///     pac, rcc,
     /// };
@@ -1019,7 +1079,7 @@ impl Adc {
     ///
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// adc.calibrate(&mut delay);
-    /// adc.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+    /// adc.set_max_sample_time();
     /// adc.enable();
     /// adc.enable_vref();
     ///
@@ -1064,7 +1124,7 @@ impl Adc {
     ///
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// adc.aio_calibrate(&mut delay).await;
-    /// adc.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+    /// adc.set_max_sample_time();
     /// adc.aio_enable().await;
     /// adc.enable_vref();
     ///
@@ -1100,7 +1160,7 @@ impl Adc {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     adc::{self, Adc, SampleTime},
+    ///     adc::{self, Adc},
     ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
     ///     dac::{Dac, ModeChip},
     ///     pac, rcc,
@@ -1117,7 +1177,7 @@ impl Adc {
     ///
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// adc.calibrate(&mut delay);
-    /// adc.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+    /// adc.set_max_sample_time();
     ///
     /// let mut dac: Dac = Dac::new(dp.DAC, &mut dp.RCC);
     /// dac.set_mode_chip(ModeChip::Norm);
@@ -1144,7 +1204,7 @@ impl Adc {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     adc::{self, Adc, SampleTime},
+    ///     adc::{self, Adc},
     ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
     ///     gpio::{pins::B4, Analog, PortB},
     ///     pac, rcc,
@@ -1161,7 +1221,7 @@ impl Adc {
     ///
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// adc.calibrate(&mut delay);
-    /// adc.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+    /// adc.set_max_sample_time();
     /// adc.enable();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
@@ -1211,7 +1271,7 @@ impl Adc {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     self as hal,
-    ///     adc::{self, Adc, SampleTime},
+    ///     adc::{self, Adc},
     ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
     ///     dac::{Dac, ModeChip},
     ///     pac, rcc,
@@ -1231,7 +1291,7 @@ impl Adc {
     ///
     /// adc.enable();
     /// adc.enable_vbat();
-    /// adc.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+    /// adc.set_max_sample_time();
     /// let sample: u16 = adc.vbat();
     /// ```
     pub fn vbat(&mut self) -> u16 {

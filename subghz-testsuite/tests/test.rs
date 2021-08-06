@@ -18,8 +18,8 @@ use bsp::{
         rcc,
         rng::{self, Rng},
         subghz::{
-            AddrComp, CalibrateImage, CmdStatus, CodingRate, CrcType, FskBandwidth, FskBitrate,
-            FskFdev, FskModParams, FskPulseShape, GenericPacketParams, HeaderType, Irq,
+            AddrComp, CalibrateImage, CfgIrq, CmdStatus, CodingRate, CrcType, FskBandwidth,
+            FskBitrate, FskFdev, FskModParams, FskPulseShape, GenericPacketParams, HeaderType, Irq,
             LoRaBandwidth, LoRaModParams, LoRaPacketParams, LoRaSyncWord, Ocp, PaConfig, PaSel,
             PacketType, PreambleDetection, RampTime, RegMode, RfFreq, SpreadingFactor, StandbyClk,
             Status, StatusMode, SubGhz, TcxoMode, TcxoTrim, Timeout, TxParams,
@@ -134,8 +134,6 @@ async fn aio_wait_irq_inner() {
         .unwrap();
     sg.aio_set_rf_frequency(&RF_FREQ).await.unwrap();
 
-    use bsp::hal::subghz::CfgIrq;
-
     const IRQ_CFG: CfgIrq = CfgIrq::new()
         .irq_enable(Irq::RxDone)
         .irq_enable(Irq::Timeout);
@@ -213,6 +211,11 @@ fn ping_pong(sg: &mut SubGhz<DmaCh>, rng: &mut Rng, rfs: &mut RfSwitch, pkt: Pac
     sg.set_rf_frequency(&RF_FREQ).unwrap();
 
     sg.write_buffer(TX_BUF_OFFSET, PING_DATA_BYTES).unwrap();
+
+    const IRQ_CFG: CfgIrq = CfgIrq::new()
+        .irq_enable(Irq::RxDone)
+        .irq_enable(Irq::Timeout);
+    sg.set_irq_cfg(&IRQ_CFG).unwrap();
 
     const MAX_ATTEMPTS: u32 = 100;
     let mut attempt: u32 = 0;

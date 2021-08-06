@@ -280,6 +280,7 @@ impl<DMA> SubGhz<DMA> {
         self.debug_pins.is_some()
     }
 
+    #[cfg(feature = "aio")]
     fn setup_rfbusy_irq() {
         let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
         dp.EXTI.ftsr2.modify(|_, w| w.ft45().enabled());
@@ -485,8 +486,13 @@ impl SubGhz<DmaCh> {
         while !rfbusys() {}
         Nss::set();
 
+        #[cfg(feature = "aio")]
         Self::setup_rfbusy_irq();
-        unsafe { unmask_irq() };
+
+        #[cfg(feature = "aio")]
+        unsafe {
+            unmask_irq()
+        };
 
         SubGhz {
             spi,

@@ -72,9 +72,7 @@ pub use timeout::Timeout;
 pub use tx_params::{RampTime, TxParams};
 pub use value_error::ValueError;
 
-pub use num_rational;
-
-use num_rational::Ratio;
+use crate::Ratio;
 
 use embedded_hal::blocking::spi::{Transfer, Write};
 
@@ -2457,7 +2455,7 @@ where
     pub fn rssi_inst(&mut self) -> Result<(Status, Ratio<i16>), Error> {
         let data: [u8; 2] = self.read_n(OpCode::GetRssiInst)?;
         let status: Status = data[0].into();
-        let rssi: Ratio<i16> = Ratio::new(i16::from(data[1]), -2);
+        let rssi: Ratio<i16> = Ratio::new_raw(i16::from(data[1]), -2);
 
         Ok((status, rssi))
     }
@@ -2657,7 +2655,7 @@ impl SubGhz<DmaCh> {
     pub async fn aio_rssi_inst(&mut self) -> Result<(Status, Ratio<i16>), Error> {
         let data: [u8; 2] = self.aio_read_n(OpCode::GetRssiInst).await?;
         let status: Status = data[0].into();
-        let rssi: Ratio<i16> = Ratio::new(i16::from(data[1]), -2);
+        let rssi: Ratio<i16> = Ratio::new_raw(i16::from(data[1]), -2);
 
         Ok((status, rssi))
     }

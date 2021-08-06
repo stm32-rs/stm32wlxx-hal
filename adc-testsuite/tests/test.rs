@@ -90,6 +90,8 @@ mod tests {
         while dp.RCC.cr.read().hsirdy().is_not_ready() {}
         let adc: Adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
 
+        assert_eq!(adc.clock_hz(&dp.RCC), 16_000_000);
+
         TestArgs { adc, delay }
     }
 

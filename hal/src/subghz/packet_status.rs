@@ -1,4 +1,4 @@
-use num_rational::Ratio;
+use crate::Ratio;
 
 use crate::subghz::Status;
 
@@ -83,14 +83,14 @@ impl FskPacketStatus {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{num_rational::Ratio, FskPacketStatus};
+    /// use stm32wl_hal::{subghz::FskPacketStatus, Ratio};
     ///
     /// let example_data_from_radio: [u8; 4] = [0, 0, 80, 0];
     /// let pkt_status: FskPacketStatus = FskPacketStatus::from(example_data_from_radio);
     /// assert_eq!(pkt_status.rssi_sync().to_integer(), -40);
     /// ```
     pub fn rssi_sync(&self) -> Ratio<i16> {
-        Ratio::new(i16::from(self.buf[2]), -2)
+        Ratio::new_raw(i16::from(self.buf[2]), -2)
     }
 
     /// Return the RSSI level over the received packet.
@@ -100,14 +100,14 @@ impl FskPacketStatus {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{num_rational::Ratio, FskPacketStatus};
+    /// use stm32wl_hal::{subghz::FskPacketStatus, Ratio};
     ///
     /// let example_data_from_radio: [u8; 4] = [0, 0, 0, 100];
     /// let pkt_status: FskPacketStatus = FskPacketStatus::from(example_data_from_radio);
     /// assert_eq!(pkt_status.rssi_avg().to_integer(), -50);
     /// ```
     pub fn rssi_avg(&self) -> Ratio<i16> {
-        Ratio::new(i16::from(self.buf[3]), -2)
+        Ratio::new_raw(i16::from(self.buf[3]), -2)
     }
 }
 
@@ -152,14 +152,14 @@ impl LoRaPacketStatus {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{num_rational::Ratio, LoRaPacketStatus};
+    /// use stm32wl_hal::{subghz::LoRaPacketStatus, Ratio};
     ///
     /// let example_data_from_radio: [u8; 4] = [0, 80, 0, 0];
     /// let pkt_status: LoRaPacketStatus = LoRaPacketStatus::from(example_data_from_radio);
     /// assert_eq!(pkt_status.rssi_pkt().to_integer(), -40);
     /// ```
     pub fn rssi_pkt(&self) -> Ratio<i16> {
-        Ratio::new(i16::from(self.buf[1]), -2)
+        Ratio::new_raw(i16::from(self.buf[1]), -2)
     }
 
     /// Estimation of SNR over the received packet.
@@ -169,14 +169,14 @@ impl LoRaPacketStatus {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{num_rational::Ratio, LoRaPacketStatus};
+    /// use stm32wl_hal::{subghz::LoRaPacketStatus, Ratio};
     ///
     /// let example_data_from_radio: [u8; 4] = [0, 0, 40, 0];
     /// let pkt_status: LoRaPacketStatus = LoRaPacketStatus::from(example_data_from_radio);
     /// assert_eq!(pkt_status.snr_pkt().to_integer(), 10);
     /// ```
     pub fn snr_pkt(&self) -> Ratio<i16> {
-        Ratio::new(i16::from(self.buf[2]), 4)
+        Ratio::new_raw(i16::from(self.buf[2]), 4)
     }
 
     /// Estimation of RSSI level of the LoRa signal after despreading.
@@ -186,13 +186,13 @@ impl LoRaPacketStatus {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{num_rational::Ratio, LoRaPacketStatus};
+    /// use stm32wl_hal::{subghz::LoRaPacketStatus, Ratio};
     ///
     /// let example_data_from_radio: [u8; 4] = [0, 0, 0, 80];
     /// let pkt_status: LoRaPacketStatus = LoRaPacketStatus::from(example_data_from_radio);
     /// assert_eq!(pkt_status.signal_rssi_pkt().to_integer(), -40);
     /// ```
     pub fn signal_rssi_pkt(&self) -> Ratio<i16> {
-        Ratio::new(i16::from(self.buf[3]), -2)
+        Ratio::new_raw(i16::from(self.buf[3]), -2)
     }
 }

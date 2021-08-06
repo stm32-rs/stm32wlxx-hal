@@ -2,7 +2,7 @@
 #![cfg_attr(feature = "stm32wl5x_cm0p", allow(dead_code))]
 #![cfg_attr(feature = "stm32wl5x_cm0p", allow(unused_imports))]
 
-pub use num_rational::Ratio;
+use crate::Ratio;
 
 use crate::gpio;
 
@@ -162,17 +162,81 @@ impl Ts {
     /// assert_eq!(Ts::MIN, Ts::Cyc1);
     /// ```
     pub const MIN: Self = Self::Cyc1;
+
+    /// Number of cycles.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal::adc::Ts;
+    ///
+    /// assert!(f32::from(Ts::Cyc1.cycles()) - 1.5 < 0.001);
+    /// assert!(f32::from(Ts::Cyc3.cycles()) - 3.5 < 0.001);
+    /// assert!(f32::from(Ts::Cyc7.cycles()) - 7.5 < 0.001);
+    /// assert!(f32::from(Ts::Cyc12.cycles()) - 12.5 < 0.001);
+    /// assert!(f32::from(Ts::Cyc19.cycles()) - 19.5 < 0.001);
+    /// assert!(f32::from(Ts::Cyc39.cycles()) - 39.5 < 0.001);
+    /// assert!(f32::from(Ts::Cyc79.cycles()) - 79.5 < 0.001);
+    /// assert!(f32::from(Ts::Cyc160.cycles()) - 160.5 < 0.001);
+    /// ```
+    pub const fn cycles(&self) -> Ratio<u16> {
+        match self {
+            Ts::Cyc1 => Ratio::new_raw(3, 2),
+            Ts::Cyc3 => Ratio::new_raw(7, 2),
+            Ts::Cyc7 => Ratio::new_raw(15, 2),
+            Ts::Cyc12 => Ratio::new_raw(25, 2),
+            Ts::Cyc19 => Ratio::new_raw(39, 2),
+            Ts::Cyc39 => Ratio::new_raw(79, 2),
+            Ts::Cyc79 => Ratio::new_raw(159, 2),
+            Ts::Cyc160 => Ratio::new_raw(321, 2),
+        }
+    }
+
+    /// Get the cycles as a duration.
+    ///
+    /// Fractional nano-seconds are rounded towards zero.
+    ///
+    /// You can get the ADC frequency with [`Adc::clock_hz`].
+    ///
+    /// # Example
+    ///
+    /// Assuming the ADC clock frequency is 16 Mhz.
+    ///
+    /// ```
+    /// use core::time::Duration;
+    /// use stm32wl_hal::adc::Ts;
+    ///
+    /// const FREQ: u32 = 16_000_000;
+    ///
+    /// assert_eq!(Ts::Cyc1.as_duration(FREQ), Duration::from_nanos(93));
+    /// assert_eq!(Ts::Cyc3.as_duration(FREQ), Duration::from_nanos(218));
+    /// assert_eq!(Ts::Cyc7.as_duration(FREQ), Duration::from_nanos(468));
+    /// assert_eq!(Ts::Cyc12.as_duration(FREQ), Duration::from_nanos(781));
+    /// assert_eq!(Ts::Cyc19.as_duration(FREQ), Duration::from_nanos(1_218));
+    /// assert_eq!(Ts::Cyc39.as_duration(FREQ), Duration::from_nanos(2_468));
+    /// assert_eq!(Ts::Cyc79.as_duration(FREQ), Duration::from_nanos(4_968));
+    /// assert_eq!(Ts::Cyc160.as_duration(FREQ), Duration::from_nanos(10_031));
+    /// ```
+    ///
+    /// [`Adc::clock_hz`]: crate::adc::Adc::clock_hz
+    #[cfg(not(feature = "stm32wl5x_cm0p"))] // doc link
+    #[cfg_attr(docsrs, doc(cfg(not(feature = "stm32wl5x_cm0p"))))]
+    pub const fn as_duration(&self, hz: u32) -> Duration {
+        let numer: u64 = (*self.cycles().numer() as u64).saturating_mul(1_000_000_000);
+        let denom: u64 = (*self.cycles().denom() as u64).saturating_mul(hz as u64);
+        Duration::from_nanos(numer / denom)
+    }
 }
 
 impl From<Ts> for u8 {
-    fn from(st: Ts) -> Self {
-        st as u8
+    fn from(ts: Ts) -> Self {
+        ts as u8
     }
 }
 
 impl From<Ts> for u32 {
-    fn from(st: Ts) -> Self {
-        st as u32
+    fn from(ts: Ts) -> Self {
+        ts as u32
     }
 }
 
@@ -384,6 +448,79 @@ impl Adc {
     pub unsafe fn pulse_reset(rcc: &mut pac::RCC) {
         rcc.apb2rstr.modify(|_, w| w.adcrst().set_bit());
         rcc.apb2rstr.modify(|_, w| w.adcrst().clear_bit());
+    }
+
+    /// Calculate the ADC clock frequency in hertz.
+    ///
+    /// **Note:** If the ADC prescaler register erroneously returns a reserved
+    /// value the code will default to an ADC prescaler of 1.
+    ///
+    /// Fractional frequencies will be rounded towards zero.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let adc: pac::ADC = dp.ADC;
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let adc: Adc = Adc::new(adc, adc::Clk::RccHsi, &mut dp.RCC);
+    /// assert_eq!(adc.clock_hz(&dp.RCC), 16_000_000);
+    /// ```
+    pub fn clock_hz(&self, rcc: &pac::RCC) -> u32 {
+        use pac::{
+            adc::{ccr::PRESC_A, cfgr2::CKMODE_A},
+            rcc::ccipr::ADCSEL_A,
+        };
+
+        let source_freq: Ratio<u32> = match self.adc.cfgr2.read().ckmode().variant() {
+            CKMODE_A::ADCLK => {
+                let src: Ratio<u32> = match rcc.ccipr.read().adcsel().variant() {
+                    ADCSEL_A::NOCLOCK => Ratio::new_raw(0, 1),
+                    ADCSEL_A::HSI16 => Ratio::new_raw(16_000_000, 1),
+                    ADCSEL_A::PLLP => crate::rcc::pllpclk(rcc, &rcc.pllcfgr.read()),
+                    ADCSEL_A::SYSCLK => crate::rcc::sysclk(rcc, &rcc.cfgr.read()),
+                };
+
+                // only the asynchronous clocks have the prescaler applied
+                let ccr = self.adc.ccr.read();
+                let prescaler: u32 = match ccr.presc().variant() {
+                    Some(p) => match p {
+                        PRESC_A::DIV1 => 1,
+                        PRESC_A::DIV2 => 2,
+                        PRESC_A::DIV4 => 4,
+                        PRESC_A::DIV6 => 6,
+                        PRESC_A::DIV8 => 8,
+                        PRESC_A::DIV10 => 10,
+                        PRESC_A::DIV12 => 12,
+                        PRESC_A::DIV16 => 16,
+                        PRESC_A::DIV32 => 32,
+                        PRESC_A::DIV64 => 64,
+                        PRESC_A::DIV128 => 128,
+                        PRESC_A::DIV256 => 256,
+                    },
+                    None => {
+                        error!("Reserved ADC prescaler value {:#X}", ccr.presc().bits());
+                        1
+                    }
+                };
+
+                src / prescaler
+            }
+            CKMODE_A::PCLK_DIV2 => crate::rcc::pllpclk(rcc, &rcc.pllcfgr.read()) / 2,
+            CKMODE_A::PCLK_DIV4 => crate::rcc::pllpclk(rcc, &rcc.pllcfgr.read()) / 4,
+            CKMODE_A::PCLK => crate::rcc::pllpclk(rcc, &rcc.pllcfgr.read()),
+        };
+
+        source_freq.to_integer()
     }
 
     /// Unmask the ADC IRQ in the NVIC.
@@ -953,7 +1090,8 @@ impl Adc {
         self.adc.cr.write(|w| w.adstart().start_conversion());
 
         let (ts_cal1, ts_cal2): (u16, u16) = ts_cal();
-        let ret: Ratio<i16> = Ratio::new(TS_CAL_TEMP_DELTA, ts_cal2.wrapping_sub(ts_cal1) as i16);
+        let ret: Ratio<i16> =
+            Ratio::new_raw(TS_CAL_TEMP_DELTA, ts_cal2.wrapping_sub(ts_cal1) as i16);
 
         let calfact: u8 = self.adc.calfact.read().calfact().bits();
         let ts_data: u16 = self.data().saturating_add(u16::from(calfact));
@@ -1028,7 +1166,8 @@ impl Adc {
         self.adc.cr.write(|w| w.adstart().start_conversion());
 
         let (ts_cal1, ts_cal2): (u16, u16) = ts_cal();
-        let ret: Ratio<i16> = Ratio::new(TS_CAL_TEMP_DELTA, ts_cal2.wrapping_sub(ts_cal1) as i16);
+        let ret: Ratio<i16> =
+            Ratio::new_raw(TS_CAL_TEMP_DELTA, ts_cal2.wrapping_sub(ts_cal1) as i16);
 
         let calfact: u8 = self.adc.calfact.read().calfact().bits();
         let ts_data: u16 = self.aio_data().await.saturating_add(u16::from(calfact));

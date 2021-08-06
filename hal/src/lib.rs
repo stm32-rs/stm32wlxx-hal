@@ -27,6 +27,9 @@ cfg_if::cfg_if! {
 // This mod MUST go first, so that the others see its macros.
 pub(crate) mod fmt;
 
+mod ratio;
+pub use ratio::Ratio;
+
 pub mod adc;
 pub mod aes;
 pub mod dac;

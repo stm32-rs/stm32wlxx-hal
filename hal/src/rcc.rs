@@ -1,11 +1,11 @@
 //! Reset and clocking control
 
+use crate::Ratio;
 use core::{
     convert::{TryFrom, TryInto},
     sync::atomic::{compiler_fence, Ordering::SeqCst},
 };
 use cortex_m::peripheral::syst::SystClkSource;
-use num_rational::Ratio;
 
 use crate::pac;
 
@@ -323,7 +323,38 @@ pub fn set_sysclk_to_msi_48megahertz(
     })
 }
 
-fn sysclk(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R) -> Ratio<u32> {
+#[cfg_attr(feature = "stm32wl5x_cm0p", allow(dead_code))]
+fn pllclk(rcc: &pac::RCC, pllcfgr: &pac::rcc::pllcfgr::R) -> Ratio<u32> {
+    use pac::rcc::{
+        cr::HSEPRE_A::{DIV1, DIV2},
+        pllcfgr::PLLSRC_A as PLLSRC,
+    };
+
+    let src_freq: u32 = match pllcfgr.pllsrc().variant() {
+        PLLSRC::NOCLOCK => 0,
+        PLLSRC::MSI => MsiRange::from_rcc(rcc).as_hertz(),
+        PLLSRC::HSI16 => 16_000_000,
+        PLLSRC::HSE32 => match rcc.cr.read().hsepre().variant() {
+            DIV1 => 32_000_000,
+            DIV2 => 16_000_000,
+        },
+    };
+
+    let pll_m: u32 = pllcfgr.pllm().bits().wrapping_add(1).into();
+    let pll_n: u32 = pllcfgr.plln().bits().into();
+
+    Ratio::new_raw(pll_n * src_freq, pll_m)
+}
+
+#[cfg_attr(feature = "stm32wl5x_cm0p", allow(dead_code))]
+pub(crate) fn pllpclk(rcc: &pac::RCC, pllcfgr: &pac::rcc::pllcfgr::R) -> Ratio<u32> {
+    let src: Ratio<u32> = pllclk(rcc, pllcfgr);
+    let pll_p: u32 = pllcfgr.pllp().bits().wrapping_add(1).into();
+
+    src / pll_p
+}
+
+pub(crate) fn sysclk(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
     use pac::rcc::{
         cfgr::SWS_A::{HSE32, HSI16, MSI, PLLR},
         cr::HSEPRE_A::{DIV1, DIV2},
@@ -338,8 +369,8 @@ fn sysclk(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R) -> Ratio<u32> {
             DIV2 => Ratio::new_raw(16_000_000, 1),
         },
         PLLR => {
-            let pllcfg = rcc.pllcfgr.read();
-            let src_freq: u32 = match pllcfg.pllsrc().variant() {
+            let pllcfgr = rcc.pllcfgr.read();
+            let src_freq: u32 = match pllcfgr.pllsrc().variant() {
                 // cannot be executing this code if there is no clock
                 PLLSRC::NOCLOCK => unreachable!(),
                 PLLSRC::MSI => MsiRange::from_rcc(rcc).as_hertz(),
@@ -350,9 +381,9 @@ fn sysclk(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R) -> Ratio<u32> {
                 },
             };
 
-            let pll_m: u32 = pllcfg.pllm().bits().wrapping_add(1).into();
-            let pll_n: u32 = pllcfg.plln().bits().into();
-            let pll_r: u32 = pllcfg.pllr().bits().wrapping_add(1).into();
+            let pll_m: u32 = pllcfgr.pllm().bits().wrapping_add(1).into();
+            let pll_n: u32 = pllcfgr.plln().bits().into();
+            let pll_r: u32 = pllcfgr.pllr().bits().wrapping_add(1).into();
 
             // proof that this will not panic:
             //
@@ -363,7 +394,7 @@ fn sysclk(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R) -> Ratio<u32> {
             // max denom is 64 (less than u32::MAX)
             //
             // pll_m and pll_r are both min 1 (denom cannot be zero)
-            Ratio::new(pll_n * src_freq, pll_m * pll_r)
+            Ratio::new_raw(pll_n * src_freq, pll_m * pll_r)
         }
     }
 }
@@ -384,10 +415,10 @@ fn sysclk(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R) -> Ratio<u32> {
 /// ```
 pub fn sysclk_hz(rcc: &pac::RCC) -> u32 {
     let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
-    sysclk(rcc, cfgr).to_integer()
+    sysclk(rcc, &cfgr).to_integer()
 }
 
-fn hclk1(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R) -> Ratio<u32> {
+fn hclk1(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
     let div: u32 = pre_div(cfgr.hpre().bits()).into();
     sysclk(rcc, cfgr) / div
 }
@@ -408,11 +439,11 @@ fn hclk1(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R) -> Ratio<u32> {
 /// ```
 pub fn hclk1_hz(rcc: &pac::RCC) -> u32 {
     let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
-    hclk1(rcc, cfgr).to_integer()
+    hclk1(rcc, &cfgr).to_integer()
 }
 
 #[cfg(any(feature = "stm32wl5x_cm4", feature = "stm32wl5x_cm0p"))]
-fn hclk2(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R) -> Ratio<u32> {
+fn hclk2(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
     let div: u32 = pre_div(rcc.extcfgr.read().c2hpre().bits()).into();
     sysclk(rcc, cfgr) / div
 }
@@ -438,10 +469,10 @@ fn hclk2(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R) -> Ratio<u32> {
 )]
 pub fn hclk2_hz(rcc: &pac::RCC) -> u32 {
     let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
-    hclk2(rcc, cfgr).to_integer()
+    hclk2(rcc, &cfgr).to_integer()
 }
 
-fn hclk3(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R) -> Ratio<u32> {
+fn hclk3(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
     let div: u32 = pre_div(rcc.extcfgr.read().shdhpre().bits()).into();
     sysclk(rcc, cfgr) / div
 }
@@ -462,10 +493,10 @@ fn hclk3(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R) -> Ratio<u32> {
 /// ```
 pub fn hclk3_hz(rcc: &pac::RCC) -> u32 {
     let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
-    hclk3(rcc, cfgr).to_integer()
+    hclk3(rcc, &cfgr).to_integer()
 }
 
-fn cpu1_systick(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R, src: SystClkSource) -> Ratio<u32> {
+fn cpu1_systick(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R, src: SystClkSource) -> Ratio<u32> {
     let hclk1: Ratio<u32> = hclk1(rcc, cfgr);
     match src {
         SystClkSource::Core => hclk1,
@@ -499,12 +530,12 @@ fn cpu1_systick(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R, src: SystClkSource) -> 
 /// ```
 pub fn cpu1_systick_hz(rcc: &pac::RCC, src: SystClkSource) -> u32 {
     let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
-    cpu1_systick(rcc, cfgr, src).to_integer()
+    cpu1_systick(rcc, &cfgr, src).to_integer()
 }
 
 #[cfg(any(feature = "stm32wl5x_cm4", feature = "stm32wl5x_cm0p"))]
 fn cpu2_systick(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R, src: SystClkSource) -> Ratio<u32> {
-    let hclk2: Ratio<u32> = hclk2(rcc, cfgr);
+    let hclk2: Ratio<u32> = hclk2(rcc, &cfgr);
     match src {
         SystClkSource::Core => hclk2,
         SystClkSource::External => hclk2 / 8,
@@ -596,6 +627,7 @@ pub fn cpu_systick_hz(rcc: &pac::RCC, src: SystClkSource) -> u32 {
 pub fn lsi_hz() -> u16 {
     use pac::rcc::csr::LSIPRE_A::{DIV1, DIV128};
     const LSI_BASE_HZ: u16 = 32_000;
+    const LSI_DIV_HZ: u16 = 32_000 / 128;
 
     // safety: volatile read with no side effects to an always-on domain
     match unsafe { pac::Peripherals::steal() }
@@ -605,7 +637,7 @@ pub fn lsi_hz() -> u16 {
         .lsipre()
         .variant()
     {
-        DIV1 => LSI_BASE_HZ / 1,
-        DIV128 => LSI_BASE_HZ / 128,
+        DIV1 => LSI_BASE_HZ,
+        DIV128 => LSI_DIV_HZ,
     }
 }

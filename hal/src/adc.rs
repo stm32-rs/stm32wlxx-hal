@@ -42,7 +42,7 @@ pub const TS_MIN_SAMPLE: Duration = Duration::from_micros(5);
 ///
 /// Value from DS13293 Rev 1 page 121 table 83 "TS characteristics"
 pub const TS_START_TYP: Duration = Duration::from_micros(70);
-/// t<sub>START</sub> temperature sensor typical startup time when entering
+/// t<sub>START</sub> temperature sensor maximum startup time when entering
 /// continuous mode
 ///
 /// Value from DS13293 Rev 1 page 121 table 83 "TS characteristics"
@@ -180,62 +180,62 @@ impl From<Ts> for u32 {
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[repr(u8)]
 pub enum Ch {
-    /// ADC input 0
+    /// ADC input 0.
     ///
     /// Connected to [`B13`](crate::gpio::pins::B13).
     In0 = 0,
-    /// ADC input 1
+    /// ADC input 1.
     ///
     /// Connected to [`B14`](crate::gpio::pins::B14).
     In1 = 1,
-    /// ADC input 2
+    /// ADC input 2.
     ///
     /// Connected to [`B3`](crate::gpio::pins::B3).
     In2 = 2,
-    /// ADC input 3
+    /// ADC input 3.
     ///
     /// Connected to [`B4`](crate::gpio::pins::B4).
     In3 = 3,
-    /// ADC input 4
+    /// ADC input 4.
     ///
     /// Connected to [`B2`](crate::gpio::pins::B2).
     In4 = 4,
-    /// ADC input 5
+    /// ADC input 5.
     ///
     /// Connected to [`B1`](crate::gpio::pins::B1).
     In5 = 5,
-    /// ADC input 6
+    /// ADC input 6.
     ///
     /// Connected to [`A10`](crate::gpio::pins::A10).
     In6 = 6,
-    /// ADC input 7
+    /// ADC input 7.
     ///
     /// Connected to [`A11`](crate::gpio::pins::A11).
     In7 = 7,
-    /// ADC input 8
+    /// ADC input 8.
     ///
     /// Connected to [`A12`](crate::gpio::pins::A12).
     In8 = 8,
-    /// ADC input 9
+    /// ADC input 9.
     ///
     /// Connected to [`A13`](crate::gpio::pins::A13).
     In9 = 9,
-    /// ADC input 10
+    /// ADC input 10.
     ///
     /// Connected to [`A14`](crate::gpio::pins::A14).
     In10 = 10,
-    /// ADC input 11
+    /// ADC input 11.
     ///
     /// Connected to [`A15`](crate::gpio::pins::A15).
     In11 = 11,
-    /// Junction temperature sensor
+    /// Junction temperature sensor.
     Vts = 12,
-    /// Internal voltage reference
+    /// Internal voltage reference.
     Vref = 13,
-    /// Battery voltage divided by 3
+    /// Battery voltage divided by 3.
     Vbat = 14,
     // 15, 16 are reserved
-    /// Digital to analog coverter output
+    /// Digital to analog coverter output.
     ///
     /// The DAC outputs to this internal pin only when configured to output to
     /// chip peripherals.
@@ -258,7 +258,7 @@ impl Ch {
     }
 }
 
-/// Analog to digital converter driver
+/// Analog to digital converter driver.
 #[derive(Debug)]
 #[cfg(not(feature = "stm32wl5x_cm0p"))]
 #[cfg_attr(docsrs, doc(cfg(not(feature = "stm32wl5x_cm0p"))))]
@@ -478,7 +478,7 @@ impl Adc {
     /// Sets all channels to the maximum sample time.
     ///
     /// This is a helper for testing and rapid prototyping purpose because
-    /// [`set_sample_times`] is verbose.
+    /// [`set_sample_times`](Adc::set_sample_times) is verbose.
     ///
     /// This method is equivalent to this:
     ///

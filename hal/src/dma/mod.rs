@@ -152,11 +152,12 @@ impl DmaCh {
     /// ```
     pub fn flags(&self) -> u8 {
         let raw: u32 = unsafe { read_volatile(self.isr) };
-        ((raw >> (4 * self.ch)) & 0xF) as u8
+        ((raw >> self.ch.mul(4)) & 0xF) as u8
     }
 
     fn clear_flags(&mut self, flags: u8) {
-        unsafe { write_volatile(self.ifcr, (flags & 0xF) as u32) }
+        let val: u32 = u32::from(flags & 0xF) << self.ch.mul(4);
+        unsafe { write_volatile(self.ifcr, val) }
     }
 
     pub(crate) fn clear_all_flags(&mut self) {

@@ -33,7 +33,7 @@ const CYC_PER_US: u32 = FREQ / 1000 / 1000;
 const CYC_PER_MS: u32 = FREQ / 1000;
 const CYC_PER_SEC: u32 = FREQ;
 
-use core::time::Duration;
+use core::{ptr::write_volatile, time::Duration};
 
 const PING_DATA: &str = "PING";
 const PONG_DATA: &str = "PONG";
@@ -316,9 +316,6 @@ mod tests {
         let mut cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
         let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 
-        cp.DCB.enable_trace();
-        cp.DWT.enable_cycle_counter();
-
         rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC);
         assert_eq!(rcc::sysclk_hz(&dp.RCC), FREQ);
 
@@ -341,6 +338,12 @@ mod tests {
 
         let mut sg: SubGhz<DmaCh> = SubGhz::new_with_dma(dp.SPI3, dma.d1c1, dma.d2c1, &mut dp.RCC);
         sg.enable_spi_debug(gpioa.pa4, gpioa.pa5, gpioa.pa6, gpioa.pa7);
+
+        cp.DCB.enable_trace();
+        cp.DWT.enable_cycle_counter();
+        // reset the cycle counter
+        const DWT_CYCCNT: usize = 0xE0001004;
+        unsafe { write_volatile(DWT_CYCCNT as *mut u32, 0) };
 
         TestArgs { sg, rng, rfs }
     }

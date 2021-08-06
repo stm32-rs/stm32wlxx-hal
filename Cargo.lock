@@ -378,16 +378,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "num-integer"
-version = "0.1.44"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2cc698a63b549a70bc047073d2949cce27cd1c7b0a4a862d08a8031bc2801db"
-dependencies = [
- "autocfg",
- "num-traits",
-]
-
-[[package]]
 name = "num-traits"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -554,7 +544,7 @@ dependencies = [
  "embedded-hal",
  "futures",
  "futures-util",
- "num-integer",
+ "num-traits",
  "rand_core",
  "stm32wl",
 ]

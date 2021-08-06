@@ -1,8 +1,5 @@
-use core::{
-    cmp::Ordering,
-    ops::{Add, Div, Mul},
-};
-use num_integer::Integer;
+use core::ops::{Add, Div, Mul};
+use num_traits::{CheckedAdd, CheckedDiv, CheckedMul};
 
 /// Represents the ratio between two numbers.
 #[derive(Copy, Clone, Debug)]
@@ -34,57 +31,40 @@ impl<T> Ratio<T> {
     }
 }
 
-impl<T: Copy + Integer> Ratio<T> {
+impl<T: CheckedDiv> Ratio<T> {
     /// Converts to an integer, rounding towards zero.
     #[inline(always)]
     pub fn to_integer(&self) -> T {
-        self.numer / self.denom
-    }
-
-    /// Returns the reciprocal.
-    ///
-    /// **Panics if the `Ratio` is zero.**
-    #[inline]
-    pub fn recip(&self) -> Ratio<T> {
-        self.clone().into_recip()
-    }
-
-    #[inline]
-    fn into_recip(self) -> Ratio<T> {
-        match self.numer.cmp(&T::zero()) {
-            Ordering::Equal => panic!("division by zero"),
-            Ordering::Greater => Ratio::new_raw(self.denom, self.numer),
-            Ordering::Less => Ratio::new_raw(T::zero() - self.denom, T::zero() - self.numer),
-        }
+        unwrap!(self.numer().checked_div(self.denom()))
     }
 }
 
-impl<T: Integer + Copy> Div<T> for Ratio<T> {
+impl<T: CheckedMul> Div<T> for Ratio<T> {
     type Output = Self;
 
     #[inline(always)]
     fn div(mut self, rhs: T) -> Self::Output {
-        self.denom = self.denom * rhs;
+        self.denom = unwrap!(self.denom().checked_mul(&rhs));
         self
     }
 }
 
-impl<T: Integer + Copy> Mul<T> for Ratio<T> {
+impl<T: CheckedMul> Mul<T> for Ratio<T> {
     type Output = Self;
 
     #[inline(always)]
     fn mul(mut self, rhs: T) -> Self::Output {
-        self.numer = self.numer * rhs;
+        self.numer = unwrap!(self.numer().checked_mul(&rhs));
         self
     }
 }
 
-impl<T: Integer + Copy> Add<T> for Ratio<T> {
+impl<T: CheckedMul + CheckedAdd> Add<T> for Ratio<T> {
     type Output = Self;
 
     #[inline(always)]
     fn add(mut self, rhs: T) -> Self::Output {
-        self.numer = rhs * self.denom + self.numer;
+        self.numer = unwrap!(unwrap!(self.denom().checked_mul(&rhs)).checked_add(self.numer()));
         self
     }
 }

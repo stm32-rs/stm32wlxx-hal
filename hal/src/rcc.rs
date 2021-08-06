@@ -323,6 +323,7 @@ pub fn set_sysclk_to_msi_48megahertz(
     })
 }
 
+#[cfg_attr(feature = "stm32wl5x_cm0p", allow(dead_code))]
 fn pllclk(rcc: &pac::RCC, pllcfgr: &pac::rcc::pllcfgr::R) -> Ratio<u32> {
     use pac::rcc::{
         cr::HSEPRE_A::{DIV1, DIV2},
@@ -345,6 +346,7 @@ fn pllclk(rcc: &pac::RCC, pllcfgr: &pac::rcc::pllcfgr::R) -> Ratio<u32> {
     Ratio::new_raw(pll_n * src_freq, pll_m)
 }
 
+#[cfg_attr(feature = "stm32wl5x_cm0p", allow(dead_code))]
 pub(crate) fn pllpclk(rcc: &pac::RCC, pllcfgr: &pac::rcc::pllcfgr::R) -> Ratio<u32> {
     let src: Ratio<u32> = pllclk(rcc, pllcfgr);
     let pll_p: u32 = pllcfgr.pllp().bits().wrapping_add(1).into();
@@ -625,6 +627,7 @@ pub fn cpu_systick_hz(rcc: &pac::RCC, src: SystClkSource) -> u32 {
 pub fn lsi_hz() -> u16 {
     use pac::rcc::csr::LSIPRE_A::{DIV1, DIV128};
     const LSI_BASE_HZ: u16 = 32_000;
+    const LSI_DIV_HZ: u16 = 32_000 / 128;
 
     // safety: volatile read with no side effects to an always-on domain
     match unsafe { pac::Peripherals::steal() }
@@ -634,7 +637,7 @@ pub fn lsi_hz() -> u16 {
         .lsipre()
         .variant()
     {
-        DIV1 => LSI_BASE_HZ / 1,
-        DIV128 => LSI_BASE_HZ / 128,
+        DIV1 => LSI_BASE_HZ,
+        DIV128 => LSI_DIV_HZ,
     }
 }

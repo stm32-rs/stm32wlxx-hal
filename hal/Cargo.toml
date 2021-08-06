@@ -32,8 +32,8 @@ rand_core = "0.6"
 cortex-m = "0.7"
 embedded-hal = "0.2"
 
-[dependencies.num-integer]
-version = "0.1"
+[dependencies.num-traits]
+version = "0.2"
 default-features = false
 
 [dependencies.stm32wl]

@@ -194,6 +194,8 @@ impl Ts {
 
     /// Get the cycles as a duration.
     ///
+    /// Fractional nano-seconds are rounded towards zero.
+    ///
     /// You can get the ADC frequency with [`Adc::clock_hz`].
     ///
     /// # Example
@@ -215,6 +217,8 @@ impl Ts {
     /// assert_eq!(Ts::Cyc79.as_duration(FREQ), Duration::from_nanos(4_968));
     /// assert_eq!(Ts::Cyc160.as_duration(FREQ), Duration::from_nanos(10_031));
     /// ```
+    ///
+    /// [`Adc::clock_hz`]: crate::adc::Adc::clock_hz
     pub const fn as_duration(&self, hz: u32) -> Duration {
         let numer: u64 = (*self.cycles().numer() as u64).saturating_mul(1_000_000_000);
         let denom: u64 = (*self.cycles().denom() as u64).saturating_mul(hz as u64);
@@ -449,7 +453,7 @@ impl Adc {
     /// **Note:** If the ADC prescaler register erroneously returns a reserved
     /// value the code will default to an ADC prescaler of 1.
     ///
-    /// Fractional frequencies will be rounded down.
+    /// Fractional frequencies will be rounded towards zero.
     ///
     /// # Example
     ///

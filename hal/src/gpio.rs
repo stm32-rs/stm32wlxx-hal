@@ -542,42 +542,34 @@ pub mod pins {
         }
     }
 
-    impl super::sealed::AdcCh for A10 {
-        const ADC_CH: adc::Ch = adc::Ch::In6;
+    // keep the trait separate from the pin so that users cant use the ADC_CH
+    // but are unable to implement the sealed trait themselves
+    macro_rules! impl_adc_ch {
+        ($pin:ident, $ch:expr) => {
+            impl $pin {
+                /// Analog to digital converter channel when this pin is
+                /// configured as [`Analog`](crate::gpio::Analog).
+                pub const ADC_CH: adc::Ch = $ch;
+            }
+
+            impl super::sealed::AdcCh for $pin {
+                const ADC_CH: adc::Ch = Self::ADC_CH;
+            }
+        };
     }
-    impl super::sealed::AdcCh for A11 {
-        const ADC_CH: adc::Ch = adc::Ch::In7;
-    }
-    impl super::sealed::AdcCh for A12 {
-        const ADC_CH: adc::Ch = adc::Ch::In8;
-    }
-    impl super::sealed::AdcCh for A13 {
-        const ADC_CH: adc::Ch = adc::Ch::In9;
-    }
-    impl super::sealed::AdcCh for A14 {
-        const ADC_CH: adc::Ch = adc::Ch::In10;
-    }
-    impl super::sealed::AdcCh for A15 {
-        const ADC_CH: adc::Ch = adc::Ch::In11;
-    }
-    impl super::sealed::AdcCh for B1 {
-        const ADC_CH: adc::Ch = adc::Ch::In5;
-    }
-    impl super::sealed::AdcCh for B2 {
-        const ADC_CH: adc::Ch = adc::Ch::In4;
-    }
-    impl super::sealed::AdcCh for B3 {
-        const ADC_CH: adc::Ch = adc::Ch::In2;
-    }
-    impl super::sealed::AdcCh for B4 {
-        const ADC_CH: adc::Ch = adc::Ch::In3;
-    }
-    impl super::sealed::AdcCh for B13 {
-        const ADC_CH: adc::Ch = adc::Ch::In0;
-    }
-    impl super::sealed::AdcCh for B14 {
-        const ADC_CH: adc::Ch = adc::Ch::In1;
-    }
+
+    impl_adc_ch!(A10, adc::Ch::In6);
+    impl_adc_ch!(A11, adc::Ch::In7);
+    impl_adc_ch!(A12, adc::Ch::In8);
+    impl_adc_ch!(A13, adc::Ch::In9);
+    impl_adc_ch!(A14, adc::Ch::In10);
+    impl_adc_ch!(A15, adc::Ch::In11);
+    impl_adc_ch!(B1, adc::Ch::In5);
+    impl_adc_ch!(B2, adc::Ch::In4);
+    impl_adc_ch!(B3, adc::Ch::In2);
+    impl_adc_ch!(B4, adc::Ch::In3);
+    impl_adc_ch!(B13, adc::Ch::In0);
+    impl_adc_ch!(B14, adc::Ch::In1);
 }
 
 /// Port A GPIOs
@@ -1338,6 +1330,9 @@ impl<P> Analog<P>
 where
     P: sealed::PinOps + sealed::AdcCh,
 {
+    /// Analog to digital converter channel.
+    pub const ADC_CH: adc::Ch = P::ADC_CH;
+
     /// Create a new analog pin from a GPIO.
     ///
     /// # Example

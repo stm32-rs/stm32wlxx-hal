@@ -33,20 +33,27 @@ const TS_CAL1_TEMP: i16 = 30;
 const TS_CAL2_TEMP: i16 = 130;
 const TS_CAL_TEMP_DELTA: i16 = TS_CAL2_TEMP - TS_CAL1_TEMP;
 
-// temperature sensor min sampling time
-#[allow(dead_code)]
-const TS_TEMP: Duration = Duration::from_micros(5);
-
-// typical startup time when entering continuous mode
-#[allow(dead_code)]
-const T_START_TYP: Duration = Duration::from_micros(70);
-const T_START_MAX: Duration = Duration::from_micros(120);
-const T_START_MAX_MICROS: u8 = T_START_MAX.as_micros() as u8;
+/// t<sub>S_temp</sub> temperature sensor minimum sampling time
+///
+/// Value from DS13293 Rev 1 page 121 table 83 "TS characteristics"
+pub const TS_MIN_SAMPLE: Duration = Duration::from_micros(5);
+/// t<sub>START</sub> temperature sensor typical startup time when entering
+/// continuous mode
+///
+/// Value from DS13293 Rev 1 page 121 table 83 "TS characteristics"
+pub const TS_START_TYP: Duration = Duration::from_micros(70);
+/// t<sub>START</sub> temperature sensor typical startup time when entering
+/// continuous mode
+///
+/// Value from DS13293 Rev 1 page 121 table 83 "TS characteristics"
+pub const TS_START_MAX: Duration = Duration::from_micros(120);
 
 const T_ADCVREG_SETUP: Duration = Duration::from_micros(20);
 const T_ADCVREG_SETUP_MICROS: u8 = T_ADCVREG_SETUP.as_micros() as u8;
 
 /// Mask of all valid channels
+///
+/// Channels 0-17, but without 15 and 16 because they are reserved.
 const CH_MASK: u32 = 0x13FFF;
 
 /// Internal voltage reference ADC calibration
@@ -149,28 +156,52 @@ impl From<SampleTime> for u32 {
 #[repr(u8)]
 pub enum Ch {
     /// ADC input 0
+    ///
+    /// Connected to [`B13`](crate::gpio::pins::B13).
     In0 = 0,
     /// ADC input 1
+    ///
+    /// Connected to [`B14`](crate::gpio::pins::B14).
     In1 = 1,
     /// ADC input 2
+    ///
+    /// Connected to [`B3`](crate::gpio::pins::B3).
     In2 = 2,
     /// ADC input 3
+    ///
+    /// Connected to [`B4`](crate::gpio::pins::B4).
     In3 = 3,
     /// ADC input 4
+    ///
+    /// Connected to [`B2`](crate::gpio::pins::B2).
     In4 = 4,
     /// ADC input 5
+    ///
+    /// Connected to [`B1`](crate::gpio::pins::B1).
     In5 = 5,
     /// ADC input 6
+    ///
+    /// Connected to [`A10`](crate::gpio::pins::A10).
     In6 = 6,
     /// ADC input 7
+    ///
+    /// Connected to [`A11`](crate::gpio::pins::A11).
     In7 = 7,
     /// ADC input 8
+    ///
+    /// Connected to [`A12`](crate::gpio::pins::A12).
     In8 = 8,
     /// ADC input 9
+    ///
+    /// Connected to [`A13`](crate::gpio::pins::A13).
     In9 = 9,
     /// ADC input 10
+    ///
+    /// Connected to [`A14`](crate::gpio::pins::A14).
     In10 = 10,
     /// ADC input 11
+    ///
+    /// Connected to [`A15`](crate::gpio::pins::A15).
     In11 = 11,
     /// Junction temperature sensor
     Vts = 12,
@@ -180,6 +211,9 @@ pub enum Ch {
     Vbat = 14,
     // 15, 16 are reserved
     /// Digital to analog coverter output
+    ///
+    /// The DAC outputs to this internal pin only when configured to output to
+    /// chip peripherals.
     Dac = 17,
 }
 
@@ -347,21 +381,72 @@ impl Adc {
 
     /// Mask the ADC IRQ in the NVIC.
     ///
+    /// # Safety
+    ///
+    /// 1. This can break `async` code that relies upon this interrupt.
+    ////   After masking the IRQ ensure you unmask it with
+    ///    [`unmask_irq`](Adc::unmask_irq) before using any `async` functions.
+    ///
     /// # Example
     ///
     /// ```no_run
     /// # #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
-    /// stm32wl_hal::adc::Adc::mask_irq()
+    /// unsafe { stm32wl_hal::adc::Adc::mask_irq() }
     /// ```
     #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
     #[cfg_attr(docsrs, doc(cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))))]
-    pub fn mask_irq() {
+    pub unsafe fn mask_irq() {
         pac::NVIC::mask(pac::Interrupt::ADC)
     }
 
-    fn set_sample_times(&mut self, mask: u32, sel1: SampleTime, sel2: SampleTime) {
+    /// Set sample times for **all** channels.
+    ///
+    /// For each bit in the mask:
+    ///
+    /// * `0`: Sample time is set by the `sel0` argument.
+    /// * `1`: Sample time is set by the `sel1` argument.
+    ///
+    /// # Panics
+    ///
+    /// * (debug) An ADC conversion is in-progress
+    ///
+    /// # Example
+    ///
+    /// Set ADC channels [`In0`] and [`In1`] (pins [`B13`] and [`B14`]
+    /// respectively) and the internal V<sub>BAT</sub> to a sample time of
+    /// 39.5 ADC clock cycles, and set all other channels to a sample time of
+    /// 160.5 clock cycles.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     self as hal,
+    ///     adc::{self, Adc, SampleTime},
+    ///     gpio::pins::{B13, B14},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// adc.set_sample_times(
+    ///     B14::ADC_CH.mask() | B13::ADC_CH.mask() | adc::Ch::Vbat.mask(),
+    ///     SampleTime::Cyc160,
+    ///     SampleTime::Cyc39,
+    /// );
+    /// ```
+    ///
+    /// [`In0`]: crate::adc::Ch::In0
+    /// [`In1`]: crate::adc::Ch::In1
+    /// [`B13`]: crate::gpio::pins::B13
+    /// [`B14`]: crate::gpio::pins::B14
+    pub fn set_sample_times(&mut self, mask: u32, sel0: SampleTime, sel1: SampleTime) {
+        debug_assert!(self.adc.cr.read().adstart().is_not_active());
         self.adc.smpr.write(|w| unsafe {
-            w.bits((mask & CH_MASK) << 8 | u32::from(sel2) << 4 | u32::from(sel1))
+            w.bits((mask & CH_MASK) << 8 | u32::from(sel1) << 4 | u32::from(sel0))
         })
     }
 
@@ -384,6 +469,7 @@ impl Adc {
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// assert_eq!(adc.is_enabled(), false);
     /// ```
+    #[must_use = "no reason to call this function if you are not using the result"]
     pub fn is_enabled(&self) -> bool {
         self.adc.cr.read().aden().bit_is_set()
     }
@@ -407,6 +493,7 @@ impl Adc {
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// assert_eq!(adc.is_disabled(), true);
     /// ```
+    #[must_use = "no reason to call this function if you are not using the result"]
     pub fn is_disabled(&self) -> bool {
         let cr = self.adc.cr.read();
         cr.aden().bit_is_clear() && cr.addis().bit_is_clear()
@@ -703,18 +790,11 @@ impl Adc {
         futures::future::poll_fn(aio::poll).await;
     }
 
-    /// Get the junction jemperature
+    /// Enable the temperature sensor.
     ///
-    /// This will enable the ADC if not already enabled.
-    ///
-    /// # Calibration
-    ///
-    /// The temperature calibration provided on-chip appears to be for an
-    /// uncalibrated ADC, though I can find no mention of this in the
-    /// datasheet.
-    ///
-    /// If the ADC has been calibrated with [`calibrate`] the calibration offset
-    /// will be removed from the sample.
+    /// You **MUST** wait for the temperature sensor to start up
+    /// ([`TS_START_TYP`] or [`TS_START_MAX`])
+    /// before the samples will be accurate.
     ///
     /// # Example
     ///
@@ -735,45 +815,105 @@ impl Adc {
     /// let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
     ///
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
-    /// let tj: i16 = adc.temperature(&mut delay).to_integer();
+    /// adc.enable_tsen();
+    /// // wait for the temperature sensor to startup
+    /// delay.delay_us(adc::TS_START_MAX.as_micros() as u32);
+    /// ```
+    pub fn enable_tsen(&mut self) {
+        self.adc.ccr.modify(|_, w| w.tsen().enabled())
+    }
+
+    /// Disable the temperature sensor.
+    pub fn disable_tsen(&mut self) {
+        self.adc.ccr.modify(|_, w| w.tsen().disabled())
+    }
+
+    /// Returns `true` if the temperature sensor is enabled.
+    #[must_use = "no reason to call this function if you are not using the result"]
+    pub fn is_tsen_enabled(&mut self) -> bool {
+        self.adc.ccr.read().tsen().is_enabled()
+    }
+
+    /// Get the junction jemperature.
+    ///
+    /// # Panics
+    ///
+    /// * (debug) ADC is not enabled
+    /// * (debug) Temperature sensor is not enabled
+    ///
+    /// # Sample Time
+    ///
+    /// You must set a sampling time with
+    /// [`set_sample_times`](Adc::set_sample_times) greater than or equal to
+    /// [`TS_MIN_SAMPLE`] before calling this method.
+    /// When in doubt use the maximum sampling time, [`SampleTime::Cyc160`].
+    ///
+    /// # Calibration
+    ///
+    /// The temperature calibration provided on-chip appears to be for an
+    /// uncalibrated ADC, though I can find no mention of this in the
+    /// datasheet.
+    ///
+    /// If the ADC has been calibrated with [`calibrate`] the calibration offset
+    /// will be removed from the sample.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc, SampleTime},
+    ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
+    ///     pac, rcc,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
+    ///
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// adc.enable();
+    /// adc.enable_tsen();
+    /// delay.delay_us(adc::TS_START_MAX.as_micros() as u32);
+    /// adc.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+    ///
+    /// let tj: i16 = adc.temperature().to_integer();
     /// ```
     ///
     /// [`calibrate`]: crate::adc::Adc::calibrate
-    pub fn temperature<D: DelayUs<u8>>(&mut self, delay: &mut D) -> Ratio<i16> {
-        self.enable();
+    pub fn temperature(&mut self) -> Ratio<i16> {
+        debug_assert!(self.is_enabled());
+        debug_assert!(self.is_tsen_enabled());
 
-        // 1. Select the ADC VIN[12] input channel
         self.cfg_ch_seq(Ch::Vts.mask());
-
-        // 2. Select an appropriate sampling time specified in the device
-        //    datasheet (TS_temp).
-        // TODO: replace with calculation of sample times from ADC clock
-        self.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
-
-        // 3. Set the TSEN bit in the ADC_CCR register to wake up the
-        //    temperature sensor from power down mode
-        //    and wait for its stabilization time (tSTART).
-        self.adc.ccr.modify(|_, w| w.tsen().enabled());
-        delay.delay_us(T_START_MAX_MICROS);
-
-        // 4. Start the ADC conversion by setting the ADSTART bit in the ADC_CR
-        //    register (or by external trigger)
-        self.adc.cr.write(|w| w.adstart().set_bit());
+        self.adc.cr.write(|w| w.adstart().start_conversion());
 
         let (ts_cal1, ts_cal2): (u16, u16) = ts_cal();
         let ret: Ratio<i16> = Ratio::new(TS_CAL_TEMP_DELTA, ts_cal2.wrapping_sub(ts_cal1) as i16);
 
-        // 5. Read the resulting VTS data in the ADC_DR register
         let calfact: u8 = self.adc.calfact.read().calfact().bits();
         let ts_data: u16 = self.data().saturating_add(u16::from(calfact));
-        self.adc.ccr.modify(|_, w| w.tsen().disabled());
-        // 6. Calculate the temperature
+
         ret * (ts_data.wrapping_sub(ts_cal1) as i16) + TS_CAL1_TEMP
     }
 
     /// Get the junction jemperature.
     ///
-    /// This will enable the ADC if not already enabled.
+    /// # Panics
+    ///
+    /// * (debug) ADC is not enabled
+    /// * (debug) Temperature sensor is not enabled
+    ///
+    /// # Sample Time
+    ///
+    /// You must set a sampling time with
+    /// [`set_sample_times`](Adc::set_sample_times) greater than or equal to
+    /// [`TS_MIN_SAMPLE`] before calling this method.
+    /// When in doubt use the maximum sampling time, [`SampleTime::Cyc160`].
     ///
     /// # Calibration
     ///
@@ -789,7 +929,7 @@ impl Adc {
     /// ```no_run
     /// # async fn doctest() {
     /// use stm32wl_hal::{
-    ///     adc::{self, Adc},
+    ///     adc::{self, Adc, SampleTime},
     ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
     ///     pac, rcc,
     /// };
@@ -804,7 +944,12 @@ impl Adc {
     /// let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
     ///
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
-    /// let tj: i16 = adc.aio_temperature(&mut delay).await.to_integer();
+    /// adc.aio_enable().await;
+    /// adc.enable_tsen();
+    /// delay.delay_us(adc::TS_START_MAX.as_micros() as u32);
+    /// adc.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+    ///
+    /// let tj: i16 = adc.aio_temperature().await.to_integer();
     /// # }
     /// ```
     ///
@@ -815,48 +960,50 @@ impl Adc {
         docsrs,
         doc(cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p"))))
     )]
-    pub async fn aio_temperature<D: DelayUs<u8>>(&mut self, delay: &mut D) -> Ratio<i16> {
-        self.aio_enable().await;
+    pub async fn aio_temperature(&mut self) -> Ratio<i16> {
+        debug_assert!(self.is_enabled());
+        debug_assert!(self.is_tsen_enabled());
 
-        // 1. Select the ADC VIN[12] input channel
         self.aio_cfg_ch_seq(Ch::Vts.mask()).await;
-
-        // 2. Select an appropriate sampling time specified in the device
-        //    datasheet (TS_temp).
-        // TODO: replace with calculation of sample times from ADC clock
-        self.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
-
-        // 3. Set the TSEN bit in the ADC_CCR register to wake up the
-        //    temperature sensor from power down mode
-        //    and wait for its stabilization time (tSTART).
-        self.adc.ccr.modify(|_, w| w.tsen().enabled());
-        // TODO: replace with async delay
-        delay.delay_us(T_START_MAX_MICROS);
-
-        // 4. Start the ADC conversion by setting the ADSTART bit in the ADC_CR
-        //    register (or by external trigger)
-        self.adc.cr.write(|w| w.adstart().set_bit());
+        self.adc.cr.write(|w| w.adstart().start_conversion());
 
         let (ts_cal1, ts_cal2): (u16, u16) = ts_cal();
         let ret: Ratio<i16> = Ratio::new(TS_CAL_TEMP_DELTA, ts_cal2.wrapping_sub(ts_cal1) as i16);
 
-        // 5. Read the resulting VTS data in the ADC_DR register
         let calfact: u8 = self.adc.calfact.read().calfact().bits();
         let ts_data: u16 = self.aio_data().await.saturating_add(u16::from(calfact));
-        self.adc.ccr.modify(|_, w| w.tsen().disabled());
-        // 6. Calculate the temperature
+
         ret * (ts_data.wrapping_sub(ts_cal1) as i16) + TS_CAL1_TEMP
+    }
+
+    /// Enable the internal voltage reference.
+    pub fn enable_vref(&mut self) {
+        self.adc.ccr.modify(|_, w| w.vrefen().enabled())
+    }
+
+    /// Disable the internal voltage reference.
+    pub fn disable_vref(&mut self) {
+        self.adc.ccr.modify(|_, w| w.vrefen().disabled())
+    }
+
+    /// Returns `true` if the internal voltage reference is enabled.
+    #[must_use = "no reason to call this function if you are not using the result"]
+    pub fn is_vref_enabled(&mut self) -> bool {
+        self.adc.ccr.read().vrefen().is_enabled()
     }
 
     /// Read the internal voltage reference.
     ///
-    /// This will enable the ADC if not already enabled.
+    /// # Panics
+    ///
+    /// * (debug) ADC is not enabled
+    /// * (debug) Voltage reference is not enabled
     ///
     /// # Example
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     adc::{self, Adc},
+    ///     adc::{self, Adc, SampleTime},
     ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
     ///     pac, rcc,
     /// };
@@ -872,25 +1019,29 @@ impl Adc {
     ///
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// adc.calibrate(&mut delay);
+    /// adc.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+    /// adc.enable();
+    /// adc.enable_vref();
+    ///
     /// let vref: u16 = adc.vref();
     /// let vref_cal: u16 = adc::vref_cal();
     /// let error: i16 = ((vref as i16) - (vref_cal as i16)).abs();
     /// assert!(error < 10);
     /// ```
     pub fn vref(&mut self) -> u16 {
-        self.enable();
+        debug_assert!(self.is_enabled());
+        debug_assert!(self.is_vref_enabled());
         self.cfg_ch_seq(Ch::Vref.mask());
-        self.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
-        self.adc.ccr.modify(|_, w| w.vrefen().enabled());
-        self.adc.cr.write(|w| w.adstart().set_bit());
-        let data: u16 = self.data();
-        self.adc.ccr.modify(|_, w| w.vrefen().disabled());
-        data
+        self.adc.cr.write(|w| w.adstart().start_conversion());
+        self.data()
     }
 
     /// Read the internal voltage reference.
     ///
-    /// This will enable the ADC if not already enabled.
+    /// # Panics
+    ///
+    /// * (debug) ADC is not enabled
+    /// * (debug) Voltage reference is not enabled
     ///
     /// # Example
     ///
@@ -913,6 +1064,10 @@ impl Adc {
     ///
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// adc.aio_calibrate(&mut delay).await;
+    /// adc.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+    /// adc.aio_enable().await;
+    /// adc.enable_vref();
+    ///
     /// let vref: u16 = adc.aio_vref().await;
     /// let vref_cal: u16 = adc::vref_cal();
     /// let error: i16 = ((vref as i16) - (vref_cal as i16)).abs();
@@ -925,28 +1080,138 @@ impl Adc {
         doc(cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p"))))
     )]
     pub async fn aio_vref(&mut self) -> u16 {
-        self.aio_enable().await;
+        debug_assert!(self.is_enabled());
+        debug_assert!(self.is_vref_enabled());
         self.aio_cfg_ch_seq(Ch::Vref.mask()).await;
-        self.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
-        self.adc.ccr.modify(|_, w| w.vrefen().enabled());
-        self.adc.cr.write(|w| w.adstart().set_bit());
-        let data: u16 = self.aio_data().await;
-        self.adc.ccr.modify(|_, w| w.vrefen().disabled());
-        data
+        self.adc.cr.write(|w| w.adstart().start_conversion());
+        self.aio_data().await
     }
 
     /// Sample the DAC output.
     ///
-    /// This will enable the ADC if not already enabled.
-    ///
     /// The DAC must be configured to output to chip peripherals for this to
     /// work as expected.
+    ///
+    /// # Panics
+    ///
+    /// * (debug) ADC is not enabled
     ///
     /// # Example
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     adc::{self, Adc},
+    ///     adc::{self, Adc, SampleTime},
+    ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
+    ///     dac::{Dac, ModeChip},
+    ///     pac, rcc,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
+    ///
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// adc.calibrate(&mut delay);
+    /// adc.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+    ///
+    /// let mut dac: Dac = Dac::new(dp.DAC, &mut dp.RCC);
+    /// dac.set_mode_chip(ModeChip::Norm);
+    ///
+    /// dac.setup_soft_trigger();
+    /// dac.soft_trigger(1234);
+    /// // should be in the same ballpark as the DAC output
+    /// let sample: u16 = adc.dac();
+    /// ```
+    pub fn dac(&mut self) -> u16 {
+        debug_assert!(self.is_enabled());
+        self.cfg_ch_seq(Ch::Dac.mask());
+        self.adc.cr.write(|w| w.adstart().set_bit());
+        self.data()
+    }
+
+    /// Sample a GPIO pin.
+    ///
+    /// # Panics
+    ///
+    /// * (debug) ADC is not enabled
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc, SampleTime},
+    ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
+    ///     gpio::{pins::B4, Analog, PortB},
+    ///     pac, rcc,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
+    ///
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// adc.calibrate(&mut delay);
+    /// adc.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+    /// adc.enable();
+    ///
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    /// let b4: Analog<B4> = Analog::new(gpiob.pb4);
+    ///
+    /// let sample: u16 = adc.pin(&b4);
+    /// ```
+    #[allow(unused_variables)]
+    pub fn pin<P: gpio::sealed::AdcCh>(&mut self, pin: &gpio::Analog<P>) -> u16 {
+        debug_assert!(self.is_enabled());
+        self.cfg_ch_seq(P::ADC_CH.mask());
+        self.adc.cr.write(|w| w.adstart().start_conversion());
+        self.data()
+    }
+
+    /// Enable V<sub>BAT</sub>.
+    ///
+    /// To prevent any unwanted consumption on the battery, it is recommended to
+    /// enable the bridge divider only when needed for ADC conversion.
+    pub fn enable_vbat(&mut self) {
+        self.adc.ccr.modify(|_, w| w.vbaten().enabled())
+    }
+
+    /// Disable V<sub>BAT</sub>.
+    pub fn disable_vbat(&mut self) {
+        self.adc.ccr.modify(|_, w| w.vbaten().disabled());
+    }
+
+    /// Returns `true` if V<sub>BAT</sub> is enabled.
+    #[must_use = "no reason to call this function if you are not using the result"]
+    pub fn is_vbat_enabled(&self) -> bool {
+        self.adc.ccr.read().vbaten().is_enabled()
+    }
+
+    /// Sample the V<sub>BAT</sub> pin.
+    ///
+    /// This is internally connected to a bridge divider, the converted digital
+    /// value is a third the V<sub>BAT</sub> voltage.
+    ///
+    /// # Panics
+    ///
+    /// * (debug) ADC is not enabled
+    /// * (debug) V<sub>BAT</sub> is not enabled
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     self as hal,
+    ///     adc::{self, Adc, SampleTime},
     ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
     ///     dac::{Dac, ModeChip},
     ///     pac, rcc,
@@ -964,58 +1229,16 @@ impl Adc {
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// adc.calibrate(&mut delay);
     ///
-    /// let mut dac: Dac = Dac::new(dp.DAC, &mut dp.RCC);
-    /// dac.set_mode_chip(ModeChip::Norm);
-    ///
-    /// dac.setup_soft_trigger();
-    /// dac.soft_trigger(1234);
-    /// // should be in the same ballpark as the DAC output
-    /// // calibrate the ADC for additional accuracy
-    /// let sample: u16 = adc.dac();
+    /// adc.enable();
+    /// adc.enable_vbat();
+    /// adc.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
+    /// let sample: u16 = adc.vbat();
     /// ```
-    pub fn dac(&mut self) -> u16 {
-        self.enable();
-        self.cfg_ch_seq(Ch::Dac.mask());
-        self.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
-        self.adc.cr.write(|w| w.adstart().set_bit());
-        self.data()
-    }
-
-    /// Sample a GPIO pin.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     adc::{self, Adc},
-    ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
-    ///     gpio::{pins::B4, Analog, PortB},
-    ///     pac, rcc,
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
-    ///
-    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
-    /// adc.calibrate(&mut delay);
-    ///
-    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let b4: Analog<B4> = Analog::new(gpiob.pb4);
-    ///
-    /// let sample: u16 = adc.pin(&b4);
-    /// ```
-    #[allow(unused_variables)]
-    pub fn pin<P: gpio::sealed::AdcCh>(&mut self, pin: &gpio::Analog<P>) -> u16 {
-        self.enable();
-        self.cfg_ch_seq(P::ADC_CH.mask());
-        self.set_sample_times(0, SampleTime::Cyc160, SampleTime::Cyc160);
-        self.adc.cr.write(|w| w.adstart().set_bit());
+    pub fn vbat(&mut self) -> u16 {
+        debug_assert!(self.is_enabled());
+        debug_assert!(self.is_vbat_enabled());
+        self.cfg_ch_seq(Ch::Vbat.mask());
+        self.adc.cr.write(|w| w.adstart().start_conversion());
         self.data()
     }
 }

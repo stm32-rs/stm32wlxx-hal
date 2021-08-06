@@ -228,21 +228,23 @@ fn ping_pong(sg: &mut SubGhz<DmaCh>, rng: &mut Rng, rfs: &mut RfSwitch, pkt: Pac
             Timeout::from_duration_sat(dur)
         };
 
-        defmt::debug!("RX for {:?} ms", timeout.as_duration().as_millis());
+        let rx_timeout_ms: i32 = timeout.as_duration().as_millis() as i32;
+        defmt::debug!("RX with timeout {:?} ms", rx_timeout_ms);
         unwrap!(sg.set_rx(timeout));
 
         let start_cc: u32 = DWT::get_cycle_count();
         loop {
             let (status, irq_status) = unwrap!(sg.irq_status());
 
-            if irq_status != 0 {
-                defmt::debug!("IRQ status: 0x{:04X}", irq_status);
-            }
-
             let elapsed_ms: u32 = DWT::get_cycle_count().wrapping_sub(start_cc) / CYC_PER_MS;
 
             if irq_status & Irq::Timeout.mask() != 0 {
-                defmt::info!("RX timeout {} ms", elapsed_ms);
+                let elapsed_ms: i32 = elapsed_ms as i32;
+                defmt::info!(
+                    "RX timeout {} ms Δ {} ms",
+                    elapsed_ms,
+                    (rx_timeout_ms - elapsed_ms).abs()
+                );
                 defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
                 unwrap!(sg.clear_irq_status(irq_status));
 

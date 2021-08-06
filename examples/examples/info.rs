@@ -1,4 +1,4 @@
-// Prints device information, should work for all boards.
+// Prints device information, should work for all STM32WL5x boards.
 
 #![no_std]
 #![no_main]

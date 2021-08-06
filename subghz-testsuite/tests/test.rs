@@ -29,7 +29,9 @@ use bsp::{
 };
 
 const FREQ: u32 = 48_000_000;
+const CYC_PER_US: u32 = FREQ / 1000 / 1000;
 const CYC_PER_MS: u32 = FREQ / 1000;
+const CYC_PER_SEC: u32 = FREQ;
 
 use core::time::Duration;
 
@@ -107,6 +109,9 @@ async fn aio_buffer_io_inner() {
     assert_eq!(DATA, buf.as_slice());
 }
 
+// WARNING will wrap-around eventually, use this for relative timing only
+defmt::timestamp!("{=u32:µs}", DWT::get_cycle_count() / CYC_PER_US);
+
 #[cfg(feature = "aio")]
 async fn aio_wait_irq_inner() {
     let mut sg = unsafe {
@@ -157,9 +162,10 @@ fn tx_or_panic(sg: &mut SubGhz<DmaCh>, rfs: &mut RfSwitch) {
             defmt::info!("TX done");
             break;
         }
-        let elapsed_ms: u32 = start_cc.wrapping_sub(DWT::get_cycle_count()) / CYC_PER_MS;
+
+        let elapsed_s: u32 = DWT::get_cycle_count().wrapping_sub(start_cc) / CYC_PER_SEC;
         assert!(
-            elapsed_ms > 200,
+            elapsed_s < 1,
             "Timeout waiting for TX completion status={}",
             status
         );
@@ -232,8 +238,10 @@ fn ping_pong(sg: &mut SubGhz<DmaCh>, rng: &mut Rng, rfs: &mut RfSwitch, pkt: Pac
                 defmt::debug!("IRQ status: 0x{:04X}", irq_status);
             }
 
+            let elapsed_ms: u32 = DWT::get_cycle_count().wrapping_sub(start_cc) / CYC_PER_MS;
+
             if irq_status & Irq::Timeout.mask() != 0 {
-                defmt::info!("RX timeout");
+                defmt::info!("RX timeout {} ms", elapsed_ms);
                 assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
                 sg.clear_irq_status(irq_status).unwrap();
 
@@ -266,7 +274,10 @@ fn ping_pong(sg: &mut SubGhz<DmaCh>, rng: &mut Rng, rfs: &mut RfSwitch, pkt: Pac
                     PONG_DATA_BYTES => {
                         defmt::info!("received PONG");
                     }
-                    _ => panic!("Unknown data: {:?}", data_buf),
+                    _ => panic!(
+                        "Unknown data: {:?} PING={:?} PONG={:?}",
+                        data_buf, PING_DATA_BYTES, PONG_DATA_BYTES
+                    ),
                 }
 
                 rfs.set_rx();
@@ -277,9 +288,8 @@ fn ping_pong(sg: &mut SubGhz<DmaCh>, rng: &mut Rng, rfs: &mut RfSwitch, pkt: Pac
                 assert_ne!(status.cmd(), Ok(CmdStatus::ProcessingError));
                 assert_ne!(status.cmd(), Ok(CmdStatus::ExecutionFailure));
 
-                let elapsed_ms: u32 = start_cc.wrapping_sub(DWT::get_cycle_count()) / CYC_PER_MS;
                 assert!(
-                    elapsed_ms > 200,
+                    elapsed_ms < 1_000,
                     "Timeout waiting for RX completion status={}",
                     status
                 );

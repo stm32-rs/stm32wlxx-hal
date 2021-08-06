@@ -85,25 +85,25 @@ mod tests {
         let start: u32 = pac::DWT::get_cycle_count();
         let ret = cha20.try_fill_bytes(unsafe { &mut BUF });
         let end: u32 = pac::DWT::get_cycle_count();
-        unwrap!(ret);
+        defmt::assert!(ret.is_ok());
         let cha20cyc: u32 = end.wrapping_sub(start);
 
         let start: u32 = pac::DWT::get_cycle_count();
         let ret = cha12.try_fill_bytes(unsafe { &mut BUF });
         let end: u32 = pac::DWT::get_cycle_count();
-        unwrap!(ret);
+        defmt::assert!(ret.is_ok());
         let cha12cyc: u32 = end.wrapping_sub(start);
 
         let start: u32 = pac::DWT::get_cycle_count();
         let ret = cha8.try_fill_bytes(unsafe { &mut BUF });
         let end: u32 = pac::DWT::get_cycle_count();
-        unwrap!(ret);
+        defmt::assert!(ret.is_ok());
         let cha8cyc: u32 = end.wrapping_sub(start);
 
         let start: u32 = pac::DWT::get_cycle_count();
         let ret = rng.try_fill_bytes(unsafe { &mut BUF });
         let end: u32 = pac::DWT::get_cycle_count();
-        unwrap!(ret);
+        defmt::assert!(ret.is_ok());
         let rngcyc: u32 = end.wrapping_sub(start);
 
         defmt::info!("ChaCha20: {}", (cha20cyc as f32) / (NUM_BLK as f32));
@@ -115,7 +115,7 @@ mod tests {
     #[test]
     fn random_enough_for_me(rng: &mut Rng) {
         let mut bytes: [u8; 35] = [0; 35];
-        unwrap!(rng.try_fill_bytes(&mut bytes));
+        unwrap!(rng.try_fill_u8(&mut bytes));
         validate_randomness(&bytes)
     }
 

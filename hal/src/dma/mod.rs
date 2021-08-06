@@ -16,7 +16,10 @@
 
 mod cr;
 
-use core::ptr::{read_volatile, write_volatile};
+use core::{
+    ops::Mul,
+    ptr::{read_volatile, write_volatile},
+};
 
 use super::pac;
 

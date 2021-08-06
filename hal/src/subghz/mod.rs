@@ -485,8 +485,13 @@ impl SubGhz<DmaCh> {
         while !rfbusys() {}
         Nss::set();
 
+        #[cfg(feature = "aio")]
         Self::setup_rfbusy_irq();
-        unsafe { unmask_irq() };
+
+        #[cfg(feature = "aio")]
+        unsafe {
+            unmask_irq()
+        };
 
         SubGhz {
             spi,

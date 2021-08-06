@@ -12,10 +12,19 @@ categories = ["embedded", "hardware-support", "no-std"]
 repository = "https://github.com/newAM/stm32wl-hal"
 
 [features]
+defmt = ["stm32wl-hal/defmt"]
 rt = ["stm32wl-hal/rt"]
 aio = ["stm32wl-hal/aio"]
 # CM0+ not yet supported
 stm32wl5x_cm4 = ["stm32wl-hal/stm32wl5x_cm4"]
+
+# do NOT modify these features
+defmt-default = ["stm32wl-hal/defmt-default"]
+defmt-trace = ["stm32wl-hal/defmt-trace"]
+defmt-debug = ["stm32wl-hal/defmt-debug"]
+defmt-info = ["stm32wl-hal/defmt-info"]
+defmt-warn = ["stm32wl-hal/defmt-warn"]
+defmt-error = ["stm32wl-hal/defmt-error"]
 
 [dependencies.stm32wl-hal]
 path = "../hal"

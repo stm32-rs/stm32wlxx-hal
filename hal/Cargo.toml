@@ -18,6 +18,14 @@ stm32wle5 = ["stm32wl/stm32wle5"]
 rt = ["stm32wl/rt", "cortex-m-rt"]
 aio = ["futures", "futures-util", "rt"]
 
+# do NOT modify these features
+defmt-default = []
+defmt-trace = []
+defmt-debug = []
+defmt-info = []
+defmt-warn = []
+defmt-error = []
+
 [dependencies]
 cfg-if = "1"
 rand_core = "0.6"

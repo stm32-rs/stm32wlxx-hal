@@ -62,6 +62,8 @@ mod tests {
         ta.adc.start_disable();
         while !ta.adc.is_disabled() {}
         ta.adc.calibrate(&mut ta.delay);
+        ta.adc.enable();
+        ta.adc.set_max_sample_time();
 
         ta.dac.disable();
         unwrap!(ta.dac.set_mode_chip(ModeChip::Norm));

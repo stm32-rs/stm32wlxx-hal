@@ -25,6 +25,7 @@ pub use rand_core;
 
 /// RNG error types
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error {
     /// A seed error (noise error) occured.
     ///
@@ -53,8 +54,10 @@ impl Error {
 impl From<Error> for rand_core::Error {
     fn from(e: Error) -> Self {
         match e {
-            Error::Seed => NonZeroU32::new(1).unwrap().into(),
-            Error::Clock => NonZeroU32::new(2).unwrap().into(),
+            // safety: 1 is non-zero
+            Error::Seed => unsafe { NonZeroU32::new_unchecked(1) }.into(),
+            // safety: 2 is non-zero
+            Error::Clock => unsafe { NonZeroU32::new_unchecked(2) }.into(),
         }
     }
 }
@@ -563,20 +566,20 @@ impl rand_core::RngCore for Rng {
     /// Not recommended for use, panics upon errors.
     fn next_u32(&mut self) -> u32 {
         let mut dws: [u32; 1] = [0; 1];
-        self.try_fill_u32(&mut dws).unwrap();
+        unwrap!(self.try_fill_u32(&mut dws));
         dws[0]
     }
 
     /// Not recommended for use, panics upon errors.
     fn next_u64(&mut self) -> u64 {
         let mut dws: [u32; 2] = [0; 2];
-        self.try_fill_u32(&mut dws).unwrap();
+        unwrap!(self.try_fill_u32(&mut dws));
         u64::from(dws[0]) << 32 | u64::from(dws[1])
     }
 
     /// Not recommended for use, panics upon errors.
     fn fill_bytes(&mut self, dest: &mut [u8]) {
-        self.try_fill_u8(dest).unwrap()
+        unwrap!(self.try_fill_u8(dest))
     }
 
     /// Use this method if using the `RngCore` for `CryptoRng` traits.

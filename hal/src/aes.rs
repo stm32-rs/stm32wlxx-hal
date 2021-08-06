@@ -182,6 +182,7 @@ impl From<Mode> for u8 {
 
 /// AES errors.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[non_exhaustive] // add timeout at some point
 pub enum Error {
     /// Unexpected read operation from the AES_DOUTR register

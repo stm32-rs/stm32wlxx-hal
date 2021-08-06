@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 
+use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use panic_probe as _;
 use stm32wl_hal::{
@@ -23,8 +24,8 @@ mod tests {
 
     #[init]
     fn init() -> TestArgs {
-        let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-        let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
+        let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
+        let cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
 
         rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC);
 
@@ -63,7 +64,7 @@ mod tests {
         ta.adc.calibrate(&mut ta.delay);
 
         ta.dac.disable();
-        ta.dac.set_mode_chip(ModeChip::Norm).unwrap();
+        unwrap!(ta.dac.set_mode_chip(ModeChip::Norm));
         ta.dac.setup_soft_trigger();
         ta.dac.soft_trigger(1024);
 

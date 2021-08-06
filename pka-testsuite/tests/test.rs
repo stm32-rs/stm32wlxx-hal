@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 
+use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use panic_probe as _;
 use stm32wl_hal::{
@@ -53,24 +54,26 @@ async fn aio_ecdsa_sign_inner() {
         r_sign: [0; 8],
         s_sign: [0; 8],
     };
-    pka.aio_ecdsa_sign(
-        &NIST_P256,
-        &INTEGER,
-        &PRIVATE_KEY,
-        &HASH,
-        &mut output_signature,
-    )
-    .await
-    .unwrap();
-    assert_eq!(output_signature, SIGNATURE);
+    unwrap!(
+        pka.aio_ecdsa_sign(
+            &NIST_P256,
+            &INTEGER,
+            &PRIVATE_KEY,
+            &HASH,
+            &mut output_signature,
+        )
+        .await
+    );
+    defmt::assert_eq!(output_signature, SIGNATURE);
 }
 
 #[cfg(feature = "aio")]
 async fn aio_ecdsa_verify_inner() {
     let mut pka: Pka = unsafe { Pka::steal() };
-    pka.aio_ecdsa_verify(&NIST_P256, &SIGNATURE, &PUB_KEY, &HASH)
-        .await
-        .unwrap();
+    unwrap!(
+        pka.aio_ecdsa_verify(&NIST_P256, &SIGNATURE, &PUB_KEY, &HASH)
+            .await
+    )
 }
 
 #[defmt_test::tests]
@@ -79,7 +82,7 @@ mod tests {
 
     #[init]
     fn init() -> Pka {
-        let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+        let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
         let mut rcc = dp.RCC;
 
         rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut rcc);
@@ -101,21 +104,19 @@ mod tests {
             r_sign: [0; 8],
             s_sign: [0; 8],
         };
-        pka.ecdsa_sign(
+        unwrap!(pka.ecdsa_sign(
             &NIST_P256,
             &INTEGER,
             &PRIVATE_KEY,
             &HASH,
             &mut output_signature,
-        )
-        .unwrap();
-        assert_eq!(output_signature, SIGNATURE);
+        ));
+        defmt::assert_eq!(output_signature, SIGNATURE);
     }
 
     #[test]
     fn ecdsa_verify(pka: &mut Pka) {
-        pka.ecdsa_verify(&NIST_P256, &SIGNATURE, &PUB_KEY, &HASH)
-            .unwrap();
+        unwrap!(pka.ecdsa_verify(&NIST_P256, &SIGNATURE, &PUB_KEY, &HASH))
     }
 
     #[test]

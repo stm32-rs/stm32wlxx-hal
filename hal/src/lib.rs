@@ -27,9 +27,6 @@ cfg_if::cfg_if! {
 // This mod MUST go first, so that the others see its macros.
 pub(crate) mod fmt;
 
-mod ratio;
-pub use ratio::Ratio;
-
 pub mod adc;
 pub mod aes;
 pub mod dac;
@@ -41,6 +38,9 @@ pub mod rcc;
 pub mod rng;
 pub mod spi;
 pub mod subghz;
+
+mod ratio;
+pub use ratio::Ratio;
 
 #[cfg(feature = "rt")]
 #[cfg_attr(docsrs, doc(cfg(feature = "rt")))]

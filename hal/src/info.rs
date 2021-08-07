@@ -1,10 +1,11 @@
 //! Device eletronic signature
+#![forbid(missing_docs)]
 
 use core::{
     convert::{TryFrom, TryInto},
     fmt::Display,
     mem::transmute,
-    ptr::read_volatile,
+    ptr::read,
 };
 
 /// 96-bit unique device identifier
@@ -107,9 +108,9 @@ impl Uid {
 pub fn uid() -> Uid {
     unsafe {
         [
-            read_volatile(0x1FFF_7590 as *const u32),
-            read_volatile(0x1FFF_7594 as *const u32),
-            read_volatile(0x1FFF_7598 as *const u32),
+            read(0x1FFF_7590 as *const u32),
+            read(0x1FFF_7594 as *const u32),
+            read(0x1FFF_7598 as *const u32),
         ]
     }
     .into()
@@ -126,7 +127,7 @@ pub fn uid() -> Uid {
 /// assert_eq!(flash_size_kibibyte(), 256);
 /// ```
 pub fn flash_size_kibibyte() -> u16 {
-    unsafe { read_volatile(0x1FFF_75E0 as *const u16) }
+    unsafe { read(0x1FFF_75E0 as *const u16) }
 }
 
 /// Flash size in bytes
@@ -192,7 +193,7 @@ impl From<Package> for u8 {
 /// assert_eq!(package, Ok(info::Package::UFBGA73));
 /// ```
 pub fn package() -> Result<Package, u8> {
-    let raw: u16 = unsafe { read_volatile(0x1FFF_7500 as *const u16) } & 0xF;
+    let raw: u16 = unsafe { read(0x1FFF_7500 as *const u16) } & 0xF;
     (raw as u8).try_into()
 }
 
@@ -278,6 +279,9 @@ impl Display for Uid64 {
     }
 }
 
+/// Pointer to the IEEE 64-bit unique device ID (UID64)
+pub const UID64: *const u8 = 0x1FFF_7580 as *const u8;
+
 /// Get the IEEE 64-bit unique device ID (UID64)
 ///
 /// # Example
@@ -291,7 +295,7 @@ impl Display for Uid64 {
 /// // uid64.dev_num() is unique
 /// ```
 pub fn uid64() -> Uid64 {
-    let hi: u32 = unsafe { read_volatile(0x1FFF_7580 as *const u32) };
-    let lo: u32 = unsafe { read_volatile(0x1FFF_7584 as *const u32) };
+    let hi: u32 = unsafe { read(0x1FFF_7580 as *const u32) };
+    let lo: u32 = unsafe { read(0x1FFF_7584 as *const u32) };
     (((hi as u64) << 32) | (lo as u64)).into()
 }

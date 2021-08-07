@@ -189,8 +189,8 @@ jobs:
         with:
           toolchain: stable
       # not run in parallel to avoid hitting concurrency limit
+      # stm32wl5x_cm4 covered by rustdoc
       - run: cargo doc --features stm32wl5x_cm0p
-      - run: cargo doc --features stm32wl5x_cm4
       - run: cargo doc --features stm32wle5
 
   rustdoc:

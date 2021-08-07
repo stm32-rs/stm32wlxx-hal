@@ -1,6 +1,7 @@
 //! Advanced encryption standard
 
 use crate::pac;
+use pac::aes::cr::KEYSIZE_A as KeySize;
 
 /// Algorithm modes.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -33,127 +34,6 @@ impl Algorithm {
             Algorithm::Gcm => 0b11,
             Algorithm::Ccm => 0b00,
         }
-    }
-}
-
-/// 128-bit AES key.
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
-pub struct Key128 {
-    key: [u32; 4],
-}
-
-impl Key128 {
-    /// Create a new 128-bit key from a `u128`.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use stm32wl_hal::aes::Key128;
-    ///
-    /// const KEY: Key128 = Key128::from_u128(0xAAAAAAAABBBBBBBBCCCCCCCCDDDDDDDD);
-    /// assert_eq!(
-    ///     KEY,
-    ///     Key128::from_u32([0xAAAAAAAA, 0xBBBBBBBB, 0xCCCCCCCC, 0xDDDDDDDD])
-    /// );
-    /// ```
-    pub const fn from_u128(key: u128) -> Key128 {
-        Key128 {
-            key: [
-                (key >> 96) as u32,
-                (key >> 64) as u32,
-                (key >> 32) as u32,
-                key as u32,
-            ],
-        }
-    }
-
-    /// Create a new 128-bit key from 4 dwords.
-    ///
-    /// This is the native key format of the hardware.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use stm32wl_hal::aes::Key128;
-    ///
-    /// const KEY: Key128 = Key128::from_u32([0xAAAAAAAA, 0xBBBBBBBB, 0xCCCCCCCC, 0xDDDDDDDD]);
-    /// assert_eq!(KEY, Key128::from_u128(0xAAAAAAAABBBBBBBBCCCCCCCCDDDDDDDD));
-    /// ```
-    pub const fn from_u32(key: [u32; 4]) -> Key128 {
-        Key128 { key }
-    }
-}
-
-impl From<[u32; 4]> for Key128 {
-    fn from(key: [u32; 4]) -> Self {
-        Key128::from_u32(key)
-    }
-}
-
-impl From<u128> for Key128 {
-    fn from(key: u128) -> Self {
-        Key128::from_u128(key)
-    }
-}
-
-/// 256-bit AES key.
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
-pub struct Key256 {
-    key: [u32; 8],
-}
-
-impl Key256 {
-    /// Create a new 256-bit key from 8 dwords.
-    ///
-    /// This is the native key format of the hardware.
-    pub const fn from_u32(key: [u32; 8]) -> Key256 {
-        Key256 { key }
-    }
-}
-
-/// AES key sizes.
-pub enum Key {
-    /// 128-bit key
-    K128(Key128),
-    /// 256-bit key
-    K256(Key256),
-}
-
-impl From<Key128> for Key {
-    fn from(k: Key128) -> Self {
-        Key::K128(k)
-    }
-}
-
-impl From<Key256> for Key {
-    fn from(k: Key256) -> Self {
-        Key::K256(k)
-    }
-}
-
-impl Key {
-    pub(crate) const fn keysize(&self) -> bool {
-        match self {
-            Key::K128(_) => false,
-            Key::K256(_) => true,
-        }
-    }
-
-    pub(crate) const fn key(&self) -> &[u32] {
-        match self {
-            Key::K128(k) => &k.key,
-            Key::K256(k) => &k.key,
-        }
-    }
-
-    /// Returns `true` if the key is a 128-bit key.
-    pub fn is_128bit(&self) -> bool {
-        matches!(self, Self::K128(..))
-    }
-
-    /// Returns `true` if the key is a 256-bit key.
-    pub fn is_256bit(&self) -> bool {
-        matches!(self, Self::K256(..))
     }
 }
 
@@ -211,7 +91,16 @@ impl Error {
     }
 }
 
+fn keysize(key: &[u32]) -> KeySize {
+    match key.len() {
+        4 => KeySize::BITS128,
+        8 => KeySize::BITS256,
+        _ => panic!("Key must be 128-bit or 256-bit not {}-bit", key.len() * 32),
+    }
+}
+
 /// AES driver.
+#[derive(Debug)]
 pub struct Aes {
     aes: pac::AES,
 }
@@ -320,16 +209,16 @@ impl Aes {
         pac::NVIC::unmask(pac::Interrupt::AES)
     }
 
-    fn set_key(&mut self, key: &Key) {
-        self.aes.keyr0.write(|w| unsafe { w.bits(key.key()[0]) });
-        self.aes.keyr1.write(|w| unsafe { w.bits(key.key()[1]) });
-        self.aes.keyr2.write(|w| unsafe { w.bits(key.key()[2]) });
-        self.aes.keyr3.write(|w| unsafe { w.bits(key.key()[3]) });
-        if key.is_256bit() {
-            self.aes.keyr4.write(|w| unsafe { w.bits(key.key()[4]) });
-            self.aes.keyr5.write(|w| unsafe { w.bits(key.key()[5]) });
-            self.aes.keyr6.write(|w| unsafe { w.bits(key.key()[6]) });
-            self.aes.keyr7.write(|w| unsafe { w.bits(key.key()[7]) });
+    fn set_key(&mut self, key: &[u32]) {
+        self.aes.keyr0.write(|w| w.key().bits(key[0]));
+        self.aes.keyr1.write(|w| w.key().bits(key[1]));
+        self.aes.keyr2.write(|w| w.key().bits(key[2]));
+        self.aes.keyr3.write(|w| w.key().bits(key[3]));
+        if key.len() > 4 {
+            self.aes.keyr4.write(|w| w.key().bits(key[4]));
+            self.aes.keyr5.write(|w| w.key().bits(key[5]));
+            self.aes.keyr6.write(|w| w.key().bits(key[6]));
+            self.aes.keyr7.write(|w| w.key().bits(key[7]));
         }
     }
 
@@ -363,6 +252,10 @@ impl Aes {
 
     /// Encrypt using the electronic codebook chaining (ECB) algorithm.
     ///
+    /// # Panics
+    ///
+    /// * Key is not 128-bits long (4 dwords) or 256-bits long (8 dwords).
+    ///
     /// # Example
     ///
     /// ```no_run
@@ -376,7 +269,7 @@ impl Aes {
     /// let chiphertext: [u32; 4] = aes.encrypt_ecb(&KEY, &plaintext)?;
     /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
-    pub fn encrypt_ecb(&mut self, key: &Key, plaintext: &[u32; 4]) -> Result<[u32; 4], Error> {
+    pub fn encrypt_ecb(&mut self, key: &[u32], plaintext: &[u32; 4]) -> Result<[u32; 4], Error> {
         const ALGO: Algorithm = Algorithm::Ecb;
         const CHMOD2: bool = ALGO.chmod2();
         const CHMOD10: u8 = ALGO.chmod10();
@@ -397,7 +290,7 @@ impl Aes {
                 .dmainen().disabled()
                 .dmaouten().disabled()
                 .gcmph().bits(0) // do not care for ECB
-                .keysize().bit(key.keysize())
+                .keysize().variant(keysize(key))
                 .npblb().bits(0) // no padding
         );
 
@@ -414,6 +307,10 @@ impl Aes {
 
     /// Decrypt using the electronic codebook chaining (ECB) algorithm.
     ///
+    /// # Panics
+    ///
+    /// * Key is not 128-bits long (4 dwords) or 256-bits long (8 dwords).
+    ///
     /// # Example
     ///
     /// ```no_run
@@ -427,7 +324,7 @@ impl Aes {
     /// let plaintext: [u32; 4] = aes.decrypt_ecb(&KEY, &ciphertext)?;
     /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
-    pub fn decrypt_ecb(&mut self, key: &Key, ciphertext: &[u32; 4]) -> Result<[u32; 4], Error> {
+    pub fn decrypt_ecb(&mut self, key: &[u32], ciphertext: &[u32; 4]) -> Result<[u32; 4], Error> {
         const ALGO: Algorithm = Algorithm::Ecb;
         const CHMOD2: bool = ALGO.chmod2();
         const CHMOD10: u8 = ALGO.chmod10();
@@ -448,7 +345,7 @@ impl Aes {
                 .dmainen().disabled()
                 .dmaouten().disabled()
                 .gcmph().bits(0) // do not care for ECB
-                .keysize().bit(key.keysize())
+                .keysize().variant(keysize(key))
                 .npblb().bits(0) // no padding
         );
 
@@ -464,6 +361,10 @@ impl Aes {
     }
 
     /// Encrypt using the electronic codebook chaining (ECB) algorithm.
+    ///
+    /// # Panics
+    ///
+    /// * Key is not 128-bits long (4 dwords) or 256-bits long (8 dwords).
     ///
     /// # Example
     ///
@@ -486,7 +387,7 @@ impl Aes {
     )]
     pub async fn aio_encrypt_ecb(
         &mut self,
-        key: &Key,
+        key: &[u32],
         ciphertext: &[u32; 4],
     ) -> Result<[u32; 4], Error> {
         const ALGO: Algorithm = Algorithm::Ecb;
@@ -509,7 +410,7 @@ impl Aes {
                 .dmainen().disabled()
                 .dmaouten().disabled()
                 .gcmph().bits(0) // do not care for ECB
-                .keysize().bit(key.keysize())
+                .keysize().variant(keysize(key))
                 .npblb().bits(0) // no padding
         );
 
@@ -526,6 +427,10 @@ impl Aes {
 
     /// Decrypt using the electronic codebook chaining (ECB) algorithm,
     /// asynchronously.
+    ///
+    /// # Panics
+    ///
+    /// * Key is not 128-bits long (4 dwords) or 256-bits long (8 dwords).
     ///
     /// # Example
     ///
@@ -548,7 +453,7 @@ impl Aes {
     )]
     pub async fn aio_decrypt_ecb(
         &mut self,
-        key: &Key,
+        key: &[u32],
         ciphertext: &[u32; 4],
     ) -> Result<[u32; 4], Error> {
         const ALGO: Algorithm = Algorithm::Ecb;
@@ -571,7 +476,7 @@ impl Aes {
                 .dmainen().disabled()
                 .dmaouten().disabled()
                 .gcmph().bits(0) // do not care for ECB
-                .keysize().bit(key.keysize())
+                .keysize().variant(keysize(key))
                 .npblb().bits(0) // no padding
         );
 

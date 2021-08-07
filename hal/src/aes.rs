@@ -254,7 +254,7 @@ impl Aes {
     ///
     /// # Panics
     ///
-    /// * Key is not 128-bits long (4 dwords) or 256-bits long (8 dwords).
+    /// * Key is not 128-bits long (4 `u32`) or 256-bits long (8 `u32`).
     ///
     /// # Example
     ///
@@ -309,7 +309,7 @@ impl Aes {
     ///
     /// # Panics
     ///
-    /// * Key is not 128-bits long (4 dwords) or 256-bits long (8 dwords).
+    /// * Key is not 128-bits long (4 `u32`) or 256-bits long (8 `u32`).
     ///
     /// # Example
     ///
@@ -364,7 +364,7 @@ impl Aes {
     ///
     /// # Panics
     ///
-    /// * Key is not 128-bits long (4 dwords) or 256-bits long (8 dwords).
+    /// * Key is not 128-bits long (4 `u32`) or 256-bits long (8 `u32`).
     ///
     /// # Example
     ///
@@ -430,7 +430,7 @@ impl Aes {
     ///
     /// # Panics
     ///
-    /// * Key is not 128-bits long (4 dwords) or 256-bits long (8 dwords).
+    /// * Key is not 128-bits long (4 `u32`) or 256-bits long (8 `u32`).
     ///
     /// # Example
     ///

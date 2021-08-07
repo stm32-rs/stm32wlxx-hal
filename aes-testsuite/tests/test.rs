@@ -4,10 +4,7 @@
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use panic_probe as _;
-use stm32wl_hal::{
-    aes::{Aes, Key, Key128},
-    pac, rcc,
-};
+use stm32wl_hal::{aes::Aes, pac, rcc};
 
 pub const fn u128_to_u32(u: u128) -> [u32; 4] {
     [
@@ -50,7 +47,7 @@ const PLAINTEXT_CHIPHERTEXT: [(u128, u128); 7] = [
     ),
 ];
 
-const KEY: Key = Key::K128(Key128::from_u128(0));
+const KEY: [u32; 4] = [0; 4];
 
 #[cfg(feature = "aio")]
 async fn aio_decrypt_ecb_inner() {

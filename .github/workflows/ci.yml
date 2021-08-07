@@ -16,7 +16,6 @@ jobs:
     strategy:
       matrix:
         target:
-          - "x86_64-unknown-linux-gnu"
           - "thumbv6m-none-eabi"
           - "thumbv7em-none-eabi"
         mcu:
@@ -46,6 +45,10 @@ jobs:
         with:
           toolchain: stable
           target: ${{ matrix.target }}
+      - run: |
+          cargo build \
+          --target x86_64-unknown-linux-gnu \
+          --features ${{ matrix.mcu }},${{ matrix.aio }}
       - run: |
           cargo build \
           --target ${{ matrix.target }} \
@@ -180,18 +183,15 @@ jobs:
     name: doc
     runs-on: ubuntu-latest
     env: {"RUSTDOCFLAGS": "-D warnings"}
-    strategy:
-      matrix:
-        feature:
-          - "stm32wl5x_cm0p"
-          - "stm32wl5x_cm4"
-          - "stm32wle5"
     steps:
       - uses: actions/checkout@v2.3.4
       - uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
-      - run: cargo doc --features ${{ matrix.feature }}
+      # not run in parallel to avoid hitting concurrency limit
+      - run: cargo doc --features stm32wl5x_cm0p
+      - run: cargo doc --features stm32wl5x_cm4
+      - run: cargo doc --features stm32wle5
 
   rustdoc:
     name: rustdoc

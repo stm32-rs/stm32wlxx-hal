@@ -259,11 +259,10 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::aes::{Key, Key128};
     /// # let mut aes = unsafe { stm32wl_hal::aes::Aes::steal() };
     ///
     /// // this is a bad key, I am just using values from the NIST testsuite
-    /// const KEY: Key = Key::K128(Key128::from_u128(0));
+    /// const KEY: [u32; 4] = [0; 4];
     ///
     /// let plaintext: [u32; 4] = [0xf34481ec, 0x3cc627ba, 0xcd5dc3fb, 0x08f273e6];
     /// let chiphertext: [u32; 4] = aes.encrypt_ecb(&KEY, &plaintext)?;
@@ -314,11 +313,10 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::aes::{Key, Key128};
     /// # let mut aes = unsafe { stm32wl_hal::aes::Aes::steal() };
     ///
     /// // this is a bad key, I am just using values from the NIST testsuite
-    /// const KEY: Key = Key::K128(Key128::from_u128(0));
+    /// const KEY: [u32; 4] = [0; 4];
     ///
     /// let ciphertext: [u32; 4] = [0x0336763e, 0x966d9259, 0x5a567cc9, 0xce537f5e];
     /// let plaintext: [u32; 4] = aes.decrypt_ecb(&KEY, &ciphertext)?;
@@ -370,11 +368,10 @@ impl Aes {
     ///
     /// ```no_run
     /// # async fn doctest() -> Result<(), stm32wl_hal::aes::Error> {
-    /// use stm32wl_hal::aes::{Key, Key128};
     /// # let mut aes = unsafe { stm32wl_hal::aes::Aes::steal() };
     ///
     /// // this is a bad key, I am just using values from the NIST testsuite
-    /// const KEY: Key = Key::K128(Key128::from_u128(0));
+    /// const KEY: [u32; 4] = [0; 4];
     ///
     /// let plaintext: [u32; 4] = [0xf34481ec, 0x3cc627ba, 0xcd5dc3fb, 0x08f273e6];
     /// let chiphertext: [u32; 4] = aes.aio_encrypt_ecb(&KEY, &plaintext).await?;
@@ -436,11 +433,10 @@ impl Aes {
     ///
     /// ```no_run
     /// # async fn doctest() -> Result<(), stm32wl_hal::aes::Error> {
-    /// use stm32wl_hal::aes::{Key, Key128};
     /// # let mut aes = unsafe { stm32wl_hal::aes::Aes::steal() };
     ///
     /// // this is a bad key, I am just using values from the NIST testsuite
-    /// const KEY: Key = Key::K128(Key128::from_u128(0));
+    /// const KEY: [u32; 4] = [0; 4];
     ///
     /// let ciphertext: [u32; 4] = [0x0336763e, 0x966d9259, 0x5a567cc9, 0xce537f5e];
     /// let plaintext: [u32; 4] = aes.aio_decrypt_ecb(&KEY, &ciphertext).await?;

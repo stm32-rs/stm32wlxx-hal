@@ -13,6 +13,7 @@ use static_assertions as sa;
 
 use bsp::{
     hal::{
+        dma::NoDmaCh,
         dma::{AllDma, DmaCh},
         gpio::{PortA, PortC},
         pac::{self, DWT},
@@ -310,6 +311,9 @@ fn ping_pong(sg: &mut SubGhz<DmaCh>, rng: &mut Rng, rfs: &mut RfSwitch, pkt: Pac
 mod tests {
     use super::*;
 
+    // unsafe, but keeps the stack happy
+    static mut BUF: [u8; 255] = [0; 255];
+
     struct TestArgs {
         sg: SubGhz<DmaCh>,
         rng: Rng,
@@ -364,9 +368,18 @@ mod tests {
     #[test]
     fn buffer_io(ta: &mut TestArgs) {
         const DATA: [u8; 255] = [0x5A; 255];
-        static mut BUF: [u8; 255] = [0; 255];
         unwrap!(ta.sg.write_buffer(0, &DATA));
         unwrap!(ta.sg.read_buffer(0, unsafe { &mut BUF }));
+        defmt::assert_eq!(DATA.as_ref(), unsafe { BUF }.as_ref());
+    }
+
+    #[test]
+    fn no_dma_buffer_io(_: &mut TestArgs) {
+        let mut sg: SubGhz<NoDmaCh> = unsafe { SubGhz::<NoDmaCh>::steal() };
+
+        const DATA: [u8; 255] = [0x45; 255];
+        unwrap!(sg.write_buffer(0, &DATA));
+        unwrap!(sg.read_buffer(0, unsafe { &mut BUF }));
         defmt::assert_eq!(DATA.as_ref(), unsafe { BUF }.as_ref());
     }
 

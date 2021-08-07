@@ -534,6 +534,24 @@ impl SubGhz<DmaCh> {
             debug_pins: None,
         }
     }
+
+    /// Free the SPI3 peripheral and DMA channels from the SubGhz driver.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{dma::AllDma, pac, subghz::SubGhz};
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
+    ///
+    /// let sg = SubGhz::new_with_dma(dp.SPI3, dma.d1c1, dma.d2c1, &mut dp.RCC);
+    /// let (spi, d1c1, d2c1) = sg.free();
+    /// ```
+    pub fn free(self) -> (pac::SPI3, DmaCh, DmaCh) {
+        self.spi.free()
+    }
 }
 
 // 5.8.2

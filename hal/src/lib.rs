@@ -31,7 +31,6 @@ pub mod adc;
 pub mod aes;
 pub mod dac;
 pub mod dma;
-pub mod dwt;
 pub mod gpio;
 pub mod info;
 pub mod pka;

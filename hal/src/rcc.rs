@@ -212,6 +212,18 @@ const fn pre_div(pre: u8) -> u16 {
     }
 }
 
+/// APB Prescaler divisor.
+/// Works for PPRE1, PPRE2.
+const fn ppre_div(pre: u8) -> u8 {
+    match pre {
+        0b100 => 2,
+        0b101 => 4,
+        0b110 => 8,
+        0b111 => 16,
+        _ => 1,
+    }
+}
+
 /// Voltage scaling
 ///
 /// See RM0453 rev 1 section 6.1.4 dynamic voltage scaling management
@@ -502,6 +514,54 @@ fn cpu1_systick(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R, src: SystClkSource) ->
         SystClkSource::Core => hclk1,
         SystClkSource::External => hclk1 / 8,
     }
+}
+
+pub fn pclk1(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
+    let div: u32 = ppre_div(cfgr.ppre1().bits()).into();
+    hclk1(rcc, cfgr) / div
+}
+
+/// Calculate the current PCLK1 frequency in hertz
+///
+/// Fractional frequencies will be rounded down.
+///
+/// # Example
+///
+/// ```no_run
+/// use stm32wl_hal::{pac, rcc::pclk1_hz};
+///
+/// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+///
+/// // without any initialization pclk1 will be 4MHz
+/// assert_eq!(pclk1_hz(&dp.RCC), 4_000_000);
+/// ```
+pub fn pclk1_hz(rcc: &pac::RCC) -> u32 {
+    let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
+    pclk1(rcc, &cfgr).to_integer()
+}
+
+pub fn pclk2(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
+    let div: u32 = ppre_div(cfgr.ppre1().bits()).into();
+    hclk2(rcc, cfgr) / div
+}
+
+/// Calculate the current PCLK2 frequency in hertz
+///
+/// Fractional frequencies will be rounded down.
+///
+/// # Example
+///
+/// ```no_run
+/// use stm32wl_hal::{pac, rcc::pclk2_hz};
+///
+/// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+///
+/// // without any initialization pclk1 will be 4MHz
+/// assert_eq!(pclk1_hz(&dp.RCC), 4_000_000);
+/// ```
+pub fn pclk2_hz(rcc: &pac::RCC) -> u32 {
+    let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
+    pclk2(rcc, &cfgr).to_integer()
 }
 
 /// Calculate the current CPU1 systick frequency in hertz

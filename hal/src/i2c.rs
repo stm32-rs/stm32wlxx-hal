@@ -5,7 +5,7 @@ use core::convert::TryFrom;
 use crate::{
     embedded_hal::blocking::i2c::{Read, Write, WriteRead},
     pac::{rcc::ccipr::I2C3SEL_A, I2C1, I2C2, I2C3, RCC},
-    rcc::sysclk_hz,
+    rcc::{sysclk_hz, pclk1_hz},
 };
 
 use embedded_time::{fixed_point::FixedPoint, rate::*};
@@ -85,7 +85,7 @@ macro_rules! i2c {
                     match rcc.ccipr.read().$i2cXsel().variant().unwrap() {
                         I2C3SEL_A::HSI16 => Hertz(16_000_000),
                         I2C3SEL_A::SYSCLK => Hertz(sysclk_hz(rcc)), // TODO move the HAL to embedded-time?
-                        I2C3SEL_A::PCLK => Hertz(sysclk_hz(rcc)), // TODO Correct this (HCLK1 / DIV APB1)
+                        I2C3SEL_A::PCLK => Hertz(pclk1_hz(rcc)), // TODO Correct this (HCLK1 / DIV APB1)
                     }
                 }
 

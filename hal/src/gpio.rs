@@ -167,6 +167,41 @@ pub(crate) mod sealed {
         fn set_alternate_function(&mut self, af: u8);
     }
 
+    /// Indicate a GPIO pin has the I2C1 SDA alternate function
+    pub trait I2c1Sda {
+        /// Initialize the GPIO pin for use as I2C1 SDA
+        fn set_i2c1_sda_af(&mut self, pullup: bool);
+    }
+
+    /// Indicate a GPIO pin has the I2C1 SCL alternate function
+    pub trait I2c1Scl {
+        /// Initialize the GPIO pin for use as I2C1 SCL
+        fn set_i2c1_scl_af(&mut self, pullup: bool);
+    }
+
+    /// Indicate a GPIO pin has the I2C2 SDA alternate function
+    pub trait I2c2Sda {
+        /// Initialize the GPIO pin for use as I2C2 SDA
+        fn set_i2c2_sda_af(&mut self, pullup: bool);
+    }
+
+    /// Indicate a GPIO pin has the I2C2 SCL alternate function
+    pub trait I2c2Scl {
+        /// Initialize the GPIO pin for use as I2C2 SCL
+        fn set_i2c2_scl_af(&mut self, pullup: bool);
+    }
+    /// Indicate a GPIO pin has the I2C3 SDA alternate function
+    pub trait I2c3Sda {
+        /// Initialize the GPIO pin for use as I2C3 SDA
+        fn set_i2c3_sda_af(&mut self, pullup: bool);
+    }
+
+    /// Indicate a GPIO pin has the I2C3 SCL alternate function
+    pub trait I2c3Scl {
+        /// Initialize the GPIO pin for use as I2C3 SCL
+        fn set_i2c3_scl_af(&mut self, pullup: bool);
+    }
+
     /// Indicate a GPIO pin has the SPI1 MOSI alternate function
     pub trait Spi1Mosi {
         /// Initialize the GPIO pin for use as SPI1 MOSI
@@ -361,6 +396,204 @@ pub mod pins {
     gpio_struct!(C13, GPIOC_BASE, 13, "Port C pin 13");
     gpio_struct!(C14, GPIOC_BASE, 14, "Port C pin 14");
     gpio_struct!(C15, GPIOC_BASE, 15, "Port C pin 15");
+
+    impl super::sealed::I2c1Sda for A10 {
+        fn set_i2c1_sda_af(&mut self, pullup: bool) {
+            cortex_m::interrupt::free(|cs| unsafe {
+                self.pin.set_output_type(cs, OutputType::OpenDrain);
+                self.pin
+                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
+            });
+            self.pin.set_alternate_function(4)
+        }
+    }
+
+    impl super::sealed::I2c1Sda for B7 {
+        fn set_i2c1_sda_af(&mut self, pullup: bool) {
+            cortex_m::interrupt::free(|cs| unsafe {
+                self.pin.set_output_type(cs, OutputType::OpenDrain);
+                self.pin
+                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
+            });
+            self.pin.set_alternate_function(4)
+        }
+    }
+
+    impl super::sealed::I2c1Sda for B9 {
+        fn set_i2c1_sda_af(&mut self, pullup: bool) {
+            cortex_m::interrupt::free(|cs| unsafe {
+                self.pin.set_output_type(cs, OutputType::OpenDrain);
+                self.pin
+                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
+            });
+            self.pin.set_alternate_function(4)
+        }
+    }
+
+    impl super::sealed::I2c1Scl for A9 {
+        fn set_i2c1_scl_af(&mut self, pullup: bool) {
+            cortex_m::interrupt::free(|cs| unsafe {
+                self.pin.set_output_type(cs, OutputType::OpenDrain);
+                self.pin
+                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
+            });
+            self.pin.set_alternate_function(4)
+        }
+    }
+
+    impl super::sealed::I2c1Scl for B6 {
+        fn set_i2c1_scl_af(&mut self, pullup: bool) {
+            cortex_m::interrupt::free(|cs| unsafe {
+                self.pin.set_output_type(cs, OutputType::OpenDrain);
+                self.pin
+                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
+            });
+            self.pin.set_alternate_function(4)
+        }
+    }
+
+    impl super::sealed::I2c1Scl for B8 {
+        fn set_i2c1_scl_af(&mut self, pullup: bool) {
+            cortex_m::interrupt::free(|cs| unsafe {
+                self.pin.set_output_type(cs, OutputType::OpenDrain);
+                self.pin
+                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
+            });
+            self.pin.set_alternate_function(4)
+        }
+    }
+
+    impl super::sealed::I2c2Sda for A11 {
+        fn set_i2c2_sda_af(&mut self, pullup: bool) {
+            cortex_m::interrupt::free(|cs| unsafe {
+                self.pin.set_output_type(cs, OutputType::OpenDrain);
+                self.pin
+                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
+            });
+            self.pin.set_alternate_function(4)
+        }
+    }
+
+    impl super::sealed::I2c2Sda for A15 {
+        fn set_i2c2_sda_af(&mut self, pullup: bool) {
+            cortex_m::interrupt::free(|cs| unsafe {
+                self.pin.set_output_type(cs, OutputType::OpenDrain);
+                self.pin
+                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
+            });
+            self.pin.set_alternate_function(4)
+        }
+    }
+
+    impl super::sealed::I2c2Scl for A12 {
+        fn set_i2c2_scl_af(&mut self, pullup: bool) {
+            cortex_m::interrupt::free(|cs| unsafe {
+                self.pin.set_output_type(cs, OutputType::OpenDrain);
+                self.pin
+                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
+            });
+            self.pin.set_alternate_function(4)
+        }
+    }
+
+    impl super::sealed::I2c2Scl for B15 {
+        fn set_i2c2_scl_af(&mut self, pullup: bool) {
+            cortex_m::interrupt::free(|cs| unsafe {
+                self.pin.set_output_type(cs, OutputType::OpenDrain);
+                self.pin
+                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
+            });
+            self.pin.set_alternate_function(4)
+        }
+    }
+
+    impl super::sealed::I2c3Sda for B4 {
+        fn set_i2c3_sda_af(&mut self, pullup: bool) {
+            cortex_m::interrupt::free(|cs| unsafe {
+                self.pin.set_output_type(cs, OutputType::OpenDrain);
+                self.pin
+                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
+            });
+            self.pin.set_alternate_function(4)
+        }
+    }
+
+    impl super::sealed::I2c3Sda for B11 {
+        fn set_i2c3_sda_af(&mut self, pullup: bool) {
+            cortex_m::interrupt::free(|cs| unsafe {
+                self.pin.set_output_type(cs, OutputType::OpenDrain);
+                self.pin
+                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
+            });
+            self.pin.set_alternate_function(4)
+        }
+    }
+
+    impl super::sealed::I2c3Sda for B14 {
+        fn set_i2c3_sda_af(&mut self, pullup: bool) {
+            cortex_m::interrupt::free(|cs| unsafe {
+                self.pin.set_output_type(cs, OutputType::OpenDrain);
+                self.pin
+                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
+            });
+            self.pin.set_alternate_function(4)
+        }
+    }
+
+    impl super::sealed::I2c3Sda for C1 {
+        fn set_i2c3_sda_af(&mut self, pullup: bool) {
+            cortex_m::interrupt::free(|cs| unsafe {
+                self.pin.set_output_type(cs, OutputType::OpenDrain);
+                self.pin
+                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
+            });
+            self.pin.set_alternate_function(4)
+        }
+    }
+
+    impl super::sealed::I2c3Scl for A7 {
+        fn set_i2c3_scl_af(&mut self, pullup: bool) {
+            cortex_m::interrupt::free(|cs| unsafe {
+                self.pin.set_output_type(cs, OutputType::OpenDrain);
+                self.pin
+                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
+            });
+            self.pin.set_alternate_function(4)
+        }
+    }
+
+    impl super::sealed::I2c3Scl for B10 {
+        fn set_i2c3_scl_af(&mut self, pullup: bool) {
+            cortex_m::interrupt::free(|cs| unsafe {
+                self.pin.set_output_type(cs, OutputType::OpenDrain);
+                self.pin
+                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
+            });
+            self.pin.set_alternate_function(4)
+        }
+    }
+
+    impl super::sealed::I2c3Scl for B13 {
+        fn set_i2c3_scl_af(&mut self, pullup: bool) {
+            cortex_m::interrupt::free(|cs| unsafe {
+                self.pin.set_output_type(cs, OutputType::OpenDrain);
+                self.pin
+                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
+            });
+            self.pin.set_alternate_function(4)
+        }
+    }
+
+    impl super::sealed::I2c3Scl for C0 {
+        fn set_i2c3_scl_af(&mut self, pullup: bool) {
+            cortex_m::interrupt::free(|cs| unsafe {
+                self.pin.set_output_type(cs, OutputType::OpenDrain);
+                self.pin
+                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
+            });
+            self.pin.set_alternate_function(4)
+        }
+    }
 
     impl super::sealed::Spi1Sck for A0 {
         fn set_spi1_sck_af(&mut self) {

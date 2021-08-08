@@ -50,6 +50,10 @@ async fn aio_write_with_dma<BASE: SpiBase>(
     rx_dma: &mut DmaCh,
     words: &[u8],
 ) -> Result<(), Error> {
+    if words.is_empty() {
+        return Ok(());
+    }
+
     const RX_CR: dma::Cr = dma::Cr::RESET
         .set_dir_from_periph()
         .set_xfer_cpl_irq_en(true)
@@ -103,6 +107,10 @@ async fn aio_transfer_with_dma<BASE: SpiBase>(
     rx_dma: &mut DmaCh,
     words: &mut [u8],
 ) -> Result<(), Error> {
+    if words.is_empty() {
+        return Ok(());
+    }
+
     const RX_CR: dma::Cr = dma::Cr::RESET
         .set_dir_from_periph()
         .set_xfer_cpl_irq_en(true)
@@ -238,6 +246,10 @@ trait SpiBase {
         rx_dma: &mut DmaCh,
         words: &[u8],
     ) -> Result<(), Error> {
+        if words.is_empty() {
+            return Ok(());
+        }
+
         const RX_CR: dma::Cr = dma::Cr::RESET
             .set_dir_from_periph()
             .set_mem_inc(false)
@@ -294,6 +306,10 @@ trait SpiBase {
         rx_dma: &mut DmaCh,
         words: &'w mut [u8],
     ) -> Result<&'w [u8], Error> {
+        if words.is_empty() {
+            return Ok(words);
+        }
+
         const RX_CR: dma::Cr = dma::Cr::RESET
             .set_dir_from_periph()
             .set_mem_inc(true)

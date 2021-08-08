@@ -11,14 +11,14 @@ This is a **work in progress**, it is unstable, incomplete, and (mostly) unteste
 
 There should be enough code for very basic:
 
-* LoRa TX + RX (polling + async)
-* (G)FSK TX + RX (polling + async)
-* SPI (polling + async)
-* ECDSA signing (polling + async)
-* ECDSA verification (polling + async)
-* Cryptographically secure random number generation (polling + async)
-* AES encryption (polling + async)
-* AES decryption (polling + async)
+* LoRa TX + RX
+* (G)FSK TX + RX
+* SPI
+* ECDSA signing
+* ECDSA verification
+* Cryptographically secure random number generation
+* AES encryption
+* AES decryption
 
 ## Why upload incomplete code?
 
@@ -41,7 +41,7 @@ The on-target tests use [defmt-test].
 * `cargo install --git https://github.com/knurling-rs/probe-run.git`
   ([probe-run], [newAM/probe-run])
     * **Note:** My fork contains unreleased fixes for the stm32wl,
-      see #74 for details.
+      see [#74] for details.
 * `rustup target add --toolchain stable thumbv7m-none-eabi` ([rustup])
 * (Linux users only) udev rules are available at [newAM/nucleo-wl55jc2-rs]
 * Connect the nucleo board to your PC via USB.
@@ -116,7 +116,8 @@ The `async` code is more experimental and unstable then the rest of this crate
 
 There is no asynchronous executor provided, you must build your own.
 
-`async` support may be dropped at any time for any reason.
+`async` support may be dropped at any time for any reason; if this feature is
+important to you please let me know.
 
 Enabling `async` requires:
 1. nightly rust (non-async code compiles on stable)
@@ -133,3 +134,4 @@ cargo +nightly test -p aes-testsuite --target thumbv7em-none-eabi --features aio
 [newAM/probe-run]: https://github.com/newAM/probe-run
 [probe-run]: https://github.com/knurling-rs/probe-run
 [rustup]: https://rustup.rs/
+[#74]: https://github.com/newAM/stm32wl-hal

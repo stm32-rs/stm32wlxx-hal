@@ -175,9 +175,13 @@ pub fn mask_irq() {
 ///
 /// See RM0453 Rev 1 Section 6.3 Page 228 "Radio busy management" for more
 /// details.
-fn rfbusys() -> bool {
-    let dp = unsafe { pac::Peripherals::steal() };
-    dp.PWR.sr2.read().rfbusys().bit_is_set()
+pub fn rfbusys() -> bool {
+    unsafe { pac::Peripherals::steal() }
+        .PWR
+        .sr2
+        .read()
+        .rfbusys()
+        .is_busy()
 }
 
 /// Sub-GHz radio peripheral

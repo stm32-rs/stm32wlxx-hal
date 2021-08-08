@@ -182,9 +182,7 @@ trait SpiBase {
 
     #[inline(always)]
     fn poll_busy(&self) -> Result<(), Error> {
-        while self.status()?.bsy().is_busy() {
-            compiler_fence(SeqCst)
-        }
+        while self.status()?.bsy().is_busy() {}
         Ok(())
     }
 

@@ -541,8 +541,8 @@ pub fn pclk1_hz(rcc: &pac::RCC) -> u32 {
 }
 
 pub fn pclk2(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
-    let div: u32 = ppre_div(cfgr.ppre1().bits()).into();
-    hclk2(rcc, cfgr) / div
+    let div: u32 = ppre_div(cfgr.ppre2().bits()).into();
+    hclk1(rcc, cfgr) / div
 }
 
 /// Calculate the current PCLK2 frequency in hertz
@@ -557,7 +557,7 @@ pub fn pclk2(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
 /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 ///
 /// // without any initialization pclk1 will be 4MHz
-/// assert_eq!(pclk1_hz(&dp.RCC), 4_000_000);
+/// assert_eq!(pclk2_hz(&dp.RCC), 4_000_000);
 /// ```
 pub fn pclk2_hz(rcc: &pac::RCC) -> u32 {
     let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();

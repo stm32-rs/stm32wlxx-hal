@@ -7,6 +7,7 @@ use cortex_m::interrupt::CriticalSection;
 /// GPIO output types.
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum OutputType {
     /// Push-pull output.
     PushPull = 0b0,
@@ -21,19 +22,24 @@ pub enum OutputType {
 /// Refer to the device datasheet for the frequency specifications and the power
 /// supply and load conditions for each speed.
 #[repr(u8)]
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[allow(missing_docs)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Speed {
+    /// Low speed.
     Low = 0b00,
+    /// Medium speed.
     Medium = 0b01,
+    /// Fast speed.
     Fast = 0b10,
+    /// High speed.
     High = 0b11,
 }
 
 /// GPIO pull-up and pull-down.
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[non_exhaustive] // maybe they will use that reserved value one day...
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+
 pub enum Pull {
     /// No pull-up, no pull-down.
     None = 0b00,
@@ -44,6 +50,7 @@ pub enum Pull {
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 struct Pin<const BASE: usize, const N: u8> {}
 
 impl<const BASE: usize, const N: u8> Pin<BASE, N> {
@@ -263,6 +270,7 @@ pub mod pins {
         ($name:ident, $base:expr, $n:expr, $doc:expr) => {
             #[doc=$doc]
             #[derive(Debug)]
+            #[cfg_attr(feature = "defmt", derive(defmt::Format))]
             pub struct $name {
                 pin: Pin<$base, $n>,
             }
@@ -574,6 +582,7 @@ pub mod pins {
 
 /// Port A GPIOs
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[allow(missing_docs)]
 pub struct PortA {
     pub pa0: pins::A0,
@@ -684,6 +693,7 @@ impl PortA {
 
 /// Port B GPIOs
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[allow(missing_docs)]
 pub struct PortB {
     pub pb0: pins::B0,
@@ -794,6 +804,7 @@ impl PortB {
 
 /// Port C GPIOs
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[allow(missing_docs)]
 pub struct PortC {
     pub pc0: pins::C0,
@@ -951,6 +962,7 @@ impl Level {
 ///
 /// Argument of [`Output::new`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct OutputArgs {
     /// Output speed.
     pub speed: Speed,
@@ -994,6 +1006,7 @@ impl Default for OutputArgs {
 
 /// Output pin.
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Output<P> {
     pin: P,
 }
@@ -1211,6 +1224,7 @@ where
 
 /// Input pin
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Input<P> {
     pin: P,
 }
@@ -1322,6 +1336,7 @@ where
 
 /// Analog pin
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Analog<P> {
     pin: P,
 }

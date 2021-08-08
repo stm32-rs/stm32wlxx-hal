@@ -1,6 +1,6 @@
 # stm32wl-hal
 
-[![CI](https://github.com/newAM/stm32wl-hal/workflows/CI/badge.svg)](https://github.com/newAM/stm32wl-hal/actions)
+[![CI](https://github.com/newAM/stm32wl-hal/workflows/CI/badge.svg)](https://github.com/newAM/stm32wl-hal/actions?query=branch%3Amain)
 [![docs](https://img.shields.io/badge/docs-gh--pages-blue)](https://newam.github.io/stm32wl-hal/stm32wl_hal/index.html)
 
 Embedded rust HAL (hardware abstraction layer) for the STM32WL.

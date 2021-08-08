@@ -3,7 +3,8 @@
 
 use crate::{
     dma::{self, DmaCh, NoDmaCh},
-    gpio, pac,
+    gpio,
+    pac::{self, SPI1, SPI2, SPI3},
 };
 
 use core::{
@@ -351,21 +352,6 @@ trait SpiBase {
     }
 }
 
-#[derive(Debug)]
-struct Spi1Base {
-    pac: pac::SPI1,
-}
-
-#[derive(Debug)]
-struct Spi2Base {
-    pac: pac::SPI2,
-}
-
-#[derive(Debug)]
-struct Spi3Base {
-    pac: pac::SPI3,
-}
-
 macro_rules! impl_spi_base_for {
     ($name:ident, $dr:expr, $tx_id:expr, $rx_id:expr) => {
         impl SpiBase for $name {
@@ -374,15 +360,15 @@ macro_rules! impl_spi_base_for {
             const DMA_RX_ID: u8 = $rx_id as u8;
             #[inline(always)]
             fn cr1(&self) -> &pac::spi1::CR1 {
-                &self.pac.cr1
+                &self.cr1
             }
             #[inline(always)]
             fn cr2(&self) -> &pac::spi1::CR2 {
-                &self.pac.cr2
+                &self.cr2
             }
             #[inline(always)]
             fn sr(&self) -> &pac::spi1::SR {
-                &self.pac.sr
+                &self.sr
             }
         }
     };
@@ -392,9 +378,9 @@ use pac::dmamux::c0cr::DMAREQ_ID_A::{
     SPI1_RX_DMA, SPI1_TX_DMA, SPI2_RX_DMA, SPI2_TX_DMA, SUBGHZSPI_RX, SUBGHZSPI_TX,
 };
 
-impl_spi_base_for!(Spi1Base, SPI1_BASE + DR_OFFSET, SPI1_TX_DMA, SPI1_RX_DMA);
-impl_spi_base_for!(Spi2Base, SPI2_BASE + DR_OFFSET, SPI2_TX_DMA, SPI2_RX_DMA);
-impl_spi_base_for!(Spi3Base, SPI3_BASE + DR_OFFSET, SUBGHZSPI_TX, SUBGHZSPI_RX);
+impl_spi_base_for!(SPI1, SPI1_BASE + DR_OFFSET, SPI1_TX_DMA, SPI1_RX_DMA);
+impl_spi_base_for!(SPI2, SPI2_BASE + DR_OFFSET, SPI2_TX_DMA, SPI2_RX_DMA);
+impl_spi_base_for!(SPI3, SPI3_BASE + DR_OFFSET, SUBGHZSPI_TX, SUBGHZSPI_RX);
 
 const fn cpha_from_phase(phase: Phase) -> bool {
     match phase {
@@ -413,7 +399,7 @@ const fn cpol_from_polarity(polarity: Polarity) -> bool {
 /// SPI1 driver
 #[derive(Debug)]
 pub struct Spi1<MOSI, MISO, SCK, DMA> {
-    base: Spi1Base,
+    base: pac::SPI1,
     mosi: MOSI,
     miso: MISO,
     sck: SCK,
@@ -424,7 +410,7 @@ pub struct Spi1<MOSI, MISO, SCK, DMA> {
 /// SPI2 driver
 #[derive(Debug)]
 pub struct Spi2<MOSI, MISO, SCK, DMA> {
-    base: Spi2Base,
+    base: pac::SPI2,
     mosi: MOSI,
     miso: MISO,
     sck: SCK,
@@ -442,7 +428,7 @@ pub struct Spi2<MOSI, MISO, SCK, DMA> {
 #[derive(Debug)]
 #[doc(hidden)]
 pub struct Spi3<DMA> {
-    base: Spi3Base,
+    base: pac::SPI3,
     tx_dma: DMA,
     rx_dma: DMA,
 }
@@ -543,7 +529,7 @@ where
         Self::init_no_dma(&mut spi1, &mut mosi, &mut miso, &mut sck, mode, div, rcc);
 
         Spi1 {
-            base: Spi1Base { pac: spi1 },
+            base: spi1,
             mosi,
             miso,
             sck,
@@ -582,7 +568,7 @@ where
     /// let (spi1, pa7, pa6, pa5) = spi.free();
     /// ```
     pub fn free(self) -> (pac::SPI1, MOSI, MISO, SCK) {
-        (self.base.pac, self.mosi, self.miso, self.sck)
+        (self.base, self.mosi, self.miso, self.sck)
     }
 }
 
@@ -636,10 +622,9 @@ where
         rcc: &mut pac::RCC,
     ) -> Spi1<MOSI, MISO, SCK, DmaCh> {
         Self::init_no_dma(&mut spi1, &mut mosi, &mut miso, &mut sck, mode, div, rcc);
-        let mut base: Spi1Base = Spi1Base { pac: spi1 };
-        base.one_time_dma_setup(&mut tx_dma, &mut rx_dma);
+        spi1.one_time_dma_setup(&mut tx_dma, &mut rx_dma);
         Spi1 {
-            base,
+            base: spi1,
             mosi,
             miso,
             sck,
@@ -683,7 +668,7 @@ where
     /// ```
     pub fn free(self) -> (pac::SPI1, MOSI, MISO, SCK, DmaCh, DmaCh) {
         (
-            self.base.pac,
+            self.base,
             self.mosi,
             self.miso,
             self.sck,
@@ -808,7 +793,7 @@ where
     ) -> Spi2<MOSI, MISO, SCK, NoDmaCh> {
         Self::init_no_dma(&mut spi2, &mut mosi, &mut miso, &mut sck, mode, div, rcc);
         Spi2 {
-            base: Spi2Base { pac: spi2 },
+            base: spi2,
             mosi,
             miso,
             sck,
@@ -847,7 +832,7 @@ where
     /// let (spi2, pb15, pb14, pb13) = spi.free();
     /// ```
     pub fn free(self) -> (pac::SPI2, MOSI, MISO, SCK) {
-        (self.base.pac, self.mosi, self.miso, self.sck)
+        (self.base, self.mosi, self.miso, self.sck)
     }
 }
 
@@ -901,10 +886,9 @@ where
         rcc: &mut pac::RCC,
     ) -> Spi2<MOSI, MISO, SCK, DmaCh> {
         Self::init_no_dma(&mut spi2, &mut mosi, &mut miso, &mut sck, mode, div, rcc);
-        let mut base: Spi2Base = Spi2Base { pac: spi2 };
-        base.one_time_dma_setup(&mut tx_dma, &mut rx_dma);
+        spi2.one_time_dma_setup(&mut tx_dma, &mut rx_dma);
         Spi2 {
-            base,
+            base: spi2,
             mosi,
             miso,
             sck,
@@ -948,7 +932,7 @@ where
     /// ```
     pub fn free(self) -> (pac::SPI2, MOSI, MISO, SCK, DmaCh, DmaCh) {
         (
-            self.base.pac,
+            self.base,
             self.mosi,
             self.miso,
             self.sck,
@@ -1022,7 +1006,7 @@ impl Spi3<NoDmaCh> {
         Self::init_no_dma(&mut spi3, div, rcc);
 
         Spi3 {
-            base: Spi3Base { pac: spi3 },
+            base: spi3,
             tx_dma: NoDmaCh::new(),
             rx_dma: NoDmaCh::new(),
         }
@@ -1031,16 +1015,14 @@ impl Spi3<NoDmaCh> {
     #[allow(clippy::missing_safety_doc)]
     pub unsafe fn steal() -> Spi3<NoDmaCh> {
         Spi3 {
-            base: Spi3Base {
-                pac: pac::Peripherals::steal().SPI3,
-            },
+            base: pac::Peripherals::steal().SPI3,
             tx_dma: NoDmaCh::new(),
             rx_dma: NoDmaCh::new(),
         }
     }
 
     pub fn free(self) -> pac::SPI3 {
-        self.base.pac
+        self.base
     }
 }
 
@@ -1054,10 +1036,9 @@ impl Spi3<DmaCh> {
         rcc: &mut pac::RCC,
     ) -> Spi3<DmaCh> {
         Self::init_no_dma(&mut spi3, div, rcc);
-        let mut base: Spi3Base = Spi3Base { pac: spi3 };
-        base.one_time_dma_setup(&mut tx_dma, &mut rx_dma);
+        spi3.one_time_dma_setup(&mut tx_dma, &mut rx_dma);
         Spi3 {
-            base,
+            base: spi3,
             tx_dma,
             rx_dma,
         }
@@ -1066,16 +1047,14 @@ impl Spi3<DmaCh> {
     #[allow(clippy::missing_safety_doc)]
     pub unsafe fn steal_with_dma(tx_dma: DmaCh, rx_dma: DmaCh) -> Spi3<DmaCh> {
         Spi3 {
-            base: Spi3Base {
-                pac: pac::Peripherals::steal().SPI3,
-            },
+            base: pac::Peripherals::steal().SPI3,
             tx_dma,
             rx_dma,
         }
     }
 
     pub fn free(self) -> (pac::SPI3, DmaCh, DmaCh) {
-        (self.base.pac, self.tx_dma, self.rx_dma)
+        (self.base, self.tx_dma, self.rx_dma)
     }
 
     #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]

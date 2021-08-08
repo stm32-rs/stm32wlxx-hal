@@ -228,10 +228,12 @@ impl<DMA> SubGhz<DMA> {
         mut a6: pins::A6,
         mut a7: pins::A7,
     ) {
-        a4.set_subghz_spi_nss_af();
-        a5.set_subghz_spi_sck_af();
-        a6.set_subghz_spi_miso_af();
-        a7.set_subghz_spi_mosi_af();
+        cortex_m::interrupt::free(|cs| {
+            a4.set_subghz_spi_nss_af(cs);
+            a5.set_subghz_spi_sck_af(cs);
+            a6.set_subghz_spi_miso_af(cs);
+            a7.set_subghz_spi_mosi_af(cs);
+        });
         self.debug_pins = Some(DebugPins::new(a4, a5, a6, a7))
     }
 

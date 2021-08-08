@@ -5,7 +5,7 @@ use core::convert::TryFrom;
 use crate::{
     embedded_hal::blocking::i2c::{Read, Write, WriteRead},
     pac::{rcc::ccipr::I2C3SEL_A, I2C1, I2C2, I2C3, RCC},
-    rcc::{sysclk_hz, pclk1_hz},
+    rcc::{pclk1_hz, sysclk_hz},
 };
 
 use embedded_time::{fixed_point::FixedPoint, rate::*};

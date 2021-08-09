@@ -29,7 +29,7 @@ collaborate on creating a HAL :)
 
 ## Usage
 
-See [hal/README.md].
+See [hal/README.md](hal/README.md).
 
 ## On-Target Tests
 

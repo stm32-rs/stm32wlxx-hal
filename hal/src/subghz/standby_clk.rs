@@ -4,6 +4,7 @@
 ///
 /// [`set_standby`]: crate::subghz::SubGhz::set_standby
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum StandbyClk {
     /// RC 13 MHz used in standby mode.

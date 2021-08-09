@@ -46,7 +46,7 @@ pub use cad_params::{CadParams, ExitMode, NbCadSymbol};
 pub use calibrate::{Calibrate, CalibrateImage};
 pub use fallback_mode::FallbackMode;
 pub use hse_trim::HseTrim;
-pub use irq::{CfgIrq, Irq};
+pub use irq::{CfgIrq, Irq, IrqLine};
 pub use lora_sync_word::LoRaSyncWord;
 pub use mod_params::BpskModParams;
 pub use mod_params::{CodingRate, LoRaBandwidth, LoRaModParams, SpreadingFactor};
@@ -80,6 +80,7 @@ use embedded_hal::blocking::spi::{Transfer, Write};
 pub type Error = crate::spi::Error;
 
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 struct DebugPins {
     a4: pins::A4,
     a5: pins::A5,
@@ -97,7 +98,6 @@ impl DebugPins {
     }
 }
 
-#[derive(Debug)]
 struct Nss {
     _priv: (),
 }
@@ -175,9 +175,13 @@ pub fn mask_irq() {
 ///
 /// See RM0453 Rev 1 Section 6.3 Page 228 "Radio busy management" for more
 /// details.
-fn rfbusys() -> bool {
-    let dp = unsafe { pac::Peripherals::steal() };
-    dp.PWR.sr2.read().rfbusys().bit_is_set()
+pub fn rfbusys() -> bool {
+    unsafe { pac::Peripherals::steal() }
+        .PWR
+        .sr2
+        .read()
+        .rfbusys()
+        .is_busy()
 }
 
 /// Sub-GHz radio peripheral
@@ -228,10 +232,12 @@ impl<DMA> SubGhz<DMA> {
         mut a6: pins::A6,
         mut a7: pins::A7,
     ) {
-        a4.set_subghz_spi_nss_af();
-        a5.set_subghz_spi_sck_af();
-        a6.set_subghz_spi_miso_af();
-        a7.set_subghz_spi_mosi_af();
+        cortex_m::interrupt::free(|cs| {
+            a4.set_subghz_spi_nss_af(cs);
+            a5.set_subghz_spi_sck_af(cs);
+            a6.set_subghz_spi_miso_af(cs);
+            a7.set_subghz_spi_mosi_af(cs);
+        });
         self.debug_pins = Some(DebugPins::new(a4, a5, a6, a7))
     }
 
@@ -2757,8 +2763,8 @@ where
     /// use stm32wl_hal::subghz::{CfgIrq, Irq};
     ///
     /// const IRQ_CFG: CfgIrq = CfgIrq::new()
-    ///     .irq_enable(Irq::TxDone)
-    ///     .irq_enable(Irq::Timeout);
+    ///     .irq_enable_all(Irq::TxDone)
+    ///     .irq_enable_all(Irq::Timeout);
     /// sg.set_irq_cfg(&IRQ_CFG)?;
     /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
@@ -2834,8 +2840,8 @@ impl SubGhz<DmaCh> {
     /// use stm32wl_hal::subghz::{CfgIrq, Irq};
     ///
     /// const IRQ_CFG: CfgIrq = CfgIrq::new()
-    ///     .irq_enable(Irq::TxDone)
-    ///     .irq_enable(Irq::Timeout);
+    ///     .irq_enable_all(Irq::TxDone)
+    ///     .irq_enable_all(Irq::Timeout);
     /// sg.aio_set_irq_cfg(&IRQ_CFG).await?;
     /// # Ok(()) }
     /// ```

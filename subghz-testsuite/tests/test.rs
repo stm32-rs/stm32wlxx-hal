@@ -20,11 +20,12 @@ use bsp::{
         rcc,
         rng::{self, Rng},
         subghz::{
-            AddrComp, CalibrateImage, CfgIrq, CmdStatus, CodingRate, CrcType, FskBandwidth,
-            FskBitrate, FskFdev, FskModParams, FskPulseShape, GenericPacketParams, HeaderType, Irq,
-            LoRaBandwidth, LoRaModParams, LoRaPacketParams, LoRaSyncWord, Ocp, PaConfig, PaSel,
-            PacketType, PreambleDetection, RampTime, RegMode, RfFreq, SpreadingFactor, StandbyClk,
-            Status, StatusMode, SubGhz, TcxoMode, TcxoTrim, Timeout, TxParams,
+            rfbusys, AddrComp, CalibrateImage, CfgIrq, CmdStatus, CodingRate, CrcType,
+            FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape, GenericPacketParams,
+            HeaderType, Irq, LoRaBandwidth, LoRaModParams, LoRaPacketParams, LoRaSyncWord, Ocp,
+            PaConfig, PaSel, PacketType, PreambleDetection, RampTime, RegMode, RfFreq,
+            SpreadingFactor, StandbyClk, Status, StatusMode, SubGhz, TcxoMode, TcxoTrim, Timeout,
+            TxParams,
         },
     },
     RfSwitch,
@@ -106,9 +107,21 @@ async fn aio_buffer_io_inner() {
     };
     const DATA: [u8; 255] = [0xA5; 255];
     let mut buf: alloc::vec::Vec<u8> = alloc::vec![0; 255];
+    while rfbusys() {}
+    let start: u32 = DWT::get_cycle_count();
     unwrap!(sg.aio_write_buffer(0, &DATA).await);
     unwrap!(sg.aio_read_buffer(0, &mut buf).await);
+    let end: u32 = DWT::get_cycle_count();
+    defmt::info!("Cycles 255B: {}", end - start);
     defmt::assert_eq!(DATA.as_ref(), buf.as_slice());
+
+    let mut buf: [u8; 0] = [];
+    while rfbusys() {}
+    let start: u32 = DWT::get_cycle_count();
+    unwrap!(sg.aio_write_buffer(0, &buf).await);
+    unwrap!(sg.aio_read_buffer(0, &mut buf).await);
+    let end: u32 = DWT::get_cycle_count();
+    defmt::info!("Cycles 0B: {}", end - start);
 }
 
 // WARNING will wrap-around eventually, use this for relative timing only
@@ -135,8 +148,8 @@ async fn aio_wait_irq_inner() {
     unwrap!(sg.aio_set_rf_frequency(&RF_FREQ).await);
 
     const IRQ_CFG: CfgIrq = CfgIrq::new()
-        .irq_enable(Irq::RxDone)
-        .irq_enable(Irq::Timeout);
+        .irq_enable_all(Irq::RxDone)
+        .irq_enable_all(Irq::Timeout);
     unwrap!(sg.aio_set_irq_cfg(&IRQ_CFG).await);
 
     let status: Status = unwrap!(sg.status());
@@ -212,8 +225,8 @@ fn ping_pong(sg: &mut SubGhz<DmaCh>, rng: &mut Rng, rfs: &mut RfSwitch, pkt: Pac
     unwrap!(sg.write_buffer(TX_BUF_OFFSET, PING_DATA_BYTES));
 
     const IRQ_CFG: CfgIrq = CfgIrq::new()
-        .irq_enable(Irq::RxDone)
-        .irq_enable(Irq::Timeout);
+        .irq_enable_all(Irq::RxDone)
+        .irq_enable_all(Irq::Timeout);
     unwrap!(sg.set_irq_cfg(&IRQ_CFG));
 
     const MAX_ATTEMPTS: u32 = 100;
@@ -368,19 +381,43 @@ mod tests {
     #[test]
     fn buffer_io(ta: &mut TestArgs) {
         const DATA: [u8; 255] = [0x5A; 255];
+        while rfbusys() {}
+        let start: u32 = DWT::get_cycle_count();
         unwrap!(ta.sg.write_buffer(0, &DATA));
         unwrap!(ta.sg.read_buffer(0, unsafe { &mut BUF }));
+        let end: u32 = DWT::get_cycle_count();
+        defmt::info!("Cycles 255B: {}", end - start);
         defmt::assert_eq!(DATA.as_ref(), unsafe { BUF }.as_ref());
+
+        let mut buf: [u8; 0] = [];
+        while rfbusys() {}
+        let start: u32 = DWT::get_cycle_count();
+        unwrap!(ta.sg.write_buffer(0, &buf));
+        unwrap!(ta.sg.read_buffer(0, &mut buf));
+        let end: u32 = DWT::get_cycle_count();
+        defmt::info!("Cycles 0B: {}", end - start);
     }
 
     #[test]
-    fn no_dma_buffer_io(_: &mut TestArgs) {
+    fn buffer_io_no_dma(_: &mut TestArgs) {
         let mut sg: SubGhz<NoDmaCh> = unsafe { SubGhz::<NoDmaCh>::steal() };
 
         const DATA: [u8; 255] = [0x45; 255];
+        while rfbusys() {}
+        let start: u32 = DWT::get_cycle_count();
         unwrap!(sg.write_buffer(0, &DATA));
         unwrap!(sg.read_buffer(0, unsafe { &mut BUF }));
+        let end: u32 = DWT::get_cycle_count();
+        defmt::info!("Cycles 255B: {}", end - start);
         defmt::assert_eq!(DATA.as_ref(), unsafe { BUF }.as_ref());
+
+        let mut buf: [u8; 0] = [];
+        while rfbusys() {}
+        let start: u32 = DWT::get_cycle_count();
+        unwrap!(sg.write_buffer(0, &buf));
+        unwrap!(sg.read_buffer(0, &mut buf));
+        let end: u32 = DWT::get_cycle_count();
+        defmt::info!("Cycles 0B: {}", end - start);
     }
 
     #[test]

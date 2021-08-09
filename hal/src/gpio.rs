@@ -7,6 +7,7 @@ use cortex_m::interrupt::CriticalSection;
 /// GPIO output types.
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum OutputType {
     /// Push-pull output.
     PushPull = 0b0,
@@ -21,19 +22,24 @@ pub enum OutputType {
 /// Refer to the device datasheet for the frequency specifications and the power
 /// supply and load conditions for each speed.
 #[repr(u8)]
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[allow(missing_docs)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Speed {
+    /// Low speed.
     Low = 0b00,
+    /// Medium speed.
     Medium = 0b01,
+    /// Fast speed.
     Fast = 0b10,
+    /// High speed.
     High = 0b11,
 }
 
 /// GPIO pull-up and pull-down.
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[non_exhaustive] // maybe they will use that reserved value one day...
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+
 pub enum Pull {
     /// No pull-up, no pull-down.
     None = 0b00,
@@ -44,6 +50,7 @@ pub enum Pull {
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 struct Pin<const BASE: usize, const N: u8> {}
 
 impl<const BASE: usize, const N: u8> Pin<BASE, N> {
@@ -130,14 +137,12 @@ impl<const BASE: usize, const N: u8> Pin<BASE, N> {
     }
 
     #[inline(always)]
-    pub(crate) fn set_alternate_function(&mut self, af: u8) {
-        cortex_m::interrupt::free(|cs| unsafe {
-            self.set_mode(cs, sealed::Mode::Alternate);
-            let mut val: u32 = read_volatile(Self::AF_R);
-            val &= !(0b1111 << Self::AF_SHIFT);
-            val |= (af as u8 as u32) << Self::AF_SHIFT;
-            write_volatile(Self::AF_W, val);
-        })
+    pub(crate) unsafe fn set_alternate_function(&mut self, cs: &CriticalSection, af: u8) {
+        self.set_mode(cs, sealed::Mode::Alternate);
+        let mut val: u32 = read_volatile(Self::AF_R);
+        val &= !(0b1111 << Self::AF_SHIFT);
+        val |= (af as u8 as u32) << Self::AF_SHIFT;
+        write_volatile(Self::AF_W, val);
     }
 }
 
@@ -164,115 +169,59 @@ pub(crate) mod sealed {
         fn input_level(&self) -> Level;
         fn output_level(&self) -> Level;
         fn set_output_level(&mut self, level: Level);
-        fn set_alternate_function(&mut self, af: u8);
+        unsafe fn set_alternate_function(&mut self, cs: &CriticalSection, af: u8);
     }
 
-    /// Indicate a GPIO pin has the I2C1 SDA alternate function
-    pub trait I2c1Sda {
-        /// Initialize the GPIO pin for use as I2C1 SDA
-        fn set_i2c1_sda_af(&mut self, pullup: bool);
+    macro_rules! af_trait {
+        ($trt:ident, $method:ident) => {
+            pub trait $trt {
+                fn $method(&mut self, cs: &CriticalSection);
+            }
+        };
     }
 
-    /// Indicate a GPIO pin has the I2C1 SCL alternate function
-    pub trait I2c1Scl {
-        /// Initialize the GPIO pin for use as I2C1 SCL
-        fn set_i2c1_scl_af(&mut self, pullup: bool);
-    }
-
-    /// Indicate a GPIO pin has the I2C2 SDA alternate function
-    pub trait I2c2Sda {
-        /// Initialize the GPIO pin for use as I2C2 SDA
-        fn set_i2c2_sda_af(&mut self, pullup: bool);
-    }
-
-    /// Indicate a GPIO pin has the I2C2 SCL alternate function
-    pub trait I2c2Scl {
-        /// Initialize the GPIO pin for use as I2C2 SCL
-        fn set_i2c2_scl_af(&mut self, pullup: bool);
-    }
-    /// Indicate a GPIO pin has the I2C3 SDA alternate function
-    pub trait I2c3Sda {
-        /// Initialize the GPIO pin for use as I2C3 SDA
-        fn set_i2c3_sda_af(&mut self, pullup: bool);
-    }
-
-    /// Indicate a GPIO pin has the I2C3 SCL alternate function
-    pub trait I2c3Scl {
-        /// Initialize the GPIO pin for use as I2C3 SCL
-        fn set_i2c3_scl_af(&mut self, pullup: bool);
-    }
-
-    /// Indicate a GPIO pin has the SPI1 MOSI alternate function
-    pub trait Spi1Mosi {
-        /// Initialize the GPIO pin for use as SPI1 MOSI
-        fn set_spi1_mosi_af(&mut self);
-    }
-
-    /// Indicate a GPIO pin has the SPI1 MISO alternate function
-    pub trait Spi1Miso {
-        /// Initialize the GPIO pin for use as SPI1 MISO
-        fn set_spi1_miso_af(&mut self);
-    }
-
-    /// Indicate a GPIO pin has the SPI1 SCK alternate function
-    pub trait Spi1Sck {
-        /// Initialize the GPIO pin for use as SPI1 SCK
-        fn set_spi1_sck_af(&mut self);
-    }
-
-    /// Indicate a GPIO pin has the SPI1 NSS alternate function
-    pub trait Spi1Nss {
-        /// Initialize the GPIO pin for use as SPI1 NSS
-        fn set_spi1_nss_af(&mut self);
-    }
-
-    /// Indicate a GPIO pin has the SPI2 MOSI alternate function
-    pub trait Spi2Mosi {
-        /// Initialize the GPIO pin for use as SPI2 MOSI
-        fn set_spi2_mosi_af(&mut self);
-    }
-
-    /// Indicate a GPIO pin has the SPI2 MISO alternate function
-    pub trait Spi2Miso {
-        /// Initialize the GPIO pin for use as SPI12 MISO
-        fn set_spi2_miso_af(&mut self);
-    }
-
-    /// Indicate a GPIO pin has the SPI2 SCK alternate function
-    pub trait Spi2Sck {
-        /// Initialize the GPIO pin for use as SPI2 SCK
-        fn set_spi2_sck_af(&mut self);
-    }
-
-    /// Indicate a GPIO pin has the SPI2 NSS alternate function
-    pub trait Spi2Nss {
-        /// Initialize the GPIO pin for use as SPI2 NSS
-        fn set_spi2_nss_af(&mut self);
-    }
-
-    /// Indicate a GPIO pin has the debug SubGHz SPI MOSI alternate function
-    pub trait SubGhzSpiMosi {
-        /// Initialize the GPIO pin for use as debug SubGHz MOSI
-        fn set_subghz_spi_mosi_af(&mut self);
-    }
-
-    /// Indicate a GPIO pin has the debug SubGHz SPI MISO alternate function
-    pub trait SubGhzSpiMiso {
-        /// Initialize the GPIO pin for use as debug SubGHz MISO
-        fn set_subghz_spi_miso_af(&mut self);
-    }
-
-    /// Indicate a GPIO pin has the debug SubGHz SPI SCK alternate function
-    pub trait SubGhzSpiSck {
-        /// Initialize the GPIO pin for use as debug SubGHz SCK
-        fn set_subghz_spi_sck_af(&mut self);
-    }
-
-    /// Indicate a GPIO pin has the debug SubGHz SPI NSS alternate function
-    pub trait SubGhzSpiNss {
-        /// Initialize the GPIO pin for use as debug SubGHz NSS
-        fn set_subghz_spi_nss_af(&mut self);
-    }
+    af_trait!(Spi1Mosi, set_spi1_mosi_af);
+    af_trait!(Spi1Miso, set_spi1_miso_af);
+    af_trait!(Spi1Sck, set_spi1_sck_af);
+    af_trait!(Spi1Nss, set_spi1_nss_af);
+    af_trait!(Spi2Mosi, set_spi2_mosi_af);
+    af_trait!(Spi2Miso, set_spi2_miso_af);
+    af_trait!(Spi2Sck, set_spi2_sck_af);
+    af_trait!(Spi2Nss, set_spi2_nss_af);
+    af_trait!(SubGhzSpiMosi, set_subghz_spi_mosi_af);
+    af_trait!(SubGhzSpiMiso, set_subghz_spi_miso_af);
+    af_trait!(SubGhzSpiSck, set_subghz_spi_sck_af);
+    af_trait!(SubGhzSpiNss, set_subghz_spi_nss_af);
+    af_trait!(I2c1Sda, set_i2c1_sda_af);
+    af_trait!(I2c1Scl, set_i2c1_scl_af);
+    af_trait!(I2c1Smba, set_i2c1_smba_af);
+    af_trait!(I2c2Sda, set_i2c2_sda_af);
+    af_trait!(I2c2Scl, set_i2c2_scl_af);
+    af_trait!(I2c2Smba, set_i2c2_smba_af);
+    af_trait!(I2c3Sda, set_i2c3_sda_af);
+    af_trait!(I2c3Scl, set_i2c3_scl_af);
+    af_trait!(I2c3Smba, set_i2c3_smba_af);
+    af_trait!(RfBusy, set_rfbusy_af);
+    af_trait!(RfIrq0, set_rf_irq0_af);
+    af_trait!(RfIrq1, set_rf_irq1_af);
+    af_trait!(RfIrq2, set_rf_irq2_af);
+    af_trait!(Uart1Ck, set_uart1_ck_af);
+    af_trait!(Uart1Tx, set_uart1_tx_af);
+    af_trait!(Uart1Rx, set_uart1_rx_af);
+    af_trait!(Uart1Cts, set_uart1_cts_af);
+    af_trait!(Uart1Rts, set_uart1_rts_af);
+    af_trait!(Uart2Ck, set_uart2_ck_af);
+    af_trait!(Uart2Tx, set_uart2_tx_af);
+    af_trait!(Uart2Rx, set_uart2_rx_af);
+    af_trait!(Uart2Cts, set_uart2_cts_af);
+    af_trait!(Uart2Rts, set_uart2_rts_af);
+    af_trait!(LpUart1Ck, set_lpuart1_ck_af);
+    af_trait!(LpUart1Tx, set_lpuart1_tx_af);
+    af_trait!(LpUart1Rx, set_lpuart1_rx_af);
+    af_trait!(LpUart1Cts, set_lpuart1_cts_af);
+    af_trait!(LpUart1Rts, set_lpuart1_rts_af);
+    af_trait!(LpUart1RtsDe, set_lpuart1_rts_de_af);
+    af_trait!(IrOut, set_irout_af);
 
     /// Indicate a GPIO pin can be sampled by the ADC
     pub trait AdcCh {
@@ -298,6 +247,7 @@ pub mod pins {
         ($name:ident, $base:expr, $n:expr, $doc:expr) => {
             #[doc=$doc]
             #[derive(Debug)]
+            #[cfg_attr(feature = "defmt", derive(defmt::Format))]
             pub struct $name {
                 pin: Pin<$base, $n>,
             }
@@ -345,8 +295,8 @@ pub mod pins {
                 }
 
                 #[inline(always)]
-                fn set_alternate_function(&mut self, af: u8) {
-                    self.pin.set_alternate_function(af)
+                unsafe fn set_alternate_function(&mut self, cs: &CriticalSection, af: u8) {
+                    self.pin.set_alternate_function(cs, af)
                 }
             }
         };
@@ -397,383 +347,111 @@ pub mod pins {
     gpio_struct!(C14, GPIOC_BASE, 14, "Port C pin 14");
     gpio_struct!(C15, GPIOC_BASE, 15, "Port C pin 15");
 
-    impl super::sealed::I2c1Sda for A10 {
-        fn set_i2c1_sda_af(&mut self, pullup: bool) {
-            cortex_m::interrupt::free(|cs| unsafe {
-                self.pin.set_output_type(cs, OutputType::OpenDrain);
-                self.pin
-                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
-            });
-            self.pin.set_alternate_function(4)
-        }
+    macro_rules! impl_af {
+        ($trt:ident, $gpio:ident, $method:ident, $num:expr) => {
+            impl super::sealed::$trt for $gpio {
+                #[inline(always)]
+                fn $method(&mut self, cs: &CriticalSection) {
+                    unsafe { self.pin.set_alternate_function(cs, $num) }
+                }
+            }
+        };
     }
 
-    impl super::sealed::I2c1Sda for B7 {
-        fn set_i2c1_sda_af(&mut self, pullup: bool) {
-            cortex_m::interrupt::free(|cs| unsafe {
-                self.pin.set_output_type(cs, OutputType::OpenDrain);
-                self.pin
-                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
-            });
-            self.pin.set_alternate_function(4)
-        }
-    }
+    impl_af!(Spi2Miso, A5, set_spi2_miso_af, 3);
+    impl_af!(Spi2Nss, A9, set_spi2_nss_af, 3);
+    impl_af!(Spi2Mosi, C1, set_spi2_mosi_af, 3);
 
-    impl super::sealed::I2c1Sda for B9 {
-        fn set_i2c1_sda_af(&mut self, pullup: bool) {
-            cortex_m::interrupt::free(|cs| unsafe {
-                self.pin.set_output_type(cs, OutputType::OpenDrain);
-                self.pin
-                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
-            });
-            self.pin.set_alternate_function(4)
-        }
-    }
+    impl_af!(I2c3Smba, A0, set_i2c3_smba_af, 4);
+    impl_af!(I2c1Smba, A1, set_i2c1_smba_af, 4);
+    impl_af!(I2c2Smba, A6, set_i2c2_smba_af, 4);
+    impl_af!(I2c3Scl, A7, set_i2c3_scl_af, 4);
+    impl_af!(I2c1Scl, A9, set_i2c1_scl_af, 4);
+    impl_af!(I2c1Sda, A10, set_i2c1_sda_af, 4);
+    impl_af!(I2c2Sda, A11, set_i2c2_sda_af, 4);
+    impl_af!(I2c2Scl, A12, set_i2c2_scl_af, 4);
+    impl_af!(I2c2Smba, A13, set_i2c2_smba_af, 4);
+    impl_af!(I2c1Smba, A13, set_i2c1_smba_af, 4);
+    impl_af!(I2c2Sda, A15, set_i2c2_sda_af, 4);
+    impl_af!(I2c3Smba, B2, set_i2c3_smba_af, 4);
+    impl_af!(I2c3Sda, B4, set_i2c3_sda_af, 4);
+    impl_af!(I2c1Smba, B5, set_i2c1_smba_af, 4);
+    impl_af!(I2c1Scl, B6, set_i2c1_scl_af, 4);
+    impl_af!(I2c1Sda, B7, set_i2c1_sda_af, 4);
+    impl_af!(I2c1Scl, B8, set_i2c1_scl_af, 4);
+    impl_af!(I2c1Sda, B9, set_i2c1_sda_af, 4);
+    impl_af!(I2c3Scl, B10, set_i2c3_scl_af, 4);
+    impl_af!(I2c3Sda, B11, set_i2c3_sda_af, 4);
+    impl_af!(I2c3Smba, B12, set_i2c3_smba_af, 4);
+    impl_af!(I2c3Scl, B13, set_i2c3_scl_af, 4);
+    impl_af!(I2c3Sda, B14, set_i2c3_sda_af, 4);
+    impl_af!(I2c2Scl, B15, set_i2c2_scl_af, 4);
+    impl_af!(I2c3Scl, C0, set_i2c3_scl_af, 4);
+    impl_af!(I2c3Sda, C1, set_i2c3_sda_af, 4);
 
-    impl super::sealed::I2c1Scl for A9 {
-        fn set_i2c1_scl_af(&mut self, pullup: bool) {
-            cortex_m::interrupt::free(|cs| unsafe {
-                self.pin.set_output_type(cs, OutputType::OpenDrain);
-                self.pin
-                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
-            });
-            self.pin.set_alternate_function(4)
-        }
-    }
+    impl_af!(Spi1Sck, A0, set_spi1_sck_af, 5);
+    impl_af!(Spi1Nss, A4, set_spi1_nss_af, 5);
+    impl_af!(Spi1Sck, A5, set_spi1_sck_af, 5);
+    impl_af!(Spi1Miso, A6, set_spi1_miso_af, 5);
+    impl_af!(Spi1Mosi, A7, set_spi1_mosi_af, 5);
+    impl_af!(Spi2Sck, A8, set_spi2_sck_af, 5);
+    impl_af!(Spi2Sck, A9, set_spi2_sck_af, 5);
+    impl_af!(Spi2Mosi, A10, set_spi2_mosi_af, 5);
+    impl_af!(Spi1Miso, A11, set_spi1_miso_af, 5);
+    impl_af!(Spi1Mosi, A12, set_spi1_mosi_af, 5);
+    impl_af!(Spi1Nss, A15, set_spi1_nss_af, 5);
+    impl_af!(Spi1Nss, B2, set_spi1_nss_af, 5);
+    impl_af!(Spi1Sck, B3, set_spi1_sck_af, 5);
+    impl_af!(Spi1Miso, B4, set_spi1_miso_af, 5);
+    impl_af!(Spi1Mosi, B5, set_spi1_mosi_af, 5);
+    impl_af!(Spi2Nss, B9, set_spi2_nss_af, 5);
+    impl_af!(Spi2Sck, B10, set_spi2_sck_af, 5);
+    impl_af!(Spi2Nss, B12, set_spi2_nss_af, 5);
+    impl_af!(Spi2Sck, B13, set_spi2_sck_af, 5);
+    impl_af!(Spi2Miso, B14, set_spi2_miso_af, 5);
+    impl_af!(Spi2Mosi, B15, set_spi2_mosi_af, 5);
+    impl_af!(Spi2Mosi, C3, set_spi2_mosi_af, 5);
+    impl_af!(Spi2Miso, C2, set_spi2_miso_af, 5);
 
-    impl super::sealed::I2c1Scl for B6 {
-        fn set_i2c1_scl_af(&mut self, pullup: bool) {
-            cortex_m::interrupt::free(|cs| unsafe {
-                self.pin.set_output_type(cs, OutputType::OpenDrain);
-                self.pin
-                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
-            });
-            self.pin.set_alternate_function(4)
-        }
-    }
+    impl_af!(RfBusy, A12, set_rfbusy_af, 6);
+    impl_af!(RfIrq0, B3, set_rf_irq0_af, 6);
+    impl_af!(RfIrq1, B5, set_rf_irq1_af, 6);
+    impl_af!(RfIrq2, B8, set_rf_irq2_af, 6);
 
-    impl super::sealed::I2c1Scl for B8 {
-        fn set_i2c1_scl_af(&mut self, pullup: bool) {
-            cortex_m::interrupt::free(|cs| unsafe {
-                self.pin.set_output_type(cs, OutputType::OpenDrain);
-                self.pin
-                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
-            });
-            self.pin.set_alternate_function(4)
-        }
-    }
+    impl_af!(Uart2Cts, A0, set_uart2_cts_af, 7);
+    impl_af!(Uart2Rts, A1, set_uart2_rts_af, 7);
+    impl_af!(Uart2Tx, A2, set_uart2_tx_af, 7);
+    impl_af!(Uart2Rx, A3, set_uart2_rx_af, 7);
+    impl_af!(Uart2Ck, A4, set_uart2_ck_af, 7);
+    impl_af!(Uart1Ck, A8, set_uart1_ck_af, 7);
+    impl_af!(Uart1Tx, A9, set_uart1_tx_af, 7);
+    impl_af!(Uart1Rx, A10, set_uart1_rx_af, 7);
+    impl_af!(Uart1Cts, A11, set_uart1_cts_af, 7);
+    impl_af!(Uart1Rts, A12, set_uart1_rts_af, 7);
+    impl_af!(Uart1Rts, B3, set_uart1_rts_af, 7);
+    impl_af!(Uart1Cts, B4, set_uart1_cts_af, 7);
+    impl_af!(Uart1Ck, B5, set_uart1_ck_af, 7);
+    impl_af!(Uart1Tx, B6, set_uart1_tx_af, 7);
+    impl_af!(Uart1Rx, B7, set_uart1_rx_af, 7);
 
-    impl super::sealed::I2c2Sda for A11 {
-        fn set_i2c2_sda_af(&mut self, pullup: bool) {
-            cortex_m::interrupt::free(|cs| unsafe {
-                self.pin.set_output_type(cs, OutputType::OpenDrain);
-                self.pin
-                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
-            });
-            self.pin.set_alternate_function(4)
-        }
-    }
+    impl_af!(LpUart1Rts, A1, set_lpuart1_rts_af, 8);
+    impl_af!(LpUart1Tx, A2, set_lpuart1_tx_af, 8);
+    impl_af!(LpUart1Rx, A3, set_lpuart1_rx_af, 8);
+    impl_af!(LpUart1Cts, A6, set_lpuart1_cts_af, 8);
+    impl_af!(IrOut, A13, set_irout_af, 8);
+    impl_af!(LpUart1RtsDe, B1, set_lpuart1_rts_de_af, 8);
+    impl_af!(IrOut, B9, set_irout_af, 8);
+    impl_af!(LpUart1Rx, B10, set_lpuart1_rx_af, 8);
+    impl_af!(LpUart1Tx, B11, set_lpuart1_tx_af, 8);
+    impl_af!(LpUart1Rts, B12, set_lpuart1_rts_af, 8);
+    impl_af!(LpUart1Cts, B13, set_lpuart1_cts_af, 8);
+    impl_af!(LpUart1Rx, C0, set_lpuart1_rx_af, 8);
+    impl_af!(LpUart1Tx, C1, set_lpuart1_tx_af, 8);
 
-    impl super::sealed::I2c2Sda for A15 {
-        fn set_i2c2_sda_af(&mut self, pullup: bool) {
-            cortex_m::interrupt::free(|cs| unsafe {
-                self.pin.set_output_type(cs, OutputType::OpenDrain);
-                self.pin
-                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
-            });
-            self.pin.set_alternate_function(4)
-        }
-    }
-
-    impl super::sealed::I2c2Scl for A12 {
-        fn set_i2c2_scl_af(&mut self, pullup: bool) {
-            cortex_m::interrupt::free(|cs| unsafe {
-                self.pin.set_output_type(cs, OutputType::OpenDrain);
-                self.pin
-                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
-            });
-            self.pin.set_alternate_function(4)
-        }
-    }
-
-    impl super::sealed::I2c2Scl for B15 {
-        fn set_i2c2_scl_af(&mut self, pullup: bool) {
-            cortex_m::interrupt::free(|cs| unsafe {
-                self.pin.set_output_type(cs, OutputType::OpenDrain);
-                self.pin
-                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
-            });
-            self.pin.set_alternate_function(4)
-        }
-    }
-
-    impl super::sealed::I2c3Sda for B4 {
-        fn set_i2c3_sda_af(&mut self, pullup: bool) {
-            cortex_m::interrupt::free(|cs| unsafe {
-                self.pin.set_output_type(cs, OutputType::OpenDrain);
-                self.pin
-                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
-            });
-            self.pin.set_alternate_function(4)
-        }
-    }
-
-    impl super::sealed::I2c3Sda for B11 {
-        fn set_i2c3_sda_af(&mut self, pullup: bool) {
-            cortex_m::interrupt::free(|cs| unsafe {
-                self.pin.set_output_type(cs, OutputType::OpenDrain);
-                self.pin
-                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
-            });
-            self.pin.set_alternate_function(4)
-        }
-    }
-
-    impl super::sealed::I2c3Sda for B14 {
-        fn set_i2c3_sda_af(&mut self, pullup: bool) {
-            cortex_m::interrupt::free(|cs| unsafe {
-                self.pin.set_output_type(cs, OutputType::OpenDrain);
-                self.pin
-                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
-            });
-            self.pin.set_alternate_function(4)
-        }
-    }
-
-    impl super::sealed::I2c3Sda for C1 {
-        fn set_i2c3_sda_af(&mut self, pullup: bool) {
-            cortex_m::interrupt::free(|cs| unsafe {
-                self.pin.set_output_type(cs, OutputType::OpenDrain);
-                self.pin
-                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
-            });
-            self.pin.set_alternate_function(4)
-        }
-    }
-
-    impl super::sealed::I2c3Scl for A7 {
-        fn set_i2c3_scl_af(&mut self, pullup: bool) {
-            cortex_m::interrupt::free(|cs| unsafe {
-                self.pin.set_output_type(cs, OutputType::OpenDrain);
-                self.pin
-                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
-            });
-            self.pin.set_alternate_function(4)
-        }
-    }
-
-    impl super::sealed::I2c3Scl for B10 {
-        fn set_i2c3_scl_af(&mut self, pullup: bool) {
-            cortex_m::interrupt::free(|cs| unsafe {
-                self.pin.set_output_type(cs, OutputType::OpenDrain);
-                self.pin
-                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
-            });
-            self.pin.set_alternate_function(4)
-        }
-    }
-
-    impl super::sealed::I2c3Scl for B13 {
-        fn set_i2c3_scl_af(&mut self, pullup: bool) {
-            cortex_m::interrupt::free(|cs| unsafe {
-                self.pin.set_output_type(cs, OutputType::OpenDrain);
-                self.pin
-                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
-            });
-            self.pin.set_alternate_function(4)
-        }
-    }
-
-    impl super::sealed::I2c3Scl for C0 {
-        fn set_i2c3_scl_af(&mut self, pullup: bool) {
-            cortex_m::interrupt::free(|cs| unsafe {
-                self.pin.set_output_type(cs, OutputType::OpenDrain);
-                self.pin
-                    .set_pull(cs, if pullup { Pull::Up } else { Pull::None });
-            });
-            self.pin.set_alternate_function(4)
-        }
-    }
-
-    impl super::sealed::Spi1Sck for A0 {
-        fn set_spi1_sck_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi1Nss for A4 {
-        fn set_spi1_nss_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi1Sck for A5 {
-        fn set_spi1_sck_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi1Miso for A6 {
-        fn set_spi1_miso_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi1Mosi for A7 {
-        fn set_spi1_mosi_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi1Miso for A11 {
-        fn set_spi1_miso_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi1Mosi for A12 {
-        fn set_spi1_mosi_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi1Nss for A15 {
-        fn set_spi1_nss_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi1Nss for B2 {
-        fn set_spi1_nss_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi1Sck for B3 {
-        fn set_spi1_sck_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi1Miso for B4 {
-        fn set_spi1_miso_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi1Mosi for B5 {
-        fn set_spi1_mosi_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi2Mosi for A10 {
-        fn set_spi2_mosi_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi2Mosi for B15 {
-        fn set_spi2_mosi_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi2Mosi for C1 {
-        fn set_spi2_mosi_af(&mut self) {
-            self.pin.set_alternate_function(3)
-        }
-    }
-
-    impl super::sealed::Spi2Mosi for C3 {
-        fn set_spi2_mosi_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi2Miso for A5 {
-        fn set_spi2_miso_af(&mut self) {
-            self.pin.set_alternate_function(3)
-        }
-    }
-
-    impl super::sealed::Spi2Miso for B14 {
-        fn set_spi2_miso_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi2Miso for C2 {
-        fn set_spi2_miso_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi2Sck for A8 {
-        fn set_spi2_sck_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi2Sck for A9 {
-        fn set_spi2_sck_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi2Sck for B10 {
-        fn set_spi2_sck_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi2Sck for B13 {
-        fn set_spi2_sck_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi2Nss for A9 {
-        fn set_spi2_nss_af(&mut self) {
-            self.pin.set_alternate_function(3)
-        }
-    }
-
-    impl super::sealed::Spi2Nss for B9 {
-        fn set_spi2_nss_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::Spi2Nss for B12 {
-        fn set_spi2_nss_af(&mut self) {
-            self.pin.set_alternate_function(5)
-        }
-    }
-
-    impl super::sealed::SubGhzSpiNss for A4 {
-        fn set_subghz_spi_nss_af(&mut self) {
-            self.pin.set_alternate_function(13)
-        }
-    }
-
-    impl super::sealed::SubGhzSpiSck for A5 {
-        fn set_subghz_spi_sck_af(&mut self) {
-            self.pin.set_alternate_function(13)
-        }
-    }
-
-    impl super::sealed::SubGhzSpiMiso for A6 {
-        fn set_subghz_spi_miso_af(&mut self) {
-            self.pin.set_alternate_function(13)
-        }
-    }
-
-    impl super::sealed::SubGhzSpiMosi for A7 {
-        fn set_subghz_spi_mosi_af(&mut self) {
-            self.pin.set_alternate_function(13)
-        }
-    }
+    impl_af!(SubGhzSpiNss, A4, set_subghz_spi_nss_af, 13);
+    impl_af!(SubGhzSpiSck, A5, set_subghz_spi_sck_af, 13);
+    impl_af!(SubGhzSpiMiso, A6, set_subghz_spi_miso_af, 13);
+    impl_af!(SubGhzSpiMosi, A7, set_subghz_spi_mosi_af, 13);
 
     // keep the trait separate from the pin so that users cant use the ADC_CH
     // but are unable to implement the sealed trait themselves
@@ -807,6 +485,7 @@ pub mod pins {
 
 /// Port A GPIOs
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[allow(missing_docs)]
 pub struct PortA {
     pub pa0: pins::A0,
@@ -917,6 +596,7 @@ impl PortA {
 
 /// Port B GPIOs
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[allow(missing_docs)]
 pub struct PortB {
     pub pb0: pins::B0,
@@ -1027,6 +707,7 @@ impl PortB {
 
 /// Port C GPIOs
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[allow(missing_docs)]
 pub struct PortC {
     pub pc0: pins::C0,
@@ -1184,6 +865,7 @@ impl Level {
 ///
 /// Argument of [`Output::new`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct OutputArgs {
     /// Output speed.
     pub speed: Speed,
@@ -1227,6 +909,7 @@ impl Default for OutputArgs {
 
 /// Output pin.
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Output<P> {
     pin: P,
 }
@@ -1300,8 +983,6 @@ where
 
     /// Free the GPIO pin.
     ///
-    /// This will reconfigure the GPIO as a floating input.
-    ///
     /// # Example
     ///
     /// Configure a GPIO as an output, then free it.
@@ -1315,14 +996,10 @@ where
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let pc0_output: Output<pins::C0> = Output::default(gpioc.pc0);
-    /// let pc0: pins::C0 = pc0_output.free();
+    /// let pc0: Output<pins::C0> = Output::default(gpioc.pc0);
+    /// let pc0: pins::C0 = pc0.free();
     /// ```
-    pub fn free(mut self) -> P {
-        cortex_m::interrupt::free(|cs| unsafe {
-            self.pin.set_pull(cs, Pull::None);
-            self.pin.set_mode(cs, sealed::Mode::Input);
-        });
+    pub fn free(self) -> P {
         self.pin
     }
 
@@ -1444,6 +1121,7 @@ where
 
 /// Input pin
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Input<P> {
     pin: P,
 }
@@ -1502,8 +1180,6 @@ where
 
     /// Free the GPIO pin.
     ///
-    /// This will reconfigure the GPIO as a floating input.
-    ///
     /// # Example
     ///
     /// Configure a GPIO as an input, then free it.
@@ -1520,11 +1196,7 @@ where
     /// let pc0_input: Input<pins::C0> = Input::default(gpioc.pc0);
     /// let pc0: pins::C0 = pc0_input.free();
     /// ```
-    pub fn free(mut self) -> P {
-        cortex_m::interrupt::free(|cs| unsafe {
-            self.pin.set_pull(cs, Pull::None);
-            // mode is already input
-        });
+    pub fn free(self) -> P {
         self.pin
     }
 
@@ -1555,6 +1227,7 @@ where
 
 /// Analog pin
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Analog<P> {
     pin: P,
 }
@@ -1574,7 +1247,7 @@ where
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{pins, Analog, PortB, Pull},
+    ///     gpio::{pins, Analog, PortB},
     ///     pac,
     /// };
     ///
@@ -1592,15 +1265,13 @@ where
 
     /// Free the GPIO pin.
     ///
-    /// This will reconfigure the GPIO as a floating input.
-    ///
     /// # Example
     ///
     /// Configure a GPIO as an analog pin, then free it.
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{pins, Analog, PortB, Pull},
+    ///     gpio::{pins, Analog, PortB},
     ///     pac,
     /// };
     ///
@@ -1610,10 +1281,7 @@ where
     /// let pb14: Analog<pins::B14> = Analog::new(gpiob.pb14);
     /// let pb14: pins::B14 = pb14.free();
     /// ```
-    pub fn free(mut self) -> P {
-        cortex_m::interrupt::free(|cs| unsafe {
-            self.pin.set_mode(cs, sealed::Mode::Input);
-        });
+    pub fn free(self) -> P {
         self.pin
     }
 }
@@ -1624,5 +1292,205 @@ where
 {
     fn from(p: P) -> Self {
         Analog::new(p)
+    }
+}
+
+/// RF Busy pin
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct RfBusy {
+    pin: pins::A12,
+}
+
+impl RfBusy {
+    /// Create a new RF Busy pin from a pin A12.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{PortA, RfBusy},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let pa12: RfBusy = RfBusy::new(gpioa.pa12);
+    /// ```
+    pub fn new(mut pin: pins::A12) -> Self {
+        use sealed::RfBusy;
+        cortex_m::interrupt::free(|cs| pin.set_rfbusy_af(cs));
+        Self { pin }
+    }
+
+    /// Free the GPIO pin.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, PortA, RfBusy},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let pa12: RfBusy = RfBusy::new(gpioa.pa12);
+    /// let pa12: pins::A12 = pa12.free();
+    /// ```
+    pub fn free(self) -> pins::A12 {
+        self.pin
+    }
+}
+
+/// RF IRQ 0 pin
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct RfIrq0 {
+    pin: pins::B3,
+}
+
+impl RfIrq0 {
+    /// Create a new RF IRQ 0 pin from a pin B3.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{PortB, RfIrq0},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    /// let pb3: RfIrq0 = RfIrq0::new(gpiob.pb3);
+    /// ```
+    pub fn new(mut pin: pins::B3) -> Self {
+        use sealed::RfIrq0;
+        cortex_m::interrupt::free(|cs| pin.set_rf_irq0_af(cs));
+        Self { pin }
+    }
+
+    /// Free the GPIO pin.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, PortB, RfIrq0},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    /// let pb3: RfIrq0 = RfIrq0::new(gpiob.pb3);
+    /// let pb3: pins::B3 = pb3.free();
+    /// ```
+    pub fn free(self) -> pins::B3 {
+        self.pin
+    }
+}
+
+/// RF IRQ 1 pin
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct RfIrq1 {
+    pin: pins::B5,
+}
+
+impl RfIrq1 {
+    /// Create a new RF IRQ 1 pin from a pin B5.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{PortB, RfIrq1},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    /// let pb5: RfIrq1 = RfIrq1::new(gpiob.pb5);
+    /// ```
+    pub fn new(mut pin: pins::B5) -> Self {
+        use sealed::RfIrq1;
+        cortex_m::interrupt::free(|cs| pin.set_rf_irq1_af(cs));
+        Self { pin }
+    }
+
+    /// Free the GPIO pin.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, PortB, RfIrq1},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    /// let pb5: RfIrq1 = RfIrq1::new(gpiob.pb5);
+    /// let pb5: pins::B5 = pb5.free();
+    /// ```
+    pub fn free(self) -> pins::B5 {
+        self.pin
+    }
+}
+
+/// RF IRQ 2 pin
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct RfIrq2 {
+    pin: pins::B8,
+}
+
+impl RfIrq2 {
+    /// Create a new RF IRQ 2 pin from a pin B8.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{PortB, RfIrq2},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    /// let pb8: RfIrq2 = RfIrq2::new(gpiob.pb8);
+    /// ```
+    pub fn new(mut pin: pins::B8) -> Self {
+        use sealed::RfIrq2;
+        cortex_m::interrupt::free(|cs| pin.set_rf_irq2_af(cs));
+        Self { pin }
+    }
+
+    /// Free the GPIO pin.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, PortB, RfIrq2},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    /// let pb8: RfIrq2 = RfIrq2::new(gpiob.pb8);
+    /// let pb8: pins::B8 = pb8.free();
+    /// ```
+    pub fn free(self) -> pins::B8 {
+        self.pin
     }
 }

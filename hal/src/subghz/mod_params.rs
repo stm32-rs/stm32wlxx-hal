@@ -1,5 +1,6 @@
 /// Bandwidth options for [`FskModParams`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum FskBandwidth {
     /// 4.8 kHz DSB
     Bw4 = 0x1F,
@@ -116,6 +117,7 @@ impl PartialOrd for FskBandwidth {
 
 /// Pulse shaping options for [`FskModParams`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum FskPulseShape {
     /// No filtering applied.
     None = 0b00,
@@ -223,6 +225,7 @@ impl PartialOrd for FskBitrate {
 
 /// Frequency deviation argument for [`FskModParams::set_fdev`]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct FskFdev {
     bits: u32,
 }
@@ -288,6 +291,7 @@ impl FskFdev {
 
 /// (G)FSK modulation paramters.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct FskModParams {
     buf: [u8; 9],
 }
@@ -440,6 +444,7 @@ impl Default for FskModParams {
 ///
 /// Argument of [`LoRaModParams::set_sf`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum SpreadingFactor {
     /// Spreading factor 5.
@@ -470,6 +475,7 @@ impl From<SpreadingFactor> for u8 {
 ///
 /// Argument of [`LoRaModParams::set_bw`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum LoRaBandwidth {
     /// 7.81 kHz
@@ -545,6 +551,7 @@ impl PartialOrd for LoRaBandwidth {
 ///
 /// Argument of [`LoRaModParams::set_cr`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum CodingRate {
     /// No forward error correction coding rate 4/4
@@ -561,6 +568,8 @@ pub enum CodingRate {
 
 /// LoRa modulation paramters.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+
 pub struct LoRaModParams {
     buf: [u8; 5],
 }
@@ -685,6 +694,7 @@ impl Default for LoRaModParams {
 /// **Note:** There is no method to set the pulse shape because there is only
 /// one valid pulse shape (Gaussian BT 0.5).
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct BpskModParams {
     buf: [u8; 5],
 }

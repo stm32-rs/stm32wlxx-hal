@@ -16,6 +16,7 @@ pub struct FskStats;
 /// [`fsk_stats`]: crate::subghz::SubGhz::fsk_stats
 /// [`lora_stats`]: crate::subghz::SubGhz::lora_stats
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Stats<ModType> {
     status: Status,
     pkt_rx: u16,

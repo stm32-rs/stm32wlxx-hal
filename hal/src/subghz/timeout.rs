@@ -24,6 +24,7 @@ const fn abs_diff(a: u64, b: u64) -> u64 {
 /// [`set_tx`]: crate::subghz::SubGhz::set_tx
 /// [`TcxoMode`]: crate::subghz::TcxoMode
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Timeout {
     bits: u32,
 }

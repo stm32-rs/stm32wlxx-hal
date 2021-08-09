@@ -2,6 +2,7 @@
 ///
 /// Argument of [`set_ramp_time`][`crate::subghz::TxParams::set_ramp_time`].
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum RampTime {
     /// 10µs
@@ -47,6 +48,7 @@ impl From<RampTime> for core::time::Duration {
 ///
 /// Argument of [`set_tx_params`][`crate::subghz::SubGhz::set_tx_params`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct TxParams {
     buf: [u8; 3],
 }

@@ -4,6 +4,7 @@
 ///
 /// [`calibrate_image`]: crate::subghz::SubGhz::calibrate_image
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct CalibrateImage(pub(crate) u8, pub(crate) u8);
 
 impl CalibrateImage {
@@ -80,6 +81,7 @@ impl Default for CalibrateImage {
 ///
 /// [`calibrate`]: crate::subghz::SubGhz::calibrate
 #[derive(PartialEq, Eq, Debug, Clone, Copy, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum Calibrate {
     /// Image calibration

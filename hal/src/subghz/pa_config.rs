@@ -4,6 +4,7 @@
 ///
 /// [`set_pa_config`]: crate::subghz::SubGhz::set_pa_config
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct PaConfig {
     buf: [u8; 5],
 }

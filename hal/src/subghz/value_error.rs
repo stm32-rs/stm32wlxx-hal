@@ -4,6 +4,7 @@
 ///
 /// [`Timeout::from_duration`]: crate::subghz::Timeout::from_duration
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct ValueError<T> {
     value: T,
     limit: T,

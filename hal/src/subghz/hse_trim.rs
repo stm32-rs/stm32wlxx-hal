@@ -7,6 +7,7 @@ use crate::subghz::ValueError;
 /// [`set_hse_in_trim`]: crate::subghz::SubGhz::set_hse_in_trim
 /// [`set_hse_out_trim`]: crate::subghz::SubGhz::set_hse_out_trim
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct HseTrim {
     val: u8,
 }

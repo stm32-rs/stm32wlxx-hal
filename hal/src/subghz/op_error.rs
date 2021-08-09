@@ -4,6 +4,7 @@
 ///
 /// [`op_error`]: crate::subghz::SubGhz::op_error
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum OpError {
     /// PA ramping failed

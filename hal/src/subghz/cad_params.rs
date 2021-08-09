@@ -4,6 +4,7 @@ use crate::subghz::Timeout;
 ///
 /// Argument of [`CadParams::set_num_symbol`].
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum NbCadSymbol {
     /// 1 symbol.
@@ -21,6 +22,8 @@ pub enum NbCadSymbol {
 /// Mode to enter after a channel activity detection scan is finished.
 ///
 /// Argument of [`CadParams::set_exit_mode`].
+#[derive(Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum ExitMode {
     /// Standby with RC 13 MHz mode entry after CAD.
@@ -59,6 +62,7 @@ pub enum ExitMode {
 /// [`set_det_peak`]: crate::subghz::CadParams::set_det_peak
 /// [`set_det_min`]: crate::subghz::CadParams::set_det_min
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct CadParams {
     buf: [u8; 8],
 }

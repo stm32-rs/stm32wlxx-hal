@@ -2,6 +2,7 @@
 ///
 /// Argument of [`SleepCfg::set_startup`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum Startup {
     /// Cold startup when exiting Sleep mode, configuration registers reset.
@@ -28,6 +29,7 @@ impl Default for Startup {
 ///
 /// [`set_sleep`]: crate::subghz::SubGhz::set_sleep
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct SleepCfg(u8);
 
 impl SleepCfg {

@@ -7,6 +7,7 @@ use crate::subghz::Timeout;
 ///
 /// Used by [`TcxoMode`].
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum TcxoTrim {
     /// 1.6V
@@ -79,6 +80,7 @@ impl TcxoTrim {
 ///
 /// [`set_tcxo_mode`]: crate::subghz::SubGhz::set_tcxo_mode
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct TcxoMode {
     buf: [u8; 5],
 }

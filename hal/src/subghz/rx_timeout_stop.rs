@@ -4,6 +4,7 @@
 ///
 /// [`set_rx_timeout_stop`]: crate::subghz::SubGhz::set_rx_timeout_stop
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum RxTimeoutStop {
     /// Receive timeout stopped on synchronization word detection in generic

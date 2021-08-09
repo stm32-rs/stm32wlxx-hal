@@ -4,6 +4,7 @@
 ///
 /// [`set_pa_ocp`]: crate::subghz::SubGhz::set_pa_ocp
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum Ocp {
     /// Maximum 60mA current for LP PA mode.

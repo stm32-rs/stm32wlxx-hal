@@ -26,11 +26,16 @@ features = [
     # optional: use defmt
     "defmt",
 ]
+
+# include cortex-m-rt directly in your crate if you need interrupts
+# use the interrupt macro from the hal with `use hal::pac::interrupt;`
+# DO NOT use the interrupt macro from cortex-m-rt, it will fail to compile
+[dependencies]
+cortex-m-rt = "0.6"
 ```
 
-**Note:** To avoid version mismatches do not include `cortex-m`, `cortex-m-rt`,
-`embedded-hal`, or `stm32wl` (the PAC) directly, these are re-exported by the
-hal.
+**Note:** To avoid version mismatches do not include `cortex-m`, `embedded-hal`,
+or `stm32wl` (the PAC) directly, these are re-exported by the hal.
 
 ```rust
 use stm32wl_hal as hal;

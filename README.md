@@ -27,6 +27,10 @@ This is better than nothing for other people developing on these new chips.
 I am also hoping to find other people using these chips with rust who want to
 collaborate on creating a HAL :)
 
+## Usage
+
+See [hal/README.md](hal/README.md).
+
 ## On-Target Tests
 
 Workspaces with `testsuite` in the name denote an on-target test.

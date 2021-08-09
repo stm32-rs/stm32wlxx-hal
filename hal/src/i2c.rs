@@ -4,6 +4,7 @@ use core::convert::TryFrom;
 
 use crate::{
     embedded_hal::blocking::i2c::{Read, Write, WriteRead},
+    gpio::{OutputType, Pull},
     pac::{rcc::ccipr::I2C3SEL_A, I2C1, I2C2, I2C3, RCC},
     rcc::{pclk1_hz, sysclk_hz},
 };
@@ -11,7 +12,7 @@ use crate::{
 use embedded_time::{fixed_point::FixedPoint, rate::*};
 
 /// I2C error
-#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[non_exhaustive]
 pub enum Error {
     /// Arbitration loss
@@ -76,6 +77,9 @@ macro_rules! i2c {
                 /// Enables clock and resets the peripheral
                 fn enable_clock(rcc: &mut RCC) {
                     rcc.apb1enr1.modify(|_, w| w.$i2cXen().enabled());
+                }
+
+                fn pulse_reset(rcc: &mut RCC) {
                     rcc.apb1rstr1.modify(|_, w| w.$i2cXrst().reset());
                     rcc.apb1rstr1.modify(|_, w| w.$i2cXrst().clear_bit());
                 }
@@ -85,20 +89,40 @@ macro_rules! i2c {
                     match rcc.ccipr.read().$i2cXsel().variant().unwrap() {
                         I2C3SEL_A::HSI16 => Hertz(16_000_000),
                         I2C3SEL_A::SYSCLK => Hertz(sysclk_hz(rcc)), // TODO move the HAL to embedded-time?
-                        I2C3SEL_A::PCLK => Hertz(pclk1_hz(rcc)), // TODO Correct this (HCLK1 / DIV APB1)
+                        I2C3SEL_A::PCLK => Hertz(pclk1_hz(rcc)),
                     }
                 }
 
+                /// Configures the I2C peripheral as master with the indicated frequency. The implementation takes care
+                /// of setting the peripheral to standard/fast mode depending on the indicated frequency and generates
+                /// values for SCLL and SCLH durations
+                ///
+                /// # Panics
+                ///
+                /// * Frequency is greater than 1 MHz
+                /// * Resulting TIMINGR fields PRESC, SCLDEL, SCADEL, SCLH, SCLL are out of range
                 pub fn new(i2c: $I2CX, mut pins: (SCL, SDA), freq: Hertz, rcc: &mut RCC, pullup: bool) -> Self
                     where
-                    SCL: crate::gpio::sealed::$I2cXScl,
-                    SDA: crate::gpio::sealed::$I2cXSda,
+                    SCL: crate::gpio::sealed::$I2cXScl + crate::gpio::sealed::PinOps,
+                    SDA: crate::gpio::sealed::$I2cXSda + crate::gpio::sealed::PinOps,
                     {
-                        assert!(freq.integer() <= 1_000_000);
+                        assert!(freq.integer() <= 1_000_000); // TODO Return Error instead of panic
 
                         Self::enable_clock(rcc);
-                        pins.0.$i2cXsclAf(pullup);
-                        pins.1.$i2cXsdaAf(pullup);
+                        Self::pulse_reset(rcc);
+                        cortex_m::interrupt::free(|cs| unsafe {
+                            pins.0.set_output_type(cs, OutputType::OpenDrain);
+                            pins.1.set_output_type(cs, OutputType::OpenDrain);
+                            pins.0.$i2cXsclAf(cs);
+                            pins.1.$i2cXsdaAf(cs);
+                            if (pullup) {
+                                pins.0.set_pull(cs, Pull::Up);
+                                pins.1.set_pull(cs, Pull::Up);
+                            } else {
+                                pins.0.set_pull(cs, Pull::None);
+                                pins.1.set_pull(cs, Pull::None);
+                            }
+                        });
 
                         // TODO review compliance with the timing requirements of I2C
                         // t_I2CCLK = 1 / PCLK1
@@ -169,7 +193,7 @@ macro_rules! i2c {
                         });
 
                         // Enable the peripheral
-                        i2c.cr1.modify(|_, w| w.pe().set_bit());
+                        i2c.cr1.write(|w| w.pe().set_bit());
 
                         Self { i2c, pins }
                     }
@@ -183,6 +207,11 @@ macro_rules! i2c {
             impl<PINS> Read for $I2cX<PINS> {
                 type Error = Error;
 
+                /// Read `buffer.len()` bytes from `addr`
+                ///
+                /// # Panics
+                ///
+                /// * Empty buffer (`buffer.len() == 0`)
                 fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
                     assert!(!buffer.is_empty());
 
@@ -237,6 +266,8 @@ macro_rules! i2c {
             impl<PINS> Write for $I2cX<PINS> {
                 type Error = Error;
 
+                /// Write `bytes.len()` bytes to `addr`. 0-byte writes are allowed, in which case the master
+                /// will just write the address
                 fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Error> {
                     // Detect Bus busy
                     if self.i2c.isr.read().busy().is_busy() {
@@ -305,6 +336,11 @@ macro_rules! i2c {
             impl<PINS> WriteRead for $I2cX<PINS> {
                 type Error = Error;
 
+                /// Write `bytes.len()` bytes to `addr` and read back `buffer.len()` bytes.
+                ///
+                /// # Panics
+                ///
+                /// * `bytes` or `buffer` are empty (use `write` for 0-byte writes)
                 fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Error> {
                     assert!(!bytes.is_empty() && !buffer.is_empty());
 

@@ -1309,7 +1309,7 @@ impl RfBusy {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{RfBusy, PortA},
+    ///     gpio::{PortA, RfBusy},
     ///     pac,
     /// };
     ///
@@ -1330,7 +1330,7 @@ impl RfBusy {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{pins, RfBusy, PortA},
+    ///     gpio::{pins, PortA, RfBusy},
     ///     pac,
     /// };
     ///
@@ -1359,7 +1359,7 @@ impl RfIrq0 {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{RfIrq0, PortB},
+    ///     gpio::{PortB, RfIrq0},
     ///     pac,
     /// };
     ///
@@ -1380,7 +1380,7 @@ impl RfIrq0 {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{RfIrq0, PortB, pins},
+    ///     gpio::{pins, PortB, RfIrq0},
     ///     pac,
     /// };
     ///
@@ -1409,7 +1409,7 @@ impl RfIrq1 {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{RfIrq1, PortB},
+    ///     gpio::{PortB, RfIrq1},
     ///     pac,
     /// };
     ///
@@ -1430,7 +1430,7 @@ impl RfIrq1 {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{RfIrq1, PortB, pins},
+    ///     gpio::{pins, PortB, RfIrq1},
     ///     pac,
     /// };
     ///
@@ -1459,7 +1459,7 @@ impl RfIrq2 {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{RfIrq2, PortB},
+    ///     gpio::{PortB, RfIrq2},
     ///     pac,
     /// };
     ///
@@ -1480,7 +1480,7 @@ impl RfIrq2 {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{RfIrq2, PortB, pins},
+    ///     gpio::{pins, PortB, RfIrq2},
     ///     pac,
     /// };
     ///

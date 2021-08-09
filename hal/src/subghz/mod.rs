@@ -46,7 +46,7 @@ pub use cad_params::{CadParams, ExitMode, NbCadSymbol};
 pub use calibrate::{Calibrate, CalibrateImage};
 pub use fallback_mode::FallbackMode;
 pub use hse_trim::HseTrim;
-pub use irq::{CfgIrq, Irq};
+pub use irq::{CfgIrq, Irq, IrqLine};
 pub use lora_sync_word::LoRaSyncWord;
 pub use mod_params::BpskModParams;
 pub use mod_params::{CodingRate, LoRaBandwidth, LoRaModParams, SpreadingFactor};
@@ -2763,8 +2763,8 @@ where
     /// use stm32wl_hal::subghz::{CfgIrq, Irq};
     ///
     /// const IRQ_CFG: CfgIrq = CfgIrq::new()
-    ///     .irq_enable(Irq::TxDone)
-    ///     .irq_enable(Irq::Timeout);
+    ///     .irq_enable_all(Irq::TxDone)
+    ///     .irq_enable_all(Irq::Timeout);
     /// sg.set_irq_cfg(&IRQ_CFG)?;
     /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
@@ -2840,8 +2840,8 @@ impl SubGhz<DmaCh> {
     /// use stm32wl_hal::subghz::{CfgIrq, Irq};
     ///
     /// const IRQ_CFG: CfgIrq = CfgIrq::new()
-    ///     .irq_enable(Irq::TxDone)
-    ///     .irq_enable(Irq::Timeout);
+    ///     .irq_enable_all(Irq::TxDone)
+    ///     .irq_enable_all(Irq::Timeout);
     /// sg.aio_set_irq_cfg(&IRQ_CFG).await?;
     /// # Ok(()) }
     /// ```

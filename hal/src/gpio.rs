@@ -983,8 +983,6 @@ where
 
     /// Free the GPIO pin.
     ///
-    /// This will reconfigure the GPIO as a floating input.
-    ///
     /// # Example
     ///
     /// Configure a GPIO as an output, then free it.
@@ -998,14 +996,10 @@ where
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let pc0_output: Output<pins::C0> = Output::default(gpioc.pc0);
-    /// let pc0: pins::C0 = pc0_output.free();
+    /// let pc0: Output<pins::C0> = Output::default(gpioc.pc0);
+    /// let pc0: pins::C0 = pc0.free();
     /// ```
-    pub fn free(mut self) -> P {
-        cortex_m::interrupt::free(|cs| unsafe {
-            self.pin.set_pull(cs, Pull::None);
-            self.pin.set_mode(cs, sealed::Mode::Input);
-        });
+    pub fn free(self) -> P {
         self.pin
     }
 
@@ -1186,8 +1180,6 @@ where
 
     /// Free the GPIO pin.
     ///
-    /// This will reconfigure the GPIO as a floating input.
-    ///
     /// # Example
     ///
     /// Configure a GPIO as an input, then free it.
@@ -1204,11 +1196,7 @@ where
     /// let pc0_input: Input<pins::C0> = Input::default(gpioc.pc0);
     /// let pc0: pins::C0 = pc0_input.free();
     /// ```
-    pub fn free(mut self) -> P {
-        cortex_m::interrupt::free(|cs| unsafe {
-            self.pin.set_pull(cs, Pull::None);
-            // mode is already input
-        });
+    pub fn free(self) -> P {
         self.pin
     }
 
@@ -1277,8 +1265,6 @@ where
 
     /// Free the GPIO pin.
     ///
-    /// This will reconfigure the GPIO as a floating input.
-    ///
     /// # Example
     ///
     /// Configure a GPIO as an analog pin, then free it.
@@ -1295,10 +1281,7 @@ where
     /// let pb14: Analog<pins::B14> = Analog::new(gpiob.pb14);
     /// let pb14: pins::B14 = pb14.free();
     /// ```
-    pub fn free(mut self) -> P {
-        cortex_m::interrupt::free(|cs| unsafe {
-            self.pin.set_mode(cs, sealed::Mode::Input);
-        });
+    pub fn free(self) -> P {
         self.pin
     }
 }
@@ -1309,5 +1292,205 @@ where
 {
     fn from(p: P) -> Self {
         Analog::new(p)
+    }
+}
+
+/// RF Busy pin
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct RfBusy {
+    pin: pins::A12,
+}
+
+impl RfBusy {
+    /// Create a new RF Busy pin from a pin A12.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{PortA, RfBusy},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let pa12: RfBusy = RfBusy::new(gpioa.pa12);
+    /// ```
+    pub fn new(mut pin: pins::A12) -> Self {
+        use sealed::RfBusy;
+        cortex_m::interrupt::free(|cs| pin.set_rfbusy_af(cs));
+        Self { pin }
+    }
+
+    /// Free the GPIO pin.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, PortA, RfBusy},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let pa12: RfBusy = RfBusy::new(gpioa.pa12);
+    /// let pa12: pins::A12 = pa12.free();
+    /// ```
+    pub fn free(self) -> pins::A12 {
+        self.pin
+    }
+}
+
+/// RF IRQ 0 pin
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct RfIrq0 {
+    pin: pins::B3,
+}
+
+impl RfIrq0 {
+    /// Create a new RF IRQ 0 pin from a pin B3.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{PortB, RfIrq0},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    /// let pb3: RfIrq0 = RfIrq0::new(gpiob.pb3);
+    /// ```
+    pub fn new(mut pin: pins::B3) -> Self {
+        use sealed::RfIrq0;
+        cortex_m::interrupt::free(|cs| pin.set_rf_irq0_af(cs));
+        Self { pin }
+    }
+
+    /// Free the GPIO pin.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, PortB, RfIrq0},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    /// let pb3: RfIrq0 = RfIrq0::new(gpiob.pb3);
+    /// let pb3: pins::B3 = pb3.free();
+    /// ```
+    pub fn free(self) -> pins::B3 {
+        self.pin
+    }
+}
+
+/// RF IRQ 1 pin
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct RfIrq1 {
+    pin: pins::B5,
+}
+
+impl RfIrq1 {
+    /// Create a new RF IRQ 1 pin from a pin B5.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{PortB, RfIrq1},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    /// let pb5: RfIrq1 = RfIrq1::new(gpiob.pb5);
+    /// ```
+    pub fn new(mut pin: pins::B5) -> Self {
+        use sealed::RfIrq1;
+        cortex_m::interrupt::free(|cs| pin.set_rf_irq1_af(cs));
+        Self { pin }
+    }
+
+    /// Free the GPIO pin.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, PortB, RfIrq1},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    /// let pb5: RfIrq1 = RfIrq1::new(gpiob.pb5);
+    /// let pb5: pins::B5 = pb5.free();
+    /// ```
+    pub fn free(self) -> pins::B5 {
+        self.pin
+    }
+}
+
+/// RF IRQ 2 pin
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct RfIrq2 {
+    pin: pins::B8,
+}
+
+impl RfIrq2 {
+    /// Create a new RF IRQ 2 pin from a pin B8.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{PortB, RfIrq2},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    /// let pb8: RfIrq2 = RfIrq2::new(gpiob.pb8);
+    /// ```
+    pub fn new(mut pin: pins::B8) -> Self {
+        use sealed::RfIrq2;
+        cortex_m::interrupt::free(|cs| pin.set_rf_irq2_af(cs));
+        Self { pin }
+    }
+
+    /// Free the GPIO pin.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, PortB, RfIrq2},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    /// let pb8: RfIrq2 = RfIrq2::new(gpiob.pb8);
+    /// let pb8: pins::B8 = pb8.free();
+    /// ```
+    pub fn free(self) -> pins::B8 {
+        self.pin
     }
 }

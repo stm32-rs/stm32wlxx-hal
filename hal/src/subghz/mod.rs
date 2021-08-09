@@ -80,6 +80,7 @@ use embedded_hal::blocking::spi::{Transfer, Write};
 pub type Error = crate::spi::Error;
 
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 struct DebugPins {
     a4: pins::A4,
     a5: pins::A5,
@@ -97,7 +98,6 @@ impl DebugPins {
     }
 }
 
-#[derive(Debug)]
 struct Nss {
     _priv: (),
 }

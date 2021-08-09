@@ -2,6 +2,7 @@
 ///
 /// Argument of [`set_lora_sync_word`][crate::subghz::SubGhz::set_lora_sync_word].
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum LoRaSyncWord {
     /// LoRa private network.
     Private,

@@ -4,6 +4,7 @@
 ///
 /// [`set_tx_rx_fallback_mode`]: crate::subghz::SubGhz::set_tx_rx_fallback_mode.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum FallbackMode {
     /// Standby mode entry.

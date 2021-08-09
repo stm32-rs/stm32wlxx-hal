@@ -8,6 +8,7 @@ use crate::subghz::Status;
 ///
 /// [`fsk_packet_status`]: crate::subghz::SubGhz::fsk_packet_status
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct FskPacketStatus {
     buf: [u8; 4],
 }
@@ -117,6 +118,7 @@ impl FskPacketStatus {
 ///
 /// [`lora_packet_status`]: crate::subghz::SubGhz::lora_packet_status
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LoRaPacketStatus {
     buf: [u8; 4],
 }

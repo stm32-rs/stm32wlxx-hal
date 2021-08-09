@@ -3,6 +3,7 @@
 /// This is an argument of [`CfgIrq::irq_enable`] and
 /// [`CfgIrq::irq_disable`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum IrqLine {
     /// Global interrupt.
     Global,
@@ -37,6 +38,7 @@ impl IrqLine {
 /// more information.
 #[repr(u16)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Irq {
     /// Packet transmission finished.
     ///
@@ -112,6 +114,7 @@ impl Irq {
 ///
 /// [`set_irq_cfg`]: crate::subghz::SubGhz::set_irq_cfg
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct CfgIrq {
     buf: [u8; 9],
 }

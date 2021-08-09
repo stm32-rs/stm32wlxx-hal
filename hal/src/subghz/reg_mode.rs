@@ -1,5 +1,6 @@
 /// Radio power supply selection.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum RegMode {
     /// Linear dropout regulator

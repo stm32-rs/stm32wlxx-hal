@@ -172,77 +172,56 @@ pub(crate) mod sealed {
         unsafe fn set_alternate_function(&mut self, cs: &CriticalSection, af: u8);
     }
 
-    /// Indicate a GPIO pin has the SPI1 MOSI alternate function
-    pub trait Spi1Mosi {
-        /// Initialize the GPIO pin for use as SPI1 MOSI
-        fn set_spi1_mosi_af(&mut self, cs: &CriticalSection);
+    macro_rules! af_trait {
+        ($trt:ident, $method:ident) => {
+            pub trait $trt {
+                fn $method(&mut self, cs: &CriticalSection);
+            }
+        };
     }
 
-    /// Indicate a GPIO pin has the SPI1 MISO alternate function
-    pub trait Spi1Miso {
-        /// Initialize the GPIO pin for use as SPI1 MISO
-        fn set_spi1_miso_af(&mut self, cs: &CriticalSection);
-    }
-
-    /// Indicate a GPIO pin has the SPI1 SCK alternate function
-    pub trait Spi1Sck {
-        /// Initialize the GPIO pin for use as SPI1 SCK
-        fn set_spi1_sck_af(&mut self, cs: &CriticalSection);
-    }
-
-    /// Indicate a GPIO pin has the SPI1 NSS alternate function
-    pub trait Spi1Nss {
-        /// Initialize the GPIO pin for use as SPI1 NSS
-        fn set_spi1_nss_af(&mut self, cs: &CriticalSection);
-    }
-
-    /// Indicate a GPIO pin has the SPI2 MOSI alternate function
-    pub trait Spi2Mosi {
-        /// Initialize the GPIO pin for use as SPI2 MOSI
-        fn set_spi2_mosi_af(&mut self, cs: &CriticalSection);
-    }
-
-    /// Indicate a GPIO pin has the SPI2 MISO alternate function
-    pub trait Spi2Miso {
-        /// Initialize the GPIO pin for use as SPI12 MISO
-        fn set_spi2_miso_af(&mut self, cs: &CriticalSection);
-    }
-
-    /// Indicate a GPIO pin has the SPI2 SCK alternate function
-    pub trait Spi2Sck {
-        /// Initialize the GPIO pin for use as SPI2 SCK
-        fn set_spi2_sck_af(&mut self, cs: &CriticalSection);
-    }
-
-    /// Indicate a GPIO pin has the SPI2 NSS alternate function
-    pub trait Spi2Nss {
-        /// Initialize the GPIO pin for use as SPI2 NSS
-        fn set_spi2_nss_af(&mut self, cs: &CriticalSection);
-    }
-
-    /// Indicate a GPIO pin has the debug SubGHz SPI MOSI alternate function
-    pub trait SubGhzSpiMosi {
-        /// Initialize the GPIO pin for use as debug SubGHz MOSI
-        fn set_subghz_spi_mosi_af(&mut self, cs: &CriticalSection);
-    }
-
-    /// Indicate a GPIO pin has the debug SubGHz SPI MISO alternate function
-    pub trait SubGhzSpiMiso {
-        /// Initialize the GPIO pin for use as debug SubGHz MISO
-        fn set_subghz_spi_miso_af(&mut self, cs: &CriticalSection);
-    }
-
-    /// Indicate a GPIO pin has the debug SubGHz SPI SCK alternate function
-    pub trait SubGhzSpiSck {
-        /// Initialize the GPIO pin for use as debug SubGHz SCK
-        fn set_subghz_spi_sck_af(&mut self, cs: &CriticalSection);
-    }
-
-    /// Indicate a GPIO pin has the debug SubGHz SPI NSS alternate function
-    pub trait SubGhzSpiNss {
-        /// Initialize the GPIO pin for use as debug SubGHz NSS
-        fn set_subghz_spi_nss_af(&mut self, cs: &CriticalSection);
-    }
+    af_trait!(Spi1Mosi, set_spi1_mosi_af);
+    af_trait!(Spi1Miso, set_spi1_miso_af);
+    af_trait!(Spi1Sck, set_spi1_sck_af);
+    af_trait!(Spi1Nss, set_spi1_nss_af);
+    af_trait!(Spi2Mosi, set_spi2_mosi_af);
+    af_trait!(Spi2Miso, set_spi2_miso_af);
+    af_trait!(Spi2Sck, set_spi2_sck_af);
+    af_trait!(Spi2Nss, set_spi2_nss_af);
+    af_trait!(SubGhzSpiMosi, set_subghz_spi_mosi_af);
+    af_trait!(SubGhzSpiMiso, set_subghz_spi_miso_af);
+    af_trait!(SubGhzSpiSck, set_subghz_spi_sck_af);
+    af_trait!(SubGhzSpiNss, set_subghz_spi_nss_af);
+    af_trait!(I2c1Sda, set_i2c1_sda_af);
+    af_trait!(I2c1Scl, set_i2c1_scl_af);
+    af_trait!(I2c1Smba, set_i2c1_smba_af);
+    af_trait!(I2c2Sda, set_i2c2_sda_af);
+    af_trait!(I2c2Scl, set_i2c2_scl_af);
+    af_trait!(I2c2Smba, set_i2c2_smba_af);
+    af_trait!(I2c3Sda, set_i2c3_sda_af);
+    af_trait!(I2c3Scl, set_i2c3_scl_af);
+    af_trait!(I2c3Smba, set_i2c3_smba_af);
+    af_trait!(RfBusy, set_rfbusy_af);
+    af_trait!(RfIrq0, set_rf_irq0_af);
+    af_trait!(RfIrq1, set_rf_irq1_af);
+    af_trait!(RfIrq2, set_rf_irq2_af);
+    af_trait!(Uart1Ck, set_uart1_ck_af);
+    af_trait!(Uart1Tx, set_uart1_tx_af);
+    af_trait!(Uart1Rx, set_uart1_rx_af);
+    af_trait!(Uart1Cts, set_uart1_cts_af);
+    af_trait!(Uart1Rts, set_uart1_rts_af);
+    af_trait!(Uart2Ck, set_uart2_ck_af);
+    af_trait!(Uart2Tx, set_uart2_tx_af);
+    af_trait!(Uart2Rx, set_uart2_rx_af);
+    af_trait!(Uart2Cts, set_uart2_cts_af);
+    af_trait!(Uart2Rts, set_uart2_rts_af);
+    af_trait!(LpUart1Ck, set_lpuart1_ck_af);
+    af_trait!(LpUart1Tx, set_lpuart1_tx_af);
+    af_trait!(LpUart1Rx, set_lpuart1_rx_af);
+    af_trait!(LpUart1Cts, set_lpuart1_cts_af);
+    af_trait!(LpUart1Rts, set_lpuart1_rts_af);
+    af_trait!(LpUart1RtsDe, set_lpuart1_rts_de_af);
+    af_trait!(IrOut, set_irout_af);
 
     /// Indicate a GPIO pin can be sampled by the ADC
     pub trait AdcCh {
@@ -379,11 +358,45 @@ pub mod pins {
         };
     }
 
+    impl_af!(Spi2Miso, A5, set_spi2_miso_af, 3);
+    impl_af!(Spi2Nss, A9, set_spi2_nss_af, 3);
+    impl_af!(Spi2Mosi, C1, set_spi2_mosi_af, 3);
+
+    impl_af!(I2c3Smba, A0, set_i2c3_smba_af, 4);
+    impl_af!(I2c1Smba, A1, set_i2c1_smba_af, 4);
+    impl_af!(I2c2Smba, A6, set_i2c2_smba_af, 4);
+    impl_af!(I2c3Scl, A7, set_i2c3_scl_af, 4);
+    impl_af!(I2c1Scl, A9, set_i2c1_scl_af, 4);
+    impl_af!(I2c1Sda, A10, set_i2c1_sda_af, 4);
+    impl_af!(I2c2Sda, A11, set_i2c2_sda_af, 4);
+    impl_af!(I2c2Scl, A12, set_i2c2_scl_af, 4);
+    impl_af!(I2c2Smba, A13, set_i2c2_smba_af, 4);
+    impl_af!(I2c1Smba, A13, set_i2c1_smba_af, 4);
+    impl_af!(I2c2Sda, A15, set_i2c2_sda_af, 4);
+    impl_af!(I2c3Smba, B2, set_i2c3_smba_af, 4);
+    impl_af!(I2c3Sda, B4, set_i2c3_sda_af, 4);
+    impl_af!(I2c1Smba, B5, set_i2c1_smba_af, 4);
+    impl_af!(I2c1Scl, B6, set_i2c1_scl_af, 4);
+    impl_af!(I2c1Sda, B7, set_i2c1_sda_af, 4);
+    impl_af!(I2c1Scl, B8, set_i2c1_scl_af, 4);
+    impl_af!(I2c1Sda, B9, set_i2c1_sda_af, 4);
+    impl_af!(I2c3Scl, B10, set_i2c3_scl_af, 4);
+    impl_af!(I2c3Sda, B11, set_i2c3_sda_af, 4);
+    impl_af!(I2c3Smba, B12, set_i2c3_smba_af, 4);
+    impl_af!(I2c3Scl, B13, set_i2c3_scl_af, 4);
+    impl_af!(I2c3Sda, B14, set_i2c3_sda_af, 4);
+    impl_af!(I2c2Scl, B15, set_i2c2_scl_af, 4);
+    impl_af!(I2c3Scl, C0, set_i2c3_scl_af, 4);
+    impl_af!(I2c3Sda, C1, set_i2c3_sda_af, 4);
+
     impl_af!(Spi1Sck, A0, set_spi1_sck_af, 5);
     impl_af!(Spi1Nss, A4, set_spi1_nss_af, 5);
     impl_af!(Spi1Sck, A5, set_spi1_sck_af, 5);
     impl_af!(Spi1Miso, A6, set_spi1_miso_af, 5);
     impl_af!(Spi1Mosi, A7, set_spi1_mosi_af, 5);
+    impl_af!(Spi2Sck, A8, set_spi2_sck_af, 5);
+    impl_af!(Spi2Sck, A9, set_spi2_sck_af, 5);
+    impl_af!(Spi2Mosi, A10, set_spi2_mosi_af, 5);
     impl_af!(Spi1Miso, A11, set_spi1_miso_af, 5);
     impl_af!(Spi1Mosi, A12, set_spi1_mosi_af, 5);
     impl_af!(Spi1Nss, A15, set_spi1_nss_af, 5);
@@ -391,20 +404,50 @@ pub mod pins {
     impl_af!(Spi1Sck, B3, set_spi1_sck_af, 5);
     impl_af!(Spi1Miso, B4, set_spi1_miso_af, 5);
     impl_af!(Spi1Mosi, B5, set_spi1_mosi_af, 5);
-    impl_af!(Spi2Mosi, A10, set_spi2_mosi_af, 5);
-    impl_af!(Spi2Mosi, B15, set_spi2_mosi_af, 5);
-    impl_af!(Spi2Mosi, C1, set_spi2_mosi_af, 3);
-    impl_af!(Spi2Mosi, C3, set_spi2_mosi_af, 5);
-    impl_af!(Spi2Miso, A5, set_spi2_miso_af, 3);
-    impl_af!(Spi2Miso, B14, set_spi2_miso_af, 5);
-    impl_af!(Spi2Miso, C2, set_spi2_miso_af, 5);
-    impl_af!(Spi2Sck, A8, set_spi2_sck_af, 5);
-    impl_af!(Spi2Sck, A9, set_spi2_sck_af, 5);
-    impl_af!(Spi2Sck, B10, set_spi2_sck_af, 5);
-    impl_af!(Spi2Sck, B13, set_spi2_sck_af, 5);
-    impl_af!(Spi2Nss, A9, set_spi2_nss_af, 3);
     impl_af!(Spi2Nss, B9, set_spi2_nss_af, 5);
+    impl_af!(Spi2Sck, B10, set_spi2_sck_af, 5);
     impl_af!(Spi2Nss, B12, set_spi2_nss_af, 5);
+    impl_af!(Spi2Sck, B13, set_spi2_sck_af, 5);
+    impl_af!(Spi2Miso, B14, set_spi2_miso_af, 5);
+    impl_af!(Spi2Mosi, B15, set_spi2_mosi_af, 5);
+    impl_af!(Spi2Mosi, C3, set_spi2_mosi_af, 5);
+    impl_af!(Spi2Miso, C2, set_spi2_miso_af, 5);
+
+    impl_af!(RfBusy, A12, set_rfbusy_af, 6);
+    impl_af!(RfIrq0, B3, set_rf_irq0_af, 6);
+    impl_af!(RfIrq1, B5, set_rf_irq1_af, 6);
+    impl_af!(RfIrq2, B8, set_rf_irq2_af, 6);
+
+    impl_af!(Uart2Cts, A0, set_uart2_cts_af, 7);
+    impl_af!(Uart2Rts, A1, set_uart2_rts_af, 7);
+    impl_af!(Uart2Tx, A2, set_uart2_tx_af, 7);
+    impl_af!(Uart2Rx, A3, set_uart2_rx_af, 7);
+    impl_af!(Uart2Ck, A4, set_uart2_ck_af, 7);
+    impl_af!(Uart1Ck, A8, set_uart1_ck_af, 7);
+    impl_af!(Uart1Tx, A9, set_uart1_tx_af, 7);
+    impl_af!(Uart1Rx, A10, set_uart1_rx_af, 7);
+    impl_af!(Uart1Cts, A11, set_uart1_cts_af, 7);
+    impl_af!(Uart1Rts, A12, set_uart1_rts_af, 7);
+    impl_af!(Uart1Rts, B3, set_uart1_rts_af, 7);
+    impl_af!(Uart1Cts, B4, set_uart1_cts_af, 7);
+    impl_af!(Uart1Ck, B5, set_uart1_ck_af, 7);
+    impl_af!(Uart1Tx, B6, set_uart1_tx_af, 7);
+    impl_af!(Uart1Rx, B7, set_uart1_rx_af, 7);
+
+    impl_af!(LpUart1Rts, A1, set_lpuart1_rts_af, 8);
+    impl_af!(LpUart1Tx, A2, set_lpuart1_tx_af, 8);
+    impl_af!(LpUart1Rx, A3, set_lpuart1_rx_af, 8);
+    impl_af!(LpUart1Cts, A6, set_lpuart1_cts_af, 8);
+    impl_af!(IrOut, A13, set_irout_af, 8);
+    impl_af!(LpUart1RtsDe, B1, set_lpuart1_rts_de_af, 8);
+    impl_af!(IrOut, B9, set_irout_af, 8);
+    impl_af!(LpUart1Rx, B10, set_lpuart1_rx_af, 8);
+    impl_af!(LpUart1Tx, B11, set_lpuart1_tx_af, 8);
+    impl_af!(LpUart1Rts, B12, set_lpuart1_rts_af, 8);
+    impl_af!(LpUart1Cts, B13, set_lpuart1_cts_af, 8);
+    impl_af!(LpUart1Rx, C0, set_lpuart1_rx_af, 8);
+    impl_af!(LpUart1Tx, C1, set_lpuart1_tx_af, 8);
+
     impl_af!(SubGhzSpiNss, A4, set_subghz_spi_nss_af, 13);
     impl_af!(SubGhzSpiSck, A5, set_subghz_spi_sck_af, 13);
     impl_af!(SubGhzSpiMiso, A6, set_subghz_spi_miso_af, 13);
@@ -1216,7 +1259,7 @@ where
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{pins, Analog, PortB, Pull},
+    ///     gpio::{pins, Analog, PortB},
     ///     pac,
     /// };
     ///
@@ -1242,7 +1285,7 @@ where
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{pins, Analog, PortB, Pull},
+    ///     gpio::{pins, Analog, PortB},
     ///     pac,
     /// };
     ///

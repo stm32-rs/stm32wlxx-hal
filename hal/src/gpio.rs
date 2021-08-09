@@ -172,7 +172,7 @@ pub(crate) mod sealed {
         unsafe fn set_alternate_function(&mut self, cs: &CriticalSection, af: u8);
     }
 
-    macro_rules! pin_trait {
+    macro_rules! af_trait {
         ($trt:ident, $method:ident) => {
             pub trait $trt {
                 fn $method(&mut self, cs: &CriticalSection);
@@ -180,48 +180,48 @@ pub(crate) mod sealed {
         };
     }
 
-    pin_trait!(Spi1Mosi, set_spi1_mosi_af);
-    pin_trait!(Spi1Miso, set_spi1_miso_af);
-    pin_trait!(Spi1Sck, set_spi1_sck_af);
-    pin_trait!(Spi1Nss, set_spi1_nss_af);
-    pin_trait!(Spi2Mosi, set_spi2_mosi_af);
-    pin_trait!(Spi2Miso, set_spi2_miso_af);
-    pin_trait!(Spi2Sck, set_spi2_sck_af);
-    pin_trait!(Spi2Nss, set_spi2_nss_af);
-    pin_trait!(SubGhzSpiMosi, set_subghz_spi_mosi_af);
-    pin_trait!(SubGhzSpiMiso, set_subghz_spi_miso_af);
-    pin_trait!(SubGhzSpiSck, set_subghz_spi_sck_af);
-    pin_trait!(SubGhzSpiNss, set_subghz_spi_nss_af);
-    pin_trait!(I2c1Sda, set_i2c1_sda_af);
-    pin_trait!(I2c1Scl, set_i2c1_scl_af);
-    pin_trait!(I2c1Smba, set_i2c1_smba_af);
-    pin_trait!(I2c2Sda, set_i2c2_sda_af);
-    pin_trait!(I2c2Scl, set_i2c2_scl_af);
-    pin_trait!(I2c2Smba, set_i2c2_smba_af);
-    pin_trait!(I2c3Sda, set_i2c3_sda_af);
-    pin_trait!(I2c3Scl, set_i2c3_scl_af);
-    pin_trait!(I2c3Smba, set_i2c3_smba_af);
-    pin_trait!(RfBusy, set_rfbusy_af);
-    pin_trait!(RfIrq0, set_rf_irq0_af);
-    pin_trait!(RfIrq1, set_rf_irq1_af);
-    pin_trait!(RfIrq2, set_rf_irq2_af);
-    pin_trait!(Uart1Ck, set_uart1_ck_af);
-    pin_trait!(Uart1Tx, set_uart1_tx_af);
-    pin_trait!(Uart1Rx, set_uart1_rx_af);
-    pin_trait!(Uart1Cts, set_uart1_cts_af);
-    pin_trait!(Uart1Rts, set_uart1_rts_af);
-    pin_trait!(Uart2Ck, set_uart2_ck_af);
-    pin_trait!(Uart2Tx, set_uart2_tx_af);
-    pin_trait!(Uart2Rx, set_uart2_rx_af);
-    pin_trait!(Uart2Cts, set_uart2_cts_af);
-    pin_trait!(Uart2Rts, set_uart2_rts_af);
-    pin_trait!(LpUart1Ck, set_lpuart1_ck_af);
-    pin_trait!(LpUart1Tx, set_lpuart1_tx_af);
-    pin_trait!(LpUart1Rx, set_lpuart1_rx_af);
-    pin_trait!(LpUart1Cts, set_lpuart1_cts_af);
-    pin_trait!(LpUart1Rts, set_lpuart1_rts_af);
-    pin_trait!(LpUart1RtsDe, set_lpuart1_rts_de_af);
-    pin_trait!(IrOut, set_irout_af);
+    af_trait!(Spi1Mosi, set_spi1_mosi_af);
+    af_trait!(Spi1Miso, set_spi1_miso_af);
+    af_trait!(Spi1Sck, set_spi1_sck_af);
+    af_trait!(Spi1Nss, set_spi1_nss_af);
+    af_trait!(Spi2Mosi, set_spi2_mosi_af);
+    af_trait!(Spi2Miso, set_spi2_miso_af);
+    af_trait!(Spi2Sck, set_spi2_sck_af);
+    af_trait!(Spi2Nss, set_spi2_nss_af);
+    af_trait!(SubGhzSpiMosi, set_subghz_spi_mosi_af);
+    af_trait!(SubGhzSpiMiso, set_subghz_spi_miso_af);
+    af_trait!(SubGhzSpiSck, set_subghz_spi_sck_af);
+    af_trait!(SubGhzSpiNss, set_subghz_spi_nss_af);
+    af_trait!(I2c1Sda, set_i2c1_sda_af);
+    af_trait!(I2c1Scl, set_i2c1_scl_af);
+    af_trait!(I2c1Smba, set_i2c1_smba_af);
+    af_trait!(I2c2Sda, set_i2c2_sda_af);
+    af_trait!(I2c2Scl, set_i2c2_scl_af);
+    af_trait!(I2c2Smba, set_i2c2_smba_af);
+    af_trait!(I2c3Sda, set_i2c3_sda_af);
+    af_trait!(I2c3Scl, set_i2c3_scl_af);
+    af_trait!(I2c3Smba, set_i2c3_smba_af);
+    af_trait!(RfBusy, set_rfbusy_af);
+    af_trait!(RfIrq0, set_rf_irq0_af);
+    af_trait!(RfIrq1, set_rf_irq1_af);
+    af_trait!(RfIrq2, set_rf_irq2_af);
+    af_trait!(Uart1Ck, set_uart1_ck_af);
+    af_trait!(Uart1Tx, set_uart1_tx_af);
+    af_trait!(Uart1Rx, set_uart1_rx_af);
+    af_trait!(Uart1Cts, set_uart1_cts_af);
+    af_trait!(Uart1Rts, set_uart1_rts_af);
+    af_trait!(Uart2Ck, set_uart2_ck_af);
+    af_trait!(Uart2Tx, set_uart2_tx_af);
+    af_trait!(Uart2Rx, set_uart2_rx_af);
+    af_trait!(Uart2Cts, set_uart2_cts_af);
+    af_trait!(Uart2Rts, set_uart2_rts_af);
+    af_trait!(LpUart1Ck, set_lpuart1_ck_af);
+    af_trait!(LpUart1Tx, set_lpuart1_tx_af);
+    af_trait!(LpUart1Rx, set_lpuart1_rx_af);
+    af_trait!(LpUart1Cts, set_lpuart1_cts_af);
+    af_trait!(LpUart1Rts, set_lpuart1_rts_af);
+    af_trait!(LpUart1RtsDe, set_lpuart1_rts_de_af);
+    af_trait!(IrOut, set_irout_af);
 
     /// Indicate a GPIO pin can be sampled by the ADC
     pub trait AdcCh {
@@ -361,6 +361,7 @@ pub mod pins {
     impl_af!(Spi2Miso, A5, set_spi2_miso_af, 3);
     impl_af!(Spi2Nss, A9, set_spi2_nss_af, 3);
     impl_af!(Spi2Mosi, C1, set_spi2_mosi_af, 3);
+
     impl_af!(I2c3Smba, A0, set_i2c3_smba_af, 4);
     impl_af!(I2c1Smba, A1, set_i2c1_smba_af, 4);
     impl_af!(I2c2Smba, A6, set_i2c2_smba_af, 4);

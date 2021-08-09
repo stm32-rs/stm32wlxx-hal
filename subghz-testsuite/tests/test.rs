@@ -148,8 +148,8 @@ async fn aio_wait_irq_inner() {
     unwrap!(sg.aio_set_rf_frequency(&RF_FREQ).await);
 
     const IRQ_CFG: CfgIrq = CfgIrq::new()
-        .irq_enable(Irq::RxDone)
-        .irq_enable(Irq::Timeout);
+        .irq_enable_all(Irq::RxDone)
+        .irq_enable_all(Irq::Timeout);
     unwrap!(sg.aio_set_irq_cfg(&IRQ_CFG).await);
 
     let status: Status = unwrap!(sg.status());
@@ -225,8 +225,8 @@ fn ping_pong(sg: &mut SubGhz<DmaCh>, rng: &mut Rng, rfs: &mut RfSwitch, pkt: Pac
     unwrap!(sg.write_buffer(TX_BUF_OFFSET, PING_DATA_BYTES));
 
     const IRQ_CFG: CfgIrq = CfgIrq::new()
-        .irq_enable(Irq::RxDone)
-        .irq_enable(Irq::Timeout);
+        .irq_enable_all(Irq::RxDone)
+        .irq_enable_all(Irq::Timeout);
     unwrap!(sg.set_irq_cfg(&IRQ_CFG));
 
     const MAX_ATTEMPTS: u32 = 100;

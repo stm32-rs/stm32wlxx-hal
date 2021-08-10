@@ -1,14 +1,21 @@
 #![no_std]
 #![no_main]
 
+use core::ptr::write_volatile;
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use panic_probe as _;
 use stm32wl_hal::{
-    pac,
+    pac::{self, DWT},
     pka::{curve::NIST_P256, EcdsaPublicKey, EcdsaSignature, Pka},
     rcc,
 };
+
+const FREQ: u32 = 48_000_000;
+const CYC_PER_US: u32 = FREQ / 1000 / 1000;
+
+// WARNING will wrap-around eventually, use this for relative timing only
+defmt::timestamp!("{=u32:µs}", DWT::get_cycle_count() / CYC_PER_US);
 
 // Message hash
 const HASH: [u32; 8] = [
@@ -82,10 +89,10 @@ mod tests {
 
     #[init]
     fn init() -> Pka {
+        let mut cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
         let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
-        let mut rcc = dp.RCC;
 
-        rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut rcc);
+        rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC);
 
         #[cfg(feature = "aio")]
         {
@@ -95,7 +102,13 @@ mod tests {
             unsafe { Pka::unmask_irq() };
         }
 
-        Pka::new(dp.PKA, &mut rcc)
+        cp.DCB.enable_trace();
+        cp.DWT.enable_cycle_counter();
+        // reset the cycle counter
+        const DWT_CYCCNT: usize = 0xE0001004;
+        unsafe { write_volatile(DWT_CYCCNT as *mut u32, 0) };
+
+        Pka::new(dp.PKA, &mut dp.RCC)
     }
 
     #[test]

@@ -1,9 +1,6 @@
 #![no_std]
 #![no_main]
 
-#[cfg(feature = "aio")]
-extern crate alloc;
-
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use panic_probe as _;
@@ -99,68 +96,8 @@ const TX_PARAMS: TxParams = TxParams::new()
     .set_power(0x0D)
     .set_ramp_time(RampTime::Micros40);
 
-#[cfg(feature = "aio")]
-async fn aio_buffer_io_inner() {
-    let mut sg = unsafe {
-        let dma = AllDma::steal();
-        SubGhz::steal_with_dma(dma.d1c1, dma.d2c1)
-    };
-    const DATA: [u8; 255] = [0xA5; 255];
-    let mut buf: alloc::vec::Vec<u8> = alloc::vec![0; 255];
-    while rfbusys() {}
-    let start: u32 = DWT::get_cycle_count();
-    unwrap!(sg.aio_write_buffer(0, &DATA).await);
-    unwrap!(sg.aio_read_buffer(0, &mut buf).await);
-    let end: u32 = DWT::get_cycle_count();
-    defmt::info!("Cycles 255B: {}", end - start);
-    defmt::assert_eq!(DATA.as_ref(), buf.as_slice());
-
-    let mut buf: [u8; 0] = [];
-    while rfbusys() {}
-    let start: u32 = DWT::get_cycle_count();
-    unwrap!(sg.aio_write_buffer(0, &buf).await);
-    unwrap!(sg.aio_read_buffer(0, &mut buf).await);
-    let end: u32 = DWT::get_cycle_count();
-    defmt::info!("Cycles 0B: {}", end - start);
-}
-
 // WARNING will wrap-around eventually, use this for relative timing only
 defmt::timestamp!("{=u32:µs}", DWT::get_cycle_count() / CYC_PER_US);
-
-#[cfg(feature = "aio")]
-async fn aio_wait_irq_inner() {
-    let mut sg = unsafe {
-        let dma = AllDma::steal();
-        SubGhz::steal_with_dma(dma.d1c1, dma.d2c1)
-    };
-
-    unwrap!(sg.aio_set_standby(StandbyClk::Rc).await);
-    let status: Status = unwrap!(sg.aio_status().await);
-    defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
-
-    unwrap!(sg.aio_set_tcxo_mode(&TCXO_MODE).await);
-    unwrap!(sg.aio_set_regulator_mode(RegMode::Ldo).await);
-    unwrap!(sg.aio_set_sync_word(&SYNC_WORD).await);
-    unwrap!(sg.aio_set_packet_type(PacketType::Fsk).await);
-    unwrap!(sg.aio_set_fsk_mod_params(&FSK_MOD_PARAMS).await);
-    unwrap!(sg.aio_set_packet_params(&FSK_PACKET_PARAMS).await);
-    unwrap!(sg.aio_calibrate_image(CalibrateImage::ISM_430_440).await);
-    unwrap!(sg.aio_set_rf_frequency(&RF_FREQ).await);
-
-    const IRQ_CFG: CfgIrq = CfgIrq::new()
-        .irq_enable_all(Irq::RxDone)
-        .irq_enable_all(Irq::Timeout);
-    unwrap!(sg.aio_set_irq_cfg(&IRQ_CFG).await);
-
-    let status: Status = unwrap!(sg.status());
-    defmt::assert_ne!(status.cmd(), Ok(CmdStatus::Timeout));
-
-    // this will fail to RX immediately (15 micros timeout)
-    unwrap!(sg.aio_set_rx(Timeout::MIN).await);
-
-    let (_, irq) = unwrap!(sg.aio_wait_irq().await);
-    defmt::assert_eq!(Irq::Timeout.mask(), irq);
-}
 
 fn tx_or_panic(sg: &mut SubGhz<DmaCh>, rfs: &mut RfSwitch) {
     rfs.set_tx_lp();
@@ -348,13 +285,6 @@ mod tests {
 
         let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
 
-        #[cfg(feature = "aio")]
-        {
-            let start: usize = bsp::hal::cortex_m_rt::heap_start() as usize;
-            let size: usize = 2048; // in bytes
-            unsafe { ate::ALLOCATOR.init(start, size) };
-        }
-
         Rng::set_clock_source(&mut dp.RCC, rng::ClkSrc::MSI);
         let rng: Rng = Rng::new(dp.RNG, &mut dp.RCC);
 
@@ -368,14 +298,6 @@ mod tests {
         unsafe { write_volatile(DWT_CYCCNT as *mut u32, 0) };
 
         TestArgs { sg, rng, rfs }
-    }
-
-    #[test]
-    #[cfg(feature = "aio")]
-    fn aio_buffer_io(_: &mut TestArgs) {
-        let mut executor = ate::Executor::new();
-        executor.spawn(ate::Task::new(aio_buffer_io_inner()));
-        executor.run();
     }
 
     #[test]
@@ -418,14 +340,6 @@ mod tests {
         unwrap!(sg.read_buffer(0, &mut buf));
         let end: u32 = DWT::get_cycle_count();
         defmt::info!("Cycles 0B: {}", end - start);
-    }
-
-    #[test]
-    #[cfg(feature = "aio")]
-    fn aio_wait_irq(_: &mut TestArgs) {
-        let mut executor = ate::Executor::new();
-        executor.spawn(ate::Task::new(aio_wait_irq_inner()));
-        executor.run();
     }
 
     #[test]

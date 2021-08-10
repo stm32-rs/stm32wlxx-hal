@@ -22,7 +22,6 @@ jobs:
           - "stm32wl5x_cm0p"
           - "stm32wl5x_cm4"
           - "stm32wle5"
-        aio: ["aio", ""]
         exclude:
           - mcu: "stm32wl5x_cm0p"
             target: "thumbv7em-none-eabi"
@@ -32,15 +31,7 @@ jobs:
             target: "thumbv6m-none-eabi"
     steps:
       - uses: actions/checkout@v2.3.4
-      - if: ${{ matrix.aio == 'aio' }}
-        name: setup rust nightly
-        uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: nightly
-          default: true
-          target: ${{ matrix.target }}
-      - if: ${{ matrix.aio != 'aio' }}
-        name: setup rust stable
+      - name: setup rust stable
         uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
@@ -66,20 +57,6 @@ jobs:
           target: thumbv7em-none-eabi
       - name: cargo test
         run: bash ci/testsuite-compile.sh
-
-  build_testsuite_aio:
-    name: Testsuite Compile async
-    runs-on: ubuntu-latest
-    env: {"RUSTFLAGS": "-D warnings"}
-    steps:
-      - uses: actions/checkout@v2.3.4
-      - uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: nightly
-          target: thumbv7em-none-eabi
-          default: true
-      - name: cargo test
-        run: bash ci/testsuite-compile.sh aio
 
   build_test_bsp:
     name: Build and Test BSP
@@ -136,23 +113,6 @@ jobs:
           toolchain: stable
       - run: cargo test --features ${{ matrix.feature }}
 
-  test_aio:
-    name: Unit Tests async
-    runs-on: ubuntu-latest
-    env: {"RUSTFLAGS": "-D warnings"}
-    strategy:
-      matrix:
-        feature:
-          - "stm32wl5x_cm0p"
-          - "stm32wl5x_cm4"
-          - "stm32wle5"
-    steps:
-      - uses: actions/checkout@v2.3.4
-      - uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: nightly
-      - run: cargo test --features ${{ matrix.feature }},aio
-
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
@@ -204,7 +164,7 @@ jobs:
           toolchain: nightly
       - run: |
           cd hal
-          cargo +nightly rustdoc --features aio,stm32wl5x_cm4 -- -Z unstable-options --enable-index-page
+          cargo +nightly rustdoc --features rt,stm32wl5x_cm4 -- -Z unstable-options --enable-index-page
       - name: deploy
         if: ${{ github.ref == 'refs/heads/main' }}
         uses: peaceiris/actions-gh-pages@v3
@@ -221,13 +181,11 @@ jobs:
       - build_examples
       - build_test_bsp
       - build_testsuite
-      - build_testsuite_aio
       - clippy
       - doc
       - format
       - rustdoc
       - test
-      - test_aio
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.4

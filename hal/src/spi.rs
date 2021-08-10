@@ -43,118 +43,6 @@ const SPI1_BASE: usize = 0x4001_3000;
 const SPI2_BASE: usize = 0x4000_3800;
 const SPI3_BASE: usize = 0x5801_0000;
 
-#[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-async fn aio_write_with_dma<BASE: SpiBase>(
-    spi: &mut BASE,
-    tx_dma: &mut DmaCh,
-    rx_dma: &mut DmaCh,
-    words: &[u8],
-) -> Result<(), Error> {
-    if words.is_empty() {
-        return Ok(());
-    }
-
-    const RX_CR: dma::Cr = dma::Cr::RESET
-        .set_dir_from_periph()
-        .set_xfer_cpl_irq_en(true)
-        .set_xfer_err_irq_en(true)
-        .set_mem_inc(false)
-        .set_enable(true);
-    const TX_CR: dma::Cr = dma::Cr::RESET
-        .set_dir_from_mem()
-        .set_mem_inc(true)
-        .set_enable(true);
-
-    let garbage: [u8; 1] = [0];
-
-    rx_dma.set_mem_addr(garbage.as_ptr() as u32);
-    tx_dma.set_mem_addr(words.as_ptr() as u32);
-
-    let ndt: u32 = words.len() as u32;
-    rx_dma.set_num_data_xfer(ndt);
-    tx_dma.set_num_data_xfer(ndt);
-
-    // RX MUST come before TX
-    rx_dma.set_cr(RX_CR);
-    tx_dma.set_cr(TX_CR);
-
-    // wait for RX DMA to complete
-    let rx_dma_result: Result<(), crate::dma::Error> =
-        futures::future::poll_fn(|cx| dma::aio::poll(rx_dma.mux_ch(), cx)).await;
-
-    // RX is disabled in ISR
-    tx_dma.set_cr(dma::Cr::DISABLE);
-
-    // RX flags are cleared in ISR
-    tx_dma.clear_all_flags();
-
-    if rx_dma_result.is_err() {
-        Err(Error::RxDma)
-    } else {
-        spi.status()?;
-        if tx_dma.flags() & dma::flags::XFER_ERR != 0 {
-            Err(Error::TxDma)
-        } else {
-            Ok(())
-        }
-    }
-}
-
-#[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-async fn aio_transfer_with_dma<BASE: SpiBase>(
-    spi: &mut BASE,
-    tx_dma: &mut DmaCh,
-    rx_dma: &mut DmaCh,
-    words: &mut [u8],
-) -> Result<(), Error> {
-    if words.is_empty() {
-        return Ok(());
-    }
-
-    const RX_CR: dma::Cr = dma::Cr::RESET
-        .set_dir_from_periph()
-        .set_xfer_cpl_irq_en(true)
-        .set_xfer_err_irq_en(true)
-        .set_mem_inc(true)
-        .set_enable(true);
-    const TX_CR: dma::Cr = dma::Cr::RESET
-        .set_dir_from_mem()
-        .set_mem_inc(true)
-        .set_enable(true);
-
-    rx_dma.set_mem_addr(words.as_ptr() as u32);
-    tx_dma.set_mem_addr(words.as_ptr() as u32);
-
-    let ndt: u32 = words.len() as u32;
-    rx_dma.set_num_data_xfer(ndt);
-    tx_dma.set_num_data_xfer(ndt);
-
-    // RX MUST come before TX
-    rx_dma.set_cr(RX_CR);
-    tx_dma.set_cr(TX_CR);
-
-    // wait for RX DMA to complete
-    let rx_dma_result: Result<(), crate::dma::Error> =
-        futures::future::poll_fn(|cx| dma::aio::poll(rx_dma.mux_ch(), cx)).await;
-
-    // RX is disabled in ISR
-    tx_dma.set_cr(dma::Cr::DISABLE);
-
-    // RX flags are cleared in ISR
-    tx_dma.clear_all_flags();
-
-    if rx_dma_result.is_err() {
-        Err(Error::RxDma)
-    } else {
-        spi.status()?;
-        if tx_dma.flags() & dma::flags::XFER_ERR != 0 {
-            Err(Error::TxDma)
-        } else {
-            Ok(())
-        }
-    }
-}
-
 trait SpiBase {
     const DR: usize;
     const DMA_TX_ID: u8;
@@ -662,26 +550,6 @@ where
     pub fn free(self) -> (pac::SPI1, (MOSI, MISO, SCK), DmaCh, DmaCh) {
         (self.base, self.pins, self.tx_dma, self.rx_dma)
     }
-
-    /// Asynchronously write with the DMA.
-    ///
-    /// In a perfect world this would be in an async trait, unfortunately
-    /// async traits require more workarounds than I am comforatable with right
-    /// now.
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    pub async fn aio_write_with_dma(&mut self, words: &[u8]) -> Result<(), Error> {
-        aio_write_with_dma(&mut self.base, &mut self.tx_dma, &mut self.rx_dma, words).await
-    }
-
-    /// Asynchronously transfer with the DMA.
-    ///
-    /// In a perfect world this would be in an async trait, unfortunately
-    /// async traits require more workarounds than I am comforatable with right
-    /// now.
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    pub async fn aio_transfer_with_dma(&mut self, words: &mut [u8]) -> Result<(), Error> {
-        aio_transfer_with_dma(&mut self.base, &mut self.tx_dma, &mut self.rx_dma, words).await
-    }
 }
 
 impl<MOSI, MISO, SCK, DMA> Spi2<MOSI, MISO, SCK, DMA>
@@ -902,26 +770,6 @@ where
     pub fn free(self) -> (pac::SPI2, (MOSI, MISO, SCK), DmaCh, DmaCh) {
         (self.base, self.pins, self.tx_dma, self.rx_dma)
     }
-
-    /// Asynchronously write with the DMA.
-    ///
-    /// In a perfect world this would be in an async trait, unfortunately
-    /// async traits require more workarounds than I am comforatable with right
-    /// now.
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    pub async fn aio_write_with_dma(&mut self, words: &[u8]) -> Result<(), Error> {
-        aio_write_with_dma(&mut self.base, &mut self.tx_dma, &mut self.rx_dma, words).await
-    }
-
-    /// Asynchronously transfer with the DMA.
-    ///
-    /// In a perfect world this would be in an async trait, unfortunately
-    /// async traits require more workarounds than I am comforatable with right
-    /// now.
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    pub async fn aio_transfer_with_dma(&mut self, words: &mut [u8]) -> Result<(), Error> {
-        aio_transfer_with_dma(&mut self.base, &mut self.tx_dma, &mut self.rx_dma, words).await
-    }
 }
 
 #[allow(missing_docs)] // struct is hidden
@@ -1017,16 +865,6 @@ impl Spi3<DmaCh> {
 
     pub fn free(self) -> (pac::SPI3, DmaCh, DmaCh) {
         (self.base, self.tx_dma, self.rx_dma)
-    }
-
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    pub async fn aio_write_with_dma(&mut self, words: &[u8]) -> Result<(), Error> {
-        aio_write_with_dma(&mut self.base, &mut self.tx_dma, &mut self.rx_dma, words).await
-    }
-
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    pub async fn aio_transfer_with_dma(&mut self, words: &mut [u8]) -> Result<(), Error> {
-        aio_transfer_with_dma(&mut self.base, &mut self.tx_dma, &mut self.rx_dma, words).await
     }
 }
 

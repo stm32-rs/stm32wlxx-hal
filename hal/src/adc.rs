@@ -543,12 +543,6 @@ impl Adc {
 
     /// Mask the ADC IRQ in the NVIC.
     ///
-    /// # Safety
-    ///
-    /// 1. This can break `async` code that relies upon this interrupt.
-    ////   After masking the IRQ ensure you unmask it with
-    ///    [`unmask_irq`](Adc::unmask_irq) before using any `async` functions.
-    ///
     /// # Example
     ///
     /// ```no_run
@@ -557,7 +551,7 @@ impl Adc {
     /// ```
     #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
     #[cfg_attr(docsrs, doc(cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))))]
-    pub unsafe fn mask_irq() {
+    pub fn mask_irq() {
         pac::NVIC::mask(pac::Interrupt::ADC)
     }
 
@@ -737,39 +731,6 @@ impl Adc {
         }
     }
 
-    /// Enable the ADC and wait for a completion interrupt.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # async fn doctest() {
-    /// use stm32wl_hal::{
-    ///     adc::{self, Adc},
-    ///     pac,
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
-    /// adc.aio_enable().await;
-    /// # }
-    /// ```
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    #[cfg_attr(
-        docsrs,
-        doc(cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p"))))
-    )]
-    pub async fn aio_enable(&mut self) {
-        if self.start_enable() {
-            self.adc.ier.write(|w| w.adrdyie().enabled());
-            futures::future::poll_fn(aio::poll).await;
-        }
-    }
-
     /// Start the ADC disable procedure.
     ///
     /// This will stop any conversions in-progress and set the addis bit if
@@ -864,25 +825,11 @@ impl Adc {
         while self.adc.isr.read().ccrdy().is_not_complete() {}
     }
 
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    async fn aio_cfg_ch_seq(&mut self, ch: u32) {
-        self.set_chsel(ch);
-        self.adc.ier.write(|w| w.ccrdyie().enabled());
-        futures::future::poll_fn(aio::poll).await;
-    }
-
     fn data(&self) -> u16 {
         while self.adc.isr.read().eoc().is_not_complete() {}
         let data: u16 = self.adc.dr.read().data().bits();
         self.adc.isr.write(|w| w.eoc().set_bit());
         data
-    }
-
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    async fn aio_data(&self) -> u16 {
-        self.adc.ier.write(|w| w.eocie().enabled());
-        futures::future::poll_fn(aio::poll).await;
-        self.adc.dr.read().data().bits()
     }
 
     /// Calibrate the ADC for additional accuracy.
@@ -930,61 +877,6 @@ impl Adc {
         // takes 401 cycles at 48MHz sysclk, ADC at 16MHz with HSI
         while self.adc.cr.read().adcal().is_calibrating() {}
         self.adc.isr.write(|w| w.eocal().set_bit());
-    }
-
-    /// Asynchronously Calibrate the ADC for additional accuracy.
-    ///
-    /// Calibration should be performed before starting A/D conversion.
-    /// It removes the offset error which may vary from chip to chip due to
-    /// process variation.
-    ///
-    /// The calibration factor is lost in the following cases:
-    /// * The power supply is removed from the ADC
-    ///   (for example when entering STANDBY or VBAT mode)
-    /// * The ADC peripheral is reset.
-    ///
-    /// This will disable the ADC if it is not already disabled.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # async fn doctest() {
-    /// use stm32wl_hal::{
-    ///     adc::{self, Adc},
-    ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
-    ///     pac, rcc,
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
-    ///
-    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
-    /// adc.aio_calibrate(&mut delay).await;
-    /// # }
-    /// ```
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    #[cfg_attr(
-        docsrs,
-        doc(cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p"))))
-    )]
-    pub async fn aio_calibrate<D: DelayUs<u8>>(&mut self, delay: &mut D) {
-        self.setup_calibrate();
-
-        // voltage regulator output is available after T_ADCVREG_SETUP
-        // TODO: replace with async delay
-        delay.delay_us(T_ADCVREG_SETUP_MICROS);
-
-        self.adc.ier.write(|w| w.eocalie().enabled());
-
-        self.start_calibrate();
-
-        futures::future::poll_fn(aio::poll).await;
     }
 
     /// Enable the temperature sensor.
@@ -1099,82 +991,6 @@ impl Adc {
         ret * (ts_data.wrapping_sub(ts_cal1) as i16) + TS_CAL1_TEMP
     }
 
-    /// Get the junction jemperature.
-    ///
-    /// # Panics
-    ///
-    /// * (debug) ADC is not enabled
-    /// * (debug) Temperature sensor is not enabled
-    ///
-    /// # Sample Time
-    ///
-    /// You must set a sampling time with
-    /// [`set_sample_times`](Adc::set_sample_times) greater than or equal to
-    /// [`TS_MIN_SAMPLE`] before calling this method.
-    /// When in doubt use the maximum sampling time, [`Ts::Cyc160`].
-    ///
-    /// # Calibration
-    ///
-    /// The temperature calibration provided on-chip appears to be for an
-    /// uncalibrated ADC, though I can find no mention of this in the
-    /// datasheet.
-    ///
-    /// If the ADC has been calibrated with [`calibrate`] or [`aio_calibrate`]
-    /// the calibration offset will be removed from the sample.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # async fn doctest() {
-    /// use stm32wl_hal::{
-    ///     adc::{self, Adc},
-    ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
-    ///     pac, rcc,
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
-    ///
-    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
-    /// adc.aio_enable().await;
-    /// adc.enable_tsen();
-    /// delay.delay_us(adc::TS_START_MAX.as_micros() as u32);
-    /// adc.set_max_sample_time();
-    ///
-    /// let tj: i16 = adc.aio_temperature().await.to_integer();
-    /// # }
-    /// ```
-    ///
-    /// [`calibrate`]: crate::adc::Adc::calibrate
-    /// [`aio_calibrate`]: crate::adc::Adc::aio_calibrate
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    #[cfg_attr(
-        docsrs,
-        doc(cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p"))))
-    )]
-    pub async fn aio_temperature(&mut self) -> Ratio<i16> {
-        debug_assert!(self.is_enabled());
-        debug_assert!(self.is_tsen_enabled());
-
-        self.aio_cfg_ch_seq(Ch::Vts.mask()).await;
-        self.adc.cr.write(|w| w.adstart().start_conversion());
-
-        let (ts_cal1, ts_cal2): (u16, u16) = ts_cal();
-        let ret: Ratio<i16> =
-            Ratio::new_raw(TS_CAL_TEMP_DELTA, ts_cal2.wrapping_sub(ts_cal1) as i16);
-
-        let calfact: u8 = self.adc.calfact.read().calfact().bits();
-        let ts_data: u16 = self.aio_data().await.saturating_add(u16::from(calfact));
-
-        ret * (ts_data.wrapping_sub(ts_cal1) as i16) + TS_CAL1_TEMP
-    }
-
     /// Enable the internal voltage reference.
     pub fn enable_vref(&mut self) {
         self.adc.ccr.modify(|_, w| w.vrefen().enabled())
@@ -1233,57 +1049,6 @@ impl Adc {
         self.cfg_ch_seq(Ch::Vref.mask());
         self.adc.cr.write(|w| w.adstart().start_conversion());
         self.data()
-    }
-
-    /// Read the internal voltage reference.
-    ///
-    /// # Panics
-    ///
-    /// * (debug) ADC is not enabled
-    /// * (debug) Voltage reference is not enabled
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # async fn doctest() {
-    /// use stm32wl_hal::{
-    ///     adc::{self, Adc},
-    ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
-    ///     pac, rcc,
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
-    ///
-    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
-    /// adc.aio_calibrate(&mut delay).await;
-    /// adc.set_max_sample_time();
-    /// adc.aio_enable().await;
-    /// adc.enable_vref();
-    ///
-    /// let vref: u16 = adc.aio_vref().await;
-    /// let vref_cal: u16 = adc::vref_cal();
-    /// let error: i16 = ((vref as i16) - (vref_cal as i16)).abs();
-    /// assert!(error < 10);
-    /// # }
-    /// ```
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    #[cfg_attr(
-        docsrs,
-        doc(cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p"))))
-    )]
-    pub async fn aio_vref(&mut self) -> u16 {
-        debug_assert!(self.is_enabled());
-        debug_assert!(self.is_vref_enabled());
-        self.aio_cfg_ch_seq(Ch::Vref.mask()).await;
-        self.adc.cr.write(|w| w.adstart().start_conversion());
-        self.aio_data().await
     }
 
     /// Sample the DAC output.
@@ -1439,78 +1204,5 @@ impl Adc {
         self.cfg_ch_seq(Ch::Vbat.mask());
         self.adc.cr.write(|w| w.adstart().start_conversion());
         self.data()
-    }
-}
-
-#[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-mod aio {
-    use core::{
-        sync::atomic::{AtomicU32, Ordering::SeqCst},
-        task::Poll,
-    };
-    use futures_util::task::AtomicWaker;
-
-    static ADC_WAKER: AtomicWaker = AtomicWaker::new();
-    static ADC_RESULT: AtomicU32 = AtomicU32::new(0);
-
-    pub fn poll(cx: &mut core::task::Context<'_>) -> Poll<u32> {
-        ADC_WAKER.register(cx.waker());
-        match ADC_RESULT.load(SeqCst) {
-            0 => core::task::Poll::Pending,
-            _ => {
-                ADC_WAKER.take();
-                let isr: u32 = ADC_RESULT.swap(0, SeqCst);
-                Poll::Ready(isr)
-            }
-        }
-    }
-
-    #[cfg(all(target_arch = "arm", target_os = "none"))]
-    mod irq {
-        use super::{SeqCst, ADC_RESULT, ADC_WAKER};
-        use crate::pac::{self, interrupt};
-
-        #[interrupt]
-        #[allow(non_snake_case)]
-        fn ADC() {
-            debug_assert_eq!(ADC_RESULT.load(SeqCst), 0);
-
-            let adc: pac::ADC = unsafe { pac::Peripherals::steal() }.ADC;
-
-            // store result
-            ADC_RESULT.store(adc.isr.read().bits(), SeqCst);
-
-            // clear and disable IRQs
-            #[rustfmt::skip]
-            adc.isr.write(|w| {
-                w
-                    .ccrdy().set_bit()
-                    .eocal().set_bit()
-                    .awd3().set_bit()
-                    .awd2().set_bit()
-                    .awd1().set_bit()
-                    .ovr().set_bit()
-                    .eos().set_bit()
-                    .eoc().set_bit()
-                    .eosmp().set_bit()
-                    .adrdy().set_bit()
-            });
-            #[rustfmt::skip]
-            adc.ier.write(|w|  {
-                w
-                    .ccrdyie().disabled()
-                    .eocalie().disabled()
-                    .awd3ie().disabled()
-                    .awd2ie().disabled()
-                    .awd1ie().disabled()
-                    .ovrie().disabled()
-                    .eosie().disabled()
-                    .eocie().disabled()
-                    .eosmpie().disabled()
-                    .adrdyie().disabled()
-            });
-
-            ADC_WAKER.wake();
-        }
     }
 }

@@ -27,39 +27,6 @@ fn validate_vref(pre: u16, post: u16) {
     defmt::assert!(post_delta.abs() < pre_delta.abs());
 }
 
-#[cfg(feature = "aio")]
-async fn aio_temperature_inner() {
-    let mut dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
-    let cp: pac::CorePeripherals = unsafe { pac::CorePeripherals::steal() };
-    let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
-    let mut adc: Adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
-
-    adc.aio_enable().await;
-    adc.enable_tsen();
-    delay.delay_us(adc::TS_START_MAX.as_micros() as u32);
-    adc.set_max_sample_time();
-    let temp: i16 = adc.aio_temperature().await.to_integer();
-    validate_temperature(temp);
-}
-
-#[cfg(feature = "aio")]
-async fn aio_vref_inner() {
-    let mut dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
-    let cp: pac::CorePeripherals = unsafe { pac::CorePeripherals::steal() };
-    let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
-    let mut adc: Adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
-
-    adc.aio_enable().await;
-    adc.enable_vref();
-    adc.set_max_sample_time();
-    let pre: u16 = adc.aio_vref().await;
-    adc.aio_calibrate(&mut delay).await;
-    adc.aio_enable().await;
-    let post: u16 = adc.aio_vref().await;
-
-    validate_vref(pre, post)
-}
-
 #[defmt_test::tests]
 mod tests {
     use super::*;
@@ -77,14 +44,6 @@ mod tests {
         rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC);
 
         let delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
-
-        #[cfg(feature = "aio")]
-        {
-            let start: usize = stm32wl_hal::cortex_m_rt::heap_start() as usize;
-            let size: usize = 2048; // in bytes
-            unsafe { ate::ALLOCATOR.init(start, size) };
-            unsafe { Adc::unmask_irq() };
-        }
 
         dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
         while dp.RCC.cr.read().hsirdy().is_not_ready() {}
@@ -186,28 +145,12 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "aio")]
-    fn aio_vref(_ta: &mut TestArgs) {
-        let mut executor = ate::Executor::new();
-        executor.spawn(ate::Task::new(aio_vref_inner()));
-        executor.run();
-    }
-
-    #[test]
     fn temperature(ta: &mut TestArgs) {
         ta.adc.enable_tsen();
         ta.delay.delay_us(adc::TS_START_MAX.as_micros() as u32);
         ta.adc.set_max_sample_time();
         let temp: i16 = ta.adc.temperature().to_integer();
         validate_temperature(temp);
-    }
-
-    #[test]
-    #[cfg(feature = "aio")]
-    fn aio_temperature(_ta: &mut TestArgs) {
-        let mut executor = ate::Executor::new();
-        executor.spawn(ate::Task::new(aio_temperature_inner()));
-        executor.run();
     }
 
     #[test]

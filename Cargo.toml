@@ -3,7 +3,6 @@ resolver = "2"
 members = [
     "adc-testsuite",
     "aes-testsuite",
-    "ate",
     "dac-testsuite",
     "examples",
     "hal",

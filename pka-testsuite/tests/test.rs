@@ -54,35 +54,6 @@ const PUB_KEY: EcdsaPublicKey<8> = EcdsaPublicKey {
     ],
 };
 
-#[cfg(feature = "aio")]
-async fn aio_ecdsa_sign_inner() {
-    let mut pka: Pka = unsafe { Pka::steal() };
-    let mut output_signature: EcdsaSignature<8> = EcdsaSignature {
-        r_sign: [0; 8],
-        s_sign: [0; 8],
-    };
-    unwrap!(
-        pka.aio_ecdsa_sign(
-            &NIST_P256,
-            &INTEGER,
-            &PRIVATE_KEY,
-            &HASH,
-            &mut output_signature,
-        )
-        .await
-    );
-    defmt::assert_eq!(output_signature, SIGNATURE);
-}
-
-#[cfg(feature = "aio")]
-async fn aio_ecdsa_verify_inner() {
-    let mut pka: Pka = unsafe { Pka::steal() };
-    unwrap!(
-        pka.aio_ecdsa_verify(&NIST_P256, &SIGNATURE, &PUB_KEY, &HASH)
-            .await
-    )
-}
-
 #[defmt_test::tests]
 mod tests {
     use super::*;
@@ -93,14 +64,6 @@ mod tests {
         let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
 
         rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC);
-
-        #[cfg(feature = "aio")]
-        {
-            let start: usize = stm32wl_hal::cortex_m_rt::heap_start() as usize;
-            let size: usize = 2048; // in bytes
-            unsafe { ate::ALLOCATOR.init(start, size) };
-            unsafe { Pka::unmask_irq() };
-        }
 
         cp.DCB.enable_trace();
         cp.DWT.enable_cycle_counter();
@@ -130,21 +93,5 @@ mod tests {
     #[test]
     fn ecdsa_verify(pka: &mut Pka) {
         unwrap!(pka.ecdsa_verify(&NIST_P256, &SIGNATURE, &PUB_KEY, &HASH))
-    }
-
-    #[test]
-    #[cfg(feature = "aio")]
-    fn aio_ecdsa_sign(_pka: &mut Pka) {
-        let mut executor = ate::Executor::new();
-        executor.spawn(ate::Task::new(aio_ecdsa_sign_inner()));
-        executor.run();
-    }
-
-    #[test]
-    #[cfg(feature = "aio")]
-    fn aio_ecdsa_verify(_pka: &mut Pka) {
-        let mut executor = ate::Executor::new();
-        executor.spawn(ate::Task::new(aio_ecdsa_verify_inner()));
-        executor.run();
     }
 }

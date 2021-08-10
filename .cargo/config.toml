@@ -20,16 +20,6 @@ test-pka = "test -p pka-testsuite --target thumbv7em-none-eabi"
 test-rng = "test -p rng-testsuite --target thumbv7em-none-eabi"
 test-subghz = "test -p subghz-testsuite --target thumbv7em-none-eabi"
 
-# e.g. cargo +nightly test-aes-aio
-test-adc-aio = "test -p adc-testsuite --target thumbv7em-none-eabi --features aio"
-test-aes-aio = "test -p aes-testsuite --target thumbv7em-none-eabi --features aio"
-test-pka-aio = "test -p pka-testsuite --target thumbv7em-none-eabi --features aio"
-test-rng-aio = "test -p rng-testsuite --target thumbv7em-none-eabi --features aio"
-test-subghz-aio = "test -p subghz-testsuite --target thumbv7em-none-eabi --features aio"
-
 # e.g. cargo unit
 unit = "test --features stm32wl5x_cm4"
-# e.g. cargo +nightly unit-aio
-unit-aio = "test --features stm32wl5x_cm4,aio"
-# e.g. cargo unit-little
 unit-little = "test --features stm32wl5x_cm0p"

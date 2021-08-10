@@ -15,10 +15,8 @@ defmt-rtt = "0.2"
 defmt-test = "0.2"
 panic-probe = { version = "0.2", features = ["print-defmt" ] }
 stm32wl-hal = { path = "../hal", features = ["stm32wl5x_cm4", "defmt"] }
-ate = { path = "../ate", optional = true }
 
 [features]
-aio = ["ate", "stm32wl-hal/aio"]
 default = ["defmt-trace", "stm32wl-hal/defmt-trace"]
 
 # do NOT modify these features

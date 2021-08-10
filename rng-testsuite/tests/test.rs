@@ -9,14 +9,6 @@ use stm32wl_hal::{
     rng::{rand_core::RngCore, ClkSrc, Rng},
 };
 
-#[cfg(feature = "aio")]
-async fn aio_random_enough_for_me_inner() {
-    let mut rng: Rng = unsafe { Rng::steal() };
-    let mut bytes: [u8; 33] = [0; 33];
-    unwrap!(rng.aio_try_fill_u8(&mut bytes).await);
-    validate_randomness(&bytes)
-}
-
 /// This is not a cryptographically secure validation, this only ensures that
 /// the driver is operating nominally, is does not check for hardware
 /// correctness.
@@ -46,14 +38,6 @@ mod tests {
         let mut rcc = dp.RCC;
 
         rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut rcc);
-
-        #[cfg(feature = "aio")]
-        {
-            let start: usize = stm32wl_hal::cortex_m_rt::heap_start() as usize;
-            let size: usize = 2048; // in bytes
-            unsafe { ate::ALLOCATOR.init(start, size) };
-            unsafe { Rng::unmask_irq() };
-        }
 
         Rng::set_clock_source(&mut rcc, ClkSrc::MSI);
         Rng::new(dp.RNG, &mut rcc)
@@ -117,13 +101,5 @@ mod tests {
         let mut bytes: [u8; 35] = [0; 35];
         unwrap!(rng.try_fill_u8(&mut bytes));
         validate_randomness(&bytes)
-    }
-
-    #[test]
-    #[cfg(feature = "aio")]
-    fn aio_random_enough_for_me(_rng: &mut Rng) {
-        let mut executor = ate::Executor::new();
-        executor.spawn(ate::Task::new(aio_random_enough_for_me_inner()));
-        executor.run();
     }
 }

@@ -19,22 +19,6 @@ enum Error {
     Ram,
 }
 
-impl Error {
-    #[cfg_attr(
-        any(not(feature = "aio"), feature = "stm32wl5x_cm0p"),
-        allow(dead_code)
-    )]
-    pub const fn from_sr(raw: u32) -> Result<(), Error> {
-        if raw & 1 << 19 != 0 {
-            Err(Error::Ram)
-        } else if raw & 1 << 20 != 0 {
-            Err(Error::Address)
-        } else {
-            Ok(())
-        }
-    }
-}
-
 /// Errors from an ECDSA signing operation.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -432,24 +416,6 @@ impl Pka {
         Ok(())
     }
 
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    async fn aio_process(&mut self, mode: MODE_A) -> Result<(), Error> {
-        debug_assert!(self.pka.sr.read().procendf().bit_is_clear());
-
-        #[rustfmt::skip]
-        self.pka.cr.write(|w| {
-            w
-                .addrerrie().enabled()
-                .ramerrie().enabled()
-                .procendie().enabled()
-                .mode().variant(mode)
-                .start().set_bit()
-                .en().set_bit()
-        });
-
-        futures::future::poll_fn(aio::poll).await
-    }
-
     /// ECDSA (Ellipctic Curve Digital Signature Algorithm) signing.
     pub fn ecdsa_sign<const MODULUS_SIZE: usize, const PRIME_ORDER_SIZE: usize>(
         &mut self,
@@ -461,42 +427,6 @@ impl Pka {
     ) -> Result<(), EcdsaSignError> {
         self.ecdsa_sign_set(curve, nonce, private_key, hash);
         if let Err(e) = self.process(MODE_A::ECDSASIGN) {
-            self.zero_all_ram();
-            Err(e.into())
-        } else {
-            unsafe {
-                self.read_buf_from_ram(Self::ECDSA_SIGN_OUT_R, &mut sig_buf.r_sign);
-                self.read_buf_from_ram(Self::ECDSA_SIGN_OUT_S, &mut sig_buf.s_sign);
-            }
-
-            let result: u32 = unsafe { read_volatile(Self::ECDSA_SIGN_OUT_RESULT as *const u32) };
-            if result != 0 {
-                // Reference manual table 163 "ECDSA sign - Outputs":
-                // If error output is different from zero the content of the PKA
-                // memory should be cleared to avoid leaking information about
-                // the private key.
-                self.zero_all_ram();
-            }
-            EcdsaSignError::from_raw(result)
-        }
-    }
-
-    /// ECDSA (Ellipctic Curve Digital Signature Algorithm) signing.
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    #[cfg_attr(
-        docsrs,
-        doc(cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p"))))
-    )]
-    pub async fn aio_ecdsa_sign<const MODULUS_SIZE: usize, const PRIME_ORDER_SIZE: usize>(
-        &mut self,
-        curve: &EllipticCurve<MODULUS_SIZE, PRIME_ORDER_SIZE>,
-        nonce: &[u32; PRIME_ORDER_SIZE],
-        private_key: &[u32; PRIME_ORDER_SIZE],
-        hash: &[u32; PRIME_ORDER_SIZE],
-        sig_buf: &mut EcdsaSignature<MODULUS_SIZE>,
-    ) -> Result<(), EcdsaSignError> {
-        self.ecdsa_sign_set(curve, nonce, private_key, hash);
-        if let Err(e) = self.aio_process(MODE_A::ECDSASIGN).await {
             self.zero_all_ram();
             Err(e.into())
         } else {
@@ -560,27 +490,6 @@ impl Pka {
         self.zero_all_ram();
         self.ecdsa_verify_set(curve, sig, pub_key, hash);
         self.process(MODE_A::ECDSAVERIF)?;
-
-        let result: u32 = unsafe { read_volatile(Self::ECDSA_VERIFY_OUT as *const u32) };
-        EcdsaVerifyError::from_raw(result)
-    }
-
-    /// ECDSA (Ellipctic Curve Digital Signature Algorithm) verification.
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    #[cfg_attr(
-        docsrs,
-        doc(cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p"))))
-    )]
-    pub async fn aio_ecdsa_verify<const MODULUS_SIZE: usize, const PRIME_ORDER_SIZE: usize>(
-        &mut self,
-        curve: &EllipticCurve<MODULUS_SIZE, PRIME_ORDER_SIZE>,
-        sig: &EcdsaSignature<MODULUS_SIZE>,
-        pub_key: &EcdsaPublicKey<MODULUS_SIZE>,
-        hash: &[u32; PRIME_ORDER_SIZE],
-    ) -> Result<(), EcdsaVerifyError> {
-        self.zero_all_ram();
-        self.ecdsa_verify_set(curve, sig, pub_key, hash);
-        self.aio_process(MODE_A::ECDSAVERIF).await?;
 
         let result: u32 = unsafe { read_volatile(Self::ECDSA_VERIFY_OUT as *const u32) };
         EcdsaVerifyError::from_raw(result)
@@ -662,62 +571,6 @@ pub struct EllipticCurve<const MODULUS_SIZE: usize, const PRIME_ORDER_SIZE: usiz
     ///
     /// **Note:** Integer prime.
     pub prime_order: [u32; PRIME_ORDER_SIZE],
-}
-
-#[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-mod aio {
-    use core::{
-        sync::atomic::{AtomicU32, Ordering::SeqCst},
-        task::Poll,
-    };
-    use futures_util::task::AtomicWaker;
-
-    static PKA_WAKER: AtomicWaker = AtomicWaker::new();
-    static PKA_RESULT: AtomicU32 = AtomicU32::new(0);
-
-    pub(super) fn poll(cx: &mut core::task::Context<'_>) -> Poll<Result<(), super::Error>> {
-        PKA_WAKER.register(cx.waker());
-        match PKA_RESULT.load(SeqCst) {
-            0 => core::task::Poll::Pending,
-            _ => {
-                PKA_WAKER.take();
-                let sr: u32 = PKA_RESULT.swap(0, SeqCst);
-                Poll::Ready(super::Error::from_sr(sr))
-            }
-        }
-    }
-
-    #[cfg(all(target_arch = "arm", target_os = "none"))]
-    mod irq {
-        use super::{SeqCst, PKA_RESULT, PKA_WAKER};
-        use crate::pac::{self, interrupt};
-
-        #[interrupt]
-        #[allow(non_snake_case)]
-        fn PKA() {
-            debug_assert_eq!(PKA_RESULT.load(SeqCst), 0);
-
-            let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
-
-            // store result
-            PKA_RESULT.store(dp.PKA.sr.read().bits(), SeqCst);
-
-            // clear and disable IRQs
-            dp.PKA.cr.modify(|_, w| {
-                w.addrerrie()
-                    .clear_bit()
-                    .ramerrie()
-                    .clear_bit()
-                    .procendie()
-                    .clear_bit()
-            });
-            dp.PKA
-                .clrfr
-                .write(|w| w.addrerrfc().clear().ramerrfc().clear().procendfc().clear());
-
-            PKA_WAKER.wake();
-        }
-    }
 }
 
 /// Pre-defined elliptic curves.

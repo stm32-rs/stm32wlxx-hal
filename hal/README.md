@@ -19,10 +19,6 @@ features = [
     "stm32wle5",
     # optional: use the cortex-m-rt interrupt interface
     "rt",
-    # optional: use async (requires nightly rust)
-    # async support may be dropped in the future
-    # if this feature is important to you please let me know
-    "aio",
     # optional: use defmt
     "defmt",
 ]

@@ -16,10 +16,8 @@ defmt-rtt = "0.2"
 defmt-test = "0.2"
 panic-probe = { version = "0.2", features = ["print-defmt" ] }
 nucleo-wl55jc-bsp = { path = "../nucleo-wl55jc-bsp", features = ["stm32wl5x_cm4", "defmt"] }
-ate = { path = "../ate", optional = true }
 
 [features]
-aio = ["ate", "nucleo-wl55jc-bsp/aio"]
 default = ["defmt-trace", "nucleo-wl55jc-bsp/defmt-trace"]
 
 # do NOT modify these features

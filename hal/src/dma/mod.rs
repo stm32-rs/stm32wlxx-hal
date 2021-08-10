@@ -135,11 +135,6 @@ impl DmaCh {
         }
     }
 
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    pub(crate) const fn mux_ch(&self) -> usize {
-        self.mux_ch as usize
-    }
-
     /// Get the interrupt flags for the DMA channel.
     ///
     /// **Note:** The upper 4 bits of the return value are unused.
@@ -383,88 +378,5 @@ impl AllDma {
     /// ```
     pub const unsafe fn steal() -> AllDma {
         ALL_DMA
-    }
-}
-
-#[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-pub(crate) mod aio {
-    use core::{
-        sync::atomic::{AtomicU8, Ordering::SeqCst},
-        task::Poll,
-    };
-    use futures_util::task::AtomicWaker;
-
-    #[allow(clippy::declare_interior_mutable_const)]
-    const WAKER: AtomicWaker = AtomicWaker::new();
-    #[allow(clippy::declare_interior_mutable_const)]
-    const FLAGS: AtomicU8 = AtomicU8::new(0);
-
-    static DMA_WAKER: [AtomicWaker; 14] = [WAKER; 14];
-    static DMA_FLAGS: [AtomicU8; 14] = [FLAGS; 14];
-
-    pub fn poll(mux_ch: usize, cx: &mut core::task::Context<'_>) -> Poll<Result<(), super::Error>> {
-        DMA_WAKER[mux_ch].register(cx.waker());
-        match DMA_FLAGS[mux_ch].load(SeqCst) {
-            0 => core::task::Poll::Pending,
-            _ => {
-                DMA_WAKER[mux_ch].take();
-                let flags: u8 = DMA_FLAGS[mux_ch].swap(0, SeqCst);
-                if flags & super::flags::XFER_ERR != 0 {
-                    Poll::Ready(Err(super::Error::Xfer))
-                } else {
-                    Poll::Ready(Ok(()))
-                }
-            }
-        }
-    }
-
-    #[cfg(all(target_arch = "arm", target_os = "none"))]
-    mod irq {
-        use super::{
-            super::{Cr, DmaCh, ALL_DMA},
-            DMA_FLAGS, DMA_WAKER,
-        };
-        use crate::pac::interrupt;
-        use core::sync::atomic::Ordering::SeqCst;
-
-        macro_rules! dma_irq_handler {
-            ($name:ident, $dma:ident) => {
-                #[interrupt]
-                #[allow(non_snake_case)]
-                fn $name() {
-                    let mut dma: DmaCh = ALL_DMA.$dma;
-                    const DMA_IDX: usize = ALL_DMA.$dma.mux_ch as usize;
-
-                    debug_assert_eq!(DMA_FLAGS[DMA_IDX].load(SeqCst), 0);
-
-                    // store result
-                    DMA_FLAGS[DMA_IDX].store(dma.flags(), SeqCst);
-
-                    // disable DMA
-                    dma.set_cr(Cr::DISABLE);
-
-                    // clear flags
-                    dma.clear_all_flags();
-
-                    // wake
-                    DMA_WAKER[DMA_IDX].wake();
-                }
-            };
-        }
-
-        dma_irq_handler!(DMA1_CH1, d1c1);
-        dma_irq_handler!(DMA1_CH2, d1c2);
-        dma_irq_handler!(DMA1_CH3, d1c3);
-        dma_irq_handler!(DMA1_CH4, d1c4);
-        dma_irq_handler!(DMA1_CH5, d1c5);
-        dma_irq_handler!(DMA1_CH6, d1c6);
-        dma_irq_handler!(DMA1_CH7, d1c7);
-        dma_irq_handler!(DMA2_CH1, d2c1);
-        dma_irq_handler!(DMA2_CH2, d2c2);
-        dma_irq_handler!(DMA2_CH3, d2c3);
-        dma_irq_handler!(DMA2_CH4, d2c4);
-        dma_irq_handler!(DMA2_CH5, d2c5);
-        dma_irq_handler!(DMA2_CH6, d2c6);
-        dma_irq_handler!(DMA2_CH7, d2c7);
     }
 }

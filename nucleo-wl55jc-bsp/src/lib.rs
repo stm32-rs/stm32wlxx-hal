@@ -4,6 +4,7 @@
 #![forbid(missing_docs)]
 
 pub mod led;
+pub mod pb;
 
 pub use stm32wl_hal as hal;
 

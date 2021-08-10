@@ -1,6 +1,6 @@
 //! Push-buttons
 use stm32wl_hal::{
-    gpio::{pins, Input, PortA, PortC, Pull},
+    gpio::{pins, Input, Pull},
     pac,
 };
 
@@ -162,20 +162,17 @@ impl Pb3 {
 
     /// Steal the push-button from whatever is currently using it.
     ///
-    /// This will **not** initialize the GPIO peripheral.
-    ///
     /// # Safety
     ///
-    /// This will create a new push button, bypassing the singleton checks that
-    /// normally occur.
-    /// You are responsible for ensuring that the driver has exclusive access to
-    /// the GPIO that the push-button is connected to.
-    /// You are also responsible for ensuring the GPIO peripheral has been
-    /// setup correctly.
+    /// 1. Ensure that the code stealing the push-button has exclusive access
+    ///    to the underlying GPIO.
+    ///    Singleton checks are bypassed with this method.
+    /// 2. You are responsible for setting up the underlying GPIO correctly.
+    ///    No setup will occur when using this method.
     ///
     /// # Example
     ///
-    /// ```no_run
+    /// ```
     /// use nucleo_wl55jc_bsp::pb::Pb3;
     ///
     /// // ... setup happens here
@@ -184,7 +181,7 @@ impl Pb3 {
     /// ```
     pub unsafe fn steal() -> Self {
         Self {
-            gpio: Input::new(PortC::steal().pc6, PULL),
+            gpio: Input::steal(),
         }
     }
 }
@@ -238,16 +235,15 @@ impl Pb2 {
     ///
     /// # Safety
     ///
-    /// This will create a new push button, bypassing the singleton checks that
-    /// normally occur.
-    /// You are responsible for ensuring that the driver has exclusive access to
-    /// the GPIO that the push-button is connected to.
-    /// You are also responsible for ensuring the GPIO peripheral has been
-    /// setup correctly.
+    /// 1. Ensure that the code stealing the push-button has exclusive access
+    ///    to the underlying GPIO.
+    ///    Singleton checks are bypassed with this method.
+    /// 2. You are responsible for setting up the underlying GPIO correctly.
+    ///    No setup will occur when using this method.
     ///
     /// # Example
     ///
-    /// ```no_run
+    /// ```
     /// use nucleo_wl55jc_bsp::pb::Pb2;
     ///
     /// // ... setup happens here
@@ -256,7 +252,7 @@ impl Pb2 {
     /// ```
     pub unsafe fn steal() -> Self {
         Self {
-            gpio: Input::new(PortA::steal().pa1, PULL),
+            gpio: Input::steal(),
         }
     }
 }
@@ -310,16 +306,15 @@ impl Pb1 {
     ///
     /// # Safety
     ///
-    /// This will create a new push button, bypassing the singleton checks that
-    /// normally occur.
-    /// You are responsible for ensuring that the driver has exclusive access to
-    /// the GPIO that the push-button is connected to.
-    /// You are also responsible for ensuring the GPIO peripheral has been
-    /// setup correctly.
+    /// 1. Ensure that the code stealing the push-button has exclusive access
+    ///    to the underlying GPIO.
+    ///    Singleton checks are bypassed with this method.
+    /// 2. You are responsible for setting up the underlying GPIO correctly.
+    ///    No setup will occur when using this method.
     ///
     /// # Example
     ///
-    /// ```no_run
+    /// ```
     /// use nucleo_wl55jc_bsp::pb::Pb1;
     ///
     /// // ... setup happens here
@@ -328,7 +323,7 @@ impl Pb1 {
     /// ```
     pub unsafe fn steal() -> Self {
         Self {
-            gpio: Input::new(PortA::steal().pa0, PULL),
+            gpio: Input::steal(),
         }
     }
 }

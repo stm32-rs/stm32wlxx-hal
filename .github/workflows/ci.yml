@@ -164,7 +164,7 @@ jobs:
           toolchain: nightly
       - run: |
           cd hal
-          cargo +nightly rustdoc --features aio,stm32wl5x_cm4 -- -Z unstable-options --enable-index-page
+          cargo +nightly rustdoc --features rt,stm32wl5x_cm4 -- -Z unstable-options --enable-index-page
       - name: deploy
         if: ${{ github.ref == 'refs/heads/main' }}
         uses: peaceiris/actions-gh-pages@v3

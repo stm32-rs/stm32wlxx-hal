@@ -49,6 +49,9 @@ pub trait PushButton {
     ///
     /// This will **not** unmask the EXTI IRQ in the NVIC.
     fn setup_exti(syscfg: &mut pac::SYSCFG, exti: &mut pac::EXTI, tri: IrqTrig);
+
+    /// Clear a pending IRQ in the EXTI for the push-button.
+    fn clear_pending(exti: &mut pac::EXTI);
 }
 
 impl PushButton for Pb3 {
@@ -65,6 +68,10 @@ impl PushButton for Pb3 {
             exti.ftsr1.modify(|_, w| w.ft6().enabled());
         }
         exti.c1imr1.modify(|_, w| w.im6().unmasked());
+    }
+
+    fn clear_pending(exti: &mut pac::EXTI) {
+        exti.pr1.write(|w| w.pif6().set_bit());
     }
 }
 
@@ -83,6 +90,10 @@ impl PushButton for Pb2 {
         }
         exti.c1imr1.modify(|_, w| w.im1().unmasked());
     }
+
+    fn clear_pending(exti: &mut pac::EXTI) {
+        exti.pr1.write(|w| w.pif1().set_bit());
+    }
 }
 
 impl PushButton for Pb1 {
@@ -99,6 +110,10 @@ impl PushButton for Pb1 {
             exti.ftsr1.modify(|_, w| w.ft0().enabled());
         }
         exti.c1imr1.modify(|_, w| w.im0().unmasked());
+    }
+
+    fn clear_pending(exti: &mut pac::EXTI) {
+        exti.pr1.write(|w| w.pif0().set_bit());
     }
 }
 

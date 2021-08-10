@@ -1,7 +1,6 @@
 //! Public key accelerator
 
-use crate::pac;
-
+use crate::pac::{self, pka::cr::MODE_A};
 use core::{
     mem::size_of,
     ptr::{read_volatile, write_volatile},
@@ -216,18 +215,12 @@ impl Pka {
     /// ```no_run
     /// use stm32wl_hal::{pac, pka::Pka};
     ///
-    /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
-    ///
-    /// let mut pka = Pka::new(dp.PKA, &mut rcc);
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut pka = Pka::new(dp.PKA, &mut dp.RCC);
     /// ```
     pub fn new(pka: pac::PKA, rcc: &mut pac::RCC) -> Pka {
         Self::enable_clock(rcc);
-        rcc.ahb3rstr.modify(|_, w| w.pkarst().set_bit());
-        rcc.ahb3rstr.modify(|_, w| w.pkarst().clear_bit());
-
-        debug_assert_eq!(pka.cr.read().bits(), 0);
-        debug_assert_eq!(pka.sr.read().bits(), 0);
+        unsafe { Self::pulse_reset(rcc) };
 
         // When the PKA peripheral reset signal is released PKA RAM is cleared
         // automatically, taking 894 clock cycles.
@@ -237,10 +230,13 @@ impl Pka {
             pka.cr.write(|w| w.en().set_bit());
         }
 
-        debug_assert_eq!(pka.cr.read().bits(), 1);
-        debug_assert_eq!(pka.sr.read().bits(), 0);
-
         Pka { pka }
+    }
+
+    /// Returns `true` if the PKA is enabled.
+    #[inline]
+    pub fn is_enabled(&mut self) -> bool {
+        self.pka.cr.read().en().is_enabled()
     }
 
     /// Free the PKA peripheral from the driver.
@@ -250,13 +246,11 @@ impl Pka {
     /// ```no_run
     /// use stm32wl_hal::{pac, pka::Pka};
     ///
-    /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
-    /// let pka = dp.PKA;
-    ///
-    /// let mut pka_driver = Pka::new(pka, &mut rcc);
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let pka: pac::PKA = dp.PKA;
+    /// let mut pka: Pka = Pka::new(pka, &mut dp.RCC);
     /// // ... use PKA
-    /// let pka = pka_driver.free();
+    /// let pka: pac::PKA = pka.free();
     /// ```
     pub fn free(self) -> pac::PKA {
         self.pka
@@ -291,14 +285,23 @@ impl Pka {
     }
 
     /// Disable the PKA clock.
+    #[inline]
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.ahb3enr.modify(|_, w| w.pkaen().disabled());
     }
 
     /// Enable the PKA clock.
+    #[inline]
     pub fn enable_clock(rcc: &mut pac::RCC) {
         rcc.ahb3enr.modify(|_, w| w.pkaen().enabled());
         rcc.ahb3enr.read(); // delay after an RCC peripheral clock enabling
+    }
+
+    /// Reset the PKA.
+    #[inline]
+    pub unsafe fn pulse_reset(rcc: &mut pac::RCC) {
+        rcc.ahb3rstr.modify(|_, w| w.pkarst().set_bit());
+        rcc.ahb3rstr.modify(|_, w| w.pkarst().clear_bit());
     }
 
     /// Unmask the PKA IRQ in the NVIC.
@@ -383,16 +386,16 @@ impl Pka {
         }
     }
 
-    fn process(&mut self, opcode: PkaOpcode) -> Result<(), Error> {
+    fn process(&mut self, mode: MODE_A) -> Result<(), Error> {
         debug_assert!(self.pka.sr.read().procendf().bit_is_clear());
 
         #[rustfmt::skip]
-        self.pka.cr.write(|w| unsafe {
+        self.pka.cr.write(|w| {
             w
                 .addrerrie().disabled()
                 .ramerrie().disabled()
                 .procendie().disabled()
-                .mode().bits(opcode.into())
+                .mode().variant(mode)
                 .start().set_bit()
                 .en().set_bit()
         });
@@ -430,16 +433,16 @@ impl Pka {
     }
 
     #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    async fn aio_process(&mut self, opcode: PkaOpcode) -> Result<(), Error> {
+    async fn aio_process(&mut self, mode: MODE_A) -> Result<(), Error> {
         debug_assert!(self.pka.sr.read().procendf().bit_is_clear());
 
         #[rustfmt::skip]
-        self.pka.cr.write(|w| unsafe {
+        self.pka.cr.write(|w| {
             w
                 .addrerrie().enabled()
                 .ramerrie().enabled()
                 .procendie().enabled()
-                .mode().bits(opcode.into())
+                .mode().variant(mode)
                 .start().set_bit()
                 .en().set_bit()
         });
@@ -457,7 +460,7 @@ impl Pka {
         sig_buf: &mut EcdsaSignature<MODULUS_SIZE>,
     ) -> Result<(), EcdsaSignError> {
         self.ecdsa_sign_set(curve, nonce, private_key, hash);
-        if let Err(e) = self.process(PkaOpcode::EcdsaSign) {
+        if let Err(e) = self.process(MODE_A::ECDSASIGN) {
             self.zero_all_ram();
             Err(e.into())
         } else {
@@ -493,7 +496,7 @@ impl Pka {
         sig_buf: &mut EcdsaSignature<MODULUS_SIZE>,
     ) -> Result<(), EcdsaSignError> {
         self.ecdsa_sign_set(curve, nonce, private_key, hash);
-        if let Err(e) = self.aio_process(PkaOpcode::EcdsaSign).await {
+        if let Err(e) = self.aio_process(MODE_A::ECDSASIGN).await {
             self.zero_all_ram();
             Err(e.into())
         } else {
@@ -556,7 +559,7 @@ impl Pka {
     ) -> Result<(), EcdsaVerifyError> {
         self.zero_all_ram();
         self.ecdsa_verify_set(curve, sig, pub_key, hash);
-        self.process(PkaOpcode::EcdsaVerify)?;
+        self.process(MODE_A::ECDSAVERIF)?;
 
         let result: u32 = unsafe { read_volatile(Self::ECDSA_VERIFY_OUT as *const u32) };
         EcdsaVerifyError::from_raw(result)
@@ -577,7 +580,7 @@ impl Pka {
     ) -> Result<(), EcdsaVerifyError> {
         self.zero_all_ram();
         self.ecdsa_verify_set(curve, sig, pub_key, hash);
-        self.aio_process(PkaOpcode::EcdsaVerify).await?;
+        self.aio_process(MODE_A::ECDSAVERIF).await?;
 
         let result: u32 = unsafe { read_volatile(Self::ECDSA_VERIFY_OUT as *const u32) };
         EcdsaVerifyError::from_raw(result)

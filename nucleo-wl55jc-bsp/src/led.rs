@@ -1,4 +1,4 @@
-//! LEDs on the board
+//! LEDs
 
 use stm32wl_hal as hal;
 
@@ -13,6 +13,25 @@ const LED_ARGS: OutputArgs = OutputArgs {
     ot: gpio::OutputType::PushPull,
     pull: gpio::Pull::None,
 };
+
+/// Simple trait for an LED
+pub trait Led<OutPin>
+where
+    OutPin: OutputPin<Error = core::convert::Infallible>,
+{
+    /// Output pin driving the LED
+    fn output(&mut self) -> &mut OutPin;
+
+    /// Set the LED on
+    fn set_on(&mut self) {
+        self.output().set_high().unwrap()
+    }
+
+    /// Set the LED off
+    fn set_off(&mut self) {
+        self.output().set_low().unwrap()
+    }
+}
 
 /// Red LED
 ///
@@ -272,24 +291,5 @@ impl Blue {
 impl Led<Output<pins::B15>> for Blue {
     fn output(&mut self) -> &mut Output<pins::B15> {
         &mut self.gpio
-    }
-}
-
-/// Simple trait for an LED
-pub trait Led<OutPin>
-where
-    OutPin: OutputPin<Error = core::convert::Infallible>,
-{
-    /// Output pin driving the LED
-    fn output(&mut self) -> &mut OutPin;
-
-    /// Set the LED on
-    fn set_on(&mut self) {
-        self.output().set_high().unwrap()
-    }
-
-    /// Set the LED off
-    fn set_off(&mut self) {
-        self.output().set_low().unwrap()
     }
 }

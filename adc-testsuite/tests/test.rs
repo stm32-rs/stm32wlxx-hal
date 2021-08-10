@@ -166,6 +166,6 @@ mod tests {
 
         defmt::info!("VBAT={} Δ {}", sample, delta);
 
-        defmt::assert!(delta < 10);
+        defmt::assert!(delta < 20);
     }
 }

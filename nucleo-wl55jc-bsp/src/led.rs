@@ -1,10 +1,10 @@
-//! LEDs on the board
+//! LEDs
 
 use stm32wl_hal as hal;
 
 use hal::{
     embedded_hal::digital::v2::OutputPin,
-    gpio::{self, pins, Output, OutputArgs, PortB},
+    gpio::{self, pins, Output, OutputArgs},
 };
 
 const LED_ARGS: OutputArgs = OutputArgs {
@@ -13,6 +13,25 @@ const LED_ARGS: OutputArgs = OutputArgs {
     ot: gpio::OutputType::PushPull,
     pull: gpio::Pull::None,
 };
+
+/// Simple trait for an LED
+pub trait Led<OutPin>
+where
+    OutPin: OutputPin<Error = core::convert::Infallible>,
+{
+    /// Output pin driving the LED
+    fn output(&mut self) -> &mut OutPin;
+
+    /// Set the LED on
+    fn set_on(&mut self) {
+        self.output().set_high().unwrap()
+    }
+
+    /// Set the LED off
+    fn set_off(&mut self) {
+        self.output().set_low().unwrap()
+    }
+}
 
 /// Red LED
 ///
@@ -72,16 +91,15 @@ impl Red {
     ///
     /// # Safety
     ///
-    /// This will create a new GPIO, bypassing the singleton checks that normally
-    /// occur.
-    /// You are responsible for ensuring that the driver has exclusive access to
-    /// the GPIO driving the LED.
-    /// You are also responsible for ensuring the GPIO peripheral has been
-    /// setup correctly.
+    /// 1. Ensure that the code stealing the LED has exclusive access
+    ///    to the underlying GPIO.
+    ///    Singleton checks are bypassed with this method.
+    /// 2. You are responsible for setting up the underlying GPIO correctly.
+    ///    No setup will occur when using this method.
     ///
     /// # Example
     ///
-    /// ```no_run
+    /// ```
     /// use nucleo_wl55jc_bsp::led::Red;
     ///
     /// // ... setup happens here
@@ -90,7 +108,7 @@ impl Red {
     /// ```
     pub unsafe fn steal() -> Self {
         Self {
-            gpio: Output::new(PortB::steal().pb11, &LED_ARGS),
+            gpio: Output::steal(),
         }
     }
 }
@@ -159,16 +177,15 @@ impl Green {
     ///
     /// # Safety
     ///
-    /// This will create a new GPIO, bypassing the singleton checks that normally
-    /// occur.
-    /// You are responsible for ensuring that the driver has exclusive access to
-    /// the GPIO driving the LED.
-    /// You are also responsible for ensuring the GPIO peripheral has been
-    /// setup correctly.
+    /// 1. Ensure that the code stealing the LED has exclusive access
+    ///    to the underlying GPIO.
+    ///    Singleton checks are bypassed with this method.
+    /// 2. You are responsible for setting up the underlying GPIO correctly.
+    ///    No setup will occur when using this method.
     ///
     /// # Example
     ///
-    /// ```no_run
+    /// ```
     /// use nucleo_wl55jc_bsp::led::Green;
     ///
     /// // ... setup happens here
@@ -177,7 +194,7 @@ impl Green {
     /// ```
     pub unsafe fn steal() -> Self {
         Self {
-            gpio: Output::new(PortB::steal().pb9, &LED_ARGS),
+            gpio: Output::steal(),
         }
     }
 }
@@ -246,16 +263,15 @@ impl Blue {
     ///
     /// # Safety
     ///
-    /// This will create a new GPIO, bypassing the singleton checks that normally
-    /// occur.
-    /// You are responsible for ensuring that the driver has exclusive access to
-    /// the GPIO driving the LED.
-    /// You are also responsible for ensuring the GPIO peripheral has been
-    /// setup correctly.
+    /// 1. Ensure that the code stealing the LED has exclusive access
+    ///    to the underlying GPIO.
+    ///    Singleton checks are bypassed with this method.
+    /// 2. You are responsible for setting up the underlying GPIO correctly.
+    ///    No setup will occur when using this method.
     ///
     /// # Example
     ///
-    /// ```no_run
+    /// ```
     /// use nucleo_wl55jc_bsp::led::Blue;
     ///
     /// // ... setup happens here
@@ -264,7 +280,7 @@ impl Blue {
     /// ```
     pub unsafe fn steal() -> Self {
         Self {
-            gpio: Output::new(PortB::steal().pb15, &LED_ARGS),
+            gpio: Output::steal(),
         }
     }
 }
@@ -272,24 +288,5 @@ impl Blue {
 impl Led<Output<pins::B15>> for Blue {
     fn output(&mut self) -> &mut Output<pins::B15> {
         &mut self.gpio
-    }
-}
-
-/// Simple trait for an LED
-pub trait Led<OutPin>
-where
-    OutPin: OutputPin<Error = core::convert::Infallible>,
-{
-    /// Output pin driving the LED
-    fn output(&mut self) -> &mut OutPin;
-
-    /// Set the LED on
-    fn set_on(&mut self) {
-        self.output().set_high().unwrap()
-    }
-
-    /// Set the LED off
-    fn set_off(&mut self) {
-        self.output().set_low().unwrap()
     }
 }

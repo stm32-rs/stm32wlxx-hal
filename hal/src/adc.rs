@@ -687,98 +687,6 @@ impl Adc {
         self.set_sample_times(0, Ts::Cyc160, Ts::Cyc160);
     }
 
-    /// Returns `true` if the ADC is enabled.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     adc::{self, Adc},
-    ///     pac,
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
-    /// assert_eq!(adc.is_enabled(), false);
-    /// ```
-    #[inline]
-    #[must_use = "no reason to call this function if you are not using the result"]
-    pub fn is_enabled(&self) -> bool {
-        self.adc.cr.read().aden().bit_is_set()
-    }
-
-    /// Returns `true` if the ADC is disabled.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     adc::{self, Adc},
-    ///     pac,
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
-    /// assert_eq!(adc.is_disabled(), true);
-    /// ```
-    #[inline]
-    #[must_use = "no reason to call this function if you are not using the result"]
-    pub fn is_disabled(&self) -> bool {
-        let cr = self.adc.cr.read();
-        cr.aden().bit_is_clear() && cr.addis().bit_is_clear()
-    }
-
-    /// Start the ADC enable procedure.
-    ///
-    /// This will not poll for completion, when this function returns the ADC
-    /// may not be enabled.
-    ///
-    /// Returns `true` if the caller function should poll for completion
-    fn start_enable(&mut self) -> bool {
-        if self.adc.cr.read().aden().is_disabled() {
-            self.adc.isr.write(|w| w.adrdy().set_bit());
-            self.adc.cr.write(|w| w.aden().set_bit());
-            true
-        } else {
-            false
-        }
-    }
-
-    /// Enable the ADC and poll for completion.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     adc::{self, Adc},
-    ///     pac,
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
-    /// adc.enable();
-    /// ```
-    pub fn enable(&mut self) {
-        if self.start_enable() {
-            while self.adc.isr.read().adrdy().is_not_ready() {}
-        }
-    }
-
     /// Clear interrupts.
     ///
     /// # Example
@@ -858,61 +766,6 @@ impl Adc {
     pub fn set_ier(&mut self, ier: u32) {
         // safety: isr argument is masked with valid bits, reserved bits are kept at reset value
         self.adc.ier.write(|w| unsafe { w.bits(ier) })
-    }
-
-    /// Start the ADC disable procedure.
-    ///
-    /// This will stop any conversions in-progress and set the addis bit if
-    /// the ADC is enabled.
-    ///
-    /// This will not poll for completion, when this function returns the ADC
-    /// may not be disabled.
-    ///
-    /// The ADC takes about 20 CPU cycles to disable with a 48MHz sysclk and
-    /// the ADC on the 16MHz HSI clock.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     adc::{self, Adc},
-    ///     pac,
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
-    /// adc.enable();
-    /// // ... use ADC
-    /// adc.start_disable();
-    /// while !adc.is_disabled() {}
-    /// ```
-    pub fn start_disable(&mut self) {
-        // RM0453 rev 1 section 18.3.4 page 537 ADC on-off control
-        // 1. Check that ADSTART = 0 in the ADC_CR register to ensure that no
-        //    conversion is ongoing.
-        //    If required, stop any ongoing conversion by writing 1 to the
-        //    ADSTP bit in the ADC_CR register and waiting until this bit is
-        //    read at 0.
-        // 2. Set ADDIS = 1 in the ADC_CR register.
-        // 3. If required by the application, wait until ADEN = 0 in the ADC_CR
-        //    register, indicating that the ADC is fully disabled
-        //    (ADDIS is automatically reset once ADEN = 0).
-        // 4. Clear the ADRDY bit in ADC_ISR register by programming this bit to 1
-        //    (optional).
-        if self.adc.cr.read().adstart().bit_is_set() {
-            self.adc.cr.modify(|_, w| w.adstp().stop_conversion());
-            while self.adc.cr.read().adstp().bit_is_set() {}
-        }
-        // Setting ADDIS to `1` is only effective when ADEN = 1 and ADSTART = 0
-        // (which ensures that no conversion is ongoing)
-        if self.adc.cr.read().aden().bit_is_set() {
-            self.adc.cr.modify(|_, w| w.addis().set_bit());
-        }
     }
 
     /// Configure the channel sequencer
@@ -1259,6 +1112,158 @@ impl Adc {
         self.cfg_ch_seq(Ch::Vbat.mask());
         self.adc.cr.write(|w| w.adstart().start_conversion());
         self.data()
+    }
+}
+
+// on-off control
+// see RM0453 rev 1 section 18.3.4 page 537
+#[cfg(not(feature = "stm32wl5x_cm0p"))]
+impl Adc {
+    /// Returns `true` if the ADC is enabled.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// assert_eq!(adc.is_enabled(), false);
+    /// ```
+    #[inline]
+    #[must_use = "no reason to call this function if you are not using the result"]
+    pub fn is_enabled(&self) -> bool {
+        self.adc.cr.read().aden().bit_is_set()
+    }
+
+    /// Returns `true` if the ADC is disabled.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// assert_eq!(adc.is_disabled(), true);
+    /// ```
+    #[inline]
+    #[must_use = "no reason to call this function if you are not using the result"]
+    pub fn is_disabled(&self) -> bool {
+        let cr = self.adc.cr.read();
+        cr.aden().bit_is_clear() && cr.addis().bit_is_clear()
+    }
+
+    /// Start the ADC enable procedure.
+    ///
+    /// This will not poll for completion, when this function returns the ADC
+    /// may not be enabled.
+    ///
+    /// Returns `true` if the caller function should poll for completion
+    fn start_enable(&mut self) -> bool {
+        if self.adc.cr.read().aden().is_disabled() {
+            self.adc.isr.write(|w| w.adrdy().set_bit());
+            self.adc.cr.write(|w| w.aden().set_bit());
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Enable the ADC and poll for completion.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// adc.enable();
+    /// ```
+    pub fn enable(&mut self) {
+        if self.start_enable() {
+            while self.adc.isr.read().adrdy().is_not_ready() {}
+        }
+    }
+
+    /// Start the ADC disable procedure.
+    ///
+    /// This will stop any conversions in-progress and set the addis bit if
+    /// the ADC is enabled.
+    ///
+    /// This will not poll for completion, when this function returns the ADC
+    /// may not be disabled.
+    ///
+    /// The ADC takes about 20 CPU cycles to disable with a 48MHz sysclk and
+    /// the ADC on the 16MHz HSI clock.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// adc.enable();
+    /// // ... use ADC
+    /// adc.start_disable();
+    /// while !adc.is_disabled() {}
+    /// ```
+    pub fn start_disable(&mut self) {
+        // RM0453 rev 1 section 18.3.4 page 537 ADC on-off control
+        // 1. Check that ADSTART = 0 in the ADC_CR register to ensure that no
+        //    conversion is ongoing.
+        //    If required, stop any ongoing conversion by writing 1 to the
+        //    ADSTP bit in the ADC_CR register and waiting until this bit is
+        //    read at 0.
+        // 2. Set ADDIS = 1 in the ADC_CR register.
+        // 3. If required by the application, wait until ADEN = 0 in the ADC_CR
+        //    register, indicating that the ADC is fully disabled
+        //    (ADDIS is automatically reset once ADEN = 0).
+        // 4. Clear the ADRDY bit in ADC_ISR register by programming this bit to 1
+        //    (optional).
+        if self.adc.cr.read().adstart().bit_is_set() {
+            self.adc.cr.modify(|_, w| w.adstp().stop_conversion());
+            while self.adc.cr.read().adstp().bit_is_set() {}
+        }
+        // Setting ADDIS to `1` is only effective when ADEN = 1 and ADSTART = 0
+        // (which ensures that no conversion is ongoing)
+        if self.adc.cr.read().aden().bit_is_set() {
+            self.adc.cr.modify(|_, w| w.addis().set_bit());
+        }
     }
 }
 

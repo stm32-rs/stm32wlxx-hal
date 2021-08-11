@@ -75,6 +75,8 @@ const CH_MASK: u32 = 0x27FFF;
 /// Interrupt masks
 ///
 /// Used for [`Adc::set_isr`] and [`Adc::set_ier`].
+#[cfg(not(feature = "stm32wl5x_cm0p"))] // for doc link
+#[cfg_attr(docsrs, doc(cfg(not(feature = "stm32wl5x_cm0p"))))]
 pub mod irq {
     /// Channel configuration ready
     pub const CCRDY: u32 = 1 << 13;

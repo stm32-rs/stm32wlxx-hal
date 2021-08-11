@@ -581,8 +581,8 @@ impl Adc {
     /// # #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
     /// unsafe { stm32wl_hal::adc::Adc::unmask_irq() };
     /// ```
-    #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
-    #[cfg_attr(docsrs, doc(cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))))]
+    #[cfg(feature = "rt")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rt")))]
     pub unsafe fn unmask_irq() {
         pac::NVIC::unmask(pac::Interrupt::ADC)
     }
@@ -595,8 +595,8 @@ impl Adc {
     /// # #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
     /// unsafe { stm32wl_hal::adc::Adc::mask_irq() }
     /// ```
-    #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
-    #[cfg_attr(docsrs, doc(cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))))]
+    #[cfg(feature = "rt")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rt")))]
     pub fn mask_irq() {
         pac::NVIC::mask(pac::Interrupt::ADC)
     }

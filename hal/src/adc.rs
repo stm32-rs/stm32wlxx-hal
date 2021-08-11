@@ -434,6 +434,7 @@ impl Adc {
     /// // ... use ADC
     /// let adc: pac::ADC = adc_driver.free();
     /// ```
+    #[inline]
     pub fn free(self) -> pac::ADC {
         self.adc
     }
@@ -459,6 +460,7 @@ impl Adc {
     /// ```
     ///
     /// [`new`]: Adc::new
+    #[inline]
     pub unsafe fn steal() -> Adc {
         Adc {
             adc: pac::Peripherals::steal().ADC,
@@ -471,6 +473,7 @@ impl Adc {
     ///
     /// 1. Ensure nothing is using the ADC before disabling the clock.
     /// 2. You are responsible for en-enabling the clock before using the ADC.
+    #[inline]
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.apb2enr.modify(|_, w| w.adcen().disabled());
     }
@@ -478,6 +481,7 @@ impl Adc {
     /// Enable the ADC clock.
     ///
     /// [`new`](crate::adc::Adc::new) will enable clocks for you.
+    #[inline]
     pub fn enable_clock(rcc: &mut pac::RCC) {
         rcc.apb2enr.modify(|_, w| w.adcen().enabled());
         rcc.apb2enr.read(); // delay after an RCC peripheral clock enabling
@@ -491,6 +495,7 @@ impl Adc {
     ///
     /// 1. Ensure nothing is using the ADC before pulsing reset.
     /// 2. You are responsible for setting up the ADC after a reset.
+    #[inline]
     pub unsafe fn pulse_reset(rcc: &mut pac::RCC) {
         rcc.apb2rstr.modify(|_, w| w.adcrst().set_bit());
         rcc.apb2rstr.modify(|_, w| w.adcrst().clear_bit());
@@ -583,6 +588,7 @@ impl Adc {
     /// ```
     #[cfg(feature = "rt")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rt")))]
+    #[inline]
     pub unsafe fn unmask_irq() {
         pac::NVIC::unmask(pac::Interrupt::ADC)
     }
@@ -597,6 +603,7 @@ impl Adc {
     /// ```
     #[cfg(feature = "rt")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rt")))]
+    #[inline]
     pub fn mask_irq() {
         pac::NVIC::mask(pac::Interrupt::ADC)
     }
@@ -645,6 +652,7 @@ impl Adc {
     /// [`In1`]: crate::adc::Ch::In1
     /// [`B13`]: crate::gpio::pins::B13
     /// [`B14`]: crate::gpio::pins::B14
+    #[inline]
     pub fn set_sample_times(&mut self, mask: u32, sel0: Ts, sel1: Ts) {
         debug_assert!(self.adc.cr.read().adstart().is_not_active());
         self.adc.smpr.write(|w| unsafe {
@@ -683,6 +691,7 @@ impl Adc {
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// adc.set_max_sample_time();
     /// ```
+    #[inline]
     pub fn set_max_sample_time(&mut self) {
         self.set_sample_times(0, Ts::Cyc160, Ts::Cyc160);
     }
@@ -763,6 +772,7 @@ impl Adc {
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// adc.set_ier(adc::irq::ALL);
     /// ```
+    #[inline]
     pub fn set_ier(&mut self, ier: u32) {
         // safety: isr argument is masked with valid bits, reserved bits are kept at reset value
         self.adc.ier.write(|w| unsafe { w.bits(ier) })
@@ -771,10 +781,12 @@ impl Adc {
     /// Configure the channel sequencer
     ///
     /// See section 18.3.8 page 542 "Channel selection"
+    #[inline]
     fn set_chsel(&mut self, ch: u32) {
         self.adc.chselr0().write(|w| unsafe { w.chsel().bits(ch) });
     }
 
+    #[inline]
     fn cfg_ch_seq(&mut self, ch: u32) {
         self.set_chsel(ch);
         while self.adc.isr.read().ccrdy().is_not_complete() {}
@@ -816,16 +828,19 @@ impl Adc {
     /// // wait for the temperature sensor to startup
     /// delay.delay_us(adc::TS_START_MAX.as_micros() as u32);
     /// ```
+    #[inline]
     pub fn enable_tsen(&mut self) {
         self.adc.ccr.modify(|_, w| w.tsen().enabled())
     }
 
     /// Disable the temperature sensor.
+    #[inline]
     pub fn disable_tsen(&mut self) {
         self.adc.ccr.modify(|_, w| w.tsen().disabled())
     }
 
     /// Returns `true` if the temperature sensor is enabled.
+    #[inline]
     #[must_use = "no reason to call this function if you are not using the result"]
     pub fn is_tsen_enabled(&mut self) -> bool {
         self.adc.ccr.read().tsen().is_enabled()
@@ -900,16 +915,19 @@ impl Adc {
     }
 
     /// Enable the internal voltage reference.
+    #[inline]
     pub fn enable_vref(&mut self) {
         self.adc.ccr.modify(|_, w| w.vrefen().enabled())
     }
 
     /// Disable the internal voltage reference.
+    #[inline]
     pub fn disable_vref(&mut self) {
         self.adc.ccr.modify(|_, w| w.vrefen().disabled())
     }
 
     /// Returns `true` if the internal voltage reference is enabled.
+    #[inline]
     #[must_use = "no reason to call this function if you are not using the result"]
     pub fn is_vref_enabled(&mut self) -> bool {
         self.adc.ccr.read().vrefen().is_enabled()
@@ -1053,16 +1071,19 @@ impl Adc {
     ///
     /// To prevent any unwanted consumption on the battery, it is recommended to
     /// enable the bridge divider only when needed for ADC conversion.
+    #[inline]
     pub fn enable_vbat(&mut self) {
         self.adc.ccr.modify(|_, w| w.vbaten().enabled())
     }
 
     /// Disable V<sub>BAT</sub>.
+    #[inline]
     pub fn disable_vbat(&mut self) {
         self.adc.ccr.modify(|_, w| w.vbaten().disabled());
     }
 
     /// Returns `true` if V<sub>BAT</sub> is enabled.
+    #[inline]
     #[must_use = "no reason to call this function if you are not using the result"]
     pub fn is_vbat_enabled(&self) -> bool {
         self.adc.ccr.read().vbaten().is_enabled()

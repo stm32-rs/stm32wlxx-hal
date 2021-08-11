@@ -11,7 +11,7 @@ use static_assertions as sa;
 use bsp::{
     hal::{
         dma::NoDmaCh,
-        dma::{AllDma, DmaCh},
+        dma::{AllDma, Dma1Ch1, Dma2Ch1},
         gpio::{PortA, PortC},
         pac::{self, DWT},
         rcc,
@@ -99,7 +99,7 @@ const TX_PARAMS: TxParams = TxParams::new()
 // WARNING will wrap-around eventually, use this for relative timing only
 defmt::timestamp!("{=u32:µs}", DWT::get_cycle_count() / CYC_PER_US);
 
-fn tx_or_panic(sg: &mut SubGhz<DmaCh>, rfs: &mut RfSwitch) {
+fn tx_or_panic(sg: &mut SubGhz<Dma1Ch1, Dma2Ch1>, rfs: &mut RfSwitch) {
     rfs.set_tx_lp();
     unwrap!(sg.set_tx(Timeout::DISABLED));
     let start_cc: u32 = DWT::get_cycle_count();
@@ -125,7 +125,12 @@ fn tx_or_panic(sg: &mut SubGhz<DmaCh>, rfs: &mut RfSwitch) {
 /// Both radios transmit `b"PING"`.
 ///
 /// The first radio to recieve `b"PING"` transmits `b"PONG"` in reply.
-fn ping_pong(sg: &mut SubGhz<DmaCh>, rng: &mut Rng, rfs: &mut RfSwitch, pkt: PacketType) {
+fn ping_pong(
+    sg: &mut SubGhz<Dma1Ch1, Dma2Ch1>,
+    rng: &mut Rng,
+    rfs: &mut RfSwitch,
+    pkt: PacketType,
+) {
     unwrap!(sg.set_standby(StandbyClk::Rc));
     let status: Status = unwrap!(sg.status());
     defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
@@ -265,7 +270,7 @@ mod tests {
     static mut BUF: [u8; 255] = [0; 255];
 
     struct TestArgs {
-        sg: SubGhz<DmaCh>,
+        sg: SubGhz<Dma1Ch1, Dma2Ch1>,
         rng: Rng,
         rfs: RfSwitch,
     }
@@ -288,7 +293,8 @@ mod tests {
         Rng::set_clock_source(&mut dp.RCC, rng::ClkSrc::MSI);
         let rng: Rng = Rng::new(dp.RNG, &mut dp.RCC);
 
-        let mut sg: SubGhz<DmaCh> = SubGhz::new_with_dma(dp.SPI3, dma.d1c1, dma.d2c1, &mut dp.RCC);
+        let mut sg: SubGhz<Dma1Ch1, Dma2Ch1> =
+            SubGhz::new_with_dma(dp.SPI3, dma.d1c1, dma.d2c1, &mut dp.RCC);
         sg.enable_spi_debug(gpioa.pa4, gpioa.pa5, gpioa.pa6, gpioa.pa7);
 
         cp.DCB.enable_trace();
@@ -322,7 +328,7 @@ mod tests {
 
     #[test]
     fn buffer_io_no_dma(_: &mut TestArgs) {
-        let mut sg: SubGhz<NoDmaCh> = unsafe { SubGhz::<NoDmaCh>::steal() };
+        let mut sg: SubGhz<NoDmaCh, NoDmaCh> = unsafe { SubGhz::<NoDmaCh, NoDmaCh>::steal() };
 
         const DATA: [u8; 255] = [0x45; 255];
         while rfbusys() {}
@@ -344,7 +350,7 @@ mod tests {
 
     #[test]
     fn fsk_ping_pong(ta: &mut TestArgs) {
-        let sg: &mut SubGhz<DmaCh> = &mut ta.sg;
+        let sg: &mut SubGhz<Dma1Ch1, Dma2Ch1> = &mut ta.sg;
         let rng: &mut Rng = &mut ta.rng;
         let rfs: &mut RfSwitch = &mut ta.rfs;
 
@@ -353,7 +359,7 @@ mod tests {
 
     #[test]
     fn lora_ping_pong(ta: &mut TestArgs) {
-        let sg: &mut SubGhz<DmaCh> = &mut ta.sg;
+        let sg: &mut SubGhz<Dma1Ch1, Dma2Ch1> = &mut ta.sg;
         let rng: &mut Rng = &mut ta.rng;
         let rfs: &mut RfSwitch = &mut ta.rfs;
 

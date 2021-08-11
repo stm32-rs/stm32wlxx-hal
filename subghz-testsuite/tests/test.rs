@@ -34,7 +34,7 @@ const CYC_PER_US: u32 = FREQ / 1000 / 1000;
 const CYC_PER_MS: u32 = FREQ / 1000;
 const CYC_PER_SEC: u32 = FREQ;
 
-use core::{ptr::write_volatile, time::Duration};
+use core::time::Duration;
 
 const PING_DATA: &str = "PING";
 const PONG_DATA: &str = "PONG";

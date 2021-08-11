@@ -58,9 +58,12 @@ pub const T_ADCVREG_SETUP: Duration = Duration::from_micros(20);
 /// # Example
 ///
 /// ```
-/// use stm32wl_hal::adc::{T_ADCVREG_SETUP_MICROS, T_ADCVREG_SETUP};
+/// use stm32wl_hal::adc::{T_ADCVREG_SETUP, T_ADCVREG_SETUP_MICROS};
 ///
-/// assert_eq!(u128::from(T_ADCVREG_SETUP_MICROS), T_ADCVREG_SETUP.as_micros());
+/// assert_eq!(
+///     u128::from(T_ADCVREG_SETUP_MICROS),
+///     T_ADCVREG_SETUP.as_micros()
+/// );
 /// ```
 pub const T_ADCVREG_SETUP_MICROS: u8 = T_ADCVREG_SETUP.as_micros() as u8;
 
@@ -373,7 +376,6 @@ pub struct Adc {
 }
 
 #[cfg(not(feature = "stm32wl5x_cm0p"))]
-#[cfg_attr(docsrs, doc(cfg(not(feature = "stm32wl5x_cm0p"))))]
 impl Adc {
     /// Create a new ADC driver from a ADC peripheral.
     ///
@@ -941,8 +943,8 @@ impl Adc {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     adc::{self, Adc},
-    ///     util::new_delay,
     ///     pac, rcc,
+    ///     util::new_delay,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -1002,8 +1004,8 @@ impl Adc {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     adc::{self, Adc},
-    ///     util::new_delay,
     ///     pac, rcc,
+    ///     util::new_delay,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -1070,8 +1072,8 @@ impl Adc {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     adc::{self, Adc},
-    ///     util::new_delay,
     ///     pac, rcc,
+    ///     util::new_delay,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -1116,9 +1118,9 @@ impl Adc {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     adc::{self, Adc},
-    ///     util::new_delay,
     ///     dac::{Dac, ModeChip},
     ///     pac, rcc,
+    ///     util::new_delay,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -1160,9 +1162,9 @@ impl Adc {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     adc::{self, Adc},
-    ///     util::new_delay,
     ///     gpio::{pins::B4, Analog, PortB},
     ///     pac, rcc,
+    ///     util::new_delay,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -1227,9 +1229,9 @@ impl Adc {
     /// use stm32wl_hal::{
     ///     self as hal,
     ///     adc::{self, Adc},
-    ///     util::new_delay,
     ///     dac::{Dac, ModeChip},
     ///     pac, rcc,
+    ///     util::new_delay,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -1259,6 +1261,7 @@ impl Adc {
 }
 
 // calibration related methods
+#[cfg(not(feature = "stm32wl5x_cm0p"))]
 impl Adc {
     /// Calibrate the ADC for additional accuracy.
     ///
@@ -1287,8 +1290,8 @@ impl Adc {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     adc::{self, Adc},
-    ///     util::new_delay,
     ///     pac, rcc,
+    ///     util::new_delay,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -1331,8 +1334,8 @@ impl Adc {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     adc::{self, Adc},
-    ///     util::new_delay,
     ///     pac, rcc,
+    ///     util::new_delay,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -1394,8 +1397,8 @@ impl Adc {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     adc::{self, Adc},
-    ///     util::new_delay,
     ///     pac, rcc,
+    ///     util::new_delay,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();

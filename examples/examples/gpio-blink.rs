@@ -9,7 +9,7 @@ use stm32wl_hal::{
     self as hal,
     cortex_m::delay::Delay,
     gpio::{Level, Output, PortB},
-    pac, rcc,
+    pac,
     util::new_delay,
 };
 

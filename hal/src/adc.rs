@@ -1,4 +1,10 @@
 //! Analog to digital converter
+//!
+//! Quickstart:
+//!
+//! * [`Adc::pin`] Sample an analog pin
+//! * [`Adc::temperature`] Sample the junction temperature
+//! * [`Adc::vbat`] Sample the battery voltage
 #![cfg_attr(feature = "stm32wl5x_cm0p", allow(dead_code))]
 #![cfg_attr(feature = "stm32wl5x_cm0p", allow(unused_imports))]
 
@@ -719,7 +725,7 @@ impl Adc {
     /// ```
     #[inline]
     pub fn set_isr(&mut self, isr: u32) {
-        // safety: isr argument is masked with valid bits, reserved bits are kept at reset value
+        // saftey: reserved bits are masked and will be held at reset value
         self.adc.isr.write(|w| unsafe { w.bits(isr & irq::ALL) })
     }
 
@@ -774,27 +780,155 @@ impl Adc {
     /// ```
     #[inline]
     pub fn set_ier(&mut self, ier: u32) {
-        // safety: isr argument is masked with valid bits, reserved bits are kept at reset value
-        self.adc.ier.write(|w| unsafe { w.bits(ier) })
+        // saftey: reserved bits are masked and will be held at reset value
+        self.adc.ier.write(|w| unsafe { w.bits(ier & irq::ALL) })
     }
 
-    /// Configure the channel sequencer
+    /// Configure the channel sequencer.
     ///
-    /// See section 18.3.8 page 542 "Channel selection"
+    /// This is advanced ADC usage, most of the time you will want to use a
+    /// one of the avaliable sample methods that will configure this.
+    ///
+    /// * [`pin`](Self::pin)
+    /// * [`temperature`](Self::temperature)
+    /// * [`vbat`](Self::vbat)
+    ///
+    /// This will not poll for completion, when this method returns the channel
+    /// configuration may not be ready.
+    ///
+    /// # Panics
+    ///
+    /// * (debug) ADC conversion is in-progress.
+    ///
+    /// # Example
+    ///
+    /// Select the ADC V<sub>BAT</sub> channel.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// adc.start_chsel(adc::Ch::Vbat.mask());
+    /// while Adc::isr().ccrdy().is_not_complete() {}
+    /// ```
     #[inline]
-    fn set_chsel(&mut self, ch: u32) {
-        self.adc.chselr0().write(|w| unsafe { w.chsel().bits(ch) });
+    pub fn start_chsel(&mut self, ch: u32) {
+        debug_assert!(self.adc.cr.read().adstart().is_not_active());
+        // See section 18.3.8 page 542 "Channel selection"
+        // saftey: reserved bits are masked and will be held at reset value
+        self.adc
+            .chselr0()
+            .write(|w| unsafe { w.chsel().bits(ch & CH_MASK) });
     }
 
     #[inline]
     fn cfg_ch_seq(&mut self, ch: u32) {
-        self.set_chsel(ch);
+        self.start_chsel(ch);
         while self.adc.isr.read().ccrdy().is_not_complete() {}
     }
 
-    fn data(&self) -> u16 {
+    /// Start an ADC conversion.
+    ///
+    /// This is advanced ADC usage, most of the time you will want to use a
+    /// one of the avaliable sample methods that will configure this.
+    ///
+    /// * [`pin`](Self::pin)
+    /// * [`temperature`](Self::temperature)
+    /// * [`vbat`](Self::vbat)
+    ///
+    /// This will not poll for completion, when this method returns the AD
+    /// conversion may not be complete.
+    ///
+    /// # Panics
+    ///
+    /// * (debug) ADC is not enabled
+    /// * (debug) ADC has a pending disable request
+    ///
+    /// # Example
+    ///
+    /// See [`data`](Self::data).
+    #[inline]
+    pub fn start_conversion(&mut self) {
+        assert!(self.is_enabled());
+        assert!(self.adc.cr.read().addis().is_not_disabling());
+        self.adc.cr.write(|w| w.adstart().start_conversion());
+    }
+
+    /// Stop an ADC conversion if there is one in-progress.
+    pub fn stop_conversion(&mut self) {
+        if self.adc.cr.read().adstart().is_active() {
+            self.adc.cr.write(|w| w.adstp().stop_conversion());
+            while self.adc.cr.read().adstp().bit_is_set() {}
+        }
+    }
+
+    /// Read the ADC conversion data.
+    ///
+    /// This is advanced ADC usage, most of the time you will want to use a
+    /// one of the avaliable sample methods.
+    ///
+    /// * [`pin`](Self::pin)
+    /// * [`temperature`](Self::temperature)
+    /// * [`vbat`](Self::vbat)
+    ///
+    /// # Example
+    ///
+    /// Read the ADC V<sub>BAT</sub> channel.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac,
+    ///     util::new_delay,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut delay = new_delay(cp.SYST, &dp.RCC);
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    ///
+    /// // calibrate the ADC before it is enabled
+    /// adc.calibrate(&mut delay);
+    ///
+    /// // enable the ADC
+    /// adc.enable();
+    ///
+    /// // set the sample times to the maximum (160.5 ADC cycles)
+    /// adc.set_max_sample_time();
+    ///
+    /// // select the Vbat channel and poll for completion
+    /// adc.start_chsel(adc::Ch::Vbat.mask());
+    /// while Adc::isr().ccrdy().is_not_complete() {}
+    ///
+    /// // start the conversion and poll for completion
+    /// adc.start_conversion();
+    /// while Adc::isr().eoc().is_not_complete() {}
+    ///
+    /// // read the ADC data
+    /// let vbat: u16 = adc.data();
+    /// ```
+    #[inline]
+    pub fn data(&self) -> u16 {
+        self.adc.dr.read().data().bits()
+    }
+
+    fn poll_data(&self) -> u16 {
         while self.adc.isr.read().eoc().is_not_complete() {}
-        let data: u16 = self.adc.dr.read().data().bits();
+        let data: u16 = self.data();
         self.adc.isr.write(|w| w.eoc().set_bit());
         data
     }
@@ -822,7 +956,6 @@ impl Adc {
     /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
     ///
     /// let mut delay = new_delay(cp.SYST, &dp.RCC);
-    ///
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// adc.enable_tsen();
     /// // wait for the temperature sensor to startup
@@ -851,6 +984,7 @@ impl Adc {
     /// # Panics
     ///
     /// * (debug) ADC is not enabled
+    /// * (debug) ADC has a pending disable request
     /// * (debug) Temperature sensor is not enabled
     ///
     /// # Sample Time
@@ -902,14 +1036,14 @@ impl Adc {
         debug_assert!(self.is_tsen_enabled());
 
         self.cfg_ch_seq(Ch::Vts.mask());
-        self.adc.cr.write(|w| w.adstart().start_conversion());
+        self.start_conversion();
 
         let (ts_cal1, ts_cal2): (u16, u16) = ts_cal();
         let ret: Ratio<i16> =
             Ratio::new_raw(TS_CAL_TEMP_DELTA, ts_cal2.wrapping_sub(ts_cal1) as i16);
 
         let calfact: u8 = self.adc.calfact.read().calfact().bits();
-        let ts_data: u16 = self.data().saturating_add(u16::from(calfact));
+        let ts_data: u16 = self.poll_data().saturating_add(u16::from(calfact));
 
         ret * (ts_data.wrapping_sub(ts_cal1) as i16) + TS_CAL1_TEMP
     }
@@ -938,6 +1072,7 @@ impl Adc {
     /// # Panics
     ///
     /// * (debug) ADC is not enabled
+    /// * (debug) ADC has a pending disable request
     /// * (debug) Voltage reference is not enabled
     ///
     /// # Example
@@ -973,8 +1108,8 @@ impl Adc {
         debug_assert!(self.is_enabled());
         debug_assert!(self.is_vref_enabled());
         self.cfg_ch_seq(Ch::Vref.mask());
-        self.adc.cr.write(|w| w.adstart().start_conversion());
-        self.data()
+        self.start_conversion();
+        self.poll_data()
     }
 
     /// Sample the DAC output.
@@ -985,6 +1120,7 @@ impl Adc {
     /// # Panics
     ///
     /// * (debug) ADC is not enabled
+    /// * (debug) ADC has a pending disable request
     ///
     /// # Example
     ///
@@ -1020,8 +1156,8 @@ impl Adc {
     pub fn dac(&mut self) -> u16 {
         debug_assert!(self.is_enabled());
         self.cfg_ch_seq(Ch::Dac.mask());
-        self.adc.cr.write(|w| w.adstart().set_bit());
-        self.data()
+        self.start_conversion();
+        self.poll_data()
     }
 
     /// Sample a GPIO pin.
@@ -1029,6 +1165,7 @@ impl Adc {
     /// # Panics
     ///
     /// * (debug) ADC is not enabled
+    /// * (debug) ADC has a pending disable request
     ///
     /// # Example
     ///
@@ -1063,8 +1200,8 @@ impl Adc {
     pub fn pin<P: gpio::sealed::AdcCh>(&mut self, pin: &gpio::Analog<P>) -> u16 {
         debug_assert!(self.is_enabled());
         self.cfg_ch_seq(P::ADC_CH.mask());
-        self.adc.cr.write(|w| w.adstart().start_conversion());
-        self.data()
+        self.start_conversion();
+        self.poll_data()
     }
 
     /// Enable V<sub>BAT</sub>.
@@ -1097,6 +1234,7 @@ impl Adc {
     /// # Panics
     ///
     /// * (debug) ADC is not enabled
+    /// * (debug) ADC has a pending disable request
     /// * (debug) V<sub>BAT</sub> is not enabled
     ///
     /// # Example
@@ -1131,8 +1269,8 @@ impl Adc {
         debug_assert!(self.is_enabled());
         debug_assert!(self.is_vbat_enabled());
         self.cfg_ch_seq(Ch::Vbat.mask());
-        self.adc.cr.write(|w| w.adstart().start_conversion());
-        self.data()
+        self.start_conversion();
+        self.poll_data()
     }
 }
 
@@ -1165,7 +1303,15 @@ impl Adc {
         self.adc.cr.read().aden().bit_is_set()
     }
 
-    /// Returns `true` if the ADC is disabled.
+    /// Returns `true` if an ADC disable command is in-progress.
+    #[inline]
+    #[must_use = "no reason to call this function if you are not using the result"]
+    pub fn disable_in_progress(&self) -> bool {
+        self.adc.cr.read().addis().bit_is_set()
+    }
+
+    /// Returns `true` if the ADC is disabled, and there is no disable command
+    /// in-progress.
     ///
     /// # Example
     ///
@@ -1193,11 +1339,40 @@ impl Adc {
 
     /// Start the ADC enable procedure.
     ///
-    /// This will not poll for completion, when this function returns the ADC
+    /// This is advanced ADC usage, most of the time you will want to use
+    /// [`enable`](Self::enable).
+    ///
+    /// This will not poll for completion, when this method returns the ADC
     /// may not be enabled.
     ///
-    /// Returns `true` if the caller function should poll for completion
-    fn start_enable(&mut self) -> bool {
+    /// The method returns `true` if the caller function should poll for
+    /// completion (the ADC was not already enabled),
+    /// if the ADC was already enabled and the ADRDY interrupt was cleared then
+    /// the ADRDY bit will **not** be set again after calling this method
+    /// which can lead to polling loops that will never terminate.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// if adc.start_enable() {
+    ///     while Adc::isr().adrdy().is_not_ready() {}
+    /// }
+    /// ```
+    #[inline]
+    #[must_use = "the return value indicates if you should wait for completion"]
+    pub fn start_enable(&mut self) -> bool {
         if self.adc.cr.read().aden().is_disabled() {
             self.adc.isr.write(|w| w.adrdy().set_bit());
             self.adc.cr.write(|w| w.aden().set_bit());
@@ -1226,6 +1401,7 @@ impl Adc {
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// adc.enable();
     /// ```
+    #[inline]
     pub fn enable(&mut self) {
         if self.start_enable() {
             while self.adc.isr.read().adrdy().is_not_ready() {}
@@ -1234,11 +1410,13 @@ impl Adc {
 
     /// Start the ADC disable procedure.
     ///
-    /// This will stop any conversions in-progress and set the addis bit if
-    /// the ADC is enabled.
+    /// This is advanced ADC usage, most of the time you will want to use
+    /// [`disable`](Self::disable).
     ///
     /// This will not poll for completion, when this function returns the ADC
     /// may not be disabled.
+    ///
+    /// This will stop any conversions in-progress.
     ///
     /// The ADC takes about 20 CPU cycles to disable with a 48MHz sysclk and
     /// the ADC on the 16MHz HSI clock.
@@ -1276,15 +1454,38 @@ impl Adc {
         //    (ADDIS is automatically reset once ADEN = 0).
         // 4. Clear the ADRDY bit in ADC_ISR register by programming this bit to 1
         //    (optional).
-        if self.adc.cr.read().adstart().bit_is_set() {
-            self.adc.cr.modify(|_, w| w.adstp().stop_conversion());
-            while self.adc.cr.read().adstp().bit_is_set() {}
-        }
+        self.stop_conversion();
         // Setting ADDIS to `1` is only effective when ADEN = 1 and ADSTART = 0
         // (which ensures that no conversion is ongoing)
         if self.adc.cr.read().aden().bit_is_set() {
-            self.adc.cr.modify(|_, w| w.addis().set_bit());
+            self.adc.cr.write(|w| w.addis().set_bit());
         }
+    }
+
+    /// Disable the ADC and poll for completion.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// adc.enable();
+    /// // ... use ADC
+    /// adc.disable();
+    /// ```
+    pub fn disable(&mut self) {
+        self.start_disable();
+        while !self.is_disabled() {}
     }
 }
 
@@ -1390,8 +1591,7 @@ impl Adc {
         //    ADC_CALFACT registers.
 
         // takes appx 55 cycles when already disabled
-        self.start_disable();
-        while !self.is_disabled() {}
+        self.disable();
 
         // enable the voltage regulator as soon as possible to start the
         // countdown on the regulator setup time
@@ -1402,9 +1602,14 @@ impl Adc {
     }
 
     /// Disable the ADC voltage regulator.
+    ///
+    /// # Panics
+    ///
+    /// * (debug) ADC is enabled
     #[inline]
     pub fn disable_vreg(&mut self) {
-        self.adc.cr.modify(|_, w| w.advregen().disabled());
+        debug_assert!(self.is_disabled());
+        self.adc.cr.write(|w| w.advregen().disabled());
     }
 
     /// Start the ADC calibration.

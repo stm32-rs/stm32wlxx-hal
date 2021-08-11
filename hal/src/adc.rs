@@ -5,6 +5,7 @@
 //! * [`Adc::pin`] Sample an analog pin
 //! * [`Adc::temperature`] Sample the junction temperature
 //! * [`Adc::vbat`] Sample the battery voltage
+#![cfg_attr(feature = "stm32wl5x_cm0p", allow(rustdoc::broken_intra_doc_links))]
 #![cfg_attr(feature = "stm32wl5x_cm0p", allow(dead_code))]
 #![cfg_attr(feature = "stm32wl5x_cm0p", allow(unused_imports))]
 
@@ -81,8 +82,6 @@ const CH_MASK: u32 = 0x27FFF;
 /// Interrupt masks
 ///
 /// Used for [`Adc::set_isr`] and [`Adc::set_ier`].
-#[cfg(not(feature = "stm32wl5x_cm0p"))] // for doc link
-#[cfg_attr(docsrs, doc(cfg(not(feature = "stm32wl5x_cm0p"))))]
 pub mod irq {
     /// Channel configuration ready
     pub const CCRDY: u32 = 1 << 13;
@@ -272,8 +271,6 @@ impl Ts {
     /// ```
     ///
     /// [`Adc::clock_hz`]: crate::adc::Adc::clock_hz
-    #[cfg(not(feature = "stm32wl5x_cm0p"))] // doc link
-    #[cfg_attr(docsrs, doc(cfg(not(feature = "stm32wl5x_cm0p"))))]
     pub const fn as_duration(&self, hz: u32) -> Duration {
         let numer: u64 = (*self.cycles().numer() as u64).saturating_mul(1_000_000_000);
         let denom: u64 = (*self.cycles().denom() as u64).saturating_mul(hz as u64);

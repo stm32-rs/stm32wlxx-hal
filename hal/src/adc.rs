@@ -1263,6 +1263,7 @@ impl Adc {
 }
 
 // calibration related methods
+// see RM0453 rev 1 section 18.3.3 page 536
 #[cfg(not(feature = "stm32wl5x_cm0p"))]
 impl Adc {
     /// Calibrate the ADC for additional accuracy.
@@ -1427,5 +1428,62 @@ impl Adc {
         self.adc
             .cr
             .write(|w| w.adcal().start_calibration().advregen().enabled());
+    }
+
+    /// Get the ADC calibration factor.
+    ///
+    /// # Example
+    ///
+    /// See [`force_cal`](Self::force_cal).
+    #[inline]
+    pub fn calfact(&self) -> u8 {
+        self.adc.calfact.read().calfact().bits()
+    }
+
+    /// Force the ADC calibration.
+    ///
+    /// The calibration factor is lost each time power is removed from the ADC
+    /// (for example when entering standby or V<sub>BAT</sub> mode)
+    /// It is possible to save and restore the calibration factor with firmware
+    /// to save time when re-starting the ADC (as long as temperature and
+    /// voltage are stable during the ADC power-down).
+    ///
+    /// # Panics
+    ///
+    /// * (debug) ADC is not enabled
+    /// * (debug) ADC conversion is in-progress
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac, rcc,
+    ///     util::new_delay,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut delay = new_delay(cp.SYST, &dp.RCC);
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// adc.calibrate(&mut delay);
+    ///
+    /// // save the calibration factor
+    /// let calfact: u8 = adc.calfact();
+    ///
+    /// // restore the calibration
+    /// adc.enable(); // ADC must be enabled to restore the calibration
+    /// adc.force_cal(calfact);
+    /// ```
+    #[inline]
+    pub fn force_cal(&mut self, calfact: u8) {
+        debug_assert!(self.is_enabled());
+        debug_assert!(self.adc.cr.read().adstart().bit_is_clear());
+        self.adc.calfact.write(|w| w.calfact().bits(calfact))
     }
 }

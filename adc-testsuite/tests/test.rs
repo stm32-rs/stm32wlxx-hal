@@ -137,7 +137,14 @@ mod tests {
         ta.adc.set_max_sample_time();
         let pre: u16 = ta.adc.vref();
 
-        ta.adc.calibrate(&mut ta.delay);
+        // long-form calibration
+        defmt::assert_eq!(ta.adc.calfact(), 0);
+        ta.adc.enable_vreg();
+        ta.delay.delay_us(u32::from(adc::T_ADCVREG_SETUP_MICROS));
+        ta.adc.start_calibrate();
+        while Adc::isr().eocal().is_not_complete() {}
+        defmt::assert_ne!(ta.adc.calfact(), 0);
+
         ta.adc.enable();
         let post: u16 = ta.adc.vref();
 
@@ -155,7 +162,13 @@ mod tests {
 
     #[test]
     fn vbat(ta: &mut TestArgs) {
+        // short form calibration
+        defmt::assert_ne!(ta.adc.calfact(), 0);
+        ta.adc.force_cal(0);
+        defmt::assert_eq!(ta.adc.calfact(), 0);
         ta.adc.calibrate(&mut ta.delay);
+        defmt::assert_ne!(ta.adc.calfact(), 0);
+
         ta.adc.enable();
         ta.adc.enable_vbat();
         ta.adc.set_max_sample_time();

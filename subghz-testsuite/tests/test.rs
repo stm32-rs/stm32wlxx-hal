@@ -24,6 +24,7 @@ use bsp::{
             SpreadingFactor, StandbyClk, Status, StatusMode, SubGhz, TcxoMode, TcxoTrim, Timeout,
             TxParams,
         },
+        util::reset_cycle_count,
     },
     RfSwitch,
 };
@@ -299,9 +300,7 @@ mod tests {
 
         cp.DCB.enable_trace();
         cp.DWT.enable_cycle_counter();
-        // reset the cycle counter
-        const DWT_CYCCNT: usize = 0xE0001004;
-        unsafe { write_volatile(DWT_CYCCNT as *mut u32, 0) };
+        reset_cycle_count(&mut cp.DWT);
 
         TestArgs { sg, rng, rfs }
     }

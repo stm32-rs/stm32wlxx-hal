@@ -48,13 +48,55 @@ pub const TS_START_TYP: Duration = Duration::from_micros(70);
 /// Value from DS13293 Rev 1 page 121 table 83 "TS characteristics"
 pub const TS_START_MAX: Duration = Duration::from_micros(120);
 
-const T_ADCVREG_SETUP: Duration = Duration::from_micros(20);
-const T_ADCVREG_SETUP_MICROS: u8 = T_ADCVREG_SETUP.as_micros() as u8;
+/// t<sub>ADCVREG_SETUP</sub> ADC voltage regulator maximum startup time
+///
+/// Value from DS13293 Rev 1 page 117 table 80 "ADC characteristics"
+pub const T_ADCVREG_SETUP: Duration = Duration::from_micros(20);
+
+/// [`T_ADCVREG_SETUP`] expressed in microseconds
+///
+/// # Example
+///
+/// ```
+/// use stm32wl_hal::adc::{T_ADCVREG_SETUP_MICROS, T_ADCVREG_SETUP};
+///
+/// assert_eq!(u128::from(T_ADCVREG_SETUP_MICROS), T_ADCVREG_SETUP.as_micros());
+/// ```
+pub const T_ADCVREG_SETUP_MICROS: u8 = T_ADCVREG_SETUP.as_micros() as u8;
 
 /// Mask of all valid channels
 ///
 /// Channels 0-17, but without 15 and 16 because they are reserved.
-const CH_MASK: u32 = 0x13FFF;
+const CH_MASK: u32 = 0x27FFF;
+
+/// Interrupt masks
+///
+/// Used for [`Adc::set_isr`] and [`Adc::set_ier`].
+pub mod irq {
+    /// Channel configuration ready
+    pub const CCRDY: u32 = 1 << 13;
+    /// End of calibration
+    pub const EOCAL: u32 = 1 << 11;
+    /// Analog watchdog 3
+    pub const AWD3: u32 = 1 << 9;
+    /// Analog watchdog 2
+    pub const AWD2: u32 = 1 << 8;
+    /// Analog watchdog 1
+    pub const AWD1: u32 = 1 << 7;
+    /// Overrun
+    pub const OVR: u32 = 1 << 4;
+    /// End of conversion sequence
+    pub const EOS: u32 = 1 << 3;
+    /// End of conversion
+    pub const EOC: u32 = 1 << 2;
+    /// End of sampling
+    pub const EOSMP: u32 = 1 << 1;
+    /// ADC ready
+    pub const ARDY: u32 = 1;
+
+    /// All IRQs
+    pub const ALL: u32 = CCRDY | EOCAL | AWD3 | AWD2 | AWD1 | OVR | EOS | EOC | EOSMP | ARDY;
+}
 
 /// Internal voltage reference ADC calibration
 ///
@@ -660,6 +702,7 @@ impl Adc {
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// assert_eq!(adc.is_enabled(), false);
     /// ```
+    #[inline]
     #[must_use = "no reason to call this function if you are not using the result"]
     pub fn is_enabled(&self) -> bool {
         self.adc.cr.read().aden().bit_is_set()
@@ -684,6 +727,7 @@ impl Adc {
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// assert_eq!(adc.is_disabled(), true);
     /// ```
+    #[inline]
     #[must_use = "no reason to call this function if you are not using the result"]
     pub fn is_disabled(&self) -> bool {
         let cr = self.adc.cr.read();
@@ -729,6 +773,87 @@ impl Adc {
         if self.start_enable() {
             while self.adc.isr.read().adrdy().is_not_ready() {}
         }
+    }
+
+    /// Clear interrupts.
+    ///
+    /// # Example
+    ///
+    /// Clear all interrupts.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// adc.set_isr(adc::irq::ALL);
+    /// ```
+    #[inline]
+    pub fn set_isr(&mut self, isr: u32) {
+        // safety: isr argument is masked with valid bits, reserved bits are kept at reset value
+        self.adc.isr.write(|w| unsafe { w.bits(isr & irq::ALL) })
+    }
+
+    /// Read the interrupt status.
+    ///
+    /// # Example
+    ///
+    /// Check if the ADC is ready.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// // this will be false because the ADC is not enabled
+    /// let ready: bool = Adc::isr().adrdy().is_ready();
+    /// ```
+    #[inline]
+    pub fn isr() -> pac::adc::isr::R {
+        // saftey: atomic read with no side-effects
+        unsafe { (*pac::ADC::ptr()).isr.read() }
+    }
+
+    /// Enable and disable interrupts.
+    ///
+    /// # Example
+    ///
+    /// Enable all IRQs
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// adc.set_ier(adc::irq::ALL);
+    /// ```
+    pub fn set_ier(&mut self, ier: u32) {
+        // safety: isr argument is masked with valid bits, reserved bits are kept at reset value
+        self.adc.ier.write(|w| unsafe { w.bits(ier) })
     }
 
     /// Start the ADC disable procedure.
@@ -786,33 +911,6 @@ impl Adc {
         }
     }
 
-    fn setup_calibrate(&mut self) {
-        // RM0453 rev 1 section 18.3.3 page 536 Software calibration procedure
-        // 1. Ensure that ADEN = 0, ADVREGEN = 1 and DMAEN = 0.
-        // 2. Set ADCAL = 1.
-        // 3. Wait until ADCAL = 0 (or until EOCAL = 1).
-        //    This can be handled by interrupt if the interrupt is enabled by
-        //    setting the EOCALIE bit in the ADC_IER register
-        // 4. The calibration factor can be read from bits 6:0 of ADC_DR or
-        //    ADC_CALFACT registers.
-
-        self.start_disable();
-        while !self.is_disabled() {}
-
-        // enable the voltage regulator as soon as possible to start the
-        // countdown on the regulator setup time
-        self.adc.cr.write(|w| w.advregen().enabled());
-        // disable DMA per the calibration procedure
-        self.adc.cfgr1.write(|w| w.dmaen().clear_bit());
-    }
-
-    // requires setup_calibrate and delay for T_ADCVREG_SETUP
-    fn start_calibrate(&mut self) {
-        self.adc
-            .cr
-            .write(|w| w.adcal().start_calibration().advregen().enabled());
-    }
-
     /// Configure the channel sequencer
     ///
     /// See section 18.3.8 page 542 "Channel selection"
@@ -832,53 +930,6 @@ impl Adc {
         data
     }
 
-    /// Calibrate the ADC for additional accuracy.
-    ///
-    /// Calibration should be performed before starting A/D conversion.
-    /// It removes the offset error which may vary from chip to chip due to
-    /// process variation.
-    ///
-    /// The calibration factor is lost in the following cases:
-    /// * The power supply is removed from the ADC
-    ///   (for example when entering STANDBY or VBAT mode)
-    /// * The ADC peripheral is reset.
-    ///
-    /// This will disable the ADC if it is not already disabled.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     adc::{self, Adc},
-    ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
-    ///     pac, rcc,
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
-    ///
-    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
-    /// adc.calibrate(&mut delay);
-    /// ```
-    pub fn calibrate<D: DelayUs<u8>>(&mut self, delay: &mut D) {
-        self.setup_calibrate();
-
-        // voltage regulator output is available after T_ADCVREG_SETUP
-        delay.delay_us(T_ADCVREG_SETUP_MICROS);
-
-        self.start_calibrate();
-
-        // takes 401 cycles at 48MHz sysclk, ADC at 16MHz with HSI
-        while self.adc.cr.read().adcal().is_calibrating() {}
-        self.adc.isr.write(|w| w.eocal().set_bit());
-    }
-
     /// Enable the temperature sensor.
     ///
     /// You **MUST** wait for the temperature sensor to start up
@@ -890,7 +941,7 @@ impl Adc {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     adc::{self, Adc},
-    ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
+    ///     util::new_delay,
     ///     pac, rcc,
     /// };
     ///
@@ -901,7 +952,7 @@ impl Adc {
     /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
     /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
     ///
-    /// let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
+    /// let mut delay = new_delay(cp.SYST, &dp.RCC);
     ///
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// adc.enable_tsen();
@@ -951,7 +1002,7 @@ impl Adc {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     adc::{self, Adc},
-    ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
+    ///     util::new_delay,
     ///     pac, rcc,
     /// };
     ///
@@ -962,7 +1013,7 @@ impl Adc {
     /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
     /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
     ///
-    /// let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
+    /// let mut delay = new_delay(cp.SYST, &dp.RCC);
     ///
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// adc.enable();
@@ -1019,7 +1070,7 @@ impl Adc {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     adc::{self, Adc},
-    ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
+    ///     util::new_delay,
     ///     pac, rcc,
     /// };
     ///
@@ -1030,7 +1081,7 @@ impl Adc {
     /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
     /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
     ///
-    /// let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
+    /// let mut delay = new_delay(cp.SYST, &dp.RCC);
     ///
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// adc.calibrate(&mut delay);
@@ -1065,7 +1116,7 @@ impl Adc {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     adc::{self, Adc},
-    ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
+    ///     util::new_delay,
     ///     dac::{Dac, ModeChip},
     ///     pac, rcc,
     /// };
@@ -1077,7 +1128,7 @@ impl Adc {
     /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
     /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
     ///
-    /// let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
+    /// let mut delay = new_delay(cp.SYST, &dp.RCC);
     ///
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// adc.calibrate(&mut delay);
@@ -1109,7 +1160,7 @@ impl Adc {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     adc::{self, Adc},
-    ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
+    ///     util::new_delay,
     ///     gpio::{pins::B4, Analog, PortB},
     ///     pac, rcc,
     /// };
@@ -1121,7 +1172,7 @@ impl Adc {
     /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
     /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
     ///
-    /// let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
+    /// let mut delay = new_delay(cp.SYST, &dp.RCC);
     ///
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// adc.calibrate(&mut delay);
@@ -1176,7 +1227,7 @@ impl Adc {
     /// use stm32wl_hal::{
     ///     self as hal,
     ///     adc::{self, Adc},
-    ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
+    ///     util::new_delay,
     ///     dac::{Dac, ModeChip},
     ///     pac, rcc,
     /// };
@@ -1188,7 +1239,7 @@ impl Adc {
     /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
     /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
     ///
-    /// let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
+    /// let mut delay = new_delay(cp.SYST, &dp.RCC);
     ///
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// adc.calibrate(&mut delay);
@@ -1204,5 +1255,172 @@ impl Adc {
         self.cfg_ch_seq(Ch::Vbat.mask());
         self.adc.cr.write(|w| w.adstart().start_conversion());
         self.data()
+    }
+}
+
+// calibration related methods
+impl Adc {
+    /// Calibrate the ADC for additional accuracy.
+    ///
+    /// Calibration should be performed before starting A/D conversion.
+    /// It removes the offset error which may vary from chip to chip due to
+    /// process variation.
+    ///
+    /// The calibration factor is lost in the following cases:
+    /// * The power supply is removed from the ADC
+    ///   (for example when entering STANDBY or VBAT mode)
+    /// * The ADC peripheral is reset.
+    ///
+    /// This will disable the ADC if it is not already disabled.
+    ///
+    /// This function is the simple way to calibrate the ADC, you can use
+    /// these methods to achieve the same results if you desire finer controls:
+    ///
+    /// * [`enable_vreg`](Self::enable_vreg)
+    /// * A delay function
+    /// * [`start_calibrate`](Self::start_calibrate)
+    /// * [`set_ier`](Self::set_ier) (optional)
+    /// * [`Adc::isr`]
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     util::new_delay,
+    ///     pac, rcc,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut delay = new_delay(cp.SYST, &dp.RCC);
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// adc.calibrate(&mut delay);
+    /// ```
+    pub fn calibrate<D: DelayUs<u8>>(&mut self, delay: &mut D) {
+        self.enable_vreg();
+
+        // voltage regulator output is available after T_ADCVREG_SETUP
+        delay.delay_us(T_ADCVREG_SETUP_MICROS);
+
+        self.start_calibrate();
+
+        // takes 401 cycles at 48MHz sysclk, ADC at 16MHz with HSI
+        while self.adc.cr.read().adcal().is_calibrating() {}
+        self.adc.isr.write(|w| w.eocal().set_bit());
+    }
+
+    /// Enable the ADC voltage regulator for calibration.
+    ///
+    /// This is advanced ADC usage, most of the time you will want to use
+    /// [`calibrate`](Self::calibrate).
+    ///
+    /// This will disable the ADC and DMA request generation if not already
+    /// disabled.
+    ///
+    /// You **MUST** wait [`T_ADCVREG_SETUP`] before the voltage regulator
+    /// output is avaliable.  This delay is not performed for you.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     util::new_delay,
+    ///     pac, rcc,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut delay = new_delay(cp.SYST, &dp.RCC);
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// adc.enable_vreg();
+    /// delay.delay_us(u32::from(adc::T_ADCVREG_SETUP_MICROS));
+    /// ```
+    pub fn enable_vreg(&mut self) {
+        // RM0453 rev 1 section 18.3.3 page 536 Software calibration procedure
+        // 1. Ensure that ADEN = 0, ADVREGEN = 1 and DMAEN = 0.
+        // 2. Set ADCAL = 1.
+        // 3. Wait until ADCAL = 0 (or until EOCAL = 1).
+        //    This can be handled by interrupt if the interrupt is enabled by
+        //    setting the EOCALIE bit in the ADC_IER register
+        // 4. The calibration factor can be read from bits 6:0 of ADC_DR or
+        //    ADC_CALFACT registers.
+
+        // takes appx 55 cycles when already disabled
+        self.start_disable();
+        while !self.is_disabled() {}
+
+        // enable the voltage regulator as soon as possible to start the
+        // countdown on the regulator setup time
+        // this is a write because all other fields must be zero
+        self.adc.cr.write(|w| w.advregen().enabled());
+        // disable DMA per the calibration procedure
+        self.adc.cfgr1.modify(|_, w| w.dmaen().clear_bit());
+    }
+
+    /// Disable the ADC voltage regulator.
+    #[inline]
+    pub fn disable_vreg(&mut self) {
+        self.adc.cr.modify(|_, w| w.advregen().disabled());
+    }
+
+    /// Start the ADC calibration.
+    ///
+    /// This is advanced ADC usage, most of the time you will want to use
+    /// [`calibrate`](Self::calibrate).
+    ///
+    /// When this function returns the ADC calibration has started, but
+    /// may not have finished.
+    /// Check if the ADC calibration has finished with [`Adc::isr`].
+    ///
+    /// # Panics
+    ///
+    /// * (debug) ADC is enabled.
+    /// * (debug) ADC voltage regulator is not enabled.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     util::new_delay,
+    ///     pac, rcc,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut delay = new_delay(cp.SYST, &dp.RCC);
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    ///
+    /// adc.enable_vreg();
+    /// delay.delay_us(u32::from(adc::T_ADCVREG_SETUP_MICROS));
+    /// adc.start_calibrate();
+    /// // datasheet says this takes 82 ADC clock cycles
+    /// // my measurements are closer to 120 ADC clock cycles
+    /// while Adc::isr().eocal().is_not_complete() {}
+    /// ```
+    #[inline]
+    pub fn start_calibrate(&mut self) {
+        debug_assert!(self.adc.cr.read().advregen().is_enabled());
+        debug_assert!(self.is_disabled());
+        self.adc
+            .cr
+            .write(|w| w.adcal().start_calibration().advregen().enabled());
     }
 }

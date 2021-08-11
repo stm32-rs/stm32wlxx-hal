@@ -14,7 +14,7 @@ nucleo-wl55jc-bsp = { path = "../nucleo-wl55jc-bsp" }
 
 [features]
 # set logging levels here
-default = ["defmt-trace"]
+default = ["defmt-trace", "nucleo-wl55jc-bsp/defmt-trace"]
 
 # do NOT modify these features
 defmt-default = []

@@ -102,10 +102,10 @@ pub mod irq {
     /// End of sampling
     pub const EOSMP: u32 = 1 << 1;
     /// ADC ready
-    pub const ARDY: u32 = 1;
+    pub const ADRDY: u32 = 1;
 
     /// All IRQs
-    pub const ALL: u32 = CCRDY | EOCAL | AWD3 | AWD2 | AWD1 | OVR | EOS | EOC | EOSMP | ARDY;
+    pub const ALL: u32 = CCRDY | EOCAL | AWD3 | AWD2 | AWD1 | OVR | EOS | EOC | EOSMP | ADRDY;
 }
 
 /// Internal voltage reference ADC calibration

@@ -7,9 +7,10 @@ use defmt_rtt as _; // global logger
 use panic_probe as _; // panic handler
 use stm32wl_hal::{
     self as hal,
-    cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
+    cortex_m::delay::Delay,
     gpio::{Level, Output, PortB},
-    pac, rcc,
+    pac,
+    util::new_delay,
 };
 
 #[hal::cortex_m_rt::entry]
@@ -22,7 +23,7 @@ fn main() -> ! {
     let mut led2 = Output::default(gpiob.pb15);
     let mut led3 = Output::default(gpiob.pb11);
 
-    let mut delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
+    let mut delay: Delay = new_delay(cp.SYST, &dp.RCC);
 
     defmt::info!("Starting blinky");
 

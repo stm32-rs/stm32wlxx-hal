@@ -38,6 +38,7 @@ pub mod rcc;
 pub mod rng;
 pub mod spi;
 pub mod subghz;
+pub mod util;
 
 mod ratio;
 pub use ratio::Ratio;

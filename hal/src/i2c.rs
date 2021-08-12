@@ -54,9 +54,11 @@ macro_rules! busy_wait {
             if isr.arlo().is_lost() {
                 icr.write(|w| w.arlocf().clear());
                 return Err(Error::Arbitration);
-            } else if isr.berr().is_error() {
-                icr.write(|w| w.berrcf().clear());
-                return Err(Error::Bus);
+            // Bus error should be ignored during Master mode. See STM doc. nr. ES0500 (Erratum).
+            // Leaving this code here in case it can be used when implementing slave mode
+            // } else if isr.berr().is_error() {
+            //     icr.write(|w| w.berrcf().clear());
+            //     return Err(Error::Bus);
             } else if isr.nackf().is_nack() {
                 while $self.isr().read().stopf().is_no_stop() {}
                 icr.write(|w| w.nackcf().clear());

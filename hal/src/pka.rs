@@ -451,6 +451,7 @@ impl Pka {
         priv_key: &[u32; PRIME_ORDER_SIZE],
         hash: &[u32; PRIME_ORDER_SIZE],
     ) -> Result<(), EcdsaSignError> {
+        self.zero_ram();
         let n_length: u32 = (PRIME_ORDER_SIZE * size_of::<u32>() * 8) as u32;
         let p_length: u32 = (MODULUS_SIZE * size_of::<u32>() * 8) as u32;
 

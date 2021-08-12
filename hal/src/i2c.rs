@@ -5,7 +5,7 @@ use core::convert::TryFrom;
 use crate::{
     embedded_hal::blocking::i2c::{Read, Write, WriteRead},
     gpio::{OutputType, Pull},
-    pac::{rcc::ccipr::I2C3SEL_A, I2C1, I2C2, I2C3, RCC},
+    pac::{self, rcc::ccipr::I2C3SEL_A, I2C1, I2C2, I2C3, RCC},
     rcc::{pclk1_hz, sysclk_hz},
 };
 
@@ -31,25 +31,25 @@ pub enum Error {
 
 /// I2C peripheral operating in master mode
 pub struct I2c1<PINS> {
-    i2c: I2C1,
+    base: I2C1,
     pins: PINS,
 }
 
 pub struct I2c2<PINS> {
-    i2c: I2C2,
+    base: I2C2,
     pins: PINS,
 }
 
 pub struct I2c3<PINS> {
-    i2c: I2C3,
+    base: I2C3,
     pins: PINS,
 }
 
 macro_rules! busy_wait {
-    ($i2c:expr, $flag:ident, $variant:ident) => {
+    ($self:ident, $flag:ident, $variant:ident) => {
         loop {
-            let isr = $i2c.isr.read();
-            let icr = &$i2c.icr;
+            let isr = $self.isr().read();
+            let icr = $self.icr();
 
             if isr.arlo().is_lost() {
                 icr.write(|w| w.arlocf().clear());
@@ -58,7 +58,7 @@ macro_rules! busy_wait {
                 icr.write(|w| w.berrcf().clear());
                 return Err(Error::Bus);
             } else if isr.nackf().is_nack() {
-                while $i2c.isr.read().stopf().is_no_stop() {}
+                while $self.isr().read().stopf().is_no_stop() {}
                 icr.write(|w| w.nackcf().clear());
                 icr.write(|w| w.stopcf().clear());
                 return Err(Error::Nack);
@@ -69,21 +69,309 @@ macro_rules! busy_wait {
     };
 }
 
+trait I2cBase {
+    fn cr1(&self) -> &pac::i2c1::CR1;
+    fn cr2(&self) -> &pac::i2c1::CR2;
+    fn icr(&self) -> &pac::i2c1::ICR;
+    fn isr(&self) -> &pac::i2c1::ISR;
+    fn oar1(&self) -> &pac::i2c1::OAR1;
+    fn oar2(&self) -> &pac::i2c1::OAR2;
+    fn pecr(&self) -> &pac::i2c1::PECR;
+    fn rxdr(&self) -> &pac::i2c1::RXDR;
+    fn timeoutr(&self) -> &pac::i2c1::TIMEOUTR;
+    fn timingr(&self) -> &pac::i2c1::TIMINGR;
+    fn txdr(&self) -> &pac::i2c1::TXDR;
+
+    /// Read `buffer.len()` bytes from `addr`
+    ///
+    /// # Panics
+    ///
+    /// * Empty buffer (`buffer.len() == 0`)
+    fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Error> {
+        assert!(!buffer.is_empty());
+
+        // Detect Bus busy
+        if self.isr().read().busy().is_busy() {
+            return Err(Error::Busy);
+        }
+
+        let end = buffer.len() / 0xFF;
+
+        // Process 255 bytes at a time
+        for (i, buffer) in buffer.chunks_mut(0xFF).enumerate() {
+            // Prepare to receive `bytes`
+            self.cr2().modify(|_, w| {
+                if i == 0 {
+                    w.add10().bit7();
+                    w.sadd().bits((addr << 1) as u16);
+                    w.rd_wrn().read();
+                    w.start().start();
+                }
+                w.nbytes().bits(buffer.len() as u8);
+                if i != end {
+                    w.reload().not_completed()
+                } else {
+                    w.reload().completed().autoend().automatic()
+                }
+            });
+
+            for byte in buffer {
+                // Wait until we have received something
+                busy_wait!(self, rxne, is_not_empty);
+
+                *byte = self.rxdr().read().rxdata().bits();
+            }
+
+            if i != end {
+                // Wait until the last transmission is finished
+                busy_wait!(self, tcr, is_complete);
+            }
+        }
+
+        // automatic STOP
+        // Wait until the last transmission is finished
+        busy_wait!(self, stopf, is_stop);
+
+        self.icr().write(|w| w.stopcf().clear());
+
+        Ok(())
+    }
+
+    /// Write `bytes.len()` bytes to `addr`. 0-byte writes are allowed, in which case the master
+    /// will just write the address
+    fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Error> {
+        // Detect Bus busy
+        if self.isr().read().busy().is_busy() {
+            return Err(Error::Busy);
+        }
+
+        if bytes.is_empty() {
+            // 0 byte write
+            self.cr2().modify(|_, w| {
+                w.add10().bit7();
+                w.sadd().bits((addr << 1) as u16);
+                w.rd_wrn().write();
+                w.nbytes().bits(0);
+                w.reload().completed();
+                w.autoend().automatic();
+                w.start().start()
+            });
+        } else {
+            let end = bytes.len() / 0xFF;
+
+            // Process 255 bytes at a time
+            for (i, bytes) in bytes.chunks(0xFF).enumerate() {
+                // Prepare to send `bytes`
+                self.cr2().modify(|_, w| {
+                    if i == 0 {
+                        w.add10().bit7();
+                        w.sadd().bits((addr << 1) as u16);
+                        w.rd_wrn().write();
+                        w.start().start();
+                    }
+                    w.nbytes().bits(bytes.len() as u8);
+                    if i != end {
+                        w.reload().not_completed()
+                    } else {
+                        w.reload().completed().autoend().automatic()
+                    }
+                });
+
+                for byte in bytes {
+                    // Wait until we are allowed to send data
+                    // (START has been ACKed or last byte went through)
+                    busy_wait!(self, txis, is_empty);
+
+                    // Put byte on the wire
+                    // NOTE(write): Writes all non-reserved bits.
+                    self.txdr().write(|w| w.txdata().bits(*byte));
+                }
+
+                if i != end {
+                    // Wait until the last transmission is finished
+                    busy_wait!(self, tcr, is_complete);
+                }
+            }
+        }
+
+        // automatic STOP
+        // Wait until the last transmission is finished
+        busy_wait!(self, stopf, is_stop);
+
+        self.icr().write(|w| w.stopcf().clear());
+
+        Ok(())
+    }
+
+    /// Write `bytes.len()` bytes to `addr` and read back `buffer.len()` bytes.
+    ///
+    /// # Panics
+    ///
+    /// * `bytes` or `buffer` are empty (use `write` for 0-byte writes)
+    fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Error> {
+        assert!(!bytes.is_empty() && !buffer.is_empty());
+
+        // Detect Bus busy
+        if self.isr().read().busy().is_busy() {
+            return Err(Error::Busy);
+        }
+
+        let end = bytes.len() / 0xFF;
+
+        // Process 255 bytes at a time
+        for (i, bytes) in bytes.chunks(0xFF).enumerate() {
+            // Prepare to send `bytes`
+            self.cr2().modify(|_, w| {
+                if i == 0 {
+                    w.add10().bit7();
+                    w.sadd().bits((addr << 1) as u16);
+                    w.rd_wrn().write();
+                    w.start().start();
+                }
+                w.nbytes().bits(bytes.len() as u8);
+                if i != end {
+                    w.reload().not_completed()
+                } else {
+                    w.reload().completed().autoend().software()
+                }
+            });
+
+            for byte in bytes {
+                // Wait until we are allowed to send data
+                // (START has been ACKed or last byte went through)
+                busy_wait!(self, txis, is_empty);
+
+                // Put byte on the wire
+                // NOTE(write): Writes all non-reserved bits.
+                self.txdr().write(|w| w.txdata().bits(*byte));
+            }
+
+            if i != end {
+                // Wait until the last transmission is finished
+                busy_wait!(self, tcr, is_complete);
+            }
+        }
+
+        // Wait until the last transmission is finished
+        busy_wait!(self, tc, is_complete);
+
+        // restart
+
+        let end = buffer.len() / 0xFF;
+
+        // Process 255 bytes at a time
+        for (i, buffer) in buffer.chunks_mut(0xFF).enumerate() {
+            // Prepare to receive `bytes`
+            self.cr2().modify(|_, w| {
+                if i == 0 {
+                    w.add10().bit7();
+                    w.sadd().bits((addr << 1) as u16);
+                    w.rd_wrn().read();
+                    w.start().start();
+                }
+                w.nbytes().bits(buffer.len() as u8);
+                if i != end {
+                    w.reload().not_completed()
+                } else {
+                    w.reload().completed().autoend().automatic()
+                }
+            });
+
+            for byte in buffer {
+                // Wait until we have received something
+                busy_wait!(self, rxne, is_not_empty);
+
+                *byte = self.rxdr().read().rxdata().bits();
+            }
+
+            if i != end {
+                // Wait until the last transmission is finished
+                busy_wait!(self, tcr, is_complete);
+            }
+        }
+
+        // automatic STOP
+        // Wait until the last transmission is finished
+        busy_wait!(self, stopf, is_stop);
+
+        self.icr().write(|w| w.stopcf().clear());
+
+        Ok(())
+    }
+}
+
+macro_rules! impl_i2c_base_for {
+    ($name:ident) => {
+        impl I2cBase for $name {
+            #[inline(always)]
+            fn cr1(&self) -> &pac::i2c1::CR1 {
+                &self.cr1
+            }
+            #[inline(always)]
+            fn cr2(&self) -> &pac::i2c1::CR2 {
+                &self.cr2
+            }
+            #[inline(always)]
+            fn icr(&self) -> &pac::i2c1::ICR {
+                &self.icr
+            }
+            #[inline(always)]
+            fn isr(&self) -> &pac::i2c1::ISR {
+                &self.isr
+            }
+            #[inline(always)]
+            fn oar1(&self) -> &pac::i2c1::OAR1 {
+                &self.oar1
+            }
+            #[inline(always)]
+            fn oar2(&self) -> &pac::i2c1::OAR2 {
+                &self.oar2
+            }
+            #[inline(always)]
+            fn pecr(&self) -> &pac::i2c1::PECR {
+                &self.pecr
+            }
+            #[inline(always)]
+            fn rxdr(&self) -> &pac::i2c1::RXDR {
+                &self.rxdr
+            }
+            #[inline(always)]
+            fn timeoutr(&self) -> &pac::i2c1::TIMEOUTR {
+                &self.timeoutr
+            }
+            #[inline(always)]
+            fn timingr(&self) -> &pac::i2c1::TIMINGR {
+                &self.timingr
+            }
+            #[inline(always)]
+            fn txdr(&self) -> &pac::i2c1::TXDR {
+                &self.txdr
+            }
+        }
+    };
+}
+
+impl_i2c_base_for!(I2C1);
+impl_i2c_base_for!(I2C2);
+impl_i2c_base_for!(I2C3);
+
 macro_rules! i2c {
     ($($I2cX:ident: ($I2CX:ident, $i2cXen:ident, $i2cXrst:ident, $i2cXsel:ident,
                      $I2cXSda:ident, $I2cXScl:ident, $i2cXsclAf:ident, $i2cXsdaAf:ident),)+) => {
         $(
             impl<SCL, SDA> $I2cX<(SCL, SDA)> {
-                /// Enables clock and resets the peripheral
+                /// Enables peripheral clock
                 fn enable_clock(rcc: &mut RCC) {
                     rcc.apb1enr1.modify(|_, w| w.$i2cXen().enabled());
                 }
 
+                /// Resets peripheral clock
                 fn pulse_reset(rcc: &mut RCC) {
                     rcc.apb1rstr1.modify(|_, w| w.$i2cXrst().reset());
                     rcc.apb1rstr1.modify(|_, w| w.$i2cXrst().clear_bit());
                 }
 
+                /// Returns the frequency of the peripheral clock driver
                 fn clock(rcc: &RCC) -> Hertz {
                     // NOTE(unsafe) atomic read with no side effects
                     match rcc.ccipr.read().$i2cXsel().variant().unwrap() {
@@ -124,68 +412,17 @@ macro_rules! i2c {
                             }
                         });
 
-                        // TODO review compliance with the timing requirements of I2C
-                        // t_I2CCLK = 1 / PCLK1
-                        // t_PRESC  = (PRESC + 1) * t_I2CCLK
-                        // t_SCLL   = (SCLL + 1) * t_PRESC
-                        // t_SCLH   = (SCLH + 1) * t_PRESC
-                        //
-                        // t_SYNC1 + t_SYNC2 > 4 * t_I2CCLK
-                        // t_SCL ~= t_SYNC1 + t_SYNC2 + t_SCLL + t_SCLH
-                        let i2cclk = Self::clock(rcc).0;
-                        let ratio = i2cclk / freq.integer() - 4;
-                        let (presc, scll, sclh, sdadel, scldel) = if freq >= 100.kHz() {
-                            // fast-mode or fast-mode plus
-                            // here we pick SCLL + 1 = 2 * (SCLH + 1)
-                            let presc = ratio / 387;
-
-                            let sclh = ((ratio / (presc + 1)) - 3) / 3;
-                            let scll = 2 * (sclh + 1) - 1;
-
-                            let (sdadel, scldel) = if freq > 400.kHz() {
-                                // fast-mode plus
-                                let sdadel = 0;
-                                let scldel = i2cclk / 4_000_000 / (presc + 1) - 1;
-
-                                (sdadel, scldel)
-                            } else {
-                                // fast-mode
-                                let sdadel = i2cclk / 8_000_000 / (presc + 1);
-                                let scldel = i2cclk / 2_000_000 / (presc + 1) - 1;
-
-                                (sdadel, scldel)
-                            };
-
-                            (presc, scll, sclh, sdadel, scldel)
-                        } else {
-                            // standard-mode
-                            // here we pick SCLL = SCLH
-                            let presc = ratio / 514;
-
-                            let sclh = ((ratio / (presc + 1)) - 2) / 2;
-                            let scll = sclh;
-
-                            let sdadel = i2cclk / 2_000_000 / (presc + 1);
-                            let scldel = i2cclk / 800_000 / (presc + 1) - 1;
-
-                            (presc, scll, sclh, sdadel, scldel)
-                        };
-
-                        assert!(presc < 16);
-                        assert!(scldel < 16);
-                        assert!(sdadel < 16);
-                        let sclh = u8::try_from(sclh).unwrap();
-                        let scll = u8::try_from(scll).unwrap();
+                        let (presc, scll, sclh, sdadel, scldel) = i2c_clocks(Self::clock(rcc), freq);
 
                         // Configure for "fast mode" (400 KHz)
                         // NOTE(write): writes all non-reserved bits.
                         i2c.timingr.write(|w| {
                             w.presc()
-                                .bits(presc as u8)
+                                .bits(presc)
                                 .sdadel()
-                                .bits(sdadel as u8)
+                                .bits(sdadel)
                                 .scldel()
-                                .bits(scldel as u8)
+                                .bits(scldel)
                                 .scll()
                                 .bits(scll)
                                 .sclh()
@@ -195,241 +432,36 @@ macro_rules! i2c {
                         // Enable the peripheral
                         i2c.cr1.write(|w| w.pe().set_bit());
 
-                        Self { i2c, pins }
+                        Self { base: i2c, pins }
                     }
 
                 /// Releases the I2C peripheral and associated pins
                 pub fn free(self) -> ($I2CX, (SCL, SDA)) {
-                    (self.i2c, self.pins)
+                    (self.base, self.pins)
                 }
             }
 
             impl<PINS> Read for $I2cX<PINS> {
                 type Error = Error;
 
-                /// Read `buffer.len()` bytes from `addr`
-                ///
-                /// # Panics
-                ///
-                /// * Empty buffer (`buffer.len() == 0`)
                 fn read(&mut self, addr: u8, buffer: &mut [u8]) -> Result<(), Self::Error> {
-                    assert!(!buffer.is_empty());
-
-                    // Detect Bus busy
-                    if self.i2c.isr.read().busy().is_busy() {
-                        return Err(Error::Busy);
-                    }
-
-                    let end = buffer.len() / 0xFF;
-
-                    // Process 255 bytes at a time
-                    for (i, buffer) in buffer.chunks_mut(0xFF).enumerate() {
-                        // Prepare to receive `bytes`
-                        self.i2c.cr2.modify(|_, w| {
-                            if i == 0 {
-                                w.add10().bit7();
-                                w.sadd().bits((addr << 1) as u16);
-                                w.rd_wrn().read();
-                                w.start().start();
-                            }
-                            w.nbytes().bits(buffer.len() as u8);
-                            if i != end {
-                                w.reload().not_completed()
-                            } else {
-                                w.reload().completed().autoend().automatic()
-                            }
-                        });
-
-                        for byte in buffer {
-                            // Wait until we have received something
-                            busy_wait!(self.i2c, rxne, is_not_empty);
-
-                            *byte = self.i2c.rxdr.read().rxdata().bits();
-                        }
-
-                        if i != end {
-                            // Wait until the last transmission is finished
-                            busy_wait!(self.i2c, tcr, is_complete);
-                        }
-                    }
-
-                    // automatic STOP
-                    // Wait until the last transmission is finished
-                    busy_wait!(self.i2c, stopf, is_stop);
-
-                    self.i2c.icr.write(|w| w.stopcf().clear());
-
-                    Ok(())
+                    self.base.read(addr, buffer)
                 }
             }
 
             impl<PINS> Write for $I2cX<PINS> {
                 type Error = Error;
 
-                /// Write `bytes.len()` bytes to `addr`. 0-byte writes are allowed, in which case the master
-                /// will just write the address
-                fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Error> {
-                    // Detect Bus busy
-                    if self.i2c.isr.read().busy().is_busy() {
-                        return Err(Error::Busy);
-                    }
-
-                    if bytes.is_empty() {
-                        // 0 byte write
-                        self.i2c.cr2.modify(|_, w| {
-                            w.add10().bit7();
-                            w.sadd().bits((addr << 1) as u16);
-                            w.rd_wrn().write();
-                            w.nbytes().bits(0);
-                            w.reload().completed();
-                            w.autoend().automatic();
-                            w.start().start()
-                        });
-                    } else {
-                        let end = bytes.len() / 0xFF;
-
-                        // Process 255 bytes at a time
-                        for (i, bytes) in bytes.chunks(0xFF).enumerate() {
-                            // Prepare to send `bytes`
-                            self.i2c.cr2.modify(|_, w| {
-                                if i == 0 {
-                                    w.add10().bit7();
-                                    w.sadd().bits((addr << 1) as u16);
-                                    w.rd_wrn().write();
-                                    w.start().start();
-                                }
-                                w.nbytes().bits(bytes.len() as u8);
-                                if i != end {
-                                    w.reload().not_completed()
-                                } else {
-                                    w.reload().completed().autoend().automatic()
-                                }
-                            });
-
-                            for byte in bytes {
-                                // Wait until we are allowed to send data
-                                // (START has been ACKed or last byte went through)
-                                busy_wait!(self.i2c, txis, is_empty);
-
-                                // Put byte on the wire
-                                // NOTE(write): Writes all non-reserved bits.
-                                self.i2c.txdr.write(|w| w.txdata().bits(*byte));
-                            }
-
-                            if i != end {
-                                // Wait until the last transmission is finished
-                                busy_wait!(self.i2c, tcr, is_complete);
-                            }
-                        }
-                    }
-
-                    // automatic STOP
-                    // Wait until the last transmission is finished
-                    busy_wait!(self.i2c, stopf, is_stop);
-
-                    self.i2c.icr.write(|w| w.stopcf().clear());
-
-                    Ok(())
+                fn write(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Self::Error> {
+                    self.base.write(addr, bytes)
                 }
             }
 
             impl<PINS> WriteRead for $I2cX<PINS> {
                 type Error = Error;
 
-                /// Write `bytes.len()` bytes to `addr` and read back `buffer.len()` bytes.
-                ///
-                /// # Panics
-                ///
-                /// * `bytes` or `buffer` are empty (use `write` for 0-byte writes)
-                fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Error> {
-                    assert!(!bytes.is_empty() && !buffer.is_empty());
-
-                    // Detect Bus busy
-                    if self.i2c.isr.read().busy().is_busy() {
-                        return Err(Error::Busy);
-                    }
-
-                    let end = bytes.len() / 0xFF;
-
-                    // Process 255 bytes at a time
-                    for (i, bytes) in bytes.chunks(0xFF).enumerate() {
-                        // Prepare to send `bytes`
-                        self.i2c.cr2.modify(|_, w| {
-                            if i == 0 {
-                                w.add10().bit7();
-                                w.sadd().bits((addr << 1) as u16);
-                                w.rd_wrn().write();
-                                w.start().start();
-                            }
-                            w.nbytes().bits(bytes.len() as u8);
-                            if i != end {
-                                w.reload().not_completed()
-                            } else {
-                                w.reload().completed().autoend().software()
-                            }
-                        });
-
-                        for byte in bytes {
-                            // Wait until we are allowed to send data
-                            // (START has been ACKed or last byte went through)
-                            busy_wait!(self.i2c, txis, is_empty);
-
-                            // Put byte on the wire
-                            // NOTE(write): Writes all non-reserved bits.
-                            self.i2c.txdr.write(|w| w.txdata().bits(*byte));
-                        }
-
-                        if i != end {
-                            // Wait until the last transmission is finished
-                            busy_wait!(self.i2c, tcr, is_complete);
-                        }
-                    }
-
-                    // Wait until the last transmission is finished
-                    busy_wait!(self.i2c, tc, is_complete);
-
-                    // restart
-
-                    let end = buffer.len() / 0xFF;
-
-                    // Process 255 bytes at a time
-                    for (i, buffer) in buffer.chunks_mut(0xFF).enumerate() {
-                        // Prepare to receive `bytes`
-                        self.i2c.cr2.modify(|_, w| {
-                            if i == 0 {
-                                w.add10().bit7();
-                                w.sadd().bits((addr << 1) as u16);
-                                w.rd_wrn().read();
-                                w.start().start();
-                            }
-                            w.nbytes().bits(buffer.len() as u8);
-                            if i != end {
-                                w.reload().not_completed()
-                            } else {
-                                w.reload().completed().autoend().automatic()
-                            }
-                        });
-
-                        for byte in buffer {
-                            // Wait until we have received something
-                            busy_wait!(self.i2c, rxne, is_not_empty);
-
-                            *byte = self.i2c.rxdr.read().rxdata().bits();
-                        }
-
-                        if i != end {
-                            // Wait until the last transmission is finished
-                            busy_wait!(self.i2c, tcr, is_complete);
-                        }
-                    }
-
-                    // automatic STOP
-                    // Wait until the last transmission is finished
-                    busy_wait!(self.i2c, stopf, is_stop);
-
-                    self.i2c.icr.write(|w| w.stopcf().clear());
-
-                    Ok(())
+                fn write_read(&mut self, addr: u8, bytes: &[u8], buffer: &mut [u8]) -> Result<(), Self::Error> {
+                    self.base.write_read(addr, bytes, buffer)
                 }
             }
         )+
@@ -446,3 +478,72 @@ macro_rules! i2c {
 }
 
 i2c!([1, 2, 3]);
+
+// TODO review compliance with the timing requirements of I2C
+// t_I2CCLK = 1 / PCLK1
+// t_PRESC  = (PRESC + 1) * t_I2CCLK
+// t_SCLL   = (SCLL + 1) * t_PRESC
+// t_SCLH   = (SCLH + 1) * t_PRESC
+//
+// t_SYNC1 + t_SYNC2 > 4 * t_I2CCLK
+// t_SCL ~= t_SYNC1 + t_SYNC2 + t_SCLL + t_SCLH
+/// Returns the I2C parameters necessary to configure the peripheral.
+///
+/// # Parameters
+/// * clock: the frequency of the clock driving the I2C peripheral
+/// * freq: the desired frequency for the I2C peripheral
+///
+/// # Returns:
+/// * PRESC
+/// * SCLL
+/// * SCLH
+/// * SDADEL
+/// * SCLDEL
+fn i2c_clocks(clock: Hertz, freq: Hertz) -> (u8, u8, u8, u8, u8) {
+    let i2cclk = clock.integer();
+    let ratio = i2cclk / freq.integer() - 4;
+    let (presc, scll, sclh, sdadel, scldel) = if freq >= 100.kHz() {
+        // fast-mode or fast-mode plus
+        // here we pick SCLL + 1 = 2 * (SCLH + 1)
+        let presc = ratio / 387;
+
+        let sclh = ((ratio / (presc + 1)) - 3) / 3;
+        let scll = 2 * (sclh + 1) - 1;
+
+        let (sdadel, scldel) = if freq > 400.kHz() {
+            // fast-mode plus
+            let sdadel = 0;
+            let scldel = i2cclk / 4_000_000 / (presc + 1) - 1;
+
+            (sdadel, scldel)
+        } else {
+            // fast-mode
+            let sdadel = i2cclk / 8_000_000 / (presc + 1);
+            let scldel = i2cclk / 2_000_000 / (presc + 1) - 1;
+
+            (sdadel, scldel)
+        };
+
+        (presc, scll, sclh, sdadel, scldel)
+    } else {
+        // standard-mode
+        // here we pick SCLL = SCLH
+        let presc = ratio / 514;
+
+        let sclh = ((ratio / (presc + 1)) - 2) / 2;
+        let scll = sclh;
+
+        let sdadel = i2cclk / 2_000_000 / (presc + 1);
+        let scldel = i2cclk / 800_000 / (presc + 1) - 1;
+
+        (presc, scll, sclh, sdadel, scldel)
+    };
+
+    assert!(presc < 16);
+    assert!(scldel < 16);
+    assert!(sdadel < 16);
+    let sclh = u8::try_from(sclh).unwrap();
+    let scll = u8::try_from(scll).unwrap();
+
+    (presc as u8, scll, sclh, sdadel as u8, scldel as u8)
+}

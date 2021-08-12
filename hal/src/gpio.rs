@@ -69,7 +69,7 @@ impl<const BASE: usize, const N: u8> Pin<BASE, N> {
     const AF: usize = if N > 7 { BASE + 0x24 } else { BASE + 0x20 };
     const AF_R: *const u32 = Self::AF as *const u32;
     const AF_W: *mut u32 = Self::AF as *mut u32;
-    const AF_SHIFT: u8 = if N > 7 { (N - 7) * 4 } else { N * 4 };
+    const AF_SHIFT: u8 = if N > 7 { (N - 8) * 4 } else { N * 4 };
 
     pub(crate) const fn new() -> Pin<BASE, N> {
         Pin {}

@@ -302,64 +302,29 @@ trait I2cBase {
     }
 }
 
+#[rustfmt::skip]
 macro_rules! impl_i2c_base_for {
-    ($name:ident) => {
+    ($($name:ident)+) => {
+        $(
         impl I2cBase for $name {
-            #[inline(always)]
-            fn cr1(&self) -> &pac::i2c1::CR1 {
-                &self.cr1
-            }
-            #[inline(always)]
-            fn cr2(&self) -> &pac::i2c1::CR2 {
-                &self.cr2
-            }
-            #[inline(always)]
-            fn icr(&self) -> &pac::i2c1::ICR {
-                &self.icr
-            }
-            #[inline(always)]
-            fn isr(&self) -> &pac::i2c1::ISR {
-                &self.isr
-            }
-            #[inline(always)]
-            fn oar1(&self) -> &pac::i2c1::OAR1 {
-                &self.oar1
-            }
-            #[inline(always)]
-            fn oar2(&self) -> &pac::i2c1::OAR2 {
-                &self.oar2
-            }
-            #[inline(always)]
-            fn pecr(&self) -> &pac::i2c1::PECR {
-                &self.pecr
-            }
-            #[inline(always)]
-            fn rxdr(&self) -> &pac::i2c1::RXDR {
-                &self.rxdr
-            }
-            #[inline(always)]
-            fn timeoutr(&self) -> &pac::i2c1::TIMEOUTR {
-                &self.timeoutr
-            }
-            #[inline(always)]
-            fn timingr(&self) -> &pac::i2c1::TIMINGR {
-                &self.timingr
-            }
-            #[inline(always)]
-            fn txdr(&self) -> &pac::i2c1::TXDR {
-                &self.txdr
-            }
+            #[inline(always)] fn cr1(&self) -> &pac::i2c1::CR1 { &self.cr1 }
+            #[inline(always)] fn cr2(&self) -> &pac::i2c1::CR2 { &self.cr2 }
+            #[inline(always)] fn icr(&self) -> &pac::i2c1::ICR { &self.icr }
+            #[inline(always)] fn isr(&self) -> &pac::i2c1::ISR { &self.isr }
+            #[inline(always)] fn oar1(&self) -> &pac::i2c1::OAR1 { &self.oar1 }
+            #[inline(always)] fn oar2(&self) -> &pac::i2c1::OAR2 { &self.oar2 }
+            #[inline(always)] fn pecr(&self) -> &pac::i2c1::PECR { &self.pecr }
+            #[inline(always)] fn rxdr(&self) -> &pac::i2c1::RXDR { &self.rxdr }
+            #[inline(always)] fn timeoutr(&self) -> &pac::i2c1::TIMEOUTR { &self.timeoutr }
+            #[inline(always)] fn timingr(&self) -> &pac::i2c1::TIMINGR { &self.timingr }
+            #[inline(always)] fn txdr(&self) -> &pac::i2c1::TXDR { &self.txdr }
         }
+        )+
     };
 }
 
-impl_i2c_base_for!(I2C1);
-impl_i2c_base_for!(I2C2);
-impl_i2c_base_for!(I2C3);
-
-macro_rules! i2c {
-    ($($I2cX:ident: ($I2CX:ident, $i2cXen:ident, $i2cXrst:ident, $i2cXsel:ident,
-                     $I2cXSda:ident, $I2cXScl:ident, $i2cXsclAf:ident, $i2cXsdaAf:ident),)+) => {
+macro_rules! impl_clocks_reset {
+    ($($I2cX:ident: ($i2cXen:ident, $i2cXrst:ident, $i2cXsel:ident),)+) => {
         $(
             impl<SCL, SDA> $I2cX<(SCL, SDA)> {
                 /// Enables peripheral clock
@@ -382,7 +347,16 @@ macro_rules! i2c {
                         I2C3SEL_A::PCLK => Hertz(pclk1_hz(rcc)),
                     }
                 }
+            }
+        )+
+    }
+}
 
+macro_rules! impl_new_free {
+    ($($I2cX:ident: ($I2CX:ident, $i2cXen:ident, $i2cXrst:ident, $i2cXsel:ident,
+                     $I2cXSda:ident, $I2cXScl:ident, $i2cXsclAf:ident, $i2cXsdaAf:ident),)+) => {
+        $(
+            impl<SCL, SDA> $I2cX<(SCL, SDA)> {
                 /// Configures the I2C peripheral as master with the indicated frequency. The implementation takes care
                 /// of setting the peripheral to standard/fast mode depending on the indicated frequency and generates
                 /// values for SCLL and SCLH durations
@@ -442,7 +416,13 @@ macro_rules! i2c {
                     (self.base, self.pins)
                 }
             }
+        )+
+    }
+}
 
+macro_rules! impl_read {
+    ($($I2cX:ident)+) => {
+        $(
             impl<PINS> Read for $I2cX<PINS> {
                 type Error = Error;
 
@@ -450,7 +430,13 @@ macro_rules! i2c {
                     self.base.read(addr, buffer)
                 }
             }
+        )+
+    }
+}
 
+macro_rules! impl_write {
+    ($($I2cX:ident)+) => {
+        $(
             impl<PINS> Write for $I2cX<PINS> {
                 type Error = Error;
 
@@ -458,7 +444,13 @@ macro_rules! i2c {
                     self.base.write(addr, bytes)
                 }
             }
+        )+
+    }
+}
 
+macro_rules! impl_write_read {
+    ($($I2cX:ident)+) => {
+        $(
             impl<PINS> WriteRead for $I2cX<PINS> {
                 type Error = Error;
 
@@ -467,14 +459,19 @@ macro_rules! i2c {
                 }
             }
         )+
-    };
+    }
+}
 
+macro_rules! i2c {
     ([ $($X:literal),+ ]) => {
         paste::paste! {
-            i2c!(
-                $([<I2c $X>]: ([<I2C $X>], [<i2c $X en>], [<i2c $X rst>], [<i2c $X sel>], [<I2c $X Sda>],
-                    [<I2c $X Scl>], [<set_i2c $X _scl_af>], [<set_i2c $X _sda_af>]),)+
-            );
+            impl_i2c_base_for!($([<I2C $X>])+);
+            impl_clocks_reset!($([<I2c $X>]: ([<i2c $X en>], [<i2c $X rst>], [<i2c $X sel>]),)+);
+            impl_new_free!($([<I2c $X>]: ([<I2C $X>], [<i2c $X en>], [<i2c $X rst>], [<i2c $X sel>], [<I2c $X Sda>],
+                                    [<I2c $X Scl>], [<set_i2c $X _scl_af>], [<set_i2c $X _sda_af>]),)+);
+            impl_read!($([<I2c $X>])+);
+            impl_write!($([<I2c $X>])+);
+            impl_write_read!($([<I2c $X>])+);
         }
     };
 }

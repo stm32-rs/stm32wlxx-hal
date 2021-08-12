@@ -412,68 +412,17 @@ macro_rules! i2c {
                             }
                         });
 
-                        // TODO review compliance with the timing requirements of I2C
-                        // t_I2CCLK = 1 / PCLK1
-                        // t_PRESC  = (PRESC + 1) * t_I2CCLK
-                        // t_SCLL   = (SCLL + 1) * t_PRESC
-                        // t_SCLH   = (SCLH + 1) * t_PRESC
-                        //
-                        // t_SYNC1 + t_SYNC2 > 4 * t_I2CCLK
-                        // t_SCL ~= t_SYNC1 + t_SYNC2 + t_SCLL + t_SCLH
-                        let i2cclk = Self::clock(rcc).0;
-                        let ratio = i2cclk / freq.integer() - 4;
-                        let (presc, scll, sclh, sdadel, scldel) = if freq >= 100.kHz() {
-                            // fast-mode or fast-mode plus
-                            // here we pick SCLL + 1 = 2 * (SCLH + 1)
-                            let presc = ratio / 387;
-
-                            let sclh = ((ratio / (presc + 1)) - 3) / 3;
-                            let scll = 2 * (sclh + 1) - 1;
-
-                            let (sdadel, scldel) = if freq > 400.kHz() {
-                                // fast-mode plus
-                                let sdadel = 0;
-                                let scldel = i2cclk / 4_000_000 / (presc + 1) - 1;
-
-                                (sdadel, scldel)
-                            } else {
-                                // fast-mode
-                                let sdadel = i2cclk / 8_000_000 / (presc + 1);
-                                let scldel = i2cclk / 2_000_000 / (presc + 1) - 1;
-
-                                (sdadel, scldel)
-                            };
-
-                            (presc, scll, sclh, sdadel, scldel)
-                        } else {
-                            // standard-mode
-                            // here we pick SCLL = SCLH
-                            let presc = ratio / 514;
-
-                            let sclh = ((ratio / (presc + 1)) - 2) / 2;
-                            let scll = sclh;
-
-                            let sdadel = i2cclk / 2_000_000 / (presc + 1);
-                            let scldel = i2cclk / 800_000 / (presc + 1) - 1;
-
-                            (presc, scll, sclh, sdadel, scldel)
-                        };
-
-                        assert!(presc < 16);
-                        assert!(scldel < 16);
-                        assert!(sdadel < 16);
-                        let sclh = u8::try_from(sclh).unwrap();
-                        let scll = u8::try_from(scll).unwrap();
+                        let (presc, scll, sclh, sdadel, scldel) = i2c_clocks(Self::clock(rcc), freq);
 
                         // Configure for "fast mode" (400 KHz)
                         // NOTE(write): writes all non-reserved bits.
                         i2c.timingr.write(|w| {
                             w.presc()
-                                .bits(presc as u8)
+                                .bits(presc)
                                 .sdadel()
-                                .bits(sdadel as u8)
+                                .bits(sdadel)
                                 .scldel()
-                                .bits(scldel as u8)
+                                .bits(scldel)
                                 .scll()
                                 .bits(scll)
                                 .sclh()
@@ -529,3 +478,72 @@ macro_rules! i2c {
 }
 
 i2c!([1, 2, 3]);
+
+// TODO review compliance with the timing requirements of I2C
+// t_I2CCLK = 1 / PCLK1
+// t_PRESC  = (PRESC + 1) * t_I2CCLK
+// t_SCLL   = (SCLL + 1) * t_PRESC
+// t_SCLH   = (SCLH + 1) * t_PRESC
+//
+// t_SYNC1 + t_SYNC2 > 4 * t_I2CCLK
+// t_SCL ~= t_SYNC1 + t_SYNC2 + t_SCLL + t_SCLH
+/// Returns the I2C parameters necessary to configure the peripheral.
+///
+/// # Parameters
+/// * clock: the frequency of the clock driving the I2C peripheral
+/// * freq: the desired frequency for the I2C peripheral
+///
+/// # Returns:
+/// * PRESC
+/// * SCLL
+/// * SCLH
+/// * SDADEL
+/// * SCLDEL
+fn i2c_clocks(clock: Hertz, freq: Hertz) -> (u8, u8, u8, u8, u8) {
+    let i2cclk = clock.integer();
+    let ratio = i2cclk / freq.integer() - 4;
+    let (presc, scll, sclh, sdadel, scldel) = if freq >= 100.kHz() {
+        // fast-mode or fast-mode plus
+        // here we pick SCLL + 1 = 2 * (SCLH + 1)
+        let presc = ratio / 387;
+
+        let sclh = ((ratio / (presc + 1)) - 3) / 3;
+        let scll = 2 * (sclh + 1) - 1;
+
+        let (sdadel, scldel) = if freq > 400.kHz() {
+            // fast-mode plus
+            let sdadel = 0;
+            let scldel = i2cclk / 4_000_000 / (presc + 1) - 1;
+
+            (sdadel, scldel)
+        } else {
+            // fast-mode
+            let sdadel = i2cclk / 8_000_000 / (presc + 1);
+            let scldel = i2cclk / 2_000_000 / (presc + 1) - 1;
+
+            (sdadel, scldel)
+        };
+
+        (presc, scll, sclh, sdadel, scldel)
+    } else {
+        // standard-mode
+        // here we pick SCLL = SCLH
+        let presc = ratio / 514;
+
+        let sclh = ((ratio / (presc + 1)) - 2) / 2;
+        let scll = sclh;
+
+        let sdadel = i2cclk / 2_000_000 / (presc + 1);
+        let scldel = i2cclk / 800_000 / (presc + 1) - 1;
+
+        (presc, scll, sclh, sdadel, scldel)
+    };
+
+    assert!(presc < 16);
+    assert!(scldel < 16);
+    assert!(sdadel < 16);
+    let sclh = u8::try_from(sclh).unwrap();
+    let scll = u8::try_from(scll).unwrap();
+
+    (presc as u8, scll, sclh, sdadel as u8, scldel as u8)
+}

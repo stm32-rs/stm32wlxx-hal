@@ -1,7 +1,6 @@
 #![no_std]
 #![no_main]
 
-use core::ptr::write_volatile;
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use panic_probe as _;

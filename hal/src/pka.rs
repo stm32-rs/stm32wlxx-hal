@@ -4,6 +4,60 @@
 //!
 //! * [ECDSA signing](Pka::ecdsa_sign)
 //! * [ECDSA verify](Pka::ecdsa_verify)
+//!
+//! # ECDSA key pair generation
+//!
+//! Generate a private key for [`NIST_P256`](curve::NIST_P256):
+//!
+//! ```console
+//! $ openssl ecparam -genkey -name prime256v1 -out key.pem
+//! $ openssl ec -in key.pem -noout -text
+//! read EC key
+//! Private-Key: (256 bit)
+//! priv:
+//!     49:ac:87:27:ce:e8:74:84:fe:6d:fd:a5:10:23:8a:
+//!     d4:11:ac:e8:fe:59:3a:8c:b7:04:92:d6:59:db:81:
+//!     80:2a
+//! pub:
+//!     04:fa:65:57:59:de:c3:90:28:96:46:0a:43:2b:ae:
+//!     1d:00:91:26:e1:b4:88:78:9f:f4:ef:6b:9a:9b:de:
+//!     1b:c3:63:8f:a0:2a:c4:c4:21:ca:88:4f:06:51:f4:
+//!     e9:85:e3:cf:d0:af:40:69:cc:87:f3:a8:8a:8e:95:
+//!     e7:55:6c:ed:97
+//! ASN1 OID: prime256v1
+//! NIST CURVE: P-256
+//! ```
+//!
+//! The first `04` on the public key is encoding information, expressed in rust
+//! that keypair becomes this:
+//!
+//! ```
+//! use stm32wl_hal::pka::EcdsaPublicKey;
+//!
+//! const PRIV_KEY: [u32; 8] = [
+//!     0x49ac8727, 0xcee87484, 0xfe6dfda5, 0x10238ad4, 0x11ace8fe, 0x593a8cb7, 0x0492d659,
+//!     0xdb81802a,
+//! ];
+//!
+//! const CURVE_PT_X: [u32; 8] = [
+//!     0xfa655759, 0xdec39028, 0x96460a43, 0x2bae1d00, 0x9126e1b4, 0x88789ff4, 0xef6b9a9b,
+//!     0xde1bc363,
+//! ];
+//! const CURVE_PT_Y: [u32; 8] = [
+//!     0x8fa02ac4, 0xc421ca88, 0x4f0651f4, 0xe985e3cf, 0xd0af4069, 0xcc87f3a8, 0x8a8e95e7,
+//!     0x556ced97,
+//! ];
+//! let pub_key: EcdsaPublicKey<8> = EcdsaPublicKey {
+//!     curve_pt_x: &CURVE_PT_X,
+//!     curve_pt_y: &CURVE_PT_Y,
+//! };
+//! ```
+//!
+//! Use this command to find the name of other curves:
+//!
+//! ```bash
+//! openssl ecparam -list_curves
+//! ```
 
 use crate::pac::{self, pka::cr::MODE_A};
 use core::{

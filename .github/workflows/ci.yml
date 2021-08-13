@@ -58,8 +58,8 @@ jobs:
       - name: cargo test
         run: bash ci/testsuite-compile.sh
 
-  build_test_bsp:
-    name: Build and Test BSP
+  build_test_nucleo_bsp:
+    name: Build and Test nucleo BSP
     runs-on: ubuntu-latest
     env: {"RUSTFLAGS": "-D warnings"}
     steps:
@@ -82,6 +82,27 @@ jobs:
           cargo test -p nucleo-wl55jc-bsp \
           --target x86_64-unknown-linux-gnu \
           --features stm32wl5x_cm4
+
+  build_test_seeed_bsp:
+    name: Build and Test LoRa E5 BSP
+    runs-on: ubuntu-latest
+    env: {"RUSTFLAGS": "-D warnings"}
+    steps:
+      - uses: actions/checkout@v2.3.4
+      - uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: stable
+          target: thumbv7em-none-eabi
+      - name: "Build"
+        run: |
+          cargo build -p lora-e5-bsp --target thumbv7em-none-eabi
+      - uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: stable
+          target: x86_64-unknown-linux-gnu
+      - name: "Test"
+        run: |
+          cargo test -p lora-e5-bsp --target x86_64-unknown-linux-gnu
 
   build_examples:
     name: Examples Compile
@@ -179,7 +200,8 @@ jobs:
     needs:
       - build
       - build_examples
-      - build_test_bsp
+      - build_test_nucleo_bsp
+      - build_test_seeed_bsp
       - build_testsuite
       - clippy
       - doc

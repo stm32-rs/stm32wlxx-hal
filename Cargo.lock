@@ -301,6 +301,7 @@ dependencies = [
  "defmt",
  "defmt-rtt",
  "defmt-test",
+ "nb 1.0.0",
  "panic-probe",
  "stm32wl-hal",
 ]
@@ -425,6 +426,7 @@ dependencies = [
  "cortex-m-rt",
  "defmt",
  "embedded-hal",
+ "nb 1.0.0",
  "num-traits",
  "rand_core",
  "stm32wl",

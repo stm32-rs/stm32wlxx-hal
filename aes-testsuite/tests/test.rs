@@ -1,11 +1,10 @@
 #![no_std]
 #![no_main]
 
-use core::ptr::write_volatile;
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use panic_probe as _;
-use stm32wl_hal::{aes::Aes, cortex_m::peripheral::DWT, pac, rcc};
+use stm32wl_hal::{aes::Aes, cortex_m::peripheral::DWT, pac, rcc, util::reset_cycle_count};
 
 const FREQ: u32 = 48_000_000;
 const CYC_PER_US: u32 = FREQ / 1000 / 1000;
@@ -70,9 +69,7 @@ mod tests {
 
         cp.DCB.enable_trace();
         cp.DWT.enable_cycle_counter();
-        // reset the cycle counter
-        const DWT_CYCCNT: usize = 0xE0001004;
-        unsafe { write_volatile(DWT_CYCCNT as *mut u32, 0) };
+        reset_cycle_count(&mut cp.DWT);
 
         Aes::new(dp.AES, &mut dp.RCC)
     }

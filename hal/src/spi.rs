@@ -93,8 +93,6 @@ trait SpiBase {
 
         rx_dma.set_mux_cr_reqid(Self::DMA_RX_ID);
         tx_dma.set_mux_cr_reqid(Self::DMA_TX_ID);
-
-        unsafe { rx_dma.unmask_irq() };
     }
 
     fn write_word(&mut self, word: u8) -> Result<(), Error> {

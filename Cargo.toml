@@ -11,6 +11,7 @@ members = [
     "pka-testsuite",
     "rng-testsuite",
     "subghz-testsuite",
+    "uart-testsuite",
 ]
 default-members = ["hal"]
 

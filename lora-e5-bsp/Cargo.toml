@@ -1,21 +1,19 @@
 [package]
-name = "nucleo-wl55jc-bsp"
-description = "Board support package for the NUCLEO-WL55JC"
+name = "lora-e5-bsp"
+description = "Board support package for the seeed LoRa-E5 development kit"
 readme = "README.md"
 
 version = "0.1.0-alpha.0"
 authors = ["Alex M. <alexmgit@protonmail.com>"]
 edition = "2018"
 license = "MIT"
-keywords = ["arm", "cortex-m", "stm32", "bsp", "nucleo"]
+keywords = ["arm", "cortex-m", "stm32", "bsp", "seeed"]
 categories = ["embedded", "hardware-support", "no-std"]
 repository = "https://github.com/newAM/stm32wl-hal"
 
 [features]
 defmt = ["stm32wl-hal/defmt"]
 rt = ["stm32wl-hal/rt"]
-# CM0+ not yet supported
-stm32wl5x_cm4 = ["stm32wl-hal/stm32wl5x_cm4"]
 
 # do NOT modify these features
 defmt-default = ["stm32wl-hal/defmt-default"]
@@ -27,3 +25,4 @@ defmt-error = ["stm32wl-hal/defmt-error"]
 
 [dependencies.stm32wl-hal]
 path = "../hal"
+features = ["stm32wle5"]

@@ -6,6 +6,7 @@ members = [
     "dac-testsuite",
     "examples",
     "hal",
+    "lora-e5-bsp",
     "nucleo-wl55jc-bsp",
     "pka-testsuite",
     "rng-testsuite",

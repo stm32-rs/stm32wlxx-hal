@@ -14,6 +14,9 @@ There should be enough code for very basic:
 * LoRa TX + RX
 * (G)FSK TX + RX
 * SPI
+* GPIO
+* ADC sampling
+* DAC output
 * ECDSA signing
 * ECDSA verification
 * Cryptographically secure random number generation

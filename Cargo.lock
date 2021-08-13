@@ -462,6 +462,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "879f6906492a7cd215bfa4cf595b600146ccfac0c79bcbd1f3000162af5e8b06"
 
 [[package]]
+name = "uart-testsuite"
+version = "0.1.0"
+dependencies = [
+ "defmt",
+ "defmt-rtt",
+ "defmt-test",
+ "nb 1.0.0",
+ "panic-probe",
+ "stm32wl-hal",
+]
+
+[[package]]
 name = "unicode-xid"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

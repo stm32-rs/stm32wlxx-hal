@@ -15,6 +15,7 @@ There should be enough code for very basic:
 * (G)FSK TX + RX
 * SPI
 * GPIO
+* UART
 * ADC sampling
 * DAC output
 * ECDSA signing

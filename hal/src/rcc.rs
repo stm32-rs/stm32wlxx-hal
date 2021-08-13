@@ -472,7 +472,7 @@ pub fn hclk2_hz(rcc: &pac::RCC) -> u32 {
     hclk2(rcc, &cfgr).to_integer()
 }
 
-fn hclk3(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
+pub(crate) fn hclk3(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
     let div: u32 = pre_div(rcc.extcfgr.read().shdhpre().bits()).into();
     sysclk(rcc, cfgr) / div
 }

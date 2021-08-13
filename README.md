@@ -14,6 +14,9 @@ There should be enough code for very basic:
 * LoRa TX + RX
 * (G)FSK TX + RX
 * SPI
+* GPIO
+* ADC sampling
+* DAC output
 * ECDSA signing
 * ECDSA verification
 * Cryptographically secure random number generation
@@ -42,7 +45,7 @@ On-target tests use the NUCLEO-WL55JC2, you can find a place purchase this
 
 The on-target tests use [defmt-test].
 
-* `cargo install --git https://github.com/knurling-rs/probe-run.git`
+* `cargo install --git https://github.com/newAM/probe-run.git`
   ([probe-run], [newAM/probe-run])
     * **Note:** My fork contains unreleased fixes for the stm32wl,
       see [#74] for details.

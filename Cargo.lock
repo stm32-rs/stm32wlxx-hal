@@ -429,6 +429,7 @@ dependencies = [
  "nb 1.0.0",
  "num-traits",
  "rand_core",
+ "static_assertions",
  "stm32wl",
 ]
 

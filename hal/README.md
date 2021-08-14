@@ -45,8 +45,8 @@ use hal::pac; // published as "stm32wl" on crates.io
 ## Design
 
 ### Peripheral Access
-The layout of devive memory for the STM32WL is provided from the vendor in a
-formatcalled system view description (SVD).
+The layout of device memory for the STM32WL is provided from the vendor in a
+format called system view description (SVD).
 The SVD is not perfect, so there is a set of community maintained SVD
 patches at [stm32-rs].
 After the SVD is patched it gets run through [svd2rust] which generates

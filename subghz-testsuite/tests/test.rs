@@ -71,10 +71,12 @@ const LORA_PACKET_PARAMS: LoRaPacketParams = LoRaPacketParams::new()
     .set_header_type(HeaderType::Fixed);
 
 const FSK_MOD_PARAMS: FskModParams = FskModParams::new()
-    .set_bitrate(FskBitrate::from_bps(50_000))
+    .set_bitrate(FskBitrate::from_bps(20_000))
     .set_pulse_shape(FskPulseShape::None)
     .set_bandwidth(FskBandwidth::Bw58)
-    .set_fdev(FskFdev::from_hertz(25_000));
+    .set_fdev(FskFdev::from_hertz(10_000));
+
+sa::const_assert!(FSK_MOD_PARAMS.is_valid(30));
 
 const LORA_MOD_PARAMS: LoRaModParams = LoRaModParams::new()
     .set_bw(LoRaBandwidth::Bw125)

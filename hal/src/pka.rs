@@ -425,6 +425,18 @@ impl Pka {
     /// nb::block!(pka.ecdsa_sign_result(&mut r_sign, &mut s_sign))?;
     /// # Ok::<(), stm32wl_hal::pka::EcdsaSignError>(())
     /// ```
+    ///
+    /// # Computation Times
+    ///
+    /// | Modulus Length (bits) | Cycles   | Seconds at 48MHz |
+    /// |-----------------------|----------|------------------|
+    /// | 160                   | 1760000  | 0.037            |
+    /// | 192                   | 2664000  | 0.056            |
+    /// | 256                   | 5249000  | 0.109            |
+    /// | 320                   | 9016000  | 0.188            |
+    /// | 384                   | 14596000 | 0.304            |
+    /// | 512                   | 30618000 | 0.638            |
+    /// | 521                   | 35540000 | 0.740            |
     pub fn ecdsa_sign<const MODULUS_SIZE: usize, const PRIME_ORDER_SIZE: usize>(
         &mut self,
         curve: &EllipticCurve<MODULUS_SIZE, PRIME_ORDER_SIZE>,
@@ -547,6 +559,18 @@ impl Pka {
     /// nb::block!(pka.ecdsa_verify_result())?;
     /// # Ok::<(), stm32wl_hal::pka::EcdsaVerifyError>(())
     /// ```
+    ///
+    /// # Computation Times
+    ///
+    /// | Modulus Length (bits) | Cycles   | Seconds at 48MHz |
+    /// |-----------------------|----------|------------------|
+    /// | 160                   | 3500000  | 0.073            |
+    /// | 192                   | 5350000  | 0.112            |
+    /// | 256                   | 10498000 | 0.219            |
+    /// | 320                   | 18126000 | 0.378            |
+    /// | 384                   | 29118000 | 0.607            |
+    /// | 512                   | 61346000 | 1.278            |
+    /// | 521                   | 71588000 | 1.491            |
     pub fn ecdsa_verify<const MODULUS_SIZE: usize, const PRIME_ORDER_SIZE: usize>(
         &mut self,
         curve: &EllipticCurve<MODULUS_SIZE, PRIME_ORDER_SIZE>,

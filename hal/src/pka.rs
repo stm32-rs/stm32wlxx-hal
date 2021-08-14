@@ -5,6 +5,11 @@
 //! * [ECDSA signing](Pka::ecdsa_sign)
 //! * [ECDSA verify](Pka::ecdsa_verify)
 //!
+//! # Alternatives
+//!
+//! The [p256-cortex-m4] crate offers an assembly implementation of P256 that is
+//! about 10x faster then the hardware.
+//!
 //! # ECDSA key pair generation
 //!
 //! Generate a private key for [`NIST_P256`](curve::NIST_P256):
@@ -58,6 +63,8 @@
 //! ```bash
 //! openssl ecparam -list_curves
 //! ```
+//!
+//! [p256-cortex-m4]: (https://crates.io/crates/p256-cortex-m4)
 
 use crate::pac::{self, pka::cr::MODE_A};
 use core::{

@@ -521,10 +521,10 @@ impl FskModParams {
     ///
     /// [`FskBandwidth`] > [`FskBitrate`] + 2 × [`FskFdev`] + frequency error
     ///
-    /// Where frequency error = 2 x HSE32<sub>FREQ</sub> error.
+    /// Where frequency error = 2 × HSE32<sub>FREQ</sub> error.
     ///
     /// The datasheet (DS13293 Rev 1) gives these requirements for the HSE32
-    /// frequency tolerance.
+    /// frequency tolerance:
     ///
     /// * Initial: ±10 ppm
     /// * Over temperature (-20 to 70 °C): ±10 ppm

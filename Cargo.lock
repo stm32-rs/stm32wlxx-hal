@@ -6,7 +6,6 @@ version = 3
 name = "adc-testsuite"
 version = "0.1.0"
 dependencies = [
- "ate",
  "defmt",
  "defmt-rtt",
  "defmt-test",
@@ -18,7 +17,6 @@ dependencies = [
 name = "aes-testsuite"
 version = "0.1.0"
 dependencies = [
- "ate",
  "defmt",
  "defmt-rtt",
  "defmt-test",
@@ -36,16 +34,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "alloc-cortex-m"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a67ad0fe14be887ed94e5722d14861c1877b128edbda2dd372e64d5243d614ae"
-dependencies = [
- "cortex-m 0.6.7",
- "linked_list_allocator",
-]
-
-[[package]]
 name = "as-slice"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -55,16 +43,6 @@ dependencies = [
  "generic-array 0.13.3",
  "generic-array 0.14.4",
  "stable_deref_trait",
-]
-
-[[package]]
-name = "ate"
-version = "0.1.0"
-dependencies = [
- "alloc-cortex-m",
- "crossbeam-queue",
- "futures-util",
- "stm32wl-hal",
 ]
 
 [[package]]
@@ -147,29 +125,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "crossbeam-queue"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b10ddc024425c88c2ad148c1b0fd53f4c6d38db9697c9f1588381212fa657c9"
-dependencies = [
- "cfg-if",
- "crossbeam-utils",
-]
-
-[[package]]
-name = "crossbeam-utils"
-version = "0.8.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d82cfc11ce7f2c3faef78d8a684447b40d503d9681acebed6cb728d45940c4db"
-dependencies = [
- "cfg-if",
-]
-
-[[package]]
 name = "dac-testsuite"
 version = "0.1.0"
 dependencies = [
- "ate",
  "defmt",
  "defmt-rtt",
  "defmt-test",
@@ -260,68 +218,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "futures"
-version = "0.3.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1adc00f486adfc9ce99f77d717836f0c5aa84965eb0b4f051f4e83f7cab53f8b"
-dependencies = [
- "futures-channel",
- "futures-core",
- "futures-io",
- "futures-sink",
- "futures-task",
- "futures-util",
-]
-
-[[package]]
-name = "futures-channel"
-version = "0.3.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "74ed2411805f6e4e3d9bc904c95d5d423b89b3b25dc0250aa74729de20629ff9"
-dependencies = [
- "futures-core",
- "futures-sink",
-]
-
-[[package]]
-name = "futures-core"
-version = "0.3.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af51b1b4a7fdff033703db39de8802c673eb91855f2e0d47dcf3bf2c0ef01f99"
-
-[[package]]
-name = "futures-io"
-version = "0.3.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b0e06c393068f3a6ef246c75cdca793d6a46347e75286933e5e75fd2fd11582"
-
-[[package]]
-name = "futures-sink"
-version = "0.3.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c0f30aaa67363d119812743aa5f33c201a7a66329f97d1a887022971feea4b53"
-
-[[package]]
-name = "futures-task"
-version = "0.3.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbe54a98670017f3be909561f6ad13e810d9a51f3f061b902062ca3da80799f2"
-
-[[package]]
-name = "futures-util"
-version = "0.3.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67eb846bfd58e44a8481a00049e82c43e0ccb5d61f8dc071057cb19249dd4d78"
-dependencies = [
- "autocfg",
- "futures-core",
- "futures-sink",
- "futures-task",
- "pin-project-lite",
- "pin-utils",
-]
-
-[[package]]
 name = "generic-array"
 version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -350,10 +246,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "linked_list_allocator"
-version = "0.8.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "822add9edb1860698b79522510da17bef885171f75aa395cff099d770c609c24"
+name = "lora-e5-bsp"
+version = "0.1.0-alpha.0"
+dependencies = [
+ "stm32wl-hal",
+]
 
 [[package]]
 name = "nb"
@@ -398,25 +295,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "pin-project-lite"
-version = "0.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d31d11c69a6b52a174b42bdc0c30e5e11670f90788b2c471c31c1d17d449443"
-
-[[package]]
-name = "pin-utils"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
-
-[[package]]
 name = "pka-testsuite"
 version = "0.1.0"
 dependencies = [
- "ate",
  "defmt",
  "defmt-rtt",
  "defmt-test",
+ "nb 1.0.0",
  "panic-probe",
  "stm32wl-hal",
 ]
@@ -471,7 +356,6 @@ checksum = "d34f1408f55294453790c48b2f1ebbb1c5b4b7563eb1f418bcfcfdbb06ebb4e7"
 name = "rng-testsuite"
 version = "0.1.0"
 dependencies = [
- "ate",
  "defmt",
  "defmt-rtt",
  "defmt-test",
@@ -542,10 +426,10 @@ dependencies = [
  "cortex-m-rt",
  "defmt",
  "embedded-hal",
- "futures",
- "futures-util",
+ "nb 1.0.0",
  "num-traits",
  "rand_core",
+ "static_assertions",
  "stm32wl",
 ]
 
@@ -553,7 +437,6 @@ dependencies = [
 name = "subghz-testsuite"
 version = "0.1.0"
 dependencies = [
- "ate",
  "defmt",
  "defmt-rtt",
  "defmt-test",
@@ -578,6 +461,18 @@ name = "typenum"
 version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "879f6906492a7cd215bfa4cf595b600146ccfac0c79bcbd1f3000162af5e8b06"
+
+[[package]]
+name = "uart-testsuite"
+version = "0.1.0"
+dependencies = [
+ "defmt",
+ "defmt-rtt",
+ "defmt-test",
+ "nb 1.0.0",
+ "panic-probe",
+ "stm32wl-hal",
+]
 
 [[package]]
 name = "unicode-xid"

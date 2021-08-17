@@ -1,7 +1,7 @@
 {
-    "rust-analyzer.cargo.features": ["stm32wl5x_cm4", "rt", "aio"],
+    "rust-analyzer.cargo.features": ["stm32wl5x_cm4", "rt"],
     "rust-analyzer.cargo.allFeatures": false,
-    "rust-analyzer.checkOnSave.features": ["stm32wl5x_cm4", "rt", "aio"],
+    "rust-analyzer.checkOnSave.features": ["stm32wl5x_cm4", "rt"],
     "rust-analyzer.checkOnSave.allFeatures": false,
     "rust-analyzer.checkOnSave.allTargets": false,
     "rust-analyzer.cargo.target": "thumbv7em-none-eabi",

@@ -2,47 +2,47 @@
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum FskBandwidth {
-    /// 4.8 kHz DSB
+    /// 4.8 kHz double-sideband
     Bw4 = 0x1F,
-    /// 5.8 kHz DSB
+    /// 5.8 kHz double-sideband
     Bw5 = 0x17,
-    /// 7.3 kHz DSB
+    /// 7.3 kHz double-sideband
     Bw7 = 0x0F,
-    /// 9.7 kHz DSB
+    /// 9.7 kHz double-sideband
     Bw9 = 0x1E,
-    /// 11.7 kHz DSB
+    /// 11.7 kHz double-sideband
     Bw11 = 0x16,
-    /// 14.6 kHz DSB
+    /// 14.6 kHz double-sideband
     Bw14 = 0x0E,
-    /// 19.5 kHz DSB
+    /// 19.5 kHz double-sideband
     Bw19 = 0x1D,
-    /// 23.4 kHz DSB
+    /// 23.4 kHz double-sideband
     Bw23 = 0x15,
-    /// 29.3 kHz DSB
+    /// 29.3 kHz double-sideband
     Bw29 = 0x0D,
-    /// 39.0 kHz DSB
+    /// 39.0 kHz double-sideband
     Bw39 = 0x1C,
-    /// 46.9 kHz DSB
+    /// 46.9 kHz double-sideband
     Bw46 = 0x14,
-    /// 58.6 kHz DSB
+    /// 58.6 kHz double-sideband
     Bw58 = 0x0C,
-    /// 78.2 kHz DSB
+    /// 78.2 kHz double-sideband
     Bw78 = 0x1B,
-    /// 93.8 kHz DSB
+    /// 93.8 kHz double-sideband
     Bw93 = 0x13,
-    /// 117.3 kHz DSB
+    /// 117.3 kHz double-sideband
     Bw117 = 0x0B,
-    /// 156.2 kHz DSB
+    /// 156.2 kHz double-sideband
     Bw156 = 0x1A,
-    /// 187.2 kHz DSB
+    /// 187.2 kHz double-sideband
     Bw187 = 0x12,
-    /// 234.3 kHz DSB
+    /// 234.3 kHz double-sideband
     Bw234 = 0x0A,
-    /// 312.0 kHz DSB
+    /// 312.0 kHz double-sideband
     Bw312 = 0x19,
-    /// 373.6 kHz DSB
+    /// 373.6 kHz double-sideband
     Bw373 = 0x11,
-    /// 467.0 kHz DSB
+    /// 467.0 kHz double-sideband
     Bw467 = 0x09,
 }
 
@@ -76,7 +76,7 @@ impl FskBandwidth {
     /// assert_eq!(FskBandwidth::Bw373.hertz(), 373_600);
     /// assert_eq!(FskBandwidth::Bw467.hertz(), 467_000);
     /// ```
-    pub fn hertz(&self) -> u32 {
+    pub const fn hertz(&self) -> u32 {
         match self {
             FskBandwidth::Bw4 => 4_800,
             FskBandwidth::Bw5 => 5_800,
@@ -99,6 +99,65 @@ impl FskBandwidth {
             FskBandwidth::Bw312 => 312_000,
             FskBandwidth::Bw373 => 373_600,
             FskBandwidth::Bw467 => 467_000,
+        }
+    }
+
+    /// Convert from a raw bit value.
+    ///
+    /// Invalid values will be returned in the `Err` variant of the result.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal::subghz::FskBandwidth;
+    ///
+    /// assert_eq!(FskBandwidth::from_bits(0x1F), Ok(FskBandwidth::Bw4));
+    /// assert_eq!(FskBandwidth::from_bits(0x17), Ok(FskBandwidth::Bw5));
+    /// assert_eq!(FskBandwidth::from_bits(0x0F), Ok(FskBandwidth::Bw7));
+    /// assert_eq!(FskBandwidth::from_bits(0x1E), Ok(FskBandwidth::Bw9));
+    /// assert_eq!(FskBandwidth::from_bits(0x16), Ok(FskBandwidth::Bw11));
+    /// assert_eq!(FskBandwidth::from_bits(0x0E), Ok(FskBandwidth::Bw14));
+    /// assert_eq!(FskBandwidth::from_bits(0x1D), Ok(FskBandwidth::Bw19));
+    /// assert_eq!(FskBandwidth::from_bits(0x15), Ok(FskBandwidth::Bw23));
+    /// assert_eq!(FskBandwidth::from_bits(0x0D), Ok(FskBandwidth::Bw29));
+    /// assert_eq!(FskBandwidth::from_bits(0x1C), Ok(FskBandwidth::Bw39));
+    /// assert_eq!(FskBandwidth::from_bits(0x14), Ok(FskBandwidth::Bw46));
+    /// assert_eq!(FskBandwidth::from_bits(0x0C), Ok(FskBandwidth::Bw58));
+    /// assert_eq!(FskBandwidth::from_bits(0x1B), Ok(FskBandwidth::Bw78));
+    /// assert_eq!(FskBandwidth::from_bits(0x13), Ok(FskBandwidth::Bw93));
+    /// assert_eq!(FskBandwidth::from_bits(0x0B), Ok(FskBandwidth::Bw117));
+    /// assert_eq!(FskBandwidth::from_bits(0x1A), Ok(FskBandwidth::Bw156));
+    /// assert_eq!(FskBandwidth::from_bits(0x12), Ok(FskBandwidth::Bw187));
+    /// assert_eq!(FskBandwidth::from_bits(0x0A), Ok(FskBandwidth::Bw234));
+    /// assert_eq!(FskBandwidth::from_bits(0x19), Ok(FskBandwidth::Bw312));
+    /// assert_eq!(FskBandwidth::from_bits(0x11), Ok(FskBandwidth::Bw373));
+    /// assert_eq!(FskBandwidth::from_bits(0x09), Ok(FskBandwidth::Bw467));
+    /// assert_eq!(FskBandwidth::from_bits(0x00), Err(0x00));
+    /// ```
+    pub const fn from_bits(bits: u8) -> Result<Self, u8> {
+        match bits {
+            0x1F => Ok(Self::Bw4),
+            0x17 => Ok(Self::Bw5),
+            0x0F => Ok(Self::Bw7),
+            0x1E => Ok(Self::Bw9),
+            0x16 => Ok(Self::Bw11),
+            0x0E => Ok(Self::Bw14),
+            0x1D => Ok(Self::Bw19),
+            0x15 => Ok(Self::Bw23),
+            0x0D => Ok(Self::Bw29),
+            0x1C => Ok(Self::Bw39),
+            0x14 => Ok(Self::Bw46),
+            0x0C => Ok(Self::Bw58),
+            0x1B => Ok(Self::Bw78),
+            0x13 => Ok(Self::Bw93),
+            0x0B => Ok(Self::Bw117),
+            0x1A => Ok(Self::Bw156),
+            0x12 => Ok(Self::Bw187),
+            0x0A => Ok(Self::Bw234),
+            0x19 => Ok(Self::Bw312),
+            0x11 => Ok(Self::Bw373),
+            0x09 => Ok(Self::Bw467),
+            x => Err(x),
         }
     }
 }
@@ -328,6 +387,24 @@ impl FskModParams {
         .set_fdev(FskFdev::from_hertz(25_000))
     }
 
+    /// Get the bitrate.
+    ///
+    /// # Example
+    ///
+    /// Setting the bitrate to 32,000 bits per second.
+    ///
+    /// ```
+    /// use stm32wl_hal::subghz::{FskBitrate, FskModParams};
+    ///
+    /// const BITRATE: FskBitrate = FskBitrate::from_bps(32_000);
+    /// const MOD_PARAMS: FskModParams = FskModParams::new().set_bitrate(BITRATE);
+    /// assert_eq!(MOD_PARAMS.bitrate(), BITRATE);
+    /// ```
+    pub const fn bitrate(&self) -> FskBitrate {
+        let raw: u32 = u32::from_be_bytes([0, self.buf[1], self.buf[2], self.buf[3]]);
+        FskBitrate::from_raw(raw)
+    }
+
     /// Set the bitrate.
     ///
     /// # Example
@@ -368,6 +445,23 @@ impl FskModParams {
         self
     }
 
+    /// Get the bandwidth.
+    ///
+    /// Values that do not correspond to a valid [`FskBandwidth`] will be
+    /// returned in the `Err` variant of the result.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal::subghz::{FskBandwidth, FskModParams};
+    ///
+    /// const MOD_PARAMS: FskModParams = FskModParams::new().set_bandwidth(FskBandwidth::Bw9);
+    /// assert_eq!(MOD_PARAMS.bandwidth(), Ok(FskBandwidth::Bw9));
+    /// ```
+    pub const fn bandwidth(&self) -> Result<FskBandwidth, u8> {
+        FskBandwidth::from_bits(self.buf[5])
+    }
+
     /// Set the bandwidth.
     ///
     /// # Example
@@ -382,6 +476,22 @@ impl FskModParams {
     pub const fn set_bandwidth(mut self, bw: FskBandwidth) -> FskModParams {
         self.buf[5] = bw as u8;
         self
+    }
+
+    /// Get the frequency deviation.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal::subghz::{FskFdev, FskModParams};
+    ///
+    /// const FDEV: FskFdev = FskFdev::from_hertz(31_250);
+    /// const MOD_PARAMS: FskModParams = FskModParams::new().set_fdev(FDEV);
+    /// assert_eq!(MOD_PARAMS.fdev(), FDEV);
+    /// ```
+    pub const fn fdev(&self) -> FskFdev {
+        let raw: u32 = u32::from_be_bytes([0, self.buf[6], self.buf[7], self.buf[8]]);
+        FskFdev::from_raw(raw)
     }
 
     /// Set the frequency deviation.
@@ -405,6 +515,51 @@ impl FskModParams {
         self.buf[8] = (bits & 0xFF) as u8;
         self
     }
+    /// Returns `true` if the modulation parameters are valid.
+    ///
+    /// The bandwidth must be chosen so that:
+    ///
+    /// [`FskBandwidth`] > [`FskBitrate`] + 2 × [`FskFdev`] + frequency error
+    ///
+    /// Where frequency error = 2 × HSE32<sub>FREQ</sub> error.
+    ///
+    /// The datasheet (DS13293 Rev 1) gives these requirements for the HSE32
+    /// frequency tolerance:
+    ///
+    /// * Initial: ±10 ppm
+    /// * Over temperature (-20 to 70 °C): ±10 ppm
+    /// * Aging over 10 years: ±10 ppm
+    ///
+    /// # Example
+    ///
+    /// Checking valid parameters at compile-time
+    ///
+    /// ```
+    /// extern crate static_assertions as sa;
+    /// use stm32wl_hal::subghz::{FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape};
+    ///
+    /// const MOD_PARAMS: FskModParams = FskModParams::new()
+    ///     .set_bitrate(FskBitrate::from_bps(20_000))
+    ///     .set_pulse_shape(FskPulseShape::Bt03)
+    ///     .set_bandwidth(FskBandwidth::Bw58)
+    ///     .set_fdev(FskFdev::from_hertz(10_000));
+    ///
+    /// // 30 PPM is wost case (if the HSE32 crystal meets requirements)
+    /// sa::const_assert!(MOD_PARAMS.is_valid(30));
+    /// ```
+    #[must_use = "the return value indicates if the modulation parameters are valid"]
+    pub const fn is_valid(&self, ppm: u8) -> bool {
+        let bw: u32 = match self.bandwidth() {
+            Ok(bw) => bw.hertz(),
+            Err(_) => return false,
+        };
+        let br: u32 = self.bitrate().as_bps();
+        let fdev: u32 = self.fdev().as_hertz();
+        let hse32_err: u32 = 32 * (ppm as u32);
+        let freq_err: u32 = 2 * hse32_err;
+
+        bw > br + 2 * fdev + freq_err
+    }
 
     /// Extracts a slice containing the packet.
     ///
@@ -413,10 +568,10 @@ impl FskModParams {
     /// ```
     /// use stm32wl_hal::subghz::{FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape};
     ///
-    /// const BITRATE: FskBitrate = FskBitrate::from_bps(32_000);
+    /// const BITRATE: FskBitrate = FskBitrate::from_bps(20_000);
     /// const PULSE_SHAPE: FskPulseShape = FskPulseShape::Bt03;
-    /// const BW: FskBandwidth = FskBandwidth::Bw9;
-    /// const FDEV: FskFdev = FskFdev::from_hertz(31_250);
+    /// const BW: FskBandwidth = FskBandwidth::Bw58;
+    /// const FDEV: FskFdev = FskFdev::from_hertz(10_000);
     ///
     /// const MOD_PARAMS: FskModParams = FskModParams::new()
     ///     .set_bitrate(BITRATE)
@@ -426,7 +581,7 @@ impl FskModParams {
     ///
     /// assert_eq!(
     ///     MOD_PARAMS.as_slice(),
-    ///     &[0x8B, 0x00, 0x7D, 0x00, 0x08, 0x1E, 0x00, 0x80, 0x00]
+    ///     &[0x8B, 0x00, 0xC8, 0x00, 0x08, 0x0C, 0x00, 0x28, 0xF5]
     /// );
     /// ```
     pub const fn as_slice(&self) -> &[u8] {

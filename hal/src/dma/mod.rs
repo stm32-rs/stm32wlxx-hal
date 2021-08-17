@@ -37,31 +37,29 @@ pub mod flags {
     pub const XFER_ERR: u8 = 1 << 3;
 }
 
-/// DMA controller instance
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
-pub enum DmaCtrl {
-    /// DMA1
-    Dma1,
-    /// DMA2
-    Dma2,
+/// [Typestate] to for no DMA channel on a generic structure.
+///
+/// [Typestate]: https://docs.rust-embedded.org/book/static-guarantees/typestate-programming.html
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct NoDmaCh {
+    _priv: (),
 }
 
-impl DmaCtrl {
-    const fn base(&self) -> usize {
-        match self {
-            DmaCtrl::Dma1 => 0x4002_0000,
-            DmaCtrl::Dma2 => 0x4002_0400,
-        }
+impl NoDmaCh {
+    pub(crate) const fn new() -> Self {
+        NoDmaCh { _priv: () }
     }
 }
+
+const DMA1_BASE: usize = 0x4002_0000;
+const DMA2_BASE: usize = 0x4002_0400;
 
 const MUX_BASE: usize = 0x4002_0800;
 const MUX_CSR_ADDR: usize = MUX_BASE + 0x80;
 const MUX_CCFR_ADDR: usize = MUX_BASE + 0x84;
-#[allow(dead_code)]
-const MUX_RGSR_ADDR: usize = MUX_BASE + 0x140;
-#[allow(dead_code)]
-const MUX_RGCFR_ADDR: usize = MUX_BASE + 0x144;
+// const MUX_RGSR_ADDR: usize = MUX_BASE + 0x140;
+// const MUX_RGCFR_ADDR: usize = MUX_BASE + 0x144;
 
 /// DMA errors
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -71,133 +69,138 @@ pub enum Error {
     Xfer,
 }
 
-/// DMA channel
 #[derive(Debug)]
-pub struct DmaCh {
-    /// zero-index channel number (0-6)
-    ch: u8,
-    /// zero-index mux channel number (0-13)
-    mux_ch: u8,
-    /// interrupt number
-    irq: pac::Interrupt,
-    // here be registers
-    mux_cr: *mut u32,
-    mux_rgcr: *mut u32,
-    isr: *const u32,
-    ifcr: *mut u32,
-    cr: *mut u32,
-    ndt: *mut u32,
-    pa: *mut u32,
-    ma: *mut u32,
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub(crate) struct Dma<const BASE: usize, const CH: u8> {}
+
+impl<const BASE: usize, const CH: u8> Dma<BASE, CH> {
+    pub const MUX_CH: u8 = match BASE {
+        DMA1_BASE => CH,
+        // TODO: replace with const panic when avaliable
+        _ => CH + 7,
+    };
+    const MUX_CR: *mut u32 = (MUX_BASE + 0x4 * (Self::MUX_CH as usize)) as *mut u32;
+    // const MUX_RGCR: *mut u32 = (MUX_BASE + 0x100 + 0x4 * (Self::MUX_CH as usize)) as *mut u32;
+    const ISR: *mut u32 = BASE as *mut u32;
+    const IFCR: *mut u32 = (BASE + 0x4) as *mut u32;
+    const CR: *mut u32 = (BASE + 0x08 + 0x14 * (CH as usize)) as *mut u32;
+    const NDT: *mut u32 = (BASE + 0x0C + 0x14 * (CH as usize)) as *mut u32;
+    const PA: *mut u32 = (BASE + 0x10 + 0x14 * (CH as usize)) as *mut u32;
+    const MA: *mut u32 = (BASE + 0x14 + 0x14 * (CH as usize)) as *mut u32;
+
+    #[inline]
+    pub const fn new() -> Dma<BASE, CH> {
+        Dma {}
+    }
+
+    #[inline]
+    pub fn flags(&self) -> u8 {
+        let raw: u32 = unsafe { read_volatile(Self::ISR) };
+        ((raw >> CH.mul(4)) & 0xF) as u8
+    }
+
+    #[inline]
+    pub fn clear_flags(&mut self, flags: u8) {
+        let val: u32 = u32::from(flags & 0xF) << CH.mul(4);
+        unsafe { write_volatile(Self::IFCR, val) }
+    }
+
+    #[inline]
+    pub fn set_periph_addr(&mut self, pa: u32) {
+        unsafe { write_volatile(Self::PA, pa) }
+    }
+
+    #[inline]
+    pub fn set_mem_addr(&mut self, ma: u32) {
+        unsafe { write_volatile(Self::MA, ma) }
+    }
+
+    #[inline]
+    pub fn set_num_data_xfer(&mut self, ndt: u32) {
+        unsafe { write_volatile(Self::NDT, ndt) }
+    }
+
+    #[inline]
+    pub fn set_cr(&mut self, cr: Cr) {
+        unsafe { write_volatile(Self::CR, cr.raw()) }
+    }
+
+    #[inline]
+    pub fn set_mux_cr_reqid(&mut self, req_id: u8) {
+        unsafe { write_volatile(Self::MUX_CR, req_id as u32) }
+    }
+
+    /// Returns `true` if the DMA MUX synchronization overrun bit is set for
+    /// this channel.
+    #[inline]
+    pub fn sync_ovr(&self) -> bool {
+        let csr: u32 = unsafe { read_volatile(MUX_CSR_ADDR as *const u32) };
+        csr >> Self::MUX_CH & 0b1 == 0b1
+    }
+
+    #[inline]
+    #[allow(dead_code)]
+    pub fn clr_sync_ovr(&mut self) {
+        unsafe { write_volatile(MUX_CCFR_ADDR as *mut u32, 1 << Self::MUX_CH) };
+    }
 }
 
-impl DmaCh {
-    /// Steal the DMA channel from whatever is currently using it.
-    ///
-    /// This will **not** initialize the DMA peripheral or the DMAMUX.
-    ///
-    /// # Safety
-    ///
-    /// This will create a steal DMA channel, bypassing the singleton checks
-    /// that normally occur.
-    /// You are responsible for ensuring that the driver has exclusive access to
-    /// the DMA channel.
-    /// You are also responsible for ensuring the DMA channel has been setup
-    /// correctly.
-    /// You are also responsible for ensuring the arguments are
-    /// valid: channel number is 1-7, interrupt matches the channel.
-    const unsafe fn new(ctrl: DmaCtrl, ch: u8, irq: pac::Interrupt) -> DmaCh {
-        let mux_ch: u8 = match ctrl {
-            DmaCtrl::Dma1 => ch - 1,
-            DmaCtrl::Dma2 => ch + 6,
-        };
-        let mux_ch_u: usize = mux_ch as usize;
+pub(crate) mod sealed {
+    use super::*;
 
-        let ch: u8 = ch - 1;
-        let ch_u: usize = ch as usize;
-
-        // TODO: enable when you can assert in const fn
-        // assert_ne!(ch, 0);
-        // assert!(ch <= 7);
-
-        DmaCh {
-            ch,
-            mux_ch,
-            irq,
-            mux_cr: (MUX_BASE + 0x4 * mux_ch_u) as *mut u32,
-            mux_rgcr: (MUX_BASE + 0x100 + 0x4 * mux_ch_u) as *mut u32,
-            isr: ctrl.base() as *const u32,
-            ifcr: (ctrl.base() + 0x4) as *mut u32,
-            cr: (ctrl.base() + 0x08 + 0x14 * ch_u) as *mut u32,
-            ndt: (ctrl.base() + 0x0C + 0x14 * ch_u) as *mut u32,
-            pa: (ctrl.base() + 0x10 + 0x14 * ch_u) as *mut u32,
-            ma: (ctrl.base() + 0x14 + 0x14 * ch_u) as *mut u32,
-        }
+    pub trait DmaOps {
+        fn set_periph_addr(&mut self, pa: u32);
+        fn set_mem_addr(&mut self, ma: u32);
+        fn set_num_data_xfer(&mut self, ndt: u32);
+        fn set_cr(&mut self, cr: Cr);
+        fn set_mux_cr_reqid(&mut self, req_id: u8);
+        fn sync_ovr(&self) -> bool;
+        fn clr_sync_ovr(&mut self);
     }
+}
 
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    pub(crate) const fn mux_ch(&self) -> usize {
-        self.mux_ch as usize
-    }
+/// DMA channel trait
+pub trait DmaCh {
+    /// DMA IRQ number.
+    const IRQ: pac::Interrupt;
 
     /// Get the interrupt flags for the DMA channel.
     ///
-    /// **Note:** The upper 4 bits of the return value are unused.
+    /// **Note:** The lower 4 bits of the return value are unused.
     ///
     /// # Example
     ///
     /// Check if the transfer is complete.
     ///
     /// ```no_run
-    /// use stm32wl_hal::dma::flags;
+    /// use stm32wl_hal::dma::{flags, DmaCh};
     ///
     /// # let dma = unsafe { stm32wl_hal::dma::AllDma::steal().d1c1 };
     /// let xfer_cpl: bool = dma.flags() & flags::XFER_CPL != 0;
     /// ```
-    pub fn flags(&self) -> u8 {
-        let raw: u32 = unsafe { read_volatile(self.isr) };
-        ((raw >> self.ch.mul(4)) & 0xF) as u8
-    }
+    fn flags(&self) -> u8;
 
-    fn clear_flags(&mut self, flags: u8) {
-        let val: u32 = u32::from(flags & 0xF) << self.ch.mul(4);
-        unsafe { write_volatile(self.ifcr, val) }
-    }
+    /// Clear interrupt flags on the DMA channel.
+    ///
+    /// **Note:** The lower 4 bits of the `flags` argument are used.
+    ///
+    /// # Example
+    ///
+    /// Check and clear all set flags.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::dma::{flags, DmaCh};
+    ///
+    /// # let mut dma = unsafe { stm32wl_hal::dma::AllDma::steal().d1c1 };
+    /// let flags: u8 = dma.flags();
+    /// dma.clear_flags(flags);
+    /// ```
+    fn clear_flags(&mut self, flags: u8);
 
-    pub(crate) fn clear_all_flags(&mut self) {
+    /// Clear all interrupt flags on the DMA channel.
+    #[inline]
+    fn clear_all_flags(&mut self) {
         self.clear_flags(flags::GLOBAL | flags::XFER_CPL | flags::XFER_HLF | flags::XFER_ERR)
-    }
-
-    pub(crate) fn set_periph_addr(&mut self, pa: u32) {
-        unsafe { write_volatile(self.pa, pa) }
-    }
-
-    pub(crate) fn set_mem_addr(&mut self, ma: u32) {
-        unsafe { write_volatile(self.ma, ma) }
-    }
-
-    pub(crate) fn set_num_data_xfer(&mut self, ndt: u32) {
-        unsafe { write_volatile(self.ndt, ndt) }
-    }
-
-    pub(crate) fn set_cr(&mut self, cr: Cr) {
-        unsafe { write_volatile(self.cr, cr.raw()) }
-    }
-
-    pub(crate) fn set_mux_cr_reqid(&mut self, req_id: u8) {
-        unsafe { write_volatile(self.mux_cr, req_id as u32) }
-    }
-
-    /// Returns `true` if the DMA MUX synchronization overrun bit is set for
-    /// this channel.
-    pub fn sync_ovr(&self) -> bool {
-        let csr: u32 = unsafe { read_volatile(MUX_CSR_ADDR as *const u32) };
-        csr >> self.mux_ch & 0b1 == 0b1
-    }
-
-    #[allow(dead_code)]
-    fn clr_sync_ovr(&mut self) {
-        unsafe { write_volatile(MUX_CCFR_ADDR as *mut u32, 1 << self.mux_ch) };
     }
 
     /// Unmask the DMA interrupt in the NVIC.
@@ -216,99 +219,181 @@ impl DmaCh {
     /// * DMA1 channel 7:4 secure and non-secure interrupt (C2IMR2\[6:3\])
     /// * DMA2 channel 7:1 secure and non-secure interrupt (C2IMR2\[14:8\])
     ///   DMAMUX1 overrun interrupt (C2IMR2\[15\])
-    pub unsafe fn unmask_irq(&self) {
-        pac::NVIC::unmask(self.irq)
+    #[inline]
+    unsafe fn unmask_irq(&self) {
+        pac::NVIC::unmask(Self::IRQ)
     }
 
     /// Mask the DMA interrupt in the NVIC.
-    pub fn mask_irq(&self) {
-        pac::NVIC::mask(self.irq)
+    #[inline]
+    fn mask_irq(&self) {
+        pac::NVIC::mask(Self::IRQ)
     }
 }
 
-/// Type marker to indicate a peripheral is not using DMA
-#[derive(Debug)]
-pub struct NoDmaCh {
-    _priv: (),
+macro_rules! dma_ch {
+    ($name:ident, $base:expr, $ch:expr, $irq:ident) => {
+        /// DMA channel
+        #[derive(Debug)]
+        #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+        pub struct $name {
+            pub(crate) dma: Dma<$base, $ch>,
+        }
+
+        impl $name {
+            const fn new() -> Self {
+                Self { dma: Dma::new() }
+            }
+        }
+
+        impl DmaCh for $name {
+            const IRQ: pac::Interrupt = irq_num::$irq;
+
+            #[inline]
+            fn flags(&self) -> u8 {
+                self.dma.flags()
+            }
+
+            #[inline]
+            fn clear_flags(&mut self, flags: u8) {
+                self.dma.clear_flags(flags)
+            }
+        }
+
+        impl sealed::DmaOps for $name {
+            #[inline]
+            fn set_periph_addr(&mut self, pa: u32) {
+                self.dma.set_periph_addr(pa)
+            }
+            #[inline]
+            fn set_mem_addr(&mut self, ma: u32) {
+                self.dma.set_mem_addr(ma)
+            }
+            #[inline]
+            fn set_num_data_xfer(&mut self, ndt: u32) {
+                self.dma.set_num_data_xfer(ndt)
+            }
+            #[inline]
+            fn set_cr(&mut self, cr: Cr) {
+                self.dma.set_cr(cr)
+            }
+            #[inline]
+            fn set_mux_cr_reqid(&mut self, req_id: u8) {
+                self.dma.set_mux_cr_reqid(req_id)
+            }
+            #[inline]
+            fn sync_ovr(&self) -> bool {
+                self.dma.sync_ovr()
+            }
+            #[inline]
+            fn clr_sync_ovr(&mut self) {
+                self.dma.clr_sync_ovr()
+            }
+        }
+    };
 }
 
-impl NoDmaCh {
-    pub(crate) const fn new() -> NoDmaCh {
-        NoDmaCh { _priv: () }
-    }
+#[cfg(any(feature = "stm32wl5x_cm4", feature = "stm32wle5"))]
+mod irq_num {
+    use crate::pac::Interrupt;
+    pub const DMA1_CH1: Interrupt = Interrupt::DMA1_CH1;
+    pub const DMA1_CH2: Interrupt = Interrupt::DMA1_CH2;
+    pub const DMA1_CH3: Interrupt = Interrupt::DMA1_CH3;
+    pub const DMA1_CH4: Interrupt = Interrupt::DMA1_CH4;
+    pub const DMA1_CH5: Interrupt = Interrupt::DMA1_CH5;
+    pub const DMA1_CH6: Interrupt = Interrupt::DMA1_CH6;
+    pub const DMA1_CH7: Interrupt = Interrupt::DMA1_CH7;
+    pub const DMA2_CH1: Interrupt = Interrupt::DMA2_CH1;
+    pub const DMA2_CH2: Interrupt = Interrupt::DMA2_CH2;
+    pub const DMA2_CH3: Interrupt = Interrupt::DMA2_CH3;
+    pub const DMA2_CH4: Interrupt = Interrupt::DMA2_CH4;
+    pub const DMA2_CH5: Interrupt = Interrupt::DMA2_CH5;
+    pub const DMA2_CH6: Interrupt = Interrupt::DMA2_CH6;
+    pub const DMA2_CH7: Interrupt = Interrupt::DMA2_CH7;
 }
+
+#[cfg(feature = "stm32wl5x_cm0p")]
+mod irq_num {
+    use crate::pac::Interrupt;
+    pub const DMA1_CH1: Interrupt = Interrupt::DMA1_CH3_1;
+    pub const DMA1_CH2: Interrupt = Interrupt::DMA1_CH3_1;
+    pub const DMA1_CH3: Interrupt = Interrupt::DMA1_CH3_1;
+    pub const DMA1_CH4: Interrupt = Interrupt::DMA1_CH7_4;
+    pub const DMA1_CH5: Interrupt = Interrupt::DMA1_CH7_4;
+    pub const DMA1_CH6: Interrupt = Interrupt::DMA1_CH7_4;
+    pub const DMA1_CH7: Interrupt = Interrupt::DMA1_CH7_4;
+    pub const DMA2_CH1: Interrupt = Interrupt::DMA2_CH7_1_DMAMUX1_OVR;
+    pub const DMA2_CH2: Interrupt = Interrupt::DMA2_CH7_1_DMAMUX1_OVR;
+    pub const DMA2_CH3: Interrupt = Interrupt::DMA2_CH7_1_DMAMUX1_OVR;
+    pub const DMA2_CH4: Interrupt = Interrupt::DMA2_CH7_1_DMAMUX1_OVR;
+    pub const DMA2_CH5: Interrupt = Interrupt::DMA2_CH7_1_DMAMUX1_OVR;
+    pub const DMA2_CH6: Interrupt = Interrupt::DMA2_CH7_1_DMAMUX1_OVR;
+    pub const DMA2_CH7: Interrupt = Interrupt::DMA2_CH7_1_DMAMUX1_OVR;
+}
+
+dma_ch!(Dma1Ch1, DMA1_BASE, 0, DMA1_CH1);
+dma_ch!(Dma1Ch2, DMA1_BASE, 1, DMA1_CH2);
+dma_ch!(Dma1Ch3, DMA1_BASE, 2, DMA1_CH3);
+dma_ch!(Dma1Ch4, DMA1_BASE, 3, DMA1_CH4);
+dma_ch!(Dma1Ch5, DMA1_BASE, 4, DMA1_CH5);
+dma_ch!(Dma1Ch6, DMA1_BASE, 5, DMA1_CH6);
+dma_ch!(Dma1Ch7, DMA1_BASE, 6, DMA1_CH7);
+dma_ch!(Dma2Ch1, DMA2_BASE, 0, DMA2_CH1);
+dma_ch!(Dma2Ch2, DMA2_BASE, 1, DMA2_CH2);
+dma_ch!(Dma2Ch3, DMA2_BASE, 2, DMA2_CH3);
+dma_ch!(Dma2Ch4, DMA2_BASE, 3, DMA2_CH4);
+dma_ch!(Dma2Ch5, DMA2_BASE, 4, DMA2_CH5);
+dma_ch!(Dma2Ch6, DMA2_BASE, 5, DMA2_CH6);
+dma_ch!(Dma2Ch7, DMA2_BASE, 6, DMA2_CH7);
 
 /// All DMA channels
 #[derive(Debug)]
 pub struct AllDma {
     /// DMA controller 1 channel 1
-    pub d1c1: DmaCh,
+    pub d1c1: Dma1Ch1,
     /// DMA controller 1 channel 2
-    pub d1c2: DmaCh,
+    pub d1c2: Dma1Ch2,
     /// DMA controller 1 channel 3
-    pub d1c3: DmaCh,
+    pub d1c3: Dma1Ch3,
     /// DMA controller 1 channel 4
-    pub d1c4: DmaCh,
+    pub d1c4: Dma1Ch4,
     /// DMA controller 1 channel 5
-    pub d1c5: DmaCh,
+    pub d1c5: Dma1Ch5,
     /// DMA controller 1 channel 6
-    pub d1c6: DmaCh,
+    pub d1c6: Dma1Ch6,
     /// DMA controller 1 channel 7
-    pub d1c7: DmaCh,
+    pub d1c7: Dma1Ch7,
     /// DMA controller 2 channel 1
-    pub d2c1: DmaCh,
+    pub d2c1: Dma2Ch1,
     /// DMA controller 2 channel 2
-    pub d2c2: DmaCh,
+    pub d2c2: Dma2Ch2,
     /// DMA controller 2 channel 3
-    pub d2c3: DmaCh,
+    pub d2c3: Dma2Ch3,
     /// DMA controller 2 channel 4
-    pub d2c4: DmaCh,
+    pub d2c4: Dma2Ch4,
     /// DMA controller 2 channel 5
-    pub d2c5: DmaCh,
+    pub d2c5: Dma2Ch5,
     /// DMA controller 2 channel 6
-    pub d2c6: DmaCh,
+    pub d2c6: Dma2Ch6,
     /// DMA controller 2 channel 7
-    pub d2c7: DmaCh,
+    pub d2c7: Dma2Ch7,
 }
 
-#[cfg(any(feature = "stm32wl5x_cm4", feature = "stm32wle5"))]
-const ALL_DMA: AllDma = unsafe {
-    AllDma {
-        d1c1: DmaCh::new(DmaCtrl::Dma1, 1, pac::Interrupt::DMA1_CH1),
-        d1c2: DmaCh::new(DmaCtrl::Dma1, 2, pac::Interrupt::DMA1_CH2),
-        d1c3: DmaCh::new(DmaCtrl::Dma1, 3, pac::Interrupt::DMA1_CH3),
-        d1c4: DmaCh::new(DmaCtrl::Dma1, 4, pac::Interrupt::DMA1_CH4),
-        d1c5: DmaCh::new(DmaCtrl::Dma1, 5, pac::Interrupt::DMA1_CH5),
-        d1c6: DmaCh::new(DmaCtrl::Dma1, 6, pac::Interrupt::DMA1_CH6),
-        d1c7: DmaCh::new(DmaCtrl::Dma1, 7, pac::Interrupt::DMA1_CH7),
-        d2c1: DmaCh::new(DmaCtrl::Dma2, 1, pac::Interrupt::DMA2_CH1),
-        d2c2: DmaCh::new(DmaCtrl::Dma2, 2, pac::Interrupt::DMA2_CH2),
-        d2c3: DmaCh::new(DmaCtrl::Dma2, 3, pac::Interrupt::DMA2_CH3),
-        d2c4: DmaCh::new(DmaCtrl::Dma2, 4, pac::Interrupt::DMA2_CH4),
-        d2c5: DmaCh::new(DmaCtrl::Dma2, 5, pac::Interrupt::DMA2_CH5),
-        d2c6: DmaCh::new(DmaCtrl::Dma2, 6, pac::Interrupt::DMA2_CH6),
-        d2c7: DmaCh::new(DmaCtrl::Dma2, 7, pac::Interrupt::DMA2_CH7),
-    }
-};
-
-#[cfg(feature = "stm32wl5x_cm0p")]
-const ALL_DMA: AllDma = unsafe {
-    AllDma {
-        d1c1: DmaCh::new(DmaCtrl::Dma1, 1, pac::Interrupt::DMA1_CH3_1),
-        d1c2: DmaCh::new(DmaCtrl::Dma1, 2, pac::Interrupt::DMA1_CH3_1),
-        d1c3: DmaCh::new(DmaCtrl::Dma1, 3, pac::Interrupt::DMA1_CH3_1),
-        d1c4: DmaCh::new(DmaCtrl::Dma1, 4, pac::Interrupt::DMA1_CH7_4),
-        d1c5: DmaCh::new(DmaCtrl::Dma1, 5, pac::Interrupt::DMA1_CH7_4),
-        d1c6: DmaCh::new(DmaCtrl::Dma1, 6, pac::Interrupt::DMA1_CH7_4),
-        d1c7: DmaCh::new(DmaCtrl::Dma1, 7, pac::Interrupt::DMA1_CH7_4),
-        d2c1: DmaCh::new(DmaCtrl::Dma2, 1, pac::Interrupt::DMA2_CH7_1_DMAMUX1_OVR),
-        d2c2: DmaCh::new(DmaCtrl::Dma2, 2, pac::Interrupt::DMA2_CH7_1_DMAMUX1_OVR),
-        d2c3: DmaCh::new(DmaCtrl::Dma2, 3, pac::Interrupt::DMA2_CH7_1_DMAMUX1_OVR),
-        d2c4: DmaCh::new(DmaCtrl::Dma2, 4, pac::Interrupt::DMA2_CH7_1_DMAMUX1_OVR),
-        d2c5: DmaCh::new(DmaCtrl::Dma2, 5, pac::Interrupt::DMA2_CH7_1_DMAMUX1_OVR),
-        d2c6: DmaCh::new(DmaCtrl::Dma2, 6, pac::Interrupt::DMA2_CH7_1_DMAMUX1_OVR),
-        d2c7: DmaCh::new(DmaCtrl::Dma2, 7, pac::Interrupt::DMA2_CH7_1_DMAMUX1_OVR),
-    }
+const ALL_DMA: AllDma = AllDma {
+    d1c1: Dma1Ch1::new(),
+    d1c2: Dma1Ch2::new(),
+    d1c3: Dma1Ch3::new(),
+    d1c4: Dma1Ch4::new(),
+    d1c5: Dma1Ch5::new(),
+    d1c6: Dma1Ch6::new(),
+    d1c7: Dma1Ch7::new(),
+    d2c1: Dma2Ch1::new(),
+    d2c2: Dma2Ch2::new(),
+    d2c3: Dma2Ch3::new(),
+    d2c4: Dma2Ch4::new(),
+    d2c5: Dma2Ch5::new(),
+    d2c6: Dma2Ch6::new(),
+    d2c7: Dma2Ch7::new(),
 };
 
 impl AllDma {
@@ -383,88 +468,5 @@ impl AllDma {
     /// ```
     pub const unsafe fn steal() -> AllDma {
         ALL_DMA
-    }
-}
-
-#[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-pub(crate) mod aio {
-    use core::{
-        sync::atomic::{AtomicU8, Ordering::SeqCst},
-        task::Poll,
-    };
-    use futures_util::task::AtomicWaker;
-
-    #[allow(clippy::declare_interior_mutable_const)]
-    const WAKER: AtomicWaker = AtomicWaker::new();
-    #[allow(clippy::declare_interior_mutable_const)]
-    const FLAGS: AtomicU8 = AtomicU8::new(0);
-
-    static DMA_WAKER: [AtomicWaker; 14] = [WAKER; 14];
-    static DMA_FLAGS: [AtomicU8; 14] = [FLAGS; 14];
-
-    pub fn poll(mux_ch: usize, cx: &mut core::task::Context<'_>) -> Poll<Result<(), super::Error>> {
-        DMA_WAKER[mux_ch].register(cx.waker());
-        match DMA_FLAGS[mux_ch].load(SeqCst) {
-            0 => core::task::Poll::Pending,
-            _ => {
-                DMA_WAKER[mux_ch].take();
-                let flags: u8 = DMA_FLAGS[mux_ch].swap(0, SeqCst);
-                if flags & super::flags::XFER_ERR != 0 {
-                    Poll::Ready(Err(super::Error::Xfer))
-                } else {
-                    Poll::Ready(Ok(()))
-                }
-            }
-        }
-    }
-
-    #[cfg(all(target_arch = "arm", target_os = "none"))]
-    mod irq {
-        use super::{
-            super::{Cr, DmaCh, ALL_DMA},
-            DMA_FLAGS, DMA_WAKER,
-        };
-        use crate::pac::interrupt;
-        use core::sync::atomic::Ordering::SeqCst;
-
-        macro_rules! dma_irq_handler {
-            ($name:ident, $dma:ident) => {
-                #[interrupt]
-                #[allow(non_snake_case)]
-                fn $name() {
-                    let mut dma: DmaCh = ALL_DMA.$dma;
-                    const DMA_IDX: usize = ALL_DMA.$dma.mux_ch as usize;
-
-                    debug_assert_eq!(DMA_FLAGS[DMA_IDX].load(SeqCst), 0);
-
-                    // store result
-                    DMA_FLAGS[DMA_IDX].store(dma.flags(), SeqCst);
-
-                    // disable DMA
-                    dma.set_cr(Cr::DISABLE);
-
-                    // clear flags
-                    dma.clear_all_flags();
-
-                    // wake
-                    DMA_WAKER[DMA_IDX].wake();
-                }
-            };
-        }
-
-        dma_irq_handler!(DMA1_CH1, d1c1);
-        dma_irq_handler!(DMA1_CH2, d1c2);
-        dma_irq_handler!(DMA1_CH3, d1c3);
-        dma_irq_handler!(DMA1_CH4, d1c4);
-        dma_irq_handler!(DMA1_CH5, d1c5);
-        dma_irq_handler!(DMA1_CH6, d1c6);
-        dma_irq_handler!(DMA1_CH7, d1c7);
-        dma_irq_handler!(DMA2_CH1, d2c1);
-        dma_irq_handler!(DMA2_CH2, d2c2);
-        dma_irq_handler!(DMA2_CH3, d2c3);
-        dma_irq_handler!(DMA2_CH4, d2c4);
-        dma_irq_handler!(DMA2_CH5, d2c5);
-        dma_irq_handler!(DMA2_CH6, d2c6);
-        dma_irq_handler!(DMA2_CH7, d2c7);
     }
 }

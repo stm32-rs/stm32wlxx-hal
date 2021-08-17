@@ -1,11 +1,10 @@
 #![no_std]
 #![no_main]
 
-use core::ptr::write_volatile;
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use panic_probe as _;
-use stm32wl_hal::{aes::Aes, cortex_m::peripheral::DWT, pac, rcc};
+use stm32wl_hal::{aes::Aes, cortex_m::peripheral::DWT, pac, rcc, util::reset_cycle_count};
 
 const FREQ: u32 = 48_000_000;
 const CYC_PER_US: u32 = FREQ / 1000 / 1000;
@@ -56,26 +55,6 @@ const PLAINTEXT_CHIPHERTEXT: [(u128, u128); 7] = [
 
 const KEY: [u32; 4] = [0; 4];
 
-#[cfg(feature = "aio")]
-async fn aio_decrypt_ecb_inner() {
-    let mut aes: Aes = unsafe { Aes::steal() };
-    for (plaintext, ciphertext) in PLAINTEXT_CHIPHERTEXT.iter() {
-        let result: [u32; 4] = unwrap!(aes.aio_decrypt_ecb(&KEY, &u128_to_u32(*ciphertext)).await);
-        let plaintext_u32: [u32; 4] = u128_to_u32(*plaintext);
-        defmt::assert_eq!(result, plaintext_u32);
-    }
-}
-
-#[cfg(feature = "aio")]
-async fn aio_encrypt_ecb_inner() {
-    let mut aes: Aes = unsafe { Aes::steal() };
-    for (plaintext, ciphertext) in PLAINTEXT_CHIPHERTEXT.iter() {
-        let result: [u32; 4] = unwrap!(aes.aio_encrypt_ecb(&KEY, &u128_to_u32(*plaintext)).await);
-        let ciphertext_u32: [u32; 4] = u128_to_u32(*ciphertext);
-        defmt::assert_eq!(result, ciphertext_u32);
-    }
-}
-
 #[defmt_test::tests]
 mod tests {
     use super::*;
@@ -88,19 +67,9 @@ mod tests {
         rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC);
         defmt::assert_eq!(rcc::sysclk_hz(&dp.RCC), FREQ);
 
-        #[cfg(feature = "aio")]
-        {
-            let start: usize = stm32wl_hal::cortex_m_rt::heap_start() as usize;
-            let size: usize = 2048; // in bytes
-            unsafe { ate::ALLOCATOR.init(start, size) };
-            unsafe { Aes::unmask_irq() };
-        }
-
         cp.DCB.enable_trace();
         cp.DWT.enable_cycle_counter();
-        // reset the cycle counter
-        const DWT_CYCCNT: usize = 0xE0001004;
-        unsafe { write_volatile(DWT_CYCCNT as *mut u32, 0) };
+        reset_cycle_count(&mut cp.DWT);
 
         Aes::new(dp.AES, &mut dp.RCC)
     }
@@ -121,21 +90,5 @@ mod tests {
             let plaintext_u32: [u32; 4] = u128_to_u32(*plaintext);
             defmt::assert_eq!(result, plaintext_u32);
         }
-    }
-
-    #[test]
-    #[cfg(feature = "aio")]
-    fn aio_encrypt_ecb(_aes: &mut Aes) {
-        let mut executor = ate::Executor::new();
-        executor.spawn(ate::Task::new(aio_encrypt_ecb_inner()));
-        executor.run();
-    }
-
-    #[test]
-    #[cfg(feature = "aio")]
-    fn aio_decrypt_ecb(_aes: &mut Aes) {
-        let mut executor = ate::Executor::new();
-        executor.spawn(ate::Task::new(aio_decrypt_ecb_inner()));
-        executor.run();
     }
 }

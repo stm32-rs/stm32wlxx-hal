@@ -10,16 +10,8 @@ cd "$SCRIPT_DIR/.."
 
 for testsuite in *-testsuite
 do
-    if [[ -v 1 ]]; then
-        cargo test \
-            -p "$testsuite" \
-            --target thumbv7em-none-eabi \
-            --features "$1" \
-            --no-run
-    else
-        cargo test \
-            -p "$testsuite" \
-            --target thumbv7em-none-eabi \
-            --no-run
-    fi
+    cargo test \
+        -p "$testsuite" \
+        --target thumbv7em-none-eabi \
+        --no-run
 done

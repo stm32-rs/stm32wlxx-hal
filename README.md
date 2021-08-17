@@ -14,6 +14,10 @@ There should be enough code for very basic:
 * LoRa TX + RX
 * (G)FSK TX + RX
 * SPI
+* GPIO
+* UART
+* ADC sampling
+* DAC output
 * ECDSA signing
 * ECDSA verification
 * Cryptographically secure random number generation
@@ -27,6 +31,10 @@ This is better than nothing for other people developing on these new chips.
 I am also hoping to find other people using these chips with rust who want to
 collaborate on creating a HAL :)
 
+## Usage
+
+See [hal/README.md](hal/README.md).
+
 ## On-Target Tests
 
 Workspaces with `testsuite` in the name denote an on-target test.
@@ -38,7 +46,7 @@ On-target tests use the NUCLEO-WL55JC2, you can find a place purchase this
 
 The on-target tests use [defmt-test].
 
-* `cargo install --git https://github.com/knurling-rs/probe-run.git`
+* `cargo install --git https://github.com/newAM/probe-run.git`
   ([probe-run], [newAM/probe-run])
     * **Note:** My fork contains unreleased fixes for the stm32wl,
       see [#74] for details.
@@ -107,26 +115,6 @@ cargo run-ex gpio-blink
 * [stm32wl55cc datasheet](https://www.st.com/resource/en/datasheet/stm32wl55cc.pdf)
 * [stm32wl55xx stm32wl54xx erratum](https://www.st.com/resource/en/errata_sheet/es0500-stm32wl55xx-stm32wl54xx-device-errata-stmicroelectronics.pdf)
 * [stm32wle5xx stm32wle4xx erratum](https://www.st.com/resource/en/errata_sheet/es0506-stm32wle5xx-stm32wle4xx-device-errata-stmicroelectronics.pdf)
-
-## async
-
-There is opt-in experimental `async` code in the hal.
-The `async` code is more experimental and unstable then the rest of this crate
-(which is already experimental and unstable).
-
-There is no asynchronous executor provided, you must build your own.
-
-`async` support may be dropped at any time for any reason; if this feature is
-important to you please let me know.
-
-Enabling `async` requires:
-1. nightly rust (non-async code compiles on stable)
-2. `--features aio`
-
-For example, if you wanted to run the AES testsuite with AIO you would use:
-```text
-cargo +nightly test -p aes-testsuite --target thumbv7em-none-eabi --features aio
-```
 
 [defmt-test]: https://crates.io/crates/defmt-test
 [flip-link]: https://github.com/knurling-rs/flip-link

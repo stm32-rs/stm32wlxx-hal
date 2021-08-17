@@ -38,19 +38,6 @@ pub enum Error {
     Clock,
 }
 
-impl Error {
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    fn from_sr(sr: u32) -> Result<(), Error> {
-        if sr & (1 << 5) != 0 {
-            Err(Error::Clock)
-        } else if sr & (1 << 6) != 0 {
-            Err(Error::Seed)
-        } else {
-            Ok(())
-        }
-    }
-}
-
 impl From<Error> for rand_core::Error {
     fn from(e: Error) -> Self {
         match e {
@@ -456,88 +443,6 @@ impl Rng {
         Ok(u128::from_le_bytes(buf))
     }
 
-    /// Try to fill the destination buffer with random data, asynchronously.
-    ///
-    /// This is the native data size for the RNG.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     pac,
-    ///     rng::{ClkSrc, Rng},
-    /// };
-    ///
-    /// # async fn doctest() -> Result<(), stm32wl_hal::rng::Error> {
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// Rng::set_clock_source(&mut dp.RCC, ClkSrc::MSI);
-    /// let mut rng = Rng::new(dp.RNG, &mut dp.RCC);
-    ///
-    /// let mut nonce: [u32; 4] = [0; 4];
-    /// rng.aio_try_fill_u32(&mut nonce).await?;
-    /// # Ok(()) }
-    /// ```
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    #[cfg_attr(
-        docsrs,
-        doc(cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p"))))
-    )]
-    pub async fn aio_try_fill_u32(&mut self, dest: &mut [u32]) -> Result<(), Error> {
-        for dw in dest {
-            let sr = self.rng.sr.read();
-            if sr.drdy().bit_is_set() {
-                *dw = self.rng.dr.read().bits();
-            } else {
-                self.rng.cr.modify(|_, w| w.ie().enabled());
-                match futures::future::poll_fn(aio::poll).await {
-                    Err(Error::Seed) => self.recover_from_noise_error()?,
-                    Err(Error::Clock) => return Err(Error::Clock),
-                    Ok(_) => (),
-                }
-            }
-        }
-        Ok(())
-    }
-
-    /// Try to fill the destination buffer with random data, asynchronously.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     pac,
-    ///     rng::{ClkSrc, Rng},
-    /// };
-    ///
-    /// # async fn doctest() -> Result<(), stm32wl_hal::rng::Error> {
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// Rng::set_clock_source(&mut dp.RCC, ClkSrc::MSI);
-    /// let mut rng = Rng::new(dp.RNG, &mut dp.RCC);
-    ///
-    /// let mut nonce: [u8; 16] = [0; 16];
-    /// rng.aio_try_fill_u8(&mut nonce).await?;
-    /// # Ok(()) }
-    /// ```
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    #[cfg_attr(
-        docsrs,
-        doc(cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p"))))
-    )]
-    pub async fn aio_try_fill_u8(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-        for chunk in dest.chunks_mut(4) {
-            let mut entropy: [u32; 1] = [0];
-            self.aio_try_fill_u32(&mut entropy).await?;
-
-            chunk
-                .iter_mut()
-                .enumerate()
-                .for_each(|(idx, byte)| *byte = entropy[0].to_be_bytes()[idx])
-        }
-        Ok(())
-    }
-
     // Reference manual section 22.3.7 "Error management"
     fn recover_from_noise_error(&mut self) -> Result<(), Error> {
         // software reset by writing CONDRST
@@ -590,51 +495,3 @@ impl rand_core::RngCore for Rng {
 }
 
 impl rand_core::CryptoRng for Rng {}
-
-#[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-mod aio {
-    use core::{
-        sync::atomic::{AtomicU32, Ordering::SeqCst},
-        task::Poll,
-    };
-    use futures_util::task::AtomicWaker;
-
-    static RNG_WAKER: AtomicWaker = AtomicWaker::new();
-    static RNG_RESULT: AtomicU32 = AtomicU32::new(0);
-
-    pub fn poll(cx: &mut core::task::Context<'_>) -> Poll<Result<(), super::Error>> {
-        RNG_WAKER.register(cx.waker());
-        match RNG_RESULT.load(SeqCst) {
-            0 => core::task::Poll::Pending,
-            _ => {
-                RNG_WAKER.take();
-                let sr: u32 = RNG_RESULT.swap(0, SeqCst);
-                Poll::Ready(super::Error::from_sr(sr))
-            }
-        }
-    }
-
-    #[cfg(all(target_arch = "arm", target_os = "none"))]
-    mod irq {
-        use super::{SeqCst, RNG_RESULT, RNG_WAKER};
-        use crate::pac::{self, interrupt};
-
-        #[interrupt]
-        #[allow(non_snake_case)]
-        fn TRUE_RNG() {
-            debug_assert_eq!(RNG_RESULT.load(SeqCst), 0);
-
-            let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
-
-            // store result
-            RNG_RESULT.store(dp.RNG.sr.read().bits(), SeqCst);
-
-            // disable IRQs
-            dp.RNG.cr.modify(|_, w| w.ie().disabled());
-            // clear IRQ status
-            dp.RNG.sr.write(|w| w.seis().clear_bit().ceis().clear_bit());
-
-            RNG_WAKER.wake();
-        }
-    }
-}

@@ -1,6 +1,6 @@
 [package]
-authors = ["Alex M. <alexmgit@protonmail.com>"]
-name = "dac-testsuite"
+authors = ["Alex Martens <alexmgit@protonmail.com>"]
+name = "uart-testsuite"
 publish = false
 edition = "2018"
 version = "0.1.0"
@@ -10,6 +10,7 @@ name = "test"
 harness = false
 
 [dependencies]
+nb = "1"
 defmt = "0.2"
 defmt-rtt = "0.2"
 defmt-test = "0.2"

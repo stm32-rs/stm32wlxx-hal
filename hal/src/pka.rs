@@ -1,40 +1,77 @@
 //! Public key accelerator
+//!
+//! Quickstart:
+//!
+//! * [ECDSA signing](Pka::ecdsa_sign)
+//! * [ECDSA verify](Pka::ecdsa_verify)
+//!
+//! # Alternatives
+//!
+//! The [p256-cortex-m4] crate offers an assembly implementation of P256 that is
+//! about 10x faster then the hardware.
+//!
+//! # ECDSA key pair generation
+//!
+//! Generate a private key for [`NIST_P256`](curve::NIST_P256):
+//!
+//! ```console
+//! $ openssl ecparam -genkey -name prime256v1 -out key.pem
+//! $ openssl ec -in key.pem -noout -text
+//! read EC key
+//! Private-Key: (256 bit)
+//! priv:
+//!     49:ac:87:27:ce:e8:74:84:fe:6d:fd:a5:10:23:8a:
+//!     d4:11:ac:e8:fe:59:3a:8c:b7:04:92:d6:59:db:81:
+//!     80:2a
+//! pub:
+//!     04:fa:65:57:59:de:c3:90:28:96:46:0a:43:2b:ae:
+//!     1d:00:91:26:e1:b4:88:78:9f:f4:ef:6b:9a:9b:de:
+//!     1b:c3:63:8f:a0:2a:c4:c4:21:ca:88:4f:06:51:f4:
+//!     e9:85:e3:cf:d0:af:40:69:cc:87:f3:a8:8a:8e:95:
+//!     e7:55:6c:ed:97
+//! ASN1 OID: prime256v1
+//! NIST CURVE: P-256
+//! ```
+//!
+//! The first `04` on the public key is encoding information, expressed in rust
+//! that keypair becomes this:
+//!
+//! ```
+//! use stm32wl_hal::pka::EcdsaPublicKey;
+//!
+//! const PRIV_KEY: [u32; 8] = [
+//!     0x49ac8727, 0xcee87484, 0xfe6dfda5, 0x10238ad4, 0x11ace8fe, 0x593a8cb7, 0x0492d659,
+//!     0xdb81802a,
+//! ];
+//!
+//! const CURVE_PT_X: [u32; 8] = [
+//!     0xfa655759, 0xdec39028, 0x96460a43, 0x2bae1d00, 0x9126e1b4, 0x88789ff4, 0xef6b9a9b,
+//!     0xde1bc363,
+//! ];
+//! const CURVE_PT_Y: [u32; 8] = [
+//!     0x8fa02ac4, 0xc421ca88, 0x4f0651f4, 0xe985e3cf, 0xd0af4069, 0xcc87f3a8, 0x8a8e95e7,
+//!     0x556ced97,
+//! ];
+//! let pub_key: EcdsaPublicKey<8> = EcdsaPublicKey {
+//!     curve_pt_x: &CURVE_PT_X,
+//!     curve_pt_y: &CURVE_PT_Y,
+//! };
+//! ```
+//!
+//! Use this command to find the name of other curves:
+//!
+//! ```bash
+//! openssl ecparam -list_curves
+//! ```
+//!
+//! [p256-cortex-m4]: (https://crates.io/crates/p256-cortex-m4)
 
-use crate::pac;
-
+use crate::pac::{self, pka::cr::MODE_A};
 use core::{
     mem::size_of,
     ptr::{read_volatile, write_volatile},
-    sync::atomic::{compiler_fence, Ordering::SeqCst},
 };
-
-/// PKA errors.
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-enum Error {
-    /// Address access is out of range (unmapped address).
-    Address,
-    /// An AHB access to the PKA RAM occurred while the PKA core was computing
-    /// and using its internal RAM.
-    /// (AHB PKA_RAM access are not allowed while PKA operation is in progress).
-    Ram,
-}
-
-impl Error {
-    #[cfg_attr(
-        any(not(feature = "aio"), feature = "stm32wl5x_cm0p"),
-        allow(dead_code)
-    )]
-    pub const fn from_sr(raw: u32) -> Result<(), Error> {
-        if raw & 1 << 19 != 0 {
-            Err(Error::Ram)
-        } else if raw & 1 << 20 != 0 {
-            Err(Error::Address)
-        } else {
-            Ok(())
-        }
-    }
-}
+use nb;
 
 /// Errors from an ECDSA signing operation.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -50,6 +87,11 @@ pub enum EcdsaSignError {
     Rzero,
     /// Signature part S is equal to 0.
     Szero,
+    /// PKA mode does not match the expected mode.
+    Mode {
+        /// Actual mode bits
+        mode: u8,
+    },
     /// Unknown result code.
     Unknown {
         /// Unknown result code bits.
@@ -57,23 +99,18 @@ pub enum EcdsaSignError {
     },
 }
 
-impl From<Error> for EcdsaSignError {
-    fn from(pka: Error) -> Self {
-        match pka {
-            Error::Address => EcdsaSignError::Address,
-            Error::Ram => EcdsaSignError::Ram,
-        }
-    }
-}
-
 impl EcdsaSignError {
-    const fn from_raw(raw: u32) -> Result<(), EcdsaSignError> {
+    const fn from_raw(raw: u32) -> nb::Result<(), EcdsaSignError> {
         match raw {
             0 => Ok(()),
-            1 => Err(EcdsaSignError::Rzero),
-            2 => Err(EcdsaSignError::Szero),
-            _ => Err(EcdsaSignError::Unknown { bits: raw }),
+            1 => Err(nb::Error::Other(EcdsaSignError::Rzero)),
+            2 => Err(nb::Error::Other(EcdsaSignError::Szero)),
+            _ => Err(nb::Error::Other(EcdsaSignError::Unknown { bits: raw })),
         }
+    }
+
+    const fn mode(mode: u8) -> nb::Result<(), EcdsaSignError> {
+        Err(nb::Error::Other(EcdsaSignError::Mode { mode }))
     }
 }
 
@@ -89,23 +126,23 @@ pub enum EcdsaVerifyError {
     Ram,
     /// Invalid signature.
     Invalid,
-}
-
-impl From<Error> for EcdsaVerifyError {
-    fn from(pka: Error) -> Self {
-        match pka {
-            Error::Address => EcdsaVerifyError::Address,
-            Error::Ram => EcdsaVerifyError::Ram,
-        }
-    }
+    /// PKA mode does not match the expected mode.
+    Mode {
+        /// Actual mode bits
+        mode: u8,
+    },
 }
 
 impl EcdsaVerifyError {
-    const fn from_raw(raw: u32) -> Result<(), EcdsaVerifyError> {
+    const fn from_raw(raw: u32) -> nb::Result<(), EcdsaVerifyError> {
         match raw {
             0 => Ok(()),
-            _ => Err(EcdsaVerifyError::Invalid),
+            _ => Err(nb::Error::Other(EcdsaVerifyError::Invalid)),
         }
+    }
+
+    const fn mode(mode: u8) -> nb::Result<(), EcdsaVerifyError> {
+        Err(nb::Error::Other(EcdsaVerifyError::Mode { mode }))
     }
 }
 
@@ -159,54 +196,53 @@ impl From<PkaOpcode> for u8 {
     }
 }
 
+const BASE: usize = 0x5800_2000;
+const RAM_BASE: usize = BASE + 0x400;
+const RAM_NUM_DW: usize = 894;
+
+// ECDSA sign input addresses
+const ECDSA_SIGN_N_LEN: usize = BASE + 0x400;
+const ECDSA_SIGN_P_LEN: usize = BASE + 0x404;
+const ECDSA_SIGN_A_SIGN: usize = BASE + 0x408;
+const ECDSA_SIGN_A: usize = BASE + 0x40C;
+const ECDSA_SIGN_P: usize = BASE + 0x460;
+const ECDSA_SIGN_K: usize = BASE + 0x508;
+const ECDSA_SIGN_X: usize = BASE + 0x55C;
+const ECDSA_SIGN_Y: usize = BASE + 0x5B0;
+const ECDSA_SIGN_Z: usize = BASE + 0xDE8;
+const ECDSA_SIGN_D: usize = BASE + 0xE3C;
+const ECDSA_SIGN_N: usize = BASE + 0xE94;
+
+// ECDSA sign output addresses
+const ECDSA_SIGN_OUT_R: usize = BASE + 0x700;
+const ECDSA_SIGN_OUT_S: usize = BASE + 0x754;
+const ECDSA_SIGN_OUT_RESULT: usize = BASE + 0xEE8;
+
+// ECDSA verify input addresses
+const ECDSA_VERIFY_N_LEN: usize = BASE + 0x404;
+const ECDSA_VERIFY_P_LEN: usize = BASE + 0x4B4;
+const ECDSA_VERIFY_A_SIGN: usize = BASE + 0x45C;
+const ECDSA_VERIFY_A: usize = BASE + 0x460;
+const ECDSA_VERIFY_P: usize = BASE + 0x4B8;
+const ECDSA_VERIFY_X: usize = BASE + 0x5E8;
+const ECDSA_VERIFY_Y: usize = BASE + 0x63C;
+const ECDSA_VERIFY_XQ: usize = BASE + 0xF40;
+const ECDSA_VERIFY_YQ: usize = BASE + 0xF94;
+const ECDSA_VERIFY_R: usize = BASE + 0x1098;
+const ECDSA_VERIFY_S: usize = BASE + 0xA44;
+const ECDSA_VERIFY_Z: usize = BASE + 0xFE8;
+const ECDSA_VERIFY_N: usize = BASE + 0xD5C;
+
+// ECDSA verify output addresses
+const ECDSA_VERIFY_OUT: usize = BASE + 0x5B0;
+
 /// PKA driver.
-///
-/// Created with [`Pka::new`].
+#[derive(Debug)]
 pub struct Pka {
     pka: pac::PKA,
 }
 
 impl Pka {
-    const BASE: usize = 0x5800_2000;
-    const RAM_BASE: usize = Self::BASE + 0x400;
-    const RAM_NUM_DW: usize = 894;
-
-    // ECDSA sign input addresses
-    const ECDSA_SIGN_N_LEN: usize = Self::BASE + 0x400;
-    const ECDSA_SIGN_P_LEN: usize = Self::BASE + 0x404;
-    const ECDSA_SIGN_A_SIGN: usize = Self::BASE + 0x408;
-    const ECDSA_SIGN_A: usize = Self::BASE + 0x40C;
-    const ECDSA_SIGN_P: usize = Self::BASE + 0x460;
-    const ECDSA_SIGN_K: usize = Self::BASE + 0x508;
-    const ECDSA_SIGN_X: usize = Self::BASE + 0x55C;
-    const ECDSA_SIGN_Y: usize = Self::BASE + 0x5B0;
-    const ECDSA_SIGN_Z: usize = Self::BASE + 0xDE8;
-    const ECDSA_SIGN_D: usize = Self::BASE + 0xE3C;
-    const ECDSA_SIGN_N: usize = Self::BASE + 0xE94;
-
-    // ECDSA sign output addresses
-    const ECDSA_SIGN_OUT_R: usize = Self::BASE + 0x700;
-    const ECDSA_SIGN_OUT_S: usize = Self::BASE + 0x754;
-    const ECDSA_SIGN_OUT_RESULT: usize = Self::BASE + 0xEE8;
-
-    // ECDSA verify input addresses
-    const ECDSA_VERIFY_N_LEN: usize = Self::BASE + 0x404;
-    const ECDSA_VERIFY_P_LEN: usize = Self::BASE + 0x4B4;
-    const ECDSA_VERIFY_A_SIGN: usize = Self::BASE + 0x45C;
-    const ECDSA_VERIFY_A: usize = Self::BASE + 0x460;
-    const ECDSA_VERIFY_P: usize = Self::BASE + 0x4B8;
-    const ECDSA_VERIFY_X: usize = Self::BASE + 0x5E8;
-    const ECDSA_VERIFY_Y: usize = Self::BASE + 0x63C;
-    const ECDSA_VERIFY_XQ: usize = Self::BASE + 0xF40;
-    const ECDSA_VERIFY_YQ: usize = Self::BASE + 0xF94;
-    const ECDSA_VERIFY_R: usize = Self::BASE + 0x1098;
-    const ECDSA_VERIFY_S: usize = Self::BASE + 0xA44;
-    const ECDSA_VERIFY_Z: usize = Self::BASE + 0xFE8;
-    const ECDSA_VERIFY_N: usize = Self::BASE + 0xD5C;
-
-    // ECDSA verify output addresses
-    const ECDSA_VERIFY_OUT: usize = Self::BASE + 0x5B0;
-
     /// Create a new PKA driver from a PKA peripheral.
     ///
     /// This will enable clocks and reset the PKA peripheral.
@@ -216,18 +252,12 @@ impl Pka {
     /// ```no_run
     /// use stm32wl_hal::{pac, pka::Pka};
     ///
-    /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
-    ///
-    /// let mut pka = Pka::new(dp.PKA, &mut rcc);
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut pka = Pka::new(dp.PKA, &mut dp.RCC);
     /// ```
     pub fn new(pka: pac::PKA, rcc: &mut pac::RCC) -> Pka {
         Self::enable_clock(rcc);
-        rcc.ahb3rstr.modify(|_, w| w.pkarst().set_bit());
-        rcc.ahb3rstr.modify(|_, w| w.pkarst().clear_bit());
-
-        debug_assert_eq!(pka.cr.read().bits(), 0);
-        debug_assert_eq!(pka.sr.read().bits(), 0);
+        unsafe { Self::pulse_reset(rcc) };
 
         // When the PKA peripheral reset signal is released PKA RAM is cleared
         // automatically, taking 894 clock cycles.
@@ -237,10 +267,13 @@ impl Pka {
             pka.cr.write(|w| w.en().set_bit());
         }
 
-        debug_assert_eq!(pka.cr.read().bits(), 1);
-        debug_assert_eq!(pka.sr.read().bits(), 0);
-
         Pka { pka }
+    }
+
+    /// Returns `true` if the PKA is enabled.
+    #[inline]
+    pub fn is_enabled(&mut self) -> bool {
+        self.pka.cr.read().en().is_enabled()
     }
 
     /// Free the PKA peripheral from the driver.
@@ -250,13 +283,11 @@ impl Pka {
     /// ```no_run
     /// use stm32wl_hal::{pac, pka::Pka};
     ///
-    /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
-    /// let pka = dp.PKA;
-    ///
-    /// let mut pka_driver = Pka::new(pka, &mut rcc);
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let pka: pac::PKA = dp.PKA;
+    /// let pka: Pka = Pka::new(pka, &mut dp.RCC);
     /// // ... use PKA
-    /// let pka = pka_driver.free();
+    /// let pka: pac::PKA = pka.free();
     /// ```
     pub fn free(self) -> pac::PKA {
         self.pka
@@ -286,19 +317,29 @@ impl Pka {
     ///
     /// [`new`]: Pka::new
     pub unsafe fn steal() -> Pka {
-        let dp: pac::Peripherals = pac::Peripherals::steal();
-        Pka { pka: dp.PKA }
+        Pka {
+            pka: pac::Peripherals::steal().PKA,
+        }
     }
 
     /// Disable the PKA clock.
+    #[inline]
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.ahb3enr.modify(|_, w| w.pkaen().disabled());
     }
 
     /// Enable the PKA clock.
+    #[inline]
     pub fn enable_clock(rcc: &mut pac::RCC) {
         rcc.ahb3enr.modify(|_, w| w.pkaen().enabled());
         rcc.ahb3enr.read(); // delay after an RCC peripheral clock enabling
+    }
+
+    /// Reset the PKA.
+    #[inline]
+    pub unsafe fn pulse_reset(rcc: &mut pac::RCC) {
+        rcc.ahb3rstr.modify(|_, w| w.pkarst().set_bit());
+        rcc.ahb3rstr.modify(|_, w| w.pkarst().clear_bit());
     }
 
     /// Unmask the PKA IRQ in the NVIC.
@@ -315,11 +356,13 @@ impl Pka {
     /// ```
     #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
     #[cfg_attr(docsrs, doc(cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))))]
+    #[inline]
     pub unsafe fn unmask_irq() {
         pac::NVIC::unmask(pac::Interrupt::PKA)
     }
 
-    fn clear_all_faults(&mut self) {
+    #[inline]
+    fn clear_all_flags(&mut self) {
         #[rustfmt::skip]
         self.pka.clrfr.write(|w| {
             w
@@ -329,224 +372,212 @@ impl Pka {
         });
     }
 
-    fn zero_all_ram(&mut self) {
-        for dw in 0..Self::RAM_NUM_DW {
-            debug_assert_eq!(self.pka.sr.read().bits(), 0);
-            unsafe { write_volatile((dw * 4 + Self::RAM_BASE) as *mut u32, 0) }
-        }
+    fn zero_ram(&mut self) {
+        (0..RAM_NUM_DW)
+            .into_iter()
+            .for_each(|dw| unsafe { write_volatile((dw * 4 + RAM_BASE) as *mut u32, 0) });
     }
 
-    unsafe fn write_buf_to_ram(&mut self, offset: usize, buf: &[u32]) {
-        compiler_fence(SeqCst);
+    unsafe fn write_ram(&mut self, offset: usize, buf: &[u32]) {
+        // asserts are for internal correctness, should not be accessible by users
         debug_assert_eq!(offset % 4, 0);
         debug_assert!(offset + buf.len() * size_of::<u32>() < 0x5800_33FF);
         buf.iter().rev().enumerate().for_each(|(idx, &dw)| {
             write_volatile((offset + idx * size_of::<u32>()) as *mut u32, dw)
         });
-        compiler_fence(SeqCst)
     }
 
-    unsafe fn read_buf_from_ram(&mut self, offset: usize, buf: &mut [u32]) {
-        compiler_fence(SeqCst);
+    unsafe fn read_ram(&mut self, offset: usize, buf: &mut [u32]) {
+        // asserts are for internal correctness, should not be accessible by users
         debug_assert_eq!(offset % 4, 0);
         debug_assert!(offset + buf.len() * size_of::<u32>() < 0x5800_33FF);
         buf.iter_mut().rev().enumerate().for_each(|(idx, dw)| {
             *dw = read_volatile((offset + idx * size_of::<u32>()) as *const u32);
         });
-        compiler_fence(SeqCst)
     }
 
-    fn ecdsa_sign_set<const MODULUS_SIZE: usize, const PRIME_ORDER_SIZE: usize>(
-        &mut self,
-        curve: &EllipticCurve<MODULUS_SIZE, PRIME_ORDER_SIZE>,
-        nonce: &[u32; PRIME_ORDER_SIZE],
-        private_key: &[u32; PRIME_ORDER_SIZE],
-        hash: &[u32; PRIME_ORDER_SIZE],
-    ) {
-        debug_assert!(self.pka.cr.read().en().bit_is_set());
-        debug_assert_eq!(self.pka.sr.read().bits(), 0);
-        let n_length: u32 = (PRIME_ORDER_SIZE * size_of::<u32>() * 8) as u32;
-        let p_length: u32 = (MODULUS_SIZE * size_of::<u32>() * 8) as u32;
-
-        unsafe {
-            write_volatile(Self::ECDSA_SIGN_N_LEN as *mut u32, n_length);
-            write_volatile(Self::ECDSA_SIGN_P_LEN as *mut u32, p_length);
-            write_volatile(Self::ECDSA_SIGN_A_SIGN as *mut u32, curve.coef_sign.into());
-            self.write_buf_to_ram(Self::ECDSA_SIGN_A, &curve.coef);
-            self.write_buf_to_ram(Self::ECDSA_SIGN_P, &curve.modulus);
-            self.write_buf_to_ram(Self::ECDSA_SIGN_K, nonce);
-            self.write_buf_to_ram(Self::ECDSA_SIGN_X, &curve.base_point_x);
-            self.write_buf_to_ram(Self::ECDSA_SIGN_Y, &curve.base_point_y);
-            self.write_buf_to_ram(Self::ECDSA_SIGN_Z, hash);
-            self.write_buf_to_ram(Self::ECDSA_SIGN_D, private_key);
-            self.write_buf_to_ram(Self::ECDSA_SIGN_N, &curve.prime_order);
-        }
-    }
-
-    fn process(&mut self, opcode: PkaOpcode) -> Result<(), Error> {
-        debug_assert!(self.pka.sr.read().procendf().bit_is_clear());
-
+    #[inline]
+    fn start_process(&mut self, mode: MODE_A) {
         #[rustfmt::skip]
-        self.pka.cr.write(|w| unsafe {
-            w
-                .addrerrie().disabled()
-                .ramerrie().disabled()
-                .procendie().disabled()
-                .mode().bits(opcode.into())
-                .start().set_bit()
-                .en().set_bit()
-        });
-
-        let mut attempts = 0;
-        loop {
-            let sr = self.pka.sr.read();
-            if sr.addrerrf().bit_is_set() {
-                return Err(Error::Address);
-            } else if sr.ramerrf().bit_is_set() {
-                return Err(Error::Ram);
-            } else if sr.procendf().bit_is_set() {
-                break;
-            } else {
-                attempts += 1;
-            }
-
-            // TODO: Return a timeout error.
-            // TODO: Accept a timeout argument.
-            if attempts >= 2_000_000 {
-                panic!(
-                    "Timeout sr=0x{:X} busy={} addrerrf={} ramerrf={} procendf={}",
-                    sr.bits(),
-                    sr.busy().bits(),
-                    sr.addrerrf().bits(),
-                    sr.ramerrf().bits(),
-                    sr.procendf().bits()
-                )
-            }
-        }
-
-        debug_assert!(self.pka.sr.read().busy().bit_is_clear());
-        self.clear_all_faults();
-        Ok(())
-    }
-
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    async fn aio_process(&mut self, opcode: PkaOpcode) -> Result<(), Error> {
-        debug_assert!(self.pka.sr.read().procendf().bit_is_clear());
-
-        #[rustfmt::skip]
-        self.pka.cr.write(|w| unsafe {
+        self.pka.cr.write(|w| {
             w
                 .addrerrie().enabled()
                 .ramerrie().enabled()
                 .procendie().enabled()
-                .mode().bits(opcode.into())
+                .mode().variant(mode)
                 .start().set_bit()
                 .en().set_bit()
         });
-
-        futures::future::poll_fn(aio::poll).await
     }
 
     /// ECDSA (Ellipctic Curve Digital Signature Algorithm) signing.
+    ///
+    /// This is the blocking ECDSA sign method, equivalent to calling
+    /// [`ecdsa_sign_start`](Self::ecdsa_sign_start) then polling
+    /// [`ecdsa_sign_result`](Self::ecdsa_sign_result).
+    ///
+    /// ```no_run
+    /// # let mut pka = unsafe { stm32wl_hal::pka::Pka::steal() };
+    /// # let curve = stm32wl_hal::pka::curve::NIST_P256;
+    /// # let nonce: [u32; 8] = [0; 8];
+    /// # let priv_key: [u32; 8] = [0; 8];
+    /// # let hash: [u32; 8] = [0; 8];
+    /// # let mut r_sign: [u32; 8] = [0; 8];
+    /// # let mut s_sign: [u32; 8] = [0; 8];
+    /// // blocking
+    /// pka.ecdsa_sign(&curve, &nonce, &priv_key, &hash, &mut r_sign, &mut s_sign);
+    ///
+    /// // non-blocking
+    /// pka.ecdsa_sign_start(&curve, &nonce, &priv_key, &hash)?;
+    /// nb::block!(pka.ecdsa_sign_result(&mut r_sign, &mut s_sign))?;
+    /// # Ok::<(), stm32wl_hal::pka::EcdsaSignError>(())
+    /// ```
+    ///
+    /// # Computation Times
+    ///
+    /// | Modulus Length (bits) | Cycles   | Seconds at 48MHz |
+    /// |-----------------------|----------|------------------|
+    /// | 160                   | 1760000  | 0.037            |
+    /// | 192                   | 2664000  | 0.056            |
+    /// | 256                   | 5249000  | 0.109            |
+    /// | 320                   | 9016000  | 0.188            |
+    /// | 384                   | 14596000 | 0.304            |
+    /// | 512                   | 30618000 | 0.638            |
+    /// | 521                   | 35540000 | 0.740            |
     pub fn ecdsa_sign<const MODULUS_SIZE: usize, const PRIME_ORDER_SIZE: usize>(
         &mut self,
         curve: &EllipticCurve<MODULUS_SIZE, PRIME_ORDER_SIZE>,
         nonce: &[u32; PRIME_ORDER_SIZE],
-        private_key: &[u32; PRIME_ORDER_SIZE],
+        priv_key: &[u32; PRIME_ORDER_SIZE],
         hash: &[u32; PRIME_ORDER_SIZE],
-        sig_buf: &mut EcdsaSignature<MODULUS_SIZE>,
+        r_sign: &mut [u32; MODULUS_SIZE],
+        s_sign: &mut [u32; MODULUS_SIZE],
     ) -> Result<(), EcdsaSignError> {
-        self.ecdsa_sign_set(curve, nonce, private_key, hash);
-        if let Err(e) = self.process(PkaOpcode::EcdsaSign) {
-            self.zero_all_ram();
-            Err(e.into())
-        } else {
-            unsafe {
-                self.read_buf_from_ram(Self::ECDSA_SIGN_OUT_R, &mut sig_buf.r_sign);
-                self.read_buf_from_ram(Self::ECDSA_SIGN_OUT_S, &mut sig_buf.s_sign);
-            }
-
-            let result: u32 = unsafe { read_volatile(Self::ECDSA_SIGN_OUT_RESULT as *const u32) };
-            if result != 0 {
-                // Reference manual table 163 "ECDSA sign - Outputs":
-                // If error output is different from zero the content of the PKA
-                // memory should be cleared to avoid leaking information about
-                // the private key.
-                self.zero_all_ram();
-            }
-            EcdsaSignError::from_raw(result)
-        }
+        self.ecdsa_sign_start(curve, nonce, priv_key, hash)?;
+        nb::block!(self.ecdsa_sign_result(r_sign, s_sign))
     }
 
-    /// ECDSA (Ellipctic Curve Digital Signature Algorithm) signing.
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    #[cfg_attr(
-        docsrs,
-        doc(cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p"))))
-    )]
-    pub async fn aio_ecdsa_sign<const MODULUS_SIZE: usize, const PRIME_ORDER_SIZE: usize>(
+    /// Start an ECDSA signing operation.
+    ///
+    /// This will enable all the PKA IRQs.
+    ///
+    /// Use the [`ecdsa_sign_result`](Self::ecdsa_sign_result) method to poll
+    /// for completion, or to get the result in an interrupt handler.
+    pub fn ecdsa_sign_start<const MODULUS_SIZE: usize, const PRIME_ORDER_SIZE: usize>(
         &mut self,
         curve: &EllipticCurve<MODULUS_SIZE, PRIME_ORDER_SIZE>,
         nonce: &[u32; PRIME_ORDER_SIZE],
-        private_key: &[u32; PRIME_ORDER_SIZE],
+        priv_key: &[u32; PRIME_ORDER_SIZE],
         hash: &[u32; PRIME_ORDER_SIZE],
-        sig_buf: &mut EcdsaSignature<MODULUS_SIZE>,
     ) -> Result<(), EcdsaSignError> {
-        self.ecdsa_sign_set(curve, nonce, private_key, hash);
-        if let Err(e) = self.aio_process(PkaOpcode::EcdsaSign).await {
-            self.zero_all_ram();
-            Err(e.into())
-        } else {
-            unsafe {
-                self.read_buf_from_ram(Self::ECDSA_SIGN_OUT_R, &mut sig_buf.r_sign);
-                self.read_buf_from_ram(Self::ECDSA_SIGN_OUT_S, &mut sig_buf.s_sign);
-            }
-
-            let result: u32 = unsafe { read_volatile(Self::ECDSA_SIGN_OUT_RESULT as *const u32) };
-            if result != 0 {
-                // Reference manual table 163 "ECDSA sign - Outputs":
-                // If error output is different from zero the content of the PKA
-                // memory should be cleared to avoid leaking information about
-                // the private key.
-                self.zero_all_ram();
-            }
-            EcdsaSignError::from_raw(result)
-        }
-    }
-
-    fn ecdsa_verify_set<const MODULUS_SIZE: usize, const PRIME_ORDER_SIZE: usize>(
-        &mut self,
-        curve: &EllipticCurve<MODULUS_SIZE, PRIME_ORDER_SIZE>,
-        sig: &EcdsaSignature<MODULUS_SIZE>,
-        pub_key: &EcdsaPublicKey<MODULUS_SIZE>,
-        hash: &[u32; PRIME_ORDER_SIZE],
-    ) {
-        debug_assert!(self.pka.cr.read().en().bit_is_set());
-        debug_assert_eq!(self.pka.sr.read().bits(), 0);
+        self.zero_ram();
         let n_length: u32 = (PRIME_ORDER_SIZE * size_of::<u32>() * 8) as u32;
         let p_length: u32 = (MODULUS_SIZE * size_of::<u32>() * 8) as u32;
 
         unsafe {
-            write_volatile(Self::ECDSA_VERIFY_N_LEN as *mut u32, n_length);
-            write_volatile(Self::ECDSA_VERIFY_P_LEN as *mut u32, p_length);
-            write_volatile(
-                Self::ECDSA_VERIFY_A_SIGN as *mut u32,
-                curve.coef_sign.into(),
-            );
-            self.write_buf_to_ram(Self::ECDSA_VERIFY_A, &curve.coef);
-            self.write_buf_to_ram(Self::ECDSA_VERIFY_P, &curve.modulus);
-            self.write_buf_to_ram(Self::ECDSA_VERIFY_X, &curve.base_point_x);
-            self.write_buf_to_ram(Self::ECDSA_VERIFY_Y, &curve.base_point_y);
-            self.write_buf_to_ram(Self::ECDSA_VERIFY_XQ, &pub_key.curve_pt_x);
-            self.write_buf_to_ram(Self::ECDSA_VERIFY_YQ, &pub_key.curve_pt_y);
-            self.write_buf_to_ram(Self::ECDSA_VERIFY_R, &sig.r_sign);
-            self.write_buf_to_ram(Self::ECDSA_VERIFY_S, &sig.s_sign);
-            self.write_buf_to_ram(Self::ECDSA_VERIFY_Z, hash);
-            self.write_buf_to_ram(Self::ECDSA_VERIFY_N, &curve.prime_order);
+            write_volatile(ECDSA_SIGN_N_LEN as *mut u32, n_length);
+            write_volatile(ECDSA_SIGN_P_LEN as *mut u32, p_length);
+            write_volatile(ECDSA_SIGN_A_SIGN as *mut u32, curve.coef_sign.into());
+            self.write_ram(ECDSA_SIGN_A, &curve.coef);
+            self.write_ram(ECDSA_SIGN_P, &curve.modulus);
+            self.write_ram(ECDSA_SIGN_K, nonce);
+            self.write_ram(ECDSA_SIGN_X, &curve.base_point_x);
+            self.write_ram(ECDSA_SIGN_Y, &curve.base_point_y);
+            self.write_ram(ECDSA_SIGN_Z, hash);
+            self.write_ram(ECDSA_SIGN_D, priv_key);
+            self.write_ram(ECDSA_SIGN_N, &curve.prime_order);
+        }
+        let sr = self.pka.sr.read();
+        if sr.addrerrf().bit_is_set() {
+            self.clear_all_flags();
+            Err(EcdsaSignError::Address)
+        } else if sr.ramerrf().bit_is_set() {
+            self.clear_all_flags();
+            Err(EcdsaSignError::Ram)
+        } else {
+            self.start_process(MODE_A::ECDSASIGN);
+            Ok(())
+        }
+    }
+
+    /// Get the result of an ECDSA sign operation.
+    ///
+    /// Use this after starting an ECDSA sign operation with
+    /// [`ecdsa_sign_start`](Self::ecdsa_sign_start).
+    pub fn ecdsa_sign_result<const MODULUS_SIZE: usize>(
+        &mut self,
+        r_sign: &mut [u32; MODULUS_SIZE],
+        s_sign: &mut [u32; MODULUS_SIZE],
+    ) -> nb::Result<(), EcdsaSignError> {
+        let mode = self.pka.cr.read().mode();
+        if !mode.is_ecdsasign() {
+            return EcdsaSignError::mode(mode.bits());
+        }
+        let sr = self.pka.sr.read();
+        if sr.addrerrf().bit_is_set() {
+            self.clear_all_flags();
+            Err(nb::Error::Other(EcdsaSignError::Address))
+        } else if sr.ramerrf().bit_is_set() {
+            self.clear_all_flags();
+            Err(nb::Error::Other(EcdsaSignError::Ram))
+        } else if sr.procendf().is_in_progress() {
+            Err(nb::Error::WouldBlock)
+        } else {
+            self.clear_all_flags();
+
+            unsafe {
+                self.read_ram(ECDSA_SIGN_OUT_R, r_sign);
+                self.read_ram(ECDSA_SIGN_OUT_S, s_sign);
+            }
+
+            let result: u32 = unsafe { read_volatile(ECDSA_SIGN_OUT_RESULT as *const u32) };
+            if result != 0 {
+                // Reference manual table 163 "ECDSA sign - Outputs":
+                // If error output is different from zero the content of the PKA
+                // memory should be cleared to avoid leaking information about
+                // the private key.
+                self.zero_ram();
+            }
+            EcdsaSignError::from_raw(result)
         }
     }
 
     /// ECDSA (Ellipctic Curve Digital Signature Algorithm) verification.
+    ///
+    /// This is the blocking ECDSA verify method, equivalent to calling
+    /// [`ecdsa_verify_start`](Self::ecdsa_verify_start) then polling
+    /// [`ecdsa_verify_result`](Self::ecdsa_verify_result).
+    ///
+    /// ```no_run
+    /// # let mut pka = unsafe { stm32wl_hal::pka::Pka::steal() };
+    /// # let curve = stm32wl_hal::pka::curve::NIST_P256;
+    /// # let r_sign: [u32; 8] = [0; 8];
+    /// # let s_sign: [u32; 8] = [0; 8];
+    /// # let curve_pt_x: [u32; 8] = [0; 8];
+    /// # let curve_pt_y: [u32; 8] = [0; 8];
+    /// # let sig = stm32wl_hal::pka::EcdsaSignature { r_sign: &r_sign, s_sign: &s_sign };
+    /// # let pub_key = stm32wl_hal::pka::EcdsaPublicKey { curve_pt_x: &curve_pt_x, curve_pt_y: &curve_pt_y };
+    /// # let hash: [u32; 8] = [0; 8];
+    /// // blocking
+    /// pka.ecdsa_verify(&curve, &sig, &pub_key, &hash)?;
+    ///
+    /// // non-blocking
+    /// pka.ecdsa_verify_start(&curve, &sig, &pub_key, &hash)?;
+    /// nb::block!(pka.ecdsa_verify_result())?;
+    /// # Ok::<(), stm32wl_hal::pka::EcdsaVerifyError>(())
+    /// ```
+    ///
+    /// # Computation Times
+    ///
+    /// | Modulus Length (bits) | Cycles   | Seconds at 48MHz |
+    /// |-----------------------|----------|------------------|
+    /// | 160                   | 3500000  | 0.073            |
+    /// | 192                   | 5350000  | 0.112            |
+    /// | 256                   | 10498000 | 0.219            |
+    /// | 320                   | 18126000 | 0.378            |
+    /// | 384                   | 29118000 | 0.607            |
+    /// | 512                   | 61346000 | 1.278            |
+    /// | 521                   | 71588000 | 1.491            |
     pub fn ecdsa_verify<const MODULUS_SIZE: usize, const PRIME_ORDER_SIZE: usize>(
         &mut self,
         curve: &EllipticCurve<MODULUS_SIZE, PRIME_ORDER_SIZE>,
@@ -554,33 +585,79 @@ impl Pka {
         pub_key: &EcdsaPublicKey<MODULUS_SIZE>,
         hash: &[u32; PRIME_ORDER_SIZE],
     ) -> Result<(), EcdsaVerifyError> {
-        self.zero_all_ram();
-        self.ecdsa_verify_set(curve, sig, pub_key, hash);
-        self.process(PkaOpcode::EcdsaVerify)?;
-
-        let result: u32 = unsafe { read_volatile(Self::ECDSA_VERIFY_OUT as *const u32) };
-        EcdsaVerifyError::from_raw(result)
+        self.ecdsa_verify_start(curve, sig, pub_key, hash)?;
+        nb::block!(self.ecdsa_verify_result())
     }
 
-    /// ECDSA (Ellipctic Curve Digital Signature Algorithm) verification.
-    #[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-    #[cfg_attr(
-        docsrs,
-        doc(cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p"))))
-    )]
-    pub async fn aio_ecdsa_verify<const MODULUS_SIZE: usize, const PRIME_ORDER_SIZE: usize>(
+    /// Start an ECDSA verify operation.
+    ///
+    /// This will enable all the PKA IRQs.
+    ///
+    /// Use the [`ecdsa_verify_result`](Self::ecdsa_verify_result) method to
+    /// poll for completion, or to get the result in an interrupt handler.
+    pub fn ecdsa_verify_start<const MODULUS_SIZE: usize, const PRIME_ORDER_SIZE: usize>(
         &mut self,
         curve: &EllipticCurve<MODULUS_SIZE, PRIME_ORDER_SIZE>,
         sig: &EcdsaSignature<MODULUS_SIZE>,
         pub_key: &EcdsaPublicKey<MODULUS_SIZE>,
         hash: &[u32; PRIME_ORDER_SIZE],
     ) -> Result<(), EcdsaVerifyError> {
-        self.zero_all_ram();
-        self.ecdsa_verify_set(curve, sig, pub_key, hash);
-        self.aio_process(PkaOpcode::EcdsaVerify).await?;
+        self.zero_ram();
+        let n_length: u32 = (PRIME_ORDER_SIZE * size_of::<u32>() * 8) as u32;
+        let p_length: u32 = (MODULUS_SIZE * size_of::<u32>() * 8) as u32;
 
-        let result: u32 = unsafe { read_volatile(Self::ECDSA_VERIFY_OUT as *const u32) };
-        EcdsaVerifyError::from_raw(result)
+        unsafe {
+            write_volatile(ECDSA_VERIFY_N_LEN as *mut u32, n_length);
+            write_volatile(ECDSA_VERIFY_P_LEN as *mut u32, p_length);
+            write_volatile(ECDSA_VERIFY_A_SIGN as *mut u32, curve.coef_sign.into());
+            self.write_ram(ECDSA_VERIFY_A, &curve.coef);
+            self.write_ram(ECDSA_VERIFY_P, &curve.modulus);
+            self.write_ram(ECDSA_VERIFY_X, &curve.base_point_x);
+            self.write_ram(ECDSA_VERIFY_Y, &curve.base_point_y);
+            self.write_ram(ECDSA_VERIFY_XQ, pub_key.curve_pt_x);
+            self.write_ram(ECDSA_VERIFY_YQ, pub_key.curve_pt_y);
+            self.write_ram(ECDSA_VERIFY_R, sig.r_sign);
+            self.write_ram(ECDSA_VERIFY_S, sig.s_sign);
+            self.write_ram(ECDSA_VERIFY_Z, hash);
+            self.write_ram(ECDSA_VERIFY_N, &curve.prime_order);
+        }
+        let sr = self.pka.sr.read();
+        if sr.addrerrf().bit_is_set() {
+            self.clear_all_flags();
+            Err(EcdsaVerifyError::Address)
+        } else if sr.ramerrf().bit_is_set() {
+            self.clear_all_flags();
+            Err(EcdsaVerifyError::Ram)
+        } else {
+            self.start_process(MODE_A::ECDSAVERIF);
+            Ok(())
+        }
+    }
+
+    /// Get the result of an ECDSA verify operation.
+    ///
+    /// Use this after starting an ECDSA verify operation with
+    /// [`ecdsa_verify_start`](Self::ecdsa_verify_start).
+    pub fn ecdsa_verify_result(&mut self) -> nb::Result<(), EcdsaVerifyError> {
+        let mode = self.pka.cr.read().mode();
+        if !mode.is_ecdsaverif() {
+            return EcdsaVerifyError::mode(mode.bits());
+        }
+        let sr = self.pka.sr.read();
+        if sr.addrerrf().bit_is_set() {
+            self.clear_all_flags();
+            Err(nb::Error::Other(EcdsaVerifyError::Address))
+        } else if sr.ramerrf().bit_is_set() {
+            self.clear_all_flags();
+            Err(nb::Error::Other(EcdsaVerifyError::Ram))
+        } else if sr.procendf().is_in_progress() {
+            Err(nb::Error::WouldBlock)
+        } else {
+            self.clear_all_flags();
+
+            let result: u32 = unsafe { read_volatile(ECDSA_VERIFY_OUT as *const u32) };
+            EcdsaVerifyError::from_raw(result)
+        }
     }
 }
 
@@ -603,15 +680,15 @@ impl From<Sign> for u32 {
 
 /// ECDSA signature.
 #[derive(Debug, PartialEq, Eq)]
-pub struct EcdsaSignature<const MODULUS_SIZE: usize> {
+pub struct EcdsaSignature<'a, const MODULUS_SIZE: usize> {
     /// Signature part r.
-    pub r_sign: [u32; MODULUS_SIZE],
+    pub r_sign: &'a [u32; MODULUS_SIZE],
     /// Signature part s.
-    pub s_sign: [u32; MODULUS_SIZE],
+    pub s_sign: &'a [u32; MODULUS_SIZE],
 }
 
 #[cfg(feature = "defmt")]
-impl<const MODULUS_SIZE: usize> defmt::Format for EcdsaSignature<MODULUS_SIZE> {
+impl<'a, const MODULUS_SIZE: usize> defmt::Format for EcdsaSignature<'a, MODULUS_SIZE> {
     fn format(&self, fmt: defmt::Formatter) {
         defmt::write!(
             fmt,
@@ -623,11 +700,12 @@ impl<const MODULUS_SIZE: usize> defmt::Format for EcdsaSignature<MODULUS_SIZE> {
 }
 
 /// ECDSA public key.
-pub struct EcdsaPublicKey<const MODULUS_SIZE: usize> {
+#[derive(Debug, PartialEq, Eq)]
+pub struct EcdsaPublicKey<'a, const MODULUS_SIZE: usize> {
     /// Public-key curve point xQ.
-    pub curve_pt_x: [u32; MODULUS_SIZE],
+    pub curve_pt_x: &'a [u32; MODULUS_SIZE],
     /// Public-key curve point yQ.
-    pub curve_pt_y: [u32; MODULUS_SIZE],
+    pub curve_pt_y: &'a [u32; MODULUS_SIZE],
 }
 
 /// Elliptic curve.
@@ -659,62 +737,6 @@ pub struct EllipticCurve<const MODULUS_SIZE: usize, const PRIME_ORDER_SIZE: usiz
     ///
     /// **Note:** Integer prime.
     pub prime_order: [u32; PRIME_ORDER_SIZE],
-}
-
-#[cfg(all(feature = "aio", not(feature = "stm32wl5x_cm0p")))]
-mod aio {
-    use core::{
-        sync::atomic::{AtomicU32, Ordering::SeqCst},
-        task::Poll,
-    };
-    use futures_util::task::AtomicWaker;
-
-    static PKA_WAKER: AtomicWaker = AtomicWaker::new();
-    static PKA_RESULT: AtomicU32 = AtomicU32::new(0);
-
-    pub(super) fn poll(cx: &mut core::task::Context<'_>) -> Poll<Result<(), super::Error>> {
-        PKA_WAKER.register(cx.waker());
-        match PKA_RESULT.load(SeqCst) {
-            0 => core::task::Poll::Pending,
-            _ => {
-                PKA_WAKER.take();
-                let sr: u32 = PKA_RESULT.swap(0, SeqCst);
-                Poll::Ready(super::Error::from_sr(sr))
-            }
-        }
-    }
-
-    #[cfg(all(target_arch = "arm", target_os = "none"))]
-    mod irq {
-        use super::{SeqCst, PKA_RESULT, PKA_WAKER};
-        use crate::pac::{self, interrupt};
-
-        #[interrupt]
-        #[allow(non_snake_case)]
-        fn PKA() {
-            debug_assert_eq!(PKA_RESULT.load(SeqCst), 0);
-
-            let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
-
-            // store result
-            PKA_RESULT.store(dp.PKA.sr.read().bits(), SeqCst);
-
-            // clear and disable IRQs
-            dp.PKA.cr.modify(|_, w| {
-                w.addrerrie()
-                    .clear_bit()
-                    .ramerrie()
-                    .clear_bit()
-                    .procendie()
-                    .clear_bit()
-            });
-            dp.PKA
-                .clrfr
-                .write(|w| w.addrerrfc().clear().ramerrfc().clear().procendfc().clear());
-
-            PKA_WAKER.wake();
-        }
-    }
 }
 
 /// Pre-defined elliptic curves.

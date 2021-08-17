@@ -1,9 +1,6 @@
 #![no_std]
 #![no_main]
 
-#[cfg(feature = "aio")]
-extern crate alloc;
-
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use panic_probe as _;
@@ -14,7 +11,7 @@ use static_assertions as sa;
 use bsp::{
     hal::{
         dma::NoDmaCh,
-        dma::{AllDma, DmaCh},
+        dma::{AllDma, Dma1Ch1, Dma2Ch1},
         gpio::{PortA, PortC},
         pac::{self, DWT},
         rcc,
@@ -27,6 +24,7 @@ use bsp::{
             SpreadingFactor, StandbyClk, Status, StatusMode, SubGhz, TcxoMode, TcxoTrim, Timeout,
             TxParams,
         },
+        util::reset_cycle_count,
     },
     RfSwitch,
 };
@@ -36,7 +34,7 @@ const CYC_PER_US: u32 = FREQ / 1000 / 1000;
 const CYC_PER_MS: u32 = FREQ / 1000;
 const CYC_PER_SEC: u32 = FREQ;
 
-use core::{ptr::write_volatile, time::Duration};
+use core::time::Duration;
 
 const PING_DATA: &str = "PING";
 const PONG_DATA: &str = "PONG";
@@ -73,10 +71,12 @@ const LORA_PACKET_PARAMS: LoRaPacketParams = LoRaPacketParams::new()
     .set_header_type(HeaderType::Fixed);
 
 const FSK_MOD_PARAMS: FskModParams = FskModParams::new()
-    .set_bitrate(FskBitrate::from_bps(50_000))
+    .set_bitrate(FskBitrate::from_bps(20_000))
     .set_pulse_shape(FskPulseShape::None)
     .set_bandwidth(FskBandwidth::Bw58)
-    .set_fdev(FskFdev::from_hertz(25_000));
+    .set_fdev(FskFdev::from_hertz(10_000));
+
+sa::const_assert!(FSK_MOD_PARAMS.is_valid(30));
 
 const LORA_MOD_PARAMS: LoRaModParams = LoRaModParams::new()
     .set_bw(LoRaBandwidth::Bw125)
@@ -99,70 +99,10 @@ const TX_PARAMS: TxParams = TxParams::new()
     .set_power(0x0D)
     .set_ramp_time(RampTime::Micros40);
 
-#[cfg(feature = "aio")]
-async fn aio_buffer_io_inner() {
-    let mut sg = unsafe {
-        let dma = AllDma::steal();
-        SubGhz::steal_with_dma(dma.d1c1, dma.d2c1)
-    };
-    const DATA: [u8; 255] = [0xA5; 255];
-    let mut buf: alloc::vec::Vec<u8> = alloc::vec![0; 255];
-    while rfbusys() {}
-    let start: u32 = DWT::get_cycle_count();
-    unwrap!(sg.aio_write_buffer(0, &DATA).await);
-    unwrap!(sg.aio_read_buffer(0, &mut buf).await);
-    let end: u32 = DWT::get_cycle_count();
-    defmt::info!("Cycles 255B: {}", end - start);
-    defmt::assert_eq!(DATA.as_ref(), buf.as_slice());
-
-    let mut buf: [u8; 0] = [];
-    while rfbusys() {}
-    let start: u32 = DWT::get_cycle_count();
-    unwrap!(sg.aio_write_buffer(0, &buf).await);
-    unwrap!(sg.aio_read_buffer(0, &mut buf).await);
-    let end: u32 = DWT::get_cycle_count();
-    defmt::info!("Cycles 0B: {}", end - start);
-}
-
 // WARNING will wrap-around eventually, use this for relative timing only
 defmt::timestamp!("{=u32:µs}", DWT::get_cycle_count() / CYC_PER_US);
 
-#[cfg(feature = "aio")]
-async fn aio_wait_irq_inner() {
-    let mut sg = unsafe {
-        let dma = AllDma::steal();
-        SubGhz::steal_with_dma(dma.d1c1, dma.d2c1)
-    };
-
-    unwrap!(sg.aio_set_standby(StandbyClk::Rc).await);
-    let status: Status = unwrap!(sg.aio_status().await);
-    defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
-
-    unwrap!(sg.aio_set_tcxo_mode(&TCXO_MODE).await);
-    unwrap!(sg.aio_set_regulator_mode(RegMode::Ldo).await);
-    unwrap!(sg.aio_set_sync_word(&SYNC_WORD).await);
-    unwrap!(sg.aio_set_packet_type(PacketType::Fsk).await);
-    unwrap!(sg.aio_set_fsk_mod_params(&FSK_MOD_PARAMS).await);
-    unwrap!(sg.aio_set_packet_params(&FSK_PACKET_PARAMS).await);
-    unwrap!(sg.aio_calibrate_image(CalibrateImage::ISM_430_440).await);
-    unwrap!(sg.aio_set_rf_frequency(&RF_FREQ).await);
-
-    const IRQ_CFG: CfgIrq = CfgIrq::new()
-        .irq_enable_all(Irq::RxDone)
-        .irq_enable_all(Irq::Timeout);
-    unwrap!(sg.aio_set_irq_cfg(&IRQ_CFG).await);
-
-    let status: Status = unwrap!(sg.status());
-    defmt::assert_ne!(status.cmd(), Ok(CmdStatus::Timeout));
-
-    // this will fail to RX immediately (15 micros timeout)
-    unwrap!(sg.aio_set_rx(Timeout::MIN).await);
-
-    let (_, irq) = unwrap!(sg.aio_wait_irq().await);
-    defmt::assert_eq!(Irq::Timeout.mask(), irq);
-}
-
-fn tx_or_panic(sg: &mut SubGhz<DmaCh>, rfs: &mut RfSwitch) {
+fn tx_or_panic(sg: &mut SubGhz<Dma1Ch1, Dma2Ch1>, rfs: &mut RfSwitch) {
     rfs.set_tx_lp();
     unwrap!(sg.set_tx(Timeout::DISABLED));
     let start_cc: u32 = DWT::get_cycle_count();
@@ -188,7 +128,12 @@ fn tx_or_panic(sg: &mut SubGhz<DmaCh>, rfs: &mut RfSwitch) {
 /// Both radios transmit `b"PING"`.
 ///
 /// The first radio to recieve `b"PING"` transmits `b"PONG"` in reply.
-fn ping_pong(sg: &mut SubGhz<DmaCh>, rng: &mut Rng, rfs: &mut RfSwitch, pkt: PacketType) {
+fn ping_pong(
+    sg: &mut SubGhz<Dma1Ch1, Dma2Ch1>,
+    rng: &mut Rng,
+    rfs: &mut RfSwitch,
+    pkt: PacketType,
+) {
     unwrap!(sg.set_standby(StandbyClk::Rc));
     let status: Status = unwrap!(sg.status());
     defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
@@ -328,7 +273,7 @@ mod tests {
     static mut BUF: [u8; 255] = [0; 255];
 
     struct TestArgs {
-        sg: SubGhz<DmaCh>,
+        sg: SubGhz<Dma1Ch1, Dma2Ch1>,
         rng: Rng,
         rfs: RfSwitch,
     }
@@ -348,34 +293,18 @@ mod tests {
 
         let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
 
-        #[cfg(feature = "aio")]
-        {
-            let start: usize = bsp::hal::cortex_m_rt::heap_start() as usize;
-            let size: usize = 2048; // in bytes
-            unsafe { ate::ALLOCATOR.init(start, size) };
-        }
-
         Rng::set_clock_source(&mut dp.RCC, rng::ClkSrc::MSI);
         let rng: Rng = Rng::new(dp.RNG, &mut dp.RCC);
 
-        let mut sg: SubGhz<DmaCh> = SubGhz::new_with_dma(dp.SPI3, dma.d1c1, dma.d2c1, &mut dp.RCC);
+        let mut sg: SubGhz<Dma1Ch1, Dma2Ch1> =
+            SubGhz::new_with_dma(dp.SPI3, dma.d1c1, dma.d2c1, &mut dp.RCC);
         sg.enable_spi_debug(gpioa.pa4, gpioa.pa5, gpioa.pa6, gpioa.pa7);
 
         cp.DCB.enable_trace();
         cp.DWT.enable_cycle_counter();
-        // reset the cycle counter
-        const DWT_CYCCNT: usize = 0xE0001004;
-        unsafe { write_volatile(DWT_CYCCNT as *mut u32, 0) };
+        reset_cycle_count(&mut cp.DWT);
 
         TestArgs { sg, rng, rfs }
-    }
-
-    #[test]
-    #[cfg(feature = "aio")]
-    fn aio_buffer_io(_: &mut TestArgs) {
-        let mut executor = ate::Executor::new();
-        executor.spawn(ate::Task::new(aio_buffer_io_inner()));
-        executor.run();
     }
 
     #[test]
@@ -400,7 +329,7 @@ mod tests {
 
     #[test]
     fn buffer_io_no_dma(_: &mut TestArgs) {
-        let mut sg: SubGhz<NoDmaCh> = unsafe { SubGhz::<NoDmaCh>::steal() };
+        let mut sg: SubGhz<NoDmaCh, NoDmaCh> = unsafe { SubGhz::<NoDmaCh, NoDmaCh>::steal() };
 
         const DATA: [u8; 255] = [0x45; 255];
         while rfbusys() {}
@@ -421,16 +350,8 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "aio")]
-    fn aio_wait_irq(_: &mut TestArgs) {
-        let mut executor = ate::Executor::new();
-        executor.spawn(ate::Task::new(aio_wait_irq_inner()));
-        executor.run();
-    }
-
-    #[test]
     fn fsk_ping_pong(ta: &mut TestArgs) {
-        let sg: &mut SubGhz<DmaCh> = &mut ta.sg;
+        let sg: &mut SubGhz<Dma1Ch1, Dma2Ch1> = &mut ta.sg;
         let rng: &mut Rng = &mut ta.rng;
         let rfs: &mut RfSwitch = &mut ta.rfs;
 
@@ -439,7 +360,7 @@ mod tests {
 
     #[test]
     fn lora_ping_pong(ta: &mut TestArgs) {
-        let sg: &mut SubGhz<DmaCh> = &mut ta.sg;
+        let sg: &mut SubGhz<Dma1Ch1, Dma2Ch1> = &mut ta.sg;
         let rng: &mut Rng = &mut ta.rng;
         let rfs: &mut RfSwitch = &mut ta.rfs;
 

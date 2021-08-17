@@ -19,18 +19,19 @@ features = [
     "stm32wle5",
     # optional: use the cortex-m-rt interrupt interface
     "rt",
-    # optional: use async (requires nightly rust)
-    # async support may be dropped in the future
-    # if this feature is important to you please let me know
-    "aio",
     # optional: use defmt
     "defmt",
 ]
+
+# include cortex-m-rt directly in your crate if you need interrupts
+# use the interrupt macro from the hal with `use hal::pac::interrupt;`
+# DO NOT use the interrupt macro from cortex-m-rt, it will fail to compile
+[dependencies]
+cortex-m-rt = "0.6"
 ```
 
-**Note:** To avoid version mismatches do not include `cortex-m`, `cortex-m-rt`,
-`embedded-hal`, or `stm32wl` (the PAC) directly, these are re-exported by the
-hal.
+**Note:** To avoid version mismatches do not include `cortex-m`, `embedded-hal`,
+or `stm32wl` (the PAC) directly, these are re-exported by the hal.
 
 ```rust
 use stm32wl_hal as hal;
@@ -44,8 +45,8 @@ use hal::pac; // published as "stm32wl" on crates.io
 ## Design
 
 ### Peripheral Access
-The layout of devive memory for the STM32WL is provided from the vendor in a
-formatcalled system view description (SVD).
+The layout of device memory for the STM32WL is provided from the vendor in a
+format called system view description (SVD).
 The SVD is not perfect, so there is a set of community maintained SVD
 patches at [stm32-rs].
 After the SVD is patched it gets run through [svd2rust] which generates

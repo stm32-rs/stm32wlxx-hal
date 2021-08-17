@@ -194,7 +194,7 @@ impl defmt::Format for Status {
     fn format(&self, fmt: defmt::Formatter) {
         defmt::write!(
             fmt,
-            "Status {{ cmd: {}, mode: {} }}",
+            "Status {{ mode: {}, cmd: {} }}",
             self.mode(),
             self.cmd()
         )

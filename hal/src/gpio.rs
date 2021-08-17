@@ -162,6 +162,7 @@ pub(crate) mod sealed {
     /// Pin structures can implement it in a light wrapper without putting a ton
     /// of code into the macro which will result in longer compile times.
     pub trait PinOps {
+        unsafe fn steal() -> Self;
         unsafe fn set_mode(&mut self, cs: &CriticalSection, mode: Mode);
         unsafe fn set_output_type(&mut self, cs: &CriticalSection, ot: OutputType);
         unsafe fn set_speed(&mut self, cs: &CriticalSection, speed: Speed);
@@ -259,6 +260,11 @@ pub mod pins {
             }
 
             impl super::sealed::PinOps for $name {
+                #[inline(always)]
+                unsafe fn steal() -> Self {
+                    Self::new()
+                }
+
                 #[inline(always)]
                 unsafe fn set_mode(&mut self, cs: &CriticalSection, mode: super::sealed::Mode) {
                     self.pin.set_mode(cs, mode)
@@ -981,6 +987,28 @@ where
         Self::new(pin, &OutputArgs::new())
     }
 
+    /// Steal the output GPIO from whatever is currently using it.
+    ///
+    /// # Safety
+    ///
+    /// 1. Ensure that the code stealing the GPIO has exclusive access to the
+    ///    peripheral. Singleton checks are bypassed with this method.
+    /// 2. You are responsible for setting up the GPIO correctly.
+    ///    No setup will occur when using this method.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal::gpio::{pins, Output};
+    ///
+    /// // ... setup occurs here
+    ///
+    /// let pb11: Output<pins::B11> = unsafe { Output::steal() };
+    /// ```
+    pub unsafe fn steal() -> Self {
+        Output { pin: P::steal() }
+    }
+
     /// Free the GPIO pin.
     ///
     /// # Example
@@ -1176,6 +1204,28 @@ where
     /// ```
     pub fn default(pin: P) -> Self {
         Self::new(pin, Pull::None)
+    }
+
+    /// Steal the input GPIO from whatever is currently using it.
+    ///
+    /// # Safety
+    ///
+    /// 1. Ensure that the code stealing the GPIO has exclusive access to the
+    ///    peripheral. Singleton checks are bypassed with this method.
+    /// 2. You are responsible for setting up the GPIO correctly.
+    ///    No setup will occur when using this method.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal::gpio::{pins, Input};
+    ///
+    /// // ... setup occurs here
+    ///
+    /// let pc6: Input<pins::C6> = unsafe { Input::steal() };
+    /// ```
+    pub unsafe fn steal() -> Self {
+        Input { pin: P::steal() }
     }
 
     /// Free the GPIO pin.

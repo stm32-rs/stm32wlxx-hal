@@ -43,7 +43,7 @@ git = "https://github.com/newAM/stm32wl-rs.git"
 rev = "239ceea719f2e26b70e8680f87a31b4a309b5ff8"
 
 [dependencies.cortex-m-rt]
-version = "0.6"
+version = "0.7"
 optional = true
 
 [dependencies.defmt]

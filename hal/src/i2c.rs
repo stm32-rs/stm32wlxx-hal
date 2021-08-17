@@ -29,17 +29,22 @@ pub enum Error {
      * Alert, // SMBUS mode only */
 }
 
-/// I2C peripheral operating in master mode
+/// I2C1 peripheral operating in master mode
+#[derive(Debug)]
 pub struct I2c1<PINS> {
     base: I2C1,
     pins: PINS,
 }
 
+/// I2C2 peripheral operating in master mode
+#[derive(Debug)]
 pub struct I2c2<PINS> {
     base: I2C2,
     pins: PINS,
 }
 
+/// I2C3 peripheral operating in master mode
+#[derive(Debug)]
 pub struct I2c3<PINS> {
     base: I2C3,
     pins: PINS,

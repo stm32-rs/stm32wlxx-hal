@@ -516,7 +516,7 @@ fn cpu1_systick(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R, src: SystClkSource) ->
     }
 }
 
-pub fn pclk1(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
+fn pclk1(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
     let div: u32 = ppre_div(cfgr.ppre1().bits()).into();
     hclk1(rcc, cfgr) / div
 }
@@ -540,7 +540,7 @@ pub fn pclk1_hz(rcc: &pac::RCC) -> u32 {
     pclk1(rcc, &cfgr).to_integer()
 }
 
-pub fn pclk2(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
+fn pclk2(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
     let div: u32 = ppre_div(cfgr.ppre2().bits()).into();
     hclk1(rcc, cfgr) / div
 }
@@ -556,7 +556,7 @@ pub fn pclk2(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
 ///
 /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 ///
-/// // without any initialization pclk1 will be 4MHz
+/// // without any initialization pclk2 will be 4MHz
 /// assert_eq!(pclk2_hz(&dp.RCC), 4_000_000);
 /// ```
 pub fn pclk2_hz(rcc: &pac::RCC) -> u32 {

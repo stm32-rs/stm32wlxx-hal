@@ -76,19 +76,73 @@ mod tests {
 
     #[test]
     fn encrypt_ecb(aes: &mut Aes) {
+        let mut total_elapsed: usize = 0;
         for (plaintext, ciphertext) in PLAINTEXT_CHIPHERTEXT.iter() {
-            let result: [u32; 4] = unwrap!(aes.encrypt_ecb(&KEY, &u128_to_u32(*plaintext)));
-            let ciphertext_u32: [u32; 4] = u128_to_u32(*ciphertext);
-            defmt::assert_eq!(result, ciphertext_u32);
+            let mut output_ciphertext: [u32; 4] = [0; 4];
+            let start: u32 = DWT::get_cycle_count();
+            unwrap!(aes.encrypt_ecb(&KEY, &u128_to_u32(*plaintext), &mut output_ciphertext));
+            let end: u32 = DWT::get_cycle_count();
+            total_elapsed += (end - start) as usize;
+            let expected: [u32; 4] = u128_to_u32(*ciphertext);
+            defmt::assert_eq!(output_ciphertext, expected);
         }
+        defmt::info!(
+            "Average cycles per encrypt: {}",
+            total_elapsed / PLAINTEXT_CHIPHERTEXT.len()
+        );
+    }
+
+    #[test]
+    fn encrypt_ecb_inplace(aes: &mut Aes) {
+        let mut total_elapsed: usize = 0;
+        for (plaintext, ciphertext) in PLAINTEXT_CHIPHERTEXT.iter() {
+            let mut output_ciphertext: [u32; 4] = u128_to_u32(*plaintext);
+            let start: u32 = DWT::get_cycle_count();
+            unwrap!(aes.encrypt_ecb_inplace(&KEY, &mut output_ciphertext));
+            let end: u32 = DWT::get_cycle_count();
+            total_elapsed += (end - start) as usize;
+            let expected: [u32; 4] = u128_to_u32(*ciphertext);
+            defmt::assert_eq!(output_ciphertext, expected);
+        }
+        defmt::info!(
+            "Average cycles per encrypt: {}",
+            total_elapsed / PLAINTEXT_CHIPHERTEXT.len()
+        );
     }
 
     #[test]
     fn decrypt_ecb(aes: &mut Aes) {
+        let mut total_elapsed: usize = 0;
         for (plaintext, ciphertext) in PLAINTEXT_CHIPHERTEXT.iter() {
-            let result: [u32; 4] = unwrap!(aes.decrypt_ecb(&KEY, &u128_to_u32(*ciphertext)));
-            let plaintext_u32: [u32; 4] = u128_to_u32(*plaintext);
-            defmt::assert_eq!(result, plaintext_u32);
+            let mut output_plaintext: [u32; 4] = [0; 4];
+            let start: u32 = DWT::get_cycle_count();
+            unwrap!(aes.decrypt_ecb(&KEY, &u128_to_u32(*ciphertext), &mut output_plaintext));
+            let end: u32 = DWT::get_cycle_count();
+            total_elapsed += (end - start) as usize;
+            let expected: [u32; 4] = u128_to_u32(*plaintext);
+            defmt::assert_eq!(output_plaintext, expected);
         }
+        defmt::info!(
+            "Average cycles per decrypt: {}",
+            total_elapsed / PLAINTEXT_CHIPHERTEXT.len()
+        );
+    }
+
+    #[test]
+    fn decrypt_ecb_inplace(aes: &mut Aes) {
+        let mut total_elapsed: usize = 0;
+        for (plaintext, ciphertext) in PLAINTEXT_CHIPHERTEXT.iter() {
+            let mut output_plaintext: [u32; 4] = u128_to_u32(*ciphertext);
+            let start: u32 = DWT::get_cycle_count();
+            unwrap!(aes.decrypt_ecb_inplace(&KEY, &mut output_plaintext));
+            let end: u32 = DWT::get_cycle_count();
+            total_elapsed += (end - start) as usize;
+            let expected: [u32; 4] = u128_to_u32(*plaintext);
+            defmt::assert_eq!(output_plaintext, expected);
+        }
+        defmt::info!(
+            "Average cycles per decrypt: {}",
+            total_elapsed / PLAINTEXT_CHIPHERTEXT.len()
+        );
     }
 }

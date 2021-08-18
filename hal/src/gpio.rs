@@ -223,6 +223,16 @@ pub(crate) mod sealed {
     af_trait!(LpUart1Rts, set_lpuart1_rts_af);
     af_trait!(LpUart1RtsDe, set_lpuart1_rts_de_af);
     af_trait!(IrOut, set_irout_af);
+    af_trait!(LpTim1Out, set_lptim1_out_af);
+    af_trait!(LpTim1In1, set_lptim1_in1_af);
+    af_trait!(LpTim1In2, set_lptim1_in2_af);
+    af_trait!(LpTim1Etr, set_lptim1_etr_af);
+    af_trait!(LpTim2Out, set_lptim2_out_af);
+    af_trait!(LpTim2In1, set_lptim2_in1_af);
+    af_trait!(LpTim2Etr, set_lptim2_etr_af);
+    af_trait!(LpTim3Out, set_lptim3_out_af);
+    af_trait!(LpTim3Etr, set_lptim3_etr_af);
+    af_trait!(LpTim3In1, set_lptim3_in1_af);
 
     /// Indicate a GPIO pin can be sampled by the ADC
     pub trait AdcCh {
@@ -364,8 +374,22 @@ pub mod pins {
         };
     }
 
+    impl_af!(LpTim1Out, A4, set_lptim1_out_af, 1);
+    impl_af!(LpTim1Out, A14, set_lptim1_out_af, 1);
+    impl_af!(LpTim1Out, B2, set_lptim1_out_af, 1);
+    impl_af!(LpTim1In1, B5, set_lptim1_in1_af, 1);
+    impl_af!(LpTim1Etr, B6, set_lptim1_etr_af, 1);
+    impl_af!(LpTim1In2, B7, set_lptim1_in2_af, 1);
+    impl_af!(LpTim1In1, C0, set_lptim1_in1_af, 1);
+    impl_af!(LpTim1Out, C1, set_lptim1_out_af, 1);
+    impl_af!(LpTim1In2, C2, set_lptim1_in2_af, 1);
+    impl_af!(LpTim1Etr, C3, set_lptim1_etr_af, 1);
+
+    impl_af!(LpTim3Out, A1, set_lptim3_out_af, 3);
     impl_af!(Spi2Miso, A5, set_spi2_miso_af, 3);
     impl_af!(Spi2Nss, A9, set_spi2_nss_af, 3);
+    impl_af!(LpTim3Etr, A11, set_lptim3_etr_af, 3);
+    impl_af!(LpTim3In1, A12, set_lptim3_in1_af, 3);
     impl_af!(Spi2Mosi, C1, set_spi2_mosi_af, 3);
 
     impl_af!(I2c3Smba, A0, set_i2c3_smba_af, 4);
@@ -458,6 +482,13 @@ pub mod pins {
     impl_af!(SubGhzSpiSck, A5, set_subghz_spi_sck_af, 13);
     impl_af!(SubGhzSpiMiso, A6, set_subghz_spi_miso_af, 13);
     impl_af!(SubGhzSpiMosi, A7, set_subghz_spi_mosi_af, 13);
+
+    impl_af!(LpTim2Out, A4, set_lptim2_out_af, 14);
+    impl_af!(LpTim2Etr, A5, set_lptim2_etr_af, 14);
+    impl_af!(LpTim2Out, A8, set_lptim2_out_af, 14);
+    impl_af!(LpTim2In1, B1, set_lptim2_in1_af, 14);
+    impl_af!(LpTim2In1, C0, set_lptim2_in1_af, 14);
+    impl_af!(LpTim2Etr, C3, set_lptim2_etr_af, 14);
 
     // keep the trait separate from the pin so that users cant use the ADC_CH
     // but are unable to implement the sealed trait themselves

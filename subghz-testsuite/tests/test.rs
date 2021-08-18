@@ -293,8 +293,7 @@ mod tests {
 
         let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
 
-        Rng::set_clock_source(&mut dp.RCC, rng::ClkSrc::MSI);
-        let rng: Rng = Rng::new(dp.RNG, &mut dp.RCC);
+        let rng: Rng = Rng::new(dp.RNG, rng::Clk::MSI, &mut dp.RCC);
 
         let mut sg: SubGhz<Dma1Ch1, Dma2Ch1> =
             SubGhz::new_with_dma(dp.SPI3, dma.d1c1, dma.d2c1, &mut dp.RCC);

@@ -49,7 +49,7 @@ impl From<Error> for rand_core::Error {
     }
 }
 
-pub use pac::rcc::ccipr::RNGSEL_A as ClkSrc;
+pub use pac::rcc::ccipr::RNGSEL_A as Clk;
 
 /// RNG driver.
 #[derive(Debug)]
@@ -61,22 +61,26 @@ pub struct Rng {
 impl Rng {
     /// Create a new `Rng` driver from a RNG peripheral.
     ///
-    /// This will enable clocks and reset the RNG peripheral.
+    /// This will select the clock source, enable clocks, and reset the RNG
+    /// peripheral.
+    ///
+    /// This will **NOT** enable the selected clock source, when in doubt use
+    /// MSI because it is enabled with power-on-reset.
     ///
     /// # Example
     ///
     /// ```no_run
     /// use stm32wl_hal::{
     ///     pac,
-    ///     rng::{ClkSrc, Rng},
+    ///     rng::{Clk, Rng},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
-    /// Rng::set_clock_source(&mut dp.RCC, ClkSrc::MSI);
-    /// let mut rng = Rng::new(dp.RNG, &mut dp.RCC);
+    /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
     /// ```
-    pub fn new(rng: pac::RNG, rcc: &mut pac::RCC) -> Rng {
+    pub fn new(rng: pac::RNG, clk: Clk, rcc: &mut pac::RCC) -> Rng {
+        rcc.ccipr.modify(|_, w| w.rngsel().variant(clk));
         Self::enable_clock(rcc);
         rcc.ahb3rstr.modify(|_, w| w.rngrst().set_bit());
         rcc.ahb3rstr.modify(|_, w| w.rngrst().clear_bit());
@@ -126,13 +130,16 @@ impl Rng {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{pac, rng::Rng};
+    /// use stm32wl_hal::{
+    ///     pac,
+    ///     rng::{Clk, Rng},
+    /// };
     ///
     /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut rcc: pac::RCC = dp.RCC;
     /// let rng_dp: pac::RNG = dp.RNG;
     ///
-    /// let mut rng = Rng::new(rng_dp, &mut rcc);
+    /// let mut rng = Rng::new(rng_dp, Clk::MSI, &mut rcc);
     /// // ... use rng
     /// let rng_dp: pac::RNG = rng.free();
     /// ```
@@ -193,6 +200,16 @@ impl Rng {
     }
 
     /// Disable the RNG clock.
+    ///
+    /// # Safety
+    ///
+    /// 1. You are responsible for ensuring the RNG is in a state where the
+    ///    clock can be disabled without entering an error state.
+    /// 2. You cannot use the RNG bus while the clock is disabled.
+    /// 3. You are responsible for re-enabling the clock before resuming use
+    ///    of the RNG.
+    /// 4. You are reponsible for setting up anything that may have lost state
+    ///    while the clock was disabled.
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.ahb3enr.modify(|_, w| w.rngen().disabled());
     }
@@ -201,11 +218,6 @@ impl Rng {
     pub fn enable_clock(rcc: &mut pac::RCC) {
         rcc.ahb3enr.modify(|_, w| w.rngen().enabled());
         rcc.ahb3enr.read(); // delay after an RCC peripheral clock enabling
-    }
-
-    /// Set the RNG clock source.
-    pub fn set_clock_source(rcc: &mut pac::RCC, src: ClkSrc) {
-        rcc.ccipr.modify(|_, w| w.rngsel().variant(src))
     }
 
     /// Returns the number of correctable seed errors that have occured.
@@ -242,13 +254,11 @@ impl Rng {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     pac,
-    ///     rng::{ClkSrc, Rng},
+    ///     rng::{Clk, Rng},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// Rng::set_clock_source(&mut dp.RCC, ClkSrc::MSI);
-    /// let mut rng = Rng::new(dp.RNG, &mut dp.RCC);
+    /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
     ///
     /// let mut nonce: [u32; 4] = [0; 4];
     /// rng.try_fill_u32(&mut nonce)?;
@@ -272,13 +282,11 @@ impl Rng {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     pac,
-    ///     rng::{ClkSrc, Rng},
+    ///     rng::{Clk, Rng},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// Rng::set_clock_source(&mut dp.RCC, ClkSrc::MSI);
-    /// let mut rng = Rng::new(dp.RNG, &mut dp.RCC);
+    /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
     ///
     /// let mut nonce: [u8; 16] = [0; 16];
     /// rng.try_fill_u8(&mut nonce)?;
@@ -310,13 +318,11 @@ impl Rng {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     pac,
-    ///     rng::{ClkSrc, Rng},
+    ///     rng::{Clk, Rng},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// Rng::set_clock_source(&mut dp.RCC, ClkSrc::MSI);
-    /// let mut rng = Rng::new(dp.RNG, &mut dp.RCC);
+    /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
     ///
     /// let rand_value: u8 = rng.try_u8()?;
     /// # Ok::<(), stm32wl_hal::rng::Error>(())
@@ -339,13 +345,11 @@ impl Rng {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     pac,
-    ///     rng::{ClkSrc, Rng},
+    ///     rng::{Clk, Rng},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// Rng::set_clock_source(&mut dp.RCC, ClkSrc::MSI);
-    /// let mut rng = Rng::new(dp.RNG, &mut dp.RCC);
+    /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
     ///
     /// let rand_value: u16 = rng.try_u16()?;
     /// # Ok::<(), stm32wl_hal::rng::Error>(())
@@ -368,13 +372,11 @@ impl Rng {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     pac,
-    ///     rng::{ClkSrc, Rng},
+    ///     rng::{Clk, Rng},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// Rng::set_clock_source(&mut dp.RCC, ClkSrc::MSI);
-    /// let mut rng = Rng::new(dp.RNG, &mut dp.RCC);
+    /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
     ///
     /// let rand_value: u32 = rng.try_u32()?;
     /// # Ok::<(), stm32wl_hal::rng::Error>(())
@@ -397,13 +399,11 @@ impl Rng {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     pac,
-    ///     rng::{ClkSrc, Rng},
+    ///     rng::{Clk, Rng},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// Rng::set_clock_source(&mut dp.RCC, ClkSrc::MSI);
-    /// let mut rng = Rng::new(dp.RNG, &mut dp.RCC);
+    /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
     ///
     /// let rand_value: u64 = rng.try_u64()?;
     /// # Ok::<(), stm32wl_hal::rng::Error>(())
@@ -426,13 +426,11 @@ impl Rng {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     pac,
-    ///     rng::{ClkSrc, Rng},
+    ///     rng::{Clk, Rng},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// Rng::set_clock_source(&mut dp.RCC, ClkSrc::MSI);
-    /// let mut rng = Rng::new(dp.RNG, &mut dp.RCC);
+    /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
     ///
     /// let rand_value: u128 = rng.try_u128()?;
     /// # Ok::<(), stm32wl_hal::rng::Error>(())

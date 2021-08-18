@@ -6,7 +6,7 @@ use defmt_rtt as _; // global logger
 use panic_probe as _;
 use stm32wl_hal::{
     pac, rcc,
-    rng::{rand_core::RngCore, ClkSrc, Rng},
+    rng::{rand_core::RngCore, Clk, Rng},
 };
 
 /// This is not a cryptographically secure validation, this only ensures that
@@ -39,8 +39,7 @@ mod tests {
 
         rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut rcc);
 
-        Rng::set_clock_source(&mut rcc, ClkSrc::MSI);
-        Rng::new(dp.RNG, &mut rcc)
+        Rng::new(dp.RNG, Clk::MSI, &mut rcc)
     }
 
     /// Not really a test, just a benchmark

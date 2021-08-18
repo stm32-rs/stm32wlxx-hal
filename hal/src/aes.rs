@@ -63,7 +63,6 @@ impl From<Mode> for u8 {
 /// AES errors.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-#[non_exhaustive] // add timeout at some point
 pub enum Error {
     /// Unexpected read operation from the AES_DOUTR register
     /// during computation or data input phase.
@@ -94,26 +93,12 @@ impl Aes {
     ///
     /// # Example
     ///
-    /// Synchronous (normal) usage:
-    ///
     /// ```no_run
     /// use stm32wl_hal::{aes::Aes, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let mut aes = Aes::new(dp.AES, &mut dp.RCC);
-    /// ```
-    ///
-    /// Asynchronous usage requires the AES interrupt unmasked in the NVIC:
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{aes::Aes, pac};
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// let mut aes = Aes::new(dp.AES, &mut dp.RCC);
-    /// # #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
-    /// unsafe { Aes::unmask_irq() };
     /// ```
     pub fn new(aes: pac::AES, rcc: &mut pac::RCC) -> Aes {
         rcc.ahb3enr.modify(|_, w| w.aesen().set_bit());
@@ -205,7 +190,6 @@ impl Aes {
     }
 
     fn poll_completion(&self) -> Result<(), Error> {
-        // TODO: timeouts
         loop {
             let sr = self.aes.sr.read();
             if sr.wrerr().bit_is_set() {
@@ -220,23 +204,23 @@ impl Aes {
         }
     }
 
+    #[inline]
     fn set_din(&mut self, din: &[u32; 4]) {
         din.iter()
             .for_each(|dw| self.aes.dinr.write(|w| w.din().bits(*dw)))
     }
 
-    fn dout(&self) -> [u32; 4] {
-        let mut ret: [u32; 4] = [0; 4];
-        ret.iter_mut()
+    #[inline]
+    fn dout(&mut self, buf: &mut [u32; 4]) {
+        buf.iter_mut()
             .for_each(|dw| *dw = self.aes.doutr.read().bits());
-        ret
     }
 
     /// Encrypt using the electronic codebook chaining (ECB) algorithm.
     ///
     /// # Panics
     ///
-    /// * Key is not 128-bits long (4 `u32`) or 256-bits long (8 `u32`).
+    /// * Key is not 128-bits long (`[u32; 4]`) or 256-bits long (`[u32; 8]`).
     ///
     /// # Example
     ///
@@ -247,10 +231,16 @@ impl Aes {
     /// const KEY: [u32; 4] = [0; 4];
     ///
     /// let plaintext: [u32; 4] = [0xf34481ec, 0x3cc627ba, 0xcd5dc3fb, 0x08f273e6];
-    /// let chiphertext: [u32; 4] = aes.encrypt_ecb(&KEY, &plaintext)?;
+    /// let mut ciphertext: [u32; 4] = [0; 4];
+    /// aes.encrypt_ecb(&KEY, &plaintext, &mut ciphertext)?;
     /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
-    pub fn encrypt_ecb(&mut self, key: &[u32], plaintext: &[u32; 4]) -> Result<[u32; 4], Error> {
+    pub fn encrypt_ecb(
+        &mut self,
+        key: &[u32],
+        plaintext: &[u32; 4],
+        ciphertext: &mut [u32; 4],
+    ) -> Result<(), Error> {
         const ALGO: Algorithm = Algorithm::Ecb;
         const CHMOD2: bool = ALGO.chmod2();
         const CHMOD10: u8 = ALGO.chmod10();
@@ -277,10 +267,58 @@ impl Aes {
 
         self.set_key(key);
         self.set_din(plaintext);
-        let ret: Result<[u32; 4], Error> = match self.poll_completion() {
-            Ok(_) => Ok(self.dout()),
-            Err(e) => Err(e),
-        };
+        let ret: Result<(), Error> = self.poll_completion().map(|_| self.dout(ciphertext));
+
+        self.aes.cr.write(|w| w.en().clear_bit());
+        ret
+    }
+
+    /// Encrypt using the electronic codebook chaining (ECB) algorithm in-place.
+    ///
+    /// # Panics
+    ///
+    /// * Key is not 128-bits long (`[u32; 4]`) or 256-bits long (`[u32; 8]`).
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut aes = unsafe { stm32wl_hal::aes::Aes::steal() };
+    ///
+    /// // this is a bad key, I am just using values from the NIST testsuite
+    /// const KEY: [u32; 4] = [0; 4];
+    ///
+    /// let mut text: [u32; 4] = [0xf34481ec, 0x3cc627ba, 0xcd5dc3fb, 0x08f273e6];
+    /// aes.encrypt_ecb_inplace(&KEY, &mut text)?;
+    /// # Ok::<(), stm32wl_hal::aes::Error>(())
+    /// ```
+    pub fn encrypt_ecb_inplace(&mut self, key: &[u32], buf: &mut [u32; 4]) -> Result<(), Error> {
+        const ALGO: Algorithm = Algorithm::Ecb;
+        const CHMOD2: bool = ALGO.chmod2();
+        const CHMOD10: u8 = ALGO.chmod10();
+        const MODE: u8 = Mode::Encryption.bits();
+
+        #[rustfmt::skip]
+        self.aes.cr.write(|w|
+            w
+                .en().enabled()
+                .datatype().none()
+                .mode().bits(MODE)
+                .chmod2().bit(CHMOD2)
+                .chmod().bits(CHMOD10)
+                .ccfc().clear()
+                .errc().clear()
+                .ccfie().disabled()
+                .errie().disabled()
+                .dmainen().disabled()
+                .dmaouten().disabled()
+                .gcmph().bits(0) // do not care for ECB
+                .keysize().variant(keysize(key))
+                .npblb().bits(0) // no padding
+        );
+
+        self.set_key(key);
+        self.set_din(buf);
+        let ret: Result<(), Error> = self.poll_completion().map(|_| self.dout(buf));
 
         self.aes.cr.write(|w| w.en().clear_bit());
         ret
@@ -290,7 +328,7 @@ impl Aes {
     ///
     /// # Panics
     ///
-    /// * Key is not 128-bits long (4 `u32`) or 256-bits long (8 `u32`).
+    /// * Key is not 128-bits long (`[u32; 4]`) or 256-bits long (`[u32; 8]`).
     ///
     /// # Example
     ///
@@ -301,10 +339,16 @@ impl Aes {
     /// const KEY: [u32; 4] = [0; 4];
     ///
     /// let ciphertext: [u32; 4] = [0x0336763e, 0x966d9259, 0x5a567cc9, 0xce537f5e];
-    /// let plaintext: [u32; 4] = aes.decrypt_ecb(&KEY, &ciphertext)?;
+    /// let mut plaintext: [u32; 4] = [0; 4];
+    /// aes.decrypt_ecb(&KEY, &ciphertext, &mut plaintext)?;
     /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
-    pub fn decrypt_ecb(&mut self, key: &[u32], ciphertext: &[u32; 4]) -> Result<[u32; 4], Error> {
+    pub fn decrypt_ecb(
+        &mut self,
+        key: &[u32],
+        ciphertext: &[u32; 4],
+        plaintext: &mut [u32; 4],
+    ) -> Result<(), Error> {
         const ALGO: Algorithm = Algorithm::Ecb;
         const CHMOD2: bool = ALGO.chmod2();
         const CHMOD10: u8 = ALGO.chmod10();
@@ -331,10 +375,58 @@ impl Aes {
 
         self.set_key(key);
         self.set_din(ciphertext);
-        let ret: Result<[u32; 4], Error> = match self.poll_completion() {
-            Ok(_) => Ok(self.dout()),
-            Err(e) => Err(e),
-        };
+        let ret: Result<(), Error> = self.poll_completion().map(|_| self.dout(plaintext));
+
+        self.aes.cr.write(|w| w.en().clear_bit());
+        ret
+    }
+
+    /// Decrypt using the electronic codebook chaining (ECB) algorithm in-place.
+    ///
+    /// # Panics
+    ///
+    /// * Key is not 128-bits long (`[u32; 4]`) or 256-bits long (`[u32; 8]`).
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut aes = unsafe { stm32wl_hal::aes::Aes::steal() };
+    ///
+    /// // this is a bad key, I am just using values from the NIST testsuite
+    /// const KEY: [u32; 4] = [0; 4];
+    ///
+    /// let mut text: [u32; 4] = [0x0336763e, 0x966d9259, 0x5a567cc9, 0xce537f5e];
+    /// aes.decrypt_ecb_inplace(&KEY, &mut text)?;
+    /// # Ok::<(), stm32wl_hal::aes::Error>(())
+    /// ```
+    pub fn decrypt_ecb_inplace(&mut self, key: &[u32], buf: &mut [u32; 4]) -> Result<(), Error> {
+        const ALGO: Algorithm = Algorithm::Ecb;
+        const CHMOD2: bool = ALGO.chmod2();
+        const CHMOD10: u8 = ALGO.chmod10();
+        const MODE: u8 = Mode::KeyDerivationDecryption.bits();
+
+        #[rustfmt::skip]
+        self.aes.cr.write(|w|
+            w
+                .en().enabled()
+                .datatype().none()
+                .mode().bits(MODE)
+                .chmod2().bit(CHMOD2)
+                .chmod().bits(CHMOD10)
+                .ccfc().clear()
+                .errc().clear()
+                .ccfie().disabled()
+                .errie().disabled()
+                .dmainen().disabled()
+                .dmaouten().disabled()
+                .gcmph().bits(0) // do not care for ECB
+                .keysize().variant(keysize(key))
+                .npblb().bits(0) // no padding
+        );
+
+        self.set_key(key);
+        self.set_din(buf);
+        let ret: Result<(), Error> = self.poll_completion().map(|_| self.dout(buf));
 
         self.aes.cr.write(|w| w.en().clear_bit());
         ret

@@ -1,4 +1,4 @@
-//! # Inter-Integrated Circuit (I2C) bus
+//! Inter-Integrated Circuit (I2C) bus
 
 use core::convert::TryFrom;
 
@@ -12,6 +12,7 @@ use crate::{
 use embedded_time::{fixed_point::FixedPoint, rate::*};
 
 /// I2C error
+#[derive(Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[non_exhaustive]
 pub enum Error {

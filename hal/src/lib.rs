@@ -47,10 +47,8 @@ pub use ratio::Ratio;
 
 #[cfg(feature = "rt")]
 #[cfg_attr(docsrs, doc(cfg(feature = "rt")))]
-/// Startup code and minimal runtime for Cortex-M microcontrollers
 pub use cortex_m_rt;
 
-/// Cortex-M CPU peripherals
 pub use cortex_m;
-/// Embedded-hal trait abstractions
 pub use embedded_hal;
+pub use embedded_time;

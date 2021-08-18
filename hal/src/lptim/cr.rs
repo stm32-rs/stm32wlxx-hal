@@ -69,12 +69,14 @@ impl Cr {
         self.val & (1 << 3) != 0
     }
 
+    /// Start the timer in continuous mode.
     #[must_use = "set_continuous returns a modified Cr"]
     pub const fn set_continuous(mut self) -> Cr {
         self.val |= 1 << 2;
         self
     }
 
+    /// Start the timer in single-shot mode.
     #[must_use = "set_single returns a modified Cr"]
     pub const fn set_single(mut self) -> Cr {
         self.val |= 1 << 1;

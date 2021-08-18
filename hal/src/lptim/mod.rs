@@ -25,6 +25,7 @@
 //! lptim1.start(16_000_u16);
 //! nb::block!(lptim1.wait());
 //! ```
+#![deny(missing_docs)]
 
 mod cfgr;
 mod cr;
@@ -36,7 +37,7 @@ use crate::{pac, Ratio};
 use paste::paste;
 use void::Void;
 
-/// Low-power timer IRQs
+/// Timer IRQs.
 pub mod irq {
     /// Repetition register update OK.
     pub const REPOK: u32 = 1 << 8;
@@ -157,7 +158,7 @@ impl_lptim_base_for!(LPTIM1);
 impl_lptim_base_for!(LPTIM2);
 impl_lptim_base_for!(LPTIM3);
 
-/// Low-power timer clock selection.
+/// Timer clock selection.
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[repr(u8)]
@@ -219,6 +220,7 @@ paste_lptim!(1);
 paste_lptim!(2);
 paste_lptim!(3);
 
+/// Low-power timer trait.
 pub trait LpTim: sealed::LpTim {
     /// Create a new LPTIM driver.
     ///

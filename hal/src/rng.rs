@@ -130,13 +130,13 @@ impl Rng {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{pac, rng::Rng};
+    /// use stm32wl_hal::{pac, rng::{Rng, Clk}};
     ///
     /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut rcc: pac::RCC = dp.RCC;
     /// let rng_dp: pac::RNG = dp.RNG;
     ///
-    /// let mut rng = Rng::new(rng_dp, &mut rcc);
+    /// let mut rng = Rng::new(rng_dp, Clk::MSI, &mut rcc);
     /// // ... use rng
     /// let rng_dp: pac::RNG = rng.free();
     /// ```

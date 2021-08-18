@@ -267,10 +267,7 @@ impl Aes {
 
         self.set_key(key);
         self.set_din(plaintext);
-        let ret: Result<(), Error> = match self.poll_completion() {
-            Ok(_) => Ok(self.dout(ciphertext)),
-            Err(e) => Err(e),
-        };
+        let ret: Result<(), Error> = self.poll_completion().map(|_| self.dout(ciphertext));
 
         self.aes.cr.write(|w| w.en().clear_bit());
         ret
@@ -290,7 +287,7 @@ impl Aes {
     /// // this is a bad key, I am just using values from the NIST testsuite
     /// const KEY: [u32; 4] = [0; 4];
     ///
-    /// let text: [u32; 4] = [0xf34481ec, 0x3cc627ba, 0xcd5dc3fb, 0x08f273e6];
+    /// let mut text: [u32; 4] = [0xf34481ec, 0x3cc627ba, 0xcd5dc3fb, 0x08f273e6];
     /// aes.encrypt_ecb_inplace(&KEY, &mut text)?;
     /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
@@ -321,10 +318,7 @@ impl Aes {
 
         self.set_key(key);
         self.set_din(buf);
-        let ret: Result<(), Error> = match self.poll_completion() {
-            Ok(_) => Ok(self.dout(buf)),
-            Err(e) => Err(e),
-        };
+        let ret: Result<(), Error> = self.poll_completion().map(|_| self.dout(buf));
 
         self.aes.cr.write(|w| w.en().clear_bit());
         ret
@@ -381,10 +375,7 @@ impl Aes {
 
         self.set_key(key);
         self.set_din(ciphertext);
-        let ret: Result<(), Error> = match self.poll_completion() {
-            Ok(_) => Ok(self.dout(plaintext)),
-            Err(e) => Err(e),
-        };
+        let ret: Result<(), Error> = self.poll_completion().map(|_| self.dout(plaintext));
 
         self.aes.cr.write(|w| w.en().clear_bit());
         ret
@@ -435,10 +426,7 @@ impl Aes {
 
         self.set_key(key);
         self.set_din(buf);
-        let ret: Result<(), Error> = match self.poll_completion() {
-            Ok(_) => Ok(self.dout(buf)),
-            Err(e) => Err(e),
-        };
+        let ret: Result<(), Error> = self.poll_completion().map(|_| self.dout(buf));
 
         self.aes.cr.write(|w| w.en().clear_bit());
         ret

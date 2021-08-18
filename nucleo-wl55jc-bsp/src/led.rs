@@ -19,17 +19,22 @@ pub trait Led<OutPin>
 where
     OutPin: OutputPin<Error = core::convert::Infallible>,
 {
-    /// Output pin driving the LED
+    /// Output pin driving the LED.
     fn output(&mut self) -> &mut OutPin;
 
-    /// Set the LED on
+    /// Set the LED on.
     fn set_on(&mut self) {
         self.output().set_high().unwrap()
     }
 
-    /// Set the LED off
+    /// Set the LED off.
     fn set_off(&mut self) {
         self.output().set_low().unwrap()
+    }
+
+    /// Toggle the LED state.
+    fn toggle(&mut self) {
+        self.gpio.set_level(self.gpio.level().toggle())
     }
 }
 

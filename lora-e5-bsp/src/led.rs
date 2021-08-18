@@ -91,13 +91,18 @@ impl D5 {
         }
     }
 
-    /// Set the LED on
+    /// Set the LED on.
     pub fn set_on(&mut self) {
         self.gpio.set_low().unwrap()
     }
 
-    /// Set the LED off
+    /// Set the LED off.
     pub fn set_off(&mut self) {
         self.gpio.set_high().unwrap()
+    }
+
+    /// Toggle the LED state.
+    pub fn toggle(&mut self) {
+        self.gpio.set_level(self.gpio.level().toggle())
     }
 }

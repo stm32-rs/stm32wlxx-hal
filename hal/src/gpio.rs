@@ -589,6 +589,12 @@ impl PortA {
     }
 
     /// Disable the GPIOA clock.
+    ///
+    /// # Safety
+    ///
+    /// 1. You cannot use any port-A GPIO pin while the clock is disabled.
+    /// 2. You are responsible for re-enabling the clock before resuming use
+    ///    of any port A GPIO.
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpioaen().disabled());
     }
@@ -700,6 +706,12 @@ impl PortB {
     }
 
     /// Disable the GPIOB clock.
+    ///
+    /// # Safety
+    ///
+    /// 1. You cannot use any port-B GPIO pin while the clock is disabled.
+    /// 2. You are responsible for re-enabling the clock before resuming use
+    ///    of any port B GPIO.
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpioben().disabled());
     }
@@ -799,6 +811,12 @@ impl PortC {
     }
 
     /// Disable the GPIOC clock.
+    ///
+    /// # Safety
+    ///
+    /// 1. You cannot use any port-C GPIO pin while the clock is disabled.
+    /// 2. You are responsible for re-enabling the clock before resuming use
+    ///    of any port C GPIO.
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpiocen().disabled());
     }

@@ -143,10 +143,9 @@ jobs:
         with:
           toolchain: stable
           components: clippy
-      - uses: actions-rs/clippy-check@v1.0.7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --features stm32wl5x_cm4
+      # not using clippy-check due to this issue:
+      # https://github.com/actions-rs/clippy-check/issues/2
+      - run: cargo clippy --features stm32wl5x_cm4 -- --deny warnings
 
   format:
     name: Rust Format

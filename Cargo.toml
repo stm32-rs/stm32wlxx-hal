@@ -8,6 +8,7 @@ members = [
     "hal",
     "i2c-testsuite",
     "lora-e5-bsp",
+    "lptim-testsuite",
     "nucleo-wl55jc-bsp",
     "pka-testsuite",
     "rng-testsuite",

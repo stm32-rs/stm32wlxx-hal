@@ -475,7 +475,7 @@ impl Adc {
     /// # Safety
     ///
     /// 1. Ensure nothing is using the ADC before disabling the clock.
-    /// 2. You are responsible for en-enabling the clock before using the ADC.
+    /// 2. You are responsible for re-enabling the clock before using the ADC.
     #[inline]
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.apb2enr.modify(|_, w| w.adcen().disabled());

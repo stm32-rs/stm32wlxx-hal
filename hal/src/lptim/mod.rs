@@ -10,7 +10,7 @@
 //! ```no_run
 //! use stm32wl_hal::{
 //!     embedded_hal::timer::CountDown,
-//!     lptim::{self, LpTim, LpTim1},
+//!     lptim::{self, LpTim, LpTim1, Prescaler::Div1},
 //!     pac,
 //! };
 //!
@@ -20,7 +20,7 @@
 //! dp.RCC.cr.write(|w| w.hsion().set_bit());
 //! while dp.RCC.cr.read().hsirdy().is_not_ready() {}
 //!
-//! let mut lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, &mut dp.RCC);
+//! let mut lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
 //! // wait 16,000 cycles at 16MHz
 //! lptim1.start(16_000_u16);
 //! nb::block!(lptim1.wait());
@@ -75,6 +75,8 @@ pub(crate) mod sealed {
         fn set_icr(&mut self, icr: u32);
         fn set_ier(&mut self, ier: u32);
         fn cfgr(&self) -> Cfgr;
+        fn set_cfgr(&mut self, cfgr: Cfgr);
+        fn modify_cfgr<F: FnOnce(Cfgr) -> Cfgr>(&mut self, f: F);
         fn cr(&self) -> Cr;
         fn set_cr(&mut self, cr: Cr);
         fn set_cmp(&mut self, cmp: u16);
@@ -114,6 +116,18 @@ macro_rules! impl_lptim_base_for {
             #[inline(always)]
             fn cfgr(&self) -> Cfgr {
                 self.cfgr.read().bits().into()
+            }
+
+            #[inline(always)]
+            fn set_cfgr(&mut self, cfgr: Cfgr) {
+                // safety: reserved bits are masked
+                self.cfgr
+                    .write(|w| unsafe { w.bits(u32::from(cfgr) & 0x01FE_EEDF) })
+            }
+
+            #[inline(always)]
+            fn modify_cfgr<F: FnOnce(Cfgr) -> Cfgr>(&mut self, f: F) {
+                self.set_cfgr(f(self.cfgr()))
             }
 
             #[inline(always)]
@@ -233,7 +247,7 @@ pub trait LpTim: sealed::LpTim {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     lptim::{self, LpTim, LpTim1},
+    ///     lptim::{self, LpTim, LpTim1, Prescaler::Div1},
     ///     pac,
     /// };
     ///
@@ -243,9 +257,9 @@ pub trait LpTim: sealed::LpTim {
     /// dp.RCC.cr.write(|w| w.hsion().set_bit());
     /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
     ///
-    /// let lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, &mut dp.RCC);
+    /// let lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
     /// ```
-    fn new(tim: Self::Pac, clk: Clk, rcc: &mut pac::RCC) -> Self;
+    fn new(tim: Self::Pac, clk: Clk, div: Prescaler, rcc: &mut pac::RCC) -> Self;
 
     /// Free the LPTIM registers from the driver.
     ///
@@ -253,7 +267,7 @@ pub trait LpTim: sealed::LpTim {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     lptim::{self, LpTim, LpTim1},
+    ///     lptim::{self, LpTim, LpTim1, Prescaler::Div1},
     ///     pac,
     /// };
     ///
@@ -263,7 +277,7 @@ pub trait LpTim: sealed::LpTim {
     /// dp.RCC.cr.write(|w| w.hsion().set_bit());
     /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
     ///
-    /// let lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, &mut dp.RCC);
+    /// let lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
     /// // ... use lptim
     /// let lptim1: pac::LPTIM1 = lptim1.free();
     /// ```
@@ -337,7 +351,7 @@ pub trait LpTim: sealed::LpTim {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     lptim::{self, LpTim, LpTim1},
+    ///     lptim::{self, LpTim, LpTim1, Prescaler::Div1},
     ///     pac,
     /// };
     ///
@@ -347,7 +361,7 @@ pub trait LpTim: sealed::LpTim {
     /// dp.RCC.cr.write(|w| w.hsion().set_bit());
     /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
     ///
-    /// let lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, &mut dp.RCC);
+    /// let lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
     /// assert_eq!(lptim1.hz(&dp.RCC).to_integer(), 16_000_000);
     /// ```
     fn hz(&self, rcc: &pac::RCC) -> Ratio<u32> {
@@ -425,10 +439,11 @@ pub trait LpTim: sealed::LpTim {
 
 impl LpTim for LpTim1 {
     #[inline]
-    fn new(tim: Self::Pac, clk: Clk, rcc: &mut pac::RCC) -> Self {
+    fn new(mut tim: Self::Pac, clk: Clk, div: Prescaler, rcc: &mut pac::RCC) -> Self {
         rcc.ccipr.modify(|_, w| w.lptim1sel().bits(clk as u8));
         unsafe { Self::pulse_reset(rcc) }
         Self::enable_clock(rcc);
+        tim.set_cfgr(Cfgr::RESET.set_prescaler(div));
         Self { tim }
     }
 
@@ -469,10 +484,11 @@ impl LpTim for LpTim1 {
 
 impl LpTim for LpTim2 {
     #[inline]
-    fn new(tim: Self::Pac, clk: Clk, rcc: &mut pac::RCC) -> Self {
+    fn new(mut tim: Self::Pac, clk: Clk, div: Prescaler, rcc: &mut pac::RCC) -> Self {
         rcc.ccipr.modify(|_, w| w.lptim2sel().bits(clk as u8));
         unsafe { Self::pulse_reset(rcc) }
         Self::enable_clock(rcc);
+        tim.set_cfgr(Cfgr::RESET.set_prescaler(div));
         Self { tim }
     }
 
@@ -513,10 +529,11 @@ impl LpTim for LpTim2 {
 
 impl LpTim for LpTim3 {
     #[inline]
-    fn new(tim: Self::Pac, clk: Clk, rcc: &mut pac::RCC) -> Self {
+    fn new(mut tim: Self::Pac, clk: Clk, div: Prescaler, rcc: &mut pac::RCC) -> Self {
         rcc.ccipr.modify(|_, w| w.lptim3sel().bits(clk as u8));
         unsafe { Self::pulse_reset(rcc) }
         Self::enable_clock(rcc);
+        tim.set_cfgr(Cfgr::RESET.set_prescaler(div));
         Self { tim }
     }
 

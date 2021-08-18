@@ -6,7 +6,7 @@ use defmt_rtt as _; // global logger
 use panic_probe as _;
 use stm32wl_hal::{
     embedded_hal::timer::CountDown,
-    lptim::{self, LpTim, LpTim1, LpTim2, LpTim3},
+    lptim::{self, LpTim, LpTim1, LpTim2, LpTim3, Prescaler},
     pac::{self, DWT},
     rcc,
     util::reset_cycle_count,
@@ -44,9 +44,12 @@ mod tests {
 
         defmt::assert_eq!(LpTim1::clk(&dp.RCC), lptim::Clk::Pclk);
 
-        let lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, &mut dp.RCC);
-        let lptim2: LpTim2 = LpTim2::new(dp.LPTIM2, lptim::Clk::Hsi16, &mut dp.RCC);
-        let lptim3: LpTim3 = LpTim3::new(dp.LPTIM3, lptim::Clk::Hsi16, &mut dp.RCC);
+        let lptim1: LpTim1 =
+            LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, Prescaler::Div1, &mut dp.RCC);
+        let lptim2: LpTim2 =
+            LpTim2::new(dp.LPTIM2, lptim::Clk::Hsi16, Prescaler::Div1, &mut dp.RCC);
+        let lptim3: LpTim3 =
+            LpTim3::new(dp.LPTIM3, lptim::Clk::Hsi16, Prescaler::Div1, &mut dp.RCC);
 
         defmt::assert_eq!(LpTim1::clk(&dp.RCC), lptim::Clk::Hsi16);
 

@@ -347,7 +347,17 @@ where
     MISO: gpio::sealed::Spi1Miso,
     SCK: gpio::sealed::Spi1Sck,
 {
-    /// Disable the SPI1 clock
+    /// Disable the SPI1 clock.
+    ///
+    /// # Safety
+    ///
+    /// 1. You are responsible for ensuring the SPI bus is in a state where the
+    ///    clock can be disabled without entering an error state.
+    /// 2. You cannot use the SPI bus while the clock is disabled.
+    /// 3. You are responsible for re-enabling the clock before resuming use
+    ///    of the SPI bus.
+    /// 4. You are reponsible for setting up anything that may have lost state
+    ///    while the clock was disabled.
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.apb2enr.modify(|_, w| w.spi1en().disabled());
     }
@@ -570,7 +580,17 @@ where
     MISO: gpio::sealed::Spi2Miso,
     SCK: gpio::sealed::Spi2Sck,
 {
-    /// Disable the SPI2 clock
+    /// Disable the SPI2 clock.
+    ///
+    /// # Safety
+    ///
+    /// 1. You are responsible for ensuring the SPI bus is in a state where the
+    ///    clock can be disabled without entering an error state.
+    /// 2. You cannot use the SPI bus while the clock is disabled.
+    /// 3. You are responsible for re-enabling the clock before resuming use
+    ///    of the SPI bus.
+    /// 4. You are reponsible for setting up anything that may have lost state
+    ///    while the clock was disabled.
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.apb1enr1.modify(|_, w| w.spi2s2en().disabled());
     }
@@ -789,6 +809,16 @@ where
 #[allow(missing_docs)] // struct is hidden
 impl<RxDma, TxDma> Spi3<RxDma, TxDma> {
     /// Disable the SPI3 (SubGHz SPI) clock
+    ///
+    /// # Safety
+    ///
+    /// 1. You are responsible for ensuring the SPI bus is in a state where the
+    ///    clock can be disabled without entering an error state.
+    /// 2. You cannot use the SPI bus while the clock is disabled.
+    /// 3. You are responsible for re-enabling the clock before resuming use
+    ///    of the SPI bus.
+    /// 4. You are reponsible for setting up anything that may have lost state
+    ///    while the clock was disabled.
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.apb3enr.modify(|_, w| w.subghzspien().disabled());
     }

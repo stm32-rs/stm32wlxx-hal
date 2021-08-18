@@ -16,6 +16,7 @@ There should be enough code for very basic:
 * SPI
 * GPIO
 * UART
+* I2C
 * ADC sampling
 * DAC output
 * ECDSA signing

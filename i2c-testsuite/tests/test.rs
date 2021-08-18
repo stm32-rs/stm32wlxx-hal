@@ -111,7 +111,7 @@ mod tests {
 fn I2C2_EV() {
     let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
     let isr = dp.I2C2.isr.read();
-    defmt::debug!("I2C2 ISR {:#08X}", isr.bits());
+    defmt::debug!("I2C2 ISR={:#08X}", isr.bits());
 
     if isr.rxne().is_not_empty() {
         let rxdr: u8 = dp.I2C2.rxdr.read().rxdata().bits();

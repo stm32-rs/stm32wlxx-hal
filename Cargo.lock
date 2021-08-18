@@ -105,39 +105,19 @@ dependencies = [
 
 [[package]]
 name = "cortex-m-rt"
-version = "0.6.14"
+version = "0.6.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6d8353767db816419630a76d5f1ad5b09610d22b67ceb59647df6a8abc667f8"
+checksum = "454f278bf469e2de0a4d22ea019d169d8944f86957c8207a39e3f66c32be2fc6"
 dependencies = [
- "cortex-m-rt-macros 0.1.8",
+ "cortex-m-rt-macros",
  "r0",
 ]
 
 [[package]]
-name = "cortex-m-rt"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "069533b58e25b635fac881eb6556616bd8f83a3e0ffe2b4b9619289ed14d465e"
-dependencies = [
- "cortex-m-rt-macros 0.7.0",
-]
-
-[[package]]
 name = "cortex-m-rt-macros"
-version = "0.1.8"
+version = "0.6.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4717562afbba06e760d34451919f5c3bf3ac15c7bb897e8b04862a7428378647"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "cortex-m-rt-macros"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0f6f3e36f203cfedbc78b357fb28730aa2c6dc1ab060ee5c2405e843988d3c7"
+checksum = "c8e3aa52243e26f5922fa522b0814019e0c98fc567e2756d715dce7ad7a81f49"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -200,7 +180,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebeddf511188fb687bce605fb065495e71aa6af7e6ae4d8aa404a93bc585ec09"
 dependencies = [
  "cortex-m 0.7.3",
- "cortex-m-rt 0.6.14",
+ "cortex-m-rt",
  "defmt",
  "defmt-test-macros",
 ]
@@ -278,7 +258,7 @@ dependencies = [
 name = "i2c-testsuite"
 version = "0.1.0"
 dependencies = [
- "cortex-m-rt 0.7.0",
+ "cortex-m-rt",
  "defmt",
  "defmt-rtt",
  "defmt-test",
@@ -386,7 +366,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "45b5c81d6b51f415b3ba40b30dc598dfffb29ad4cf4a8815989754850ce6c0dc"
 dependencies = [
  "cortex-m 0.6.7",
- "cortex-m-rt 0.6.14",
+ "cortex-m-rt",
  "defmt",
 ]
 
@@ -511,11 +491,11 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 [[package]]
 name = "stm32wl"
 version = "0.13.0"
-source = "git+https://github.com/newAM/stm32wl-rs.git?rev=ff8aa208634881cd9fab307a37073431b346b5db#ff8aa208634881cd9fab307a37073431b346b5db"
+source = "git+https://github.com/newAM/stm32wl-rs.git?rev=239ceea719f2e26b70e8680f87a31b4a309b5ff8#239ceea719f2e26b70e8680f87a31b4a309b5ff8"
 dependencies = [
  "bare-metal 1.0.0",
  "cortex-m 0.7.3",
- "cortex-m-rt 0.7.0",
+ "cortex-m-rt",
  "vcell",
 ]
 
@@ -525,7 +505,7 @@ version = "0.1.0-alpha.0"
 dependencies = [
  "cfg-if",
  "cortex-m 0.7.3",
- "cortex-m-rt 0.7.0",
+ "cortex-m-rt",
  "defmt",
  "embedded-hal",
  "embedded-time",
@@ -604,9 +584,9 @@ checksum = "6a02e4885ed3bc0f2de90ea6dd45ebcbb66dacffe03547fadbb0eeae2770887d"
 
 [[package]]
 name = "volatile-register"
-version = "0.2.1"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ee8f19f9d74293faf70901bc20ad067dc1ad390d2cbf1e3f75f721ffee908b6"
+checksum = "0d67cb4616d99b940db1d6bd28844ff97108b498a6ca850e5b6191a532063286"
 dependencies = [
  "vcell",
 ]

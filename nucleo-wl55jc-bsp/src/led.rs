@@ -3,7 +3,7 @@
 use stm32wl_hal as hal;
 
 use hal::{
-    embedded_hal::digital::v2::OutputPin,
+    embedded_hal::digital::v2::{OutputPin, ToggleableOutputPin},
     gpio::{self, pins, Output, OutputArgs},
 };
 
@@ -17,7 +17,8 @@ const LED_ARGS: OutputArgs = OutputArgs {
 /// Simple trait for an LED
 pub trait Led<OutPin>
 where
-    OutPin: OutputPin<Error = core::convert::Infallible>,
+    OutPin: ToggleableOutputPin<Error = core::convert::Infallible>
+        + OutputPin<Error = core::convert::Infallible>,
 {
     /// Output pin driving the LED.
     fn output(&mut self) -> &mut OutPin;
@@ -34,7 +35,7 @@ where
 
     /// Toggle the LED state.
     fn toggle(&mut self) {
-        self.gpio.set_level(self.gpio.level().toggle())
+        self.output().toggle().unwrap()
     }
 }
 

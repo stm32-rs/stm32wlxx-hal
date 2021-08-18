@@ -1165,6 +1165,21 @@ where
     }
 }
 
+impl<P> embedded_hal::digital::v2::StatefulOutputPin for Output<P>
+where
+    P: sealed::PinOps,
+{
+    fn is_set_high(&self) -> Result<bool, Self::Error> {
+        Ok(self.pin.output_level().is_high())
+    }
+
+    fn is_set_low(&self) -> Result<bool, Self::Error> {
+        Ok(self.pin.output_level().is_low())
+    }
+}
+
+impl<P: sealed::PinOps> embedded_hal::digital::v2::toggleable::Default for Output<P> {}
+
 /// Input pin
 #[derive(Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]

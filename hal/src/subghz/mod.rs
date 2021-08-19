@@ -233,7 +233,7 @@ impl<RxDma, TxDma> SubGhz<RxDma, TxDma> {
     ///
     /// let mut gpioa = PortA::split(dp.GPIOA, &mut dp.RCC);
     /// let mut sg = SubGhz::new(dp.SPI3, &mut dp.RCC);
-    /// sg.enable_spi_debug(gpioa.pa4, gpioa.pa5, gpioa.pa6, gpioa.pa7);
+    /// sg.enable_spi_debug(gpioa.a4, gpioa.a5, gpioa.a6, gpioa.a7);
     /// ```
     pub fn enable_spi_debug(
         &mut self,
@@ -265,7 +265,7 @@ impl<RxDma, TxDma> SubGhz<RxDma, TxDma> {
     ///
     /// let mut gpioa = PortA::split(dp.GPIOA, &mut dp.RCC);
     /// let mut sg = SubGhz::new(dp.SPI3, &mut dp.RCC);
-    /// sg.enable_spi_debug(gpioa.pa4, gpioa.pa5, gpioa.pa6, gpioa.pa7);
+    /// sg.enable_spi_debug(gpioa.a4, gpioa.a5, gpioa.a6, gpioa.a7);
     ///
     /// let (a4, a5, a6, a7) = sg.disable_spi_debug().unwrap();
     /// ```
@@ -287,7 +287,7 @@ impl<RxDma, TxDma> SubGhz<RxDma, TxDma> {
     /// let mut sg = SubGhz::new(dp.SPI3, &mut dp.RCC);
     ///
     /// assert!(!sg.spi_debug_enabled());
-    /// sg.enable_spi_debug(gpioa.pa4, gpioa.pa5, gpioa.pa6, gpioa.pa7);
+    /// sg.enable_spi_debug(gpioa.a4, gpioa.a5, gpioa.a6, gpioa.a7);
     /// assert!(sg.spi_debug_enabled());
     /// ```
     pub fn spi_debug_enabled(&self) -> bool {

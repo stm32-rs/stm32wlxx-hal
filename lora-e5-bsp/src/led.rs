@@ -34,7 +34,7 @@ impl D5 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let mut d5 = led::D5::new(gpiob.pb5);
+    /// let mut d5 = led::D5::new(gpiob.b5);
     /// d5.set_on();
     /// ```
     pub fn new(b5: pins::B5) -> Self {
@@ -56,9 +56,9 @@ impl D5 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let mut d5 = led::D5::new(gpiob.pb5);
+    /// let mut d5 = led::D5::new(gpiob.b5);
     /// // ... use LED
-    /// let pb5 = d5.free();
+    /// let b5 = d5.free();
     /// ```
     pub fn free(self) -> pins::B5 {
         self.gpio.free()

@@ -50,7 +50,7 @@ mod tests {
 
         let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
         let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-        let _: LpTim3Trg = LpTim3Trg::new(gpioa.pa11);
+        let _: LpTim3Trg = LpTim3Trg::new(gpioa.a11);
 
         let lptim1: LpTim1 =
             LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, Prescaler::Div128, &mut dp.RCC);
@@ -75,7 +75,7 @@ mod tests {
             lptim2,
             lptim3,
             rcc: dp.RCC,
-            b7: Output::default(gpiob.pb7),
+            b7: Output::default(gpiob.b7),
         }
     }
 
@@ -100,7 +100,7 @@ mod tests {
 
     #[test]
     fn oneshot_external_trigger(ta: &mut TestArgs) {
-        defmt::warn!("Pin PB7 must be connected to PA11 for this test to pass");
+        defmt::warn!("Pin B7 must be connected to A11 for this test to pass");
 
         const CYCLES: u16 = 10_000;
         unsafe { LpTim3::pulse_reset(&mut ta.rcc) };

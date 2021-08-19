@@ -288,7 +288,7 @@ mod tests {
 
         let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
         let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-        let mut rfs: RfSwitch = RfSwitch::new(gpioc.pc3, gpioc.pc4, gpioc.pc5);
+        let mut rfs: RfSwitch = RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5);
         rfs.set_rx();
 
         let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
@@ -297,7 +297,7 @@ mod tests {
 
         let mut sg: SubGhz<Dma1Ch1, Dma2Ch1> =
             SubGhz::new_with_dma(dp.SPI3, dma.d1c1, dma.d2c1, &mut dp.RCC);
-        sg.enable_spi_debug(gpioa.pa4, gpioa.pa5, gpioa.pa6, gpioa.pa7);
+        sg.enable_spi_debug(gpioa.a4, gpioa.a5, gpioa.a6, gpioa.a7);
 
         cp.DCB.enable_trace();
         cp.DWT.enable_cycle_counter();

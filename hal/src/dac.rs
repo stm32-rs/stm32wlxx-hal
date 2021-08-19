@@ -259,7 +259,7 @@ impl Dac {
     /// let mut dac: Dac = Dac::new(dp.DAC, &mut dp.RCC);
     /// let mut gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
     ///
-    /// dac.set_mode_pin(Analog::new(gpioa.pa10), ModePin::NormBuf);
+    /// dac.set_mode_pin(Analog::new(gpioa.a10), ModePin::NormBuf);
     /// ```
     ///
     /// Sample and hold.
@@ -280,7 +280,7 @@ impl Dac {
     /// let mut dac: Dac = Dac::new(dp.DAC, &mut dp.RCC);
     /// let mut gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
     ///
-    /// dac.set_mode_pin(Analog::new(gpioa.pa10), ModePin::SampleHoldBuf);
+    /// dac.set_mode_pin(Analog::new(gpioa.a10), ModePin::SampleHoldBuf);
     /// ```
     pub fn set_mode_pin(&mut self, a10: Analog<A10>, mode: ModePin) {
         let cr = self.dac.cr.read();
@@ -353,8 +353,8 @@ impl Dac {
     /// let mut dac: Dac = Dac::new(dp.DAC, &mut dp.RCC);
     /// let mut gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
     ///
-    /// dac.set_mode_pin(Analog::new(gpioa.pa10), ModePin::NormBuf);
-    /// let pa10: Analog<pins::A10> = dac.set_mode_chip(ModeChip::Norm).unwrap();
+    /// dac.set_mode_pin(Analog::new(gpioa.a10), ModePin::NormBuf);
+    /// let a10: Analog<pins::A10> = dac.set_mode_chip(ModeChip::Norm).unwrap();
     /// ```
     pub fn set_mode_chip(&mut self, mode: ModeChip) -> Option<Analog<A10>> {
         let cr = self.dac.cr.read();

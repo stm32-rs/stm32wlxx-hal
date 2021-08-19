@@ -467,8 +467,7 @@ macro_rules! impl_tx_en_dis {
             ///
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
             /// let uart: LpUart<NoRx, pins::B11> =
-            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
-            ///         .enable_tx(gpiob.pb11);
+            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC).enable_tx(gpiob.b11);
             /// ```
             pub fn enable_tx<TX: gpio::sealed::$trt>(self, mut tx: TX) -> $uart<RX, TX> {
                 cortex_m::interrupt::free(|cs| tx.$method(cs));
@@ -504,7 +503,7 @@ macro_rules! impl_tx_en_dis {
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
             /// let uart: LpUart<NoRx, (pins::B11, Dma2Ch7)> =
             ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
-            ///         .enable_tx_dma(gpiob.pb11, dma.d2c7);
+            ///         .enable_tx_dma(gpiob.b11, dma.d2c7);
             /// ```
             pub fn enable_tx_dma<TxPin: gpio::sealed::$trt, TxDma: DmaCh + DmaOps>(
                 self,
@@ -548,10 +547,9 @@ macro_rules! impl_tx_en_dis {
             ///
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
             /// let uart: LpUart<NoRx, pins::B11> =
-            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
-            ///         .enable_tx(gpiob.pb11);
+            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC).enable_tx(gpiob.b11);
             ///
-            /// let (uart, pb11): (LpUart<NoRx, NoTx>, pins::B11) = uart.disable_tx();
+            /// let (uart, b11): (LpUart<NoRx, NoTx>, pins::B11) = uart.disable_tx();
             /// ```
             pub fn disable_tx(self) -> ($uart<RX, NoTx>, TX) {
                 self.uart.cr1.modify(|_, w| w.te().disabled());
@@ -595,8 +593,7 @@ macro_rules! impl_rx_en_dis {
             ///
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
             /// let uart: LpUart<pins::B10, NoTx> =
-            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
-            ///         .enable_rx(gpiob.pb10);
+            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC).enable_rx(gpiob.b10);
             /// ```
             pub fn enable_rx<RX: gpio::sealed::$trt>(self, mut rx: RX) -> $uart<RX, TX> {
                 cortex_m::interrupt::free(|cs| rx.$method(cs));
@@ -632,7 +629,7 @@ macro_rules! impl_rx_en_dis {
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
             /// let uart: LpUart<(pins::B10, Dma2Ch2), NoTx> =
             ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
-            ///         .enable_rx_dma(gpiob.pb10, dma.d2c2);
+            ///         .enable_rx_dma(gpiob.b10, dma.d2c2);
             /// ```
             pub fn enable_rx_dma<RxPin: gpio::sealed::$trt, RxDma: DmaCh + DmaOps>(
                 self,
@@ -676,10 +673,9 @@ macro_rules! impl_rx_en_dis {
             ///
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
             /// let uart: LpUart<pins::B10, NoTx> =
-            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
-            ///         .enable_rx(gpiob.pb10);
+            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC).enable_rx(gpiob.b10);
             ///
-            /// let (uart, pb10): (LpUart<NoRx, NoTx>, pins::B10) = uart.disable_rx();
+            /// let (uart, b10): (LpUart<NoRx, NoTx>, pins::B10) = uart.disable_rx();
             /// ```
             pub fn disable_rx(self) -> ($uart<NoRx, TX>, RX) {
                 self.uart.cr1.modify(|_, w| w.re().disabled());

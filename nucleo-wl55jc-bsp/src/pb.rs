@@ -131,7 +131,7 @@ impl Pb3 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let pb3 = Pb3::new(gpioc.pc6);
+    /// let pb3 = Pb3::new(gpioc.c6);
     /// ```
     pub fn new(c6: pins::C6) -> Self {
         Self {
@@ -152,7 +152,7 @@ impl Pb3 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let pb3 = Pb3::new(gpioc.pc6);
+    /// let pb3 = Pb3::new(gpioc.c6);
     /// // ... use push button
     /// let c6 = pb3.free();
     /// ```
@@ -200,7 +200,7 @@ impl Pb2 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let pb2 = Pb2::new(gpioa.pa1);
+    /// let pb2 = Pb2::new(gpioa.a1);
     /// ```
     pub fn new(a1: pins::A1) -> Self {
         Self {
@@ -221,7 +221,7 @@ impl Pb2 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let pb2 = Pb2::new(gpioa.pa1);
+    /// let pb2 = Pb2::new(gpioa.a1);
     /// // ... use push button
     /// let a1 = pb2.free();
     /// ```
@@ -271,7 +271,7 @@ impl Pb1 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let pb1 = Pb1::new(gpioa.pa0);
+    /// let pb1 = Pb1::new(gpioa.a0);
     /// ```
     pub fn new(a0: pins::A0) -> Self {
         Self {
@@ -292,7 +292,7 @@ impl Pb1 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let pb1 = Pb1::new(gpioa.pa0);
+    /// let pb1 = Pb1::new(gpioa.a0);
     /// // ... use push button
     /// let a0 = pb1.free();
     /// ```

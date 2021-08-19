@@ -32,7 +32,7 @@ impl RfSwitch {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let rfs = RfSwitch::new(gpioc.pc3, gpioc.pc4, gpioc.pc5);
+    /// let rfs = RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5);
     /// ```
     pub fn new(c3: pins::C3, c4: pins::C4, c5: pins::C5) -> RfSwitch {
         const ARGS: OutputArgs = OutputArgs {
@@ -61,7 +61,7 @@ impl RfSwitch {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let mut rfs = RfSwitch::new(gpioc.pc3, gpioc.pc4, gpioc.pc5);
+    /// let mut rfs = RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5);
     /// rfs.set_rx()
     /// ```
     pub fn set_rx(&mut self) {
@@ -83,7 +83,7 @@ impl RfSwitch {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let mut rfs = RfSwitch::new(gpioc.pc3, gpioc.pc4, gpioc.pc5);
+    /// let mut rfs = RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5);
     /// rfs.set_tx_lp()
     /// ```
     pub fn set_tx_lp(&mut self) {
@@ -105,7 +105,7 @@ impl RfSwitch {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let mut rfs = RfSwitch::new(gpioc.pc3, gpioc.pc4, gpioc.pc5);
+    /// let mut rfs = RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5);
     /// rfs.set_tx_hp()
     /// ```
     pub fn set_tx_hp(&mut self) {

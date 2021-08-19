@@ -467,8 +467,7 @@ macro_rules! impl_tx_en_dis {
             ///
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
             /// let uart: LpUart<NoRx, pins::B11> =
-            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
-            ///         .enable_tx(gpiob.b11);
+            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC).enable_tx(gpiob.b11);
             /// ```
             pub fn enable_tx<TX: gpio::sealed::$trt>(self, mut tx: TX) -> $uart<RX, TX> {
                 cortex_m::interrupt::free(|cs| tx.$method(cs));
@@ -548,8 +547,7 @@ macro_rules! impl_tx_en_dis {
             ///
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
             /// let uart: LpUart<NoRx, pins::B11> =
-            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
-            ///         .enable_tx(gpiob.b11);
+            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC).enable_tx(gpiob.b11);
             ///
             /// let (uart, b11): (LpUart<NoRx, NoTx>, pins::B11) = uart.disable_tx();
             /// ```
@@ -595,8 +593,7 @@ macro_rules! impl_rx_en_dis {
             ///
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
             /// let uart: LpUart<pins::B10, NoTx> =
-            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
-            ///         .enable_rx(gpiob.b10);
+            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC).enable_rx(gpiob.b10);
             /// ```
             pub fn enable_rx<RX: gpio::sealed::$trt>(self, mut rx: RX) -> $uart<RX, TX> {
                 cortex_m::interrupt::free(|cs| rx.$method(cs));
@@ -676,8 +673,7 @@ macro_rules! impl_rx_en_dis {
             ///
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
             /// let uart: LpUart<pins::B10, NoTx> =
-            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
-            ///         .enable_rx(gpiob.b10);
+            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC).enable_rx(gpiob.b10);
             ///
             /// let (uart, b10): (LpUart<NoRx, NoTx>, pins::B10) = uart.disable_rx();
             /// ```

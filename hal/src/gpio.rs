@@ -263,8 +263,7 @@ pub trait Exti {
 
     /// Set the current port as the interrupt source.
     ///
-    /// **Note:** Only one port (A, B, C) can be active at a time for each
-    /// pin number.
+    /// Only one port (A, B, C) can be active at a time for each pin number.
     /// For example,
     /// enabling PA2 will disable PB2 and PC2 if previously enabled.
     ///

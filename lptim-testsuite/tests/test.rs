@@ -5,8 +5,10 @@ use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use panic_probe as _;
 use stm32wl_hal::{
+    embedded_hal::digital::v2::ToggleableOutputPin,
     embedded_hal::timer::CountDown,
-    lptim::{self, LpTim, LpTim1, LpTim2, LpTim3, Prescaler},
+    gpio::{pins, LpTim3Trg, Output, PortA, PortB},
+    lptim::{self, Filter, LpTim, LpTim1, LpTim2, LpTim3, Prescaler, TrgPol, TrgSel3},
     pac::{self, DWT},
     rcc,
     util::reset_cycle_count,
@@ -29,6 +31,7 @@ mod tests {
         lptim2: LpTim2,
         lptim3: LpTim3,
         rcc: pac::RCC,
+        b7: Output<pins::B7>,
     }
 
     #[init]
@@ -43,6 +46,10 @@ mod tests {
         while dp.RCC.cr.read().hsirdy().is_not_ready() {}
 
         defmt::assert_eq!(LpTim1::clk(&dp.RCC), lptim::Clk::Pclk);
+
+        let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+        let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+        let _: LpTim3Trg = LpTim3Trg::new(gpioa.pa11);
 
         let lptim1: LpTim1 =
             LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, Prescaler::Div1, &mut dp.RCC);
@@ -65,6 +72,7 @@ mod tests {
             lptim2,
             lptim3,
             rcc: dp.RCC,
+            b7: Output::default(gpiob.pb7),
         }
     }
 
@@ -73,6 +81,46 @@ mod tests {
         const CYCLES: u16 = 10_000;
         let start: u32 = DWT::get_cycle_count();
         ta.lptim3.start(CYCLES);
+        unwrap!(nb::block!(ta.lptim3.wait()).ok());
+        let end: u32 = DWT::get_cycle_count();
+
+        // compare elapsed lptim cycles to elapsed CPU cycles
+        let elapsed: u32 = (end - start) * (FREQ / LPTIM3_FREQ);
+
+        const TOLERANCE: u32 = 100;
+        let elapsed_upper: u32 = elapsed + TOLERANCE;
+        let elapsed_lower: u32 = elapsed - TOLERANCE;
+
+        defmt::debug!("{} < {} < {}", elapsed_lower, elapsed, elapsed_upper);
+        defmt::assert!(elapsed_lower <= elapsed && elapsed <= elapsed_upper);
+    }
+
+    #[test]
+    fn oneshot_external_trigger(ta: &mut TestArgs) {
+        defmt::warn!("Pin PB7 must be connected to PA11 for this test to pass");
+
+        const CYCLES: u16 = 10_000;
+        unsafe { LpTim3::pulse_reset(&mut ta.rcc) };
+
+        ta.lptim3
+            .setup_trigger(Filter::Any, TrgPol::Both, TrgSel3::Pin);
+        ta.lptim3.start(CYCLES);
+
+        // wait 10 LPTIM3 cycles
+        let start: u32 = DWT::get_cycle_count();
+        loop {
+            let elapsed: u32 = DWT::get_cycle_count() - start;
+            if elapsed > (FREQ / LPTIM3_FREQ) * 10 {
+                break;
+            }
+        }
+
+        // timer should still read 0 because it has not triggered
+        defmt::assert_eq!(LpTim3::cnt(), 0);
+
+        let start: u32 = DWT::get_cycle_count();
+        // timer should start when this pin toggles
+        unwrap!(ta.b7.toggle());
         unwrap!(nb::block!(ta.lptim3.wait()).ok());
         let end: u32 = DWT::get_cycle_count();
 

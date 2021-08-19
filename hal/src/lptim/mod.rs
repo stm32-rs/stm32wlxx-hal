@@ -25,12 +25,12 @@
 //! lptim1.start(16_000_u16);
 //! nb::block!(lptim1.wait());
 //! ```
-#![deny(missing_docs)]
+#![warn(missing_docs)]
 
 mod cfgr;
 mod cr;
 
-pub use cfgr::{Cfgr, Prescaler};
+pub use cfgr::{Cfgr, Filter, Prescaler, TrgPol, TrgSel, TrgSel3};
 pub use cr::Cr;
 
 use crate::{pac, Ratio};
@@ -82,6 +82,7 @@ pub(crate) mod sealed {
         fn set_cmp(&mut self, cmp: u16);
         fn set_autoreload(&mut self, ar: u16);
         unsafe fn cnt() -> u16;
+        fn set_or(&mut self, or: u32);
         fn set_rep(&mut self, rep: u8);
     }
 
@@ -161,6 +162,12 @@ macro_rules! impl_lptim_base_for {
             }
 
             #[inline(always)]
+            fn set_or(&mut self, or: u32) {
+                // safety: reserved bits are masked
+                self.or.write(|w| unsafe { w.bits(or & 0b11) })
+            }
+
+            #[inline(always)]
             fn set_rep(&mut self, rep: u8) {
                 self.rcr.write(|w| w.rep().bits(rep))
             }
@@ -236,6 +243,9 @@ paste_lptim!(3);
 
 /// Low-power timer trait.
 pub trait LpTim: sealed::LpTim {
+    /// Tigger selection options.
+    type TrgSel: Into<u32>;
+
     /// Create a new LPTIM driver.
     ///
     /// This will enable the ADC clock and reset the ADC peripheral.
@@ -435,9 +445,65 @@ pub trait LpTim: sealed::LpTim {
     unsafe fn set_icr(&mut self, icr: u32) {
         self.as_mut_tim().set_icr(icr)
     }
+
+    /// Returns `true` if the timer is enabled.
+    fn is_enabled(&self) -> bool {
+        self.as_tim().cr().enabled()
+    }
+
+    /// Setup the trigger.
+    ///
+    /// This relies upon global state for GPIO triggers.
+    /// The design choice was a complex API that was impossible to misuse or a
+    /// simple API that could be misused without undefined behaviour; I picked
+    /// the latter.
+    ///
+    /// # Panics
+    ///
+    /// * (debug) timer is enabled.
+    ///
+    /// # Example
+    ///
+    /// Setup a one-shot timer that starts after a transition on pin A11.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     embedded_hal::timer::CountDown,
+    ///     gpio::{LpTim3Trg, PortA},
+    ///     lptim::{self, Filter, LpTim, LpTim3, Prescaler::Div1, TrgPol, TrgSel3},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.write(|w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// // A11 must be configured as a trigger pin
+    /// // otherwise the timer will never start
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let _: LpTim3Trg = LpTim3Trg::new(gpioa.pa11);
+    ///
+    /// let mut lptim3: LpTim3 = LpTim3::new(dp.LPTIM3, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
+    /// lptim3.setup_trigger(Filter::Any, TrgPol::Both, TrgSel3::Pin);
+    /// lptim3.start(12_345_u16);
+    /// // timer will only start after any transition on pin A11
+    /// nb::block!(lptim3.wait());
+    /// ```
+    fn setup_trigger(&mut self, filter: Filter, pol: TrgPol, sel: Self::TrgSel) {
+        debug_assert!(!self.is_enabled());
+        self.as_mut_tim().modify_cfgr(|w| {
+            w.set_trg_sel(sel.into())
+                .set_trg_pol(pol)
+                .set_trg_filter(filter)
+        })
+    }
 }
 
 impl LpTim for LpTim1 {
+    type TrgSel = TrgSel;
+
     #[inline]
     fn new(mut tim: Self::Pac, clk: Clk, div: Prescaler, rcc: &mut pac::RCC) -> Self {
         rcc.ccipr.modify(|_, w| w.lptim1sel().bits(clk as u8));
@@ -483,6 +549,8 @@ impl LpTim for LpTim1 {
 }
 
 impl LpTim for LpTim2 {
+    type TrgSel = TrgSel;
+
     #[inline]
     fn new(mut tim: Self::Pac, clk: Clk, div: Prescaler, rcc: &mut pac::RCC) -> Self {
         rcc.ccipr.modify(|_, w| w.lptim2sel().bits(clk as u8));
@@ -528,6 +596,8 @@ impl LpTim for LpTim2 {
 }
 
 impl LpTim for LpTim3 {
+    type TrgSel = TrgSel3;
+
     #[inline]
     fn new(mut tim: Self::Pac, clk: Clk, div: Prescaler, rcc: &mut pac::RCC) -> Self {
         rcc.ccipr.modify(|_, w| w.lptim3sel().bits(clk as u8));

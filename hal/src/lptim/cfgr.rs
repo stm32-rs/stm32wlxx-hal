@@ -28,6 +28,87 @@ impl Default for Prescaler {
     }
 }
 
+/// LPTIM 1 and LPTIM 2 trigger selection.
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[repr(u8)]
+pub enum TrgSel {
+    /// GPIO pin.
+    Pin = 0b000,
+    /// RTC alarm A.
+    RtcAlarmA = 0b001,
+    /// RTC alarm B.
+    RtcAlarmB = 0b010,
+    /// TAMP1 input detection.
+    Tamp1 = 0b011,
+    /// TAMP2 input detection.
+    Tamp2 = 0b100,
+    /// TAMP3 input detection.
+    Tamp3 = 0b101,
+    /// COMP1_OUT.
+    Comp1 = 0b110,
+    /// COMP2_OUT.
+    Comp2 = 0b111,
+}
+
+impl From<TrgSel> for u32 {
+    fn from(sel: TrgSel) -> Self {
+        sel as u32
+    }
+}
+
+/// LPTIM 3 trigger selection.
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[repr(u8)]
+pub enum TrgSel3 {
+    /// GPIO pin.
+    Pin = 0b000,
+    /// LPTIM1_OUT.
+    LpTim1 = 0b001,
+    /// LPTIM2_OUT.
+    LpTim2 = 0b010,
+}
+
+impl From<TrgSel3> for u32 {
+    fn from(sel: TrgSel3) -> Self {
+        sel as u32
+    }
+}
+
+/// Trigger polarity.
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[repr(u8)]
+pub enum TrgPol {
+    /// Software trigger.
+    Soft = 0b00,
+    /// Rising edge is active edge.
+    Rising = 0b01,
+    /// Falling edge is active edge.
+    Falling = 0b10,
+    /// Both edges are active edges.
+    Both = 0b11,
+}
+
+/// Filter for triggers and external clocks.
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[repr(u8)]
+pub enum Filter {
+    /// Any level change is considered valid.
+    Any = 0b00,
+    /// Level change must be stable for at least 2 clock periods
+    /// before it is considered as valid.
+    Clk2 = 0b01,
+    /// Level must be stable for at least 4 clock periods
+    /// before it is considered as valid.
+    Clk4 = 0b10,
+    /// Level must be stable for at least 8 clock periods
+    /// before it is considered as valid.
+    Clk8 = 0b11,
+}
+
 impl Prescaler {
     /// Get the prescaler divisor.
     ///
@@ -102,6 +183,33 @@ impl Cfgr {
         self.val
     }
 
+    /// Set the trigger polarity.
+    #[inline]
+    #[must_use = "set_trg_pol returns a modified Cfgr"]
+    pub fn set_trg_pol(mut self, trg_pol: TrgPol) -> Self {
+        self.val &= !(0b11 << 17);
+        self.val |= (trg_pol as u32) << 17;
+        self
+    }
+
+    /// Set the trigger source.
+    #[inline]
+    #[must_use = "set_trg_sel returns a modified Cfgr"]
+    pub const fn set_trg_sel(mut self, trigger: u32) -> Self {
+        self.val &= !(0b111 << 13);
+        self.val |= (trigger & 0b111) << 13;
+        self
+    }
+
+    /// Set the trigger filter.
+    #[inline]
+    #[must_use = "set_trg_filter returns a modified Cfgr"]
+    pub const fn set_trg_filter(mut self, filter: Filter) -> Self {
+        self.val &= !(0b111 << 6);
+        self.val |= ((filter as u32) & 0b111) << 6;
+        self
+    }
+
     /// Get the prescaler value.
     ///
     /// # Example
@@ -111,6 +219,7 @@ impl Cfgr {
     ///
     /// assert_eq!(Cfgr::default().prescaler(), Prescaler::default());
     /// ```
+    #[inline]
     pub const fn prescaler(&self) -> Prescaler {
         match (self.val >> 9) & 0b111 {
             0b000 => Prescaler::Div1,
@@ -157,6 +266,7 @@ impl Cfgr {
     /// let cfgr: Cfgr = cfgr.set_prescaler(Prescaler::Div128);
     /// assert_eq!(cfgr.prescaler(), Prescaler::Div128);
     /// ```
+    #[inline]
     #[must_use = "set_prescaler returns a modified Cfgr"]
     pub const fn set_prescaler(mut self, pres: Prescaler) -> Self {
         self.val &= !(0b111 << 9);

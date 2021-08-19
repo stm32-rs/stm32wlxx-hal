@@ -1608,3 +1608,151 @@ impl RfIrq2 {
         self.pin
     }
 }
+
+/// Low-power timer 1 trigger pin.
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct LpTim1Trg<P> {
+    pin: P,
+}
+
+impl<P: sealed::LpTim1Etr> LpTim1Trg<P> {
+    /// Create a new low-power timer 3 trigger from a pin.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, LpTim1Trg, PortB},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    /// let pb6: LpTim1Trg<pins::B6> = LpTim1Trg::new(gpiob.pb6);
+    /// ```
+    pub fn new(mut pin: P) -> Self {
+        cortex_m::interrupt::free(|cs| pin.set_lptim1_etr_af(cs));
+        Self { pin }
+    }
+
+    /// Free the GPIO pin.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, LpTim1Trg, PortB},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+    /// let pb6: LpTim1Trg<pins::B6> = LpTim1Trg::new(gpiob.pb6);
+    /// let pb6: pins::B6 = pb6.free();
+    /// ```
+    pub fn free(self) -> P {
+        self.pin
+    }
+}
+
+/// Low-power timer 2 trigger pin.
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct LpTim2Trg<P> {
+    pin: P,
+}
+
+impl<P: sealed::LpTim2Etr> LpTim2Trg<P> {
+    /// Create a new low-power timer 3 trigger from a pin.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, LpTim2Trg, PortA},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let pa5: LpTim2Trg<pins::A5> = LpTim2Trg::new(gpioa.pa5);
+    /// ```
+    pub fn new(mut pin: P) -> Self {
+        cortex_m::interrupt::free(|cs| pin.set_lptim2_etr_af(cs));
+        Self { pin }
+    }
+
+    /// Free the GPIO pin.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, LpTim2Trg, PortA},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let pa5: LpTim2Trg<pins::A5> = LpTim2Trg::new(gpioa.pa5);
+    /// let pa5: pins::A5 = pa5.free();
+    /// ```
+    pub fn free(self) -> P {
+        self.pin
+    }
+}
+
+/// Low-power timer 3 trigger pin.
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct LpTim3Trg {
+    pin: pins::A11,
+}
+
+impl LpTim3Trg {
+    /// Create a new low-power timer 3 trigger from pin A11.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, LpTim3Trg, PortA},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let pa11: LpTim3Trg = LpTim3Trg::new(gpioa.pa11);
+    /// ```
+    pub fn new(mut pin: pins::A11) -> Self {
+        use sealed::LpTim3Etr;
+        cortex_m::interrupt::free(|cs| pin.set_lptim3_etr_af(cs));
+        Self { pin }
+    }
+
+    /// Free the GPIO pin.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, LpTim3Trg, PortA},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let pa11: LpTim3Trg = LpTim3Trg::new(gpioa.pa11);
+    /// let pa11: pins::A11 = pa11.free();
+    /// ```
+    pub fn free(self) -> pins::A11 {
+        self.pin
+    }
+}

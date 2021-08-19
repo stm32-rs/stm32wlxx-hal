@@ -1189,7 +1189,7 @@ impl Adc {
     /// adc.enable();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let b4: Analog<B4> = Analog::new(gpiob.pb4);
+    /// let b4: Analog<B4> = Analog::new(gpiob.b4);
     ///
     /// let sample: u16 = adc.pin(&b4);
     /// ```

@@ -427,7 +427,7 @@ where
     /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
     /// let spi: Spi1<pins::A7, pins::A6, pins::A5, NoDmaCh, NoDmaCh> = Spi1::new(
     ///     dp.SPI1,
-    ///     (pa.pa7, pa.pa6, pa.pa5),
+    ///     (pa.a7, pa.a6, pa.a5),
     ///     MODE_0,
     ///     BaudDiv::DIV4,
     ///     &mut dp.RCC,
@@ -467,7 +467,7 @@ where
     /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
     /// let spi: Spi1<pins::A7, pins::A6, pins::A5, NoDmaCh, NoDmaCh> = Spi1::new(
     ///     dp.SPI1,
-    ///     (pa.pa7, pa.pa6, pa.pa5),
+    ///     (pa.a7, pa.a6, pa.a5),
     ///     MODE_0,
     ///     BaudDiv::DIV4,
     ///     &mut dp.RCC,
@@ -475,7 +475,7 @@ where
     ///
     /// // use SPI bus
     ///
-    /// let (spi1, (pa7, pa6, pa5)) = spi.free();
+    /// let (spi1, (a7, a6, a5)) = spi.free();
     /// ```
     pub fn free(self) -> (pac::SPI1, (MOSI, MISO, SCK)) {
         (self.base, self.pins)
@@ -511,7 +511,7 @@ where
     ///
     /// let spi: Spi1<pins::A7, pins::A6, pins::A5, Dma1Ch1, Dma2Ch1> = Spi1::new_with_dma(
     ///     dp.SPI1,
-    ///     (pa.pa7, pa.pa6, pa.pa5),
+    ///     (pa.a7, pa.a6, pa.a5),
     ///     dma.d1c1,
     ///     dma.d2c1,
     ///     MODE_0,
@@ -557,7 +557,7 @@ where
     ///
     /// let spi: Spi1<pins::A7, pins::A6, pins::A5, Dma1Ch1, Dma2Ch1> = Spi1::new_with_dma(
     ///     dp.SPI1,
-    ///     (pa.pa7, pa.pa6, pa.pa5),
+    ///     (pa.a7, pa.a6, pa.a5),
     ///     dma.d1c1,
     ///     dma.d2c1,
     ///     MODE_0,
@@ -567,7 +567,7 @@ where
     ///
     /// // use SPI bus
     ///
-    /// let (spi1, (pa7, pa6, pa5), tx_dma, rx_dma) = spi.free();
+    /// let (spi1, (a7, a6, a5), tx_dma, rx_dma) = spi.free();
     /// ```
     pub fn free(self) -> (pac::SPI1, (MOSI, MISO, SCK), RxDma, TxDma) {
         (self.base, self.pins, self.rx_dma, self.tx_dma)
@@ -660,7 +660,7 @@ where
     /// let pb: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
     /// let spi: Spi2<pins::B15, pins::B14, pins::B13, NoDmaCh, NoDmaCh> = Spi2::new(
     ///     dp.SPI2,
-    ///     (pb.pb15, pb.pb14, pb.pb13),
+    ///     (pb.b15, pb.b14, pb.b13),
     ///     MODE_0,
     ///     BaudDiv::DIV4,
     ///     &mut dp.RCC,
@@ -699,7 +699,7 @@ where
     /// let pb: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
     /// let spi: Spi2<pins::B15, pins::B14, pins::B13, NoDmaCh, NoDmaCh> = Spi2::new(
     ///     dp.SPI2,
-    ///     (pb.pb15, pb.pb14, pb.pb13),
+    ///     (pb.b15, pb.b14, pb.b13),
     ///     MODE_0,
     ///     BaudDiv::DIV4,
     ///     &mut dp.RCC,
@@ -707,7 +707,7 @@ where
     ///
     /// // use SPI bus
     ///
-    /// let (spi2, (pb15, pb14, pb13)) = spi.free();
+    /// let (spi2, (b15, b14, b13)) = spi.free();
     /// ```
     pub fn free(self) -> (pac::SPI2, (MOSI, MISO, SCK)) {
         (self.base, (self.pins))
@@ -743,7 +743,7 @@ where
     ///
     /// let spi: Spi2<pins::B15, pins::B14, pins::B13, Dma1Ch1, Dma2Ch1> = Spi2::new_with_dma(
     ///     dp.SPI2,
-    ///     (pb.pb15, pb.pb14, pb.pb13),
+    ///     (pb.b15, pb.b14, pb.b13),
     ///     dma.d1c1,
     ///     dma.d2c1,
     ///     MODE_0,
@@ -789,7 +789,7 @@ where
     ///
     /// let spi: Spi2<pins::B15, pins::B14, pins::B13, Dma1Ch1, Dma2Ch1> = Spi2::new_with_dma(
     ///     dp.SPI2,
-    ///     (pb.pb15, pb.pb14, pb.pb13),
+    ///     (pb.b15, pb.b14, pb.b13),
     ///     dma.d1c1,
     ///     dma.d2c1,
     ///     MODE_0,
@@ -799,7 +799,7 @@ where
     ///
     /// // use SPI bus
     ///
-    /// let (spi2, (pb15, pb14, pb13), tx_dma, rx_dma) = spi.free();
+    /// let (spi2, (b15, b14, b13), tx_dma, rx_dma) = spi.free();
     /// ```
     pub fn free(self) -> (pac::SPI2, (MOSI, MISO, SCK), RxDma, TxDma) {
         (self.base, self.pins, self.rx_dma, self.tx_dma)

@@ -1,8 +1,5 @@
 //! Push-buttons
-use stm32wl_hal::{
-    gpio::{pins, Input, Pull},
-    pac,
-};
+use stm32wl_hal::gpio::{pins, Exti, Input, Pull};
 
 const PULL: Pull = Pull::Up;
 
@@ -24,96 +21,62 @@ pub struct Pb1 {
     gpio: Input<pins::A0>,
 }
 
-/// Push-button IRQ triggers.
-#[derive(Debug)]
-pub enum IrqTrig {
-    /// Fire the interrupt when the button is pushed.
-    OnPush,
-    /// Fire the interrupt when the button is released.
-    OnRelease,
-    /// Fire the interrupt on both push and release.
-    Both,
-}
-
 /// Simple trait for a push-button
 pub trait PushButton {
+    /// Input pin for the push-button
+    ///
+    /// This can be used to access the EXTI trait for the pin.
+    ///
+    /// # Example
+    ///
+    /// Setup EXTI to fire an interrupt when PB3 is pushed.
+    ///
+    /// ```no_run
+    /// use nucleo_wl55jc_bsp::{
+    ///     hal::{
+    ///         gpio::{Exti, ExtiTrg, PortC},
+    ///         pac,
+    ///     },
+    ///     pb::{Pb3, PushButton},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+    /// let pb3 = Pb3::new(gpioc.c6);
+    ///
+    /// <Pb3 as PushButton>::Pin::setup_exti_c1(&mut dp.EXTI, &mut dp.SYSCFG, ExtiTrg::Falling);
+    /// ```
+    type Pin: Exti;
+
     /// Returns `True` if the button is currently being pushed.
     fn is_pushed(&self) -> bool;
-
-    /// Setup the push-button to fire an interrupt.
-    ///
-    /// This will:
-    /// 1. Set the SYSCFG EXTICR to the push-button pin
-    /// 2. Enable falling/rising triggers (or both)
-    /// 3. Unmask the IRQ in the EXTI IMR (hard-coded for core 1)
-    ///
-    /// This will **not** unmask the EXTI IRQ in the NVIC.
-    fn setup_exti(syscfg: &mut pac::SYSCFG, exti: &mut pac::EXTI, tri: IrqTrig);
-
-    /// Clear a pending IRQ in the EXTI for the push-button.
-    fn clear_pending(exti: &mut pac::EXTI);
 }
 
 impl PushButton for Pb3 {
+    type Pin = pins::C6;
+
+    #[inline]
     fn is_pushed(&self) -> bool {
         self.gpio.level().is_low()
-    }
-
-    fn setup_exti(syscfg: &mut pac::SYSCFG, exti: &mut pac::EXTI, tri: IrqTrig) {
-        syscfg.exticr2.modify(|_, w| w.exti6().pc6());
-        if matches!(tri, IrqTrig::OnRelease | IrqTrig::Both) {
-            exti.rtsr1.modify(|_, w| w.rt6().enabled());
-        }
-        if matches!(tri, IrqTrig::OnPush | IrqTrig::Both) {
-            exti.ftsr1.modify(|_, w| w.ft6().enabled());
-        }
-        exti.c1imr1.modify(|_, w| w.im6().unmasked());
-    }
-
-    fn clear_pending(exti: &mut pac::EXTI) {
-        exti.pr1.write(|w| w.pif6().set_bit());
     }
 }
 
 impl PushButton for Pb2 {
+    type Pin = pins::A1;
+
+    #[inline]
     fn is_pushed(&self) -> bool {
         self.gpio.level().is_low()
-    }
-
-    fn setup_exti(syscfg: &mut pac::SYSCFG, exti: &mut pac::EXTI, tri: IrqTrig) {
-        syscfg.exticr1.modify(|_, w| w.exti1().pa1());
-        if matches!(tri, IrqTrig::OnRelease | IrqTrig::Both) {
-            exti.rtsr1.modify(|_, w| w.rt1().enabled());
-        }
-        if matches!(tri, IrqTrig::OnPush | IrqTrig::Both) {
-            exti.ftsr1.modify(|_, w| w.ft1().enabled());
-        }
-        exti.c1imr1.modify(|_, w| w.im1().unmasked());
-    }
-
-    fn clear_pending(exti: &mut pac::EXTI) {
-        exti.pr1.write(|w| w.pif1().set_bit());
     }
 }
 
 impl PushButton for Pb1 {
+    type Pin = pins::A0;
+
+    #[inline]
     fn is_pushed(&self) -> bool {
         self.gpio.level().is_low()
-    }
-
-    fn setup_exti(syscfg: &mut pac::SYSCFG, exti: &mut pac::EXTI, tri: IrqTrig) {
-        syscfg.exticr1.modify(|_, w| w.exti0().pa0());
-        if matches!(tri, IrqTrig::OnRelease | IrqTrig::Both) {
-            exti.rtsr1.modify(|_, w| w.rt0().enabled());
-        }
-        if matches!(tri, IrqTrig::OnPush | IrqTrig::Both) {
-            exti.ftsr1.modify(|_, w| w.ft0().enabled());
-        }
-        exti.c1imr1.modify(|_, w| w.im0().unmasked());
-    }
-
-    fn clear_pending(exti: &mut pac::EXTI) {
-        exti.pr1.write(|w| w.pif0().set_bit());
     }
 }
 
@@ -131,7 +94,7 @@ impl Pb3 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let pb3 = Pb3::new(gpioc.pc6);
+    /// let pb3 = Pb3::new(gpioc.c6);
     /// ```
     pub fn new(c6: pins::C6) -> Self {
         Self {
@@ -152,7 +115,7 @@ impl Pb3 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let pb3 = Pb3::new(gpioc.pc6);
+    /// let pb3 = Pb3::new(gpioc.c6);
     /// // ... use push button
     /// let c6 = pb3.free();
     /// ```
@@ -200,7 +163,7 @@ impl Pb2 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let pb2 = Pb2::new(gpioa.pa1);
+    /// let pb2 = Pb2::new(gpioa.a1);
     /// ```
     pub fn new(a1: pins::A1) -> Self {
         Self {
@@ -221,7 +184,7 @@ impl Pb2 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let pb2 = Pb2::new(gpioa.pa1);
+    /// let pb2 = Pb2::new(gpioa.a1);
     /// // ... use push button
     /// let a1 = pb2.free();
     /// ```
@@ -271,7 +234,7 @@ impl Pb1 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let pb1 = Pb1::new(gpioa.pa0);
+    /// let pb1 = Pb1::new(gpioa.a0);
     /// ```
     pub fn new(a0: pins::A0) -> Self {
         Self {
@@ -292,7 +255,7 @@ impl Pb1 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let pb1 = Pb1::new(gpioa.pa0);
+    /// let pb1 = Pb1::new(gpioa.a0);
     /// // ... use push button
     /// let a0 = pb1.free();
     /// ```

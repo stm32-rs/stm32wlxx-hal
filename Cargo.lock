@@ -239,6 +239,7 @@ dependencies = [
 name = "examples"
 version = "0.1.0"
 dependencies = [
+ "cortex-m-rt 0.6.14",
  "defmt",
  "defmt-rtt",
  "nucleo-wl55jc-bsp",
@@ -523,7 +524,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 [[package]]
 name = "stm32wl"
 version = "0.13.0"
-source = "git+https://github.com/newAM/stm32wl-rs.git?rev=ff8aa208634881cd9fab307a37073431b346b5db#ff8aa208634881cd9fab307a37073431b346b5db"
+source = "git+https://github.com/newAM/stm32wl-rs.git?rev=a1aa8eaf9a3d771ccc1752ffff0fa69bf063f009#a1aa8eaf9a3d771ccc1752ffff0fa69bf063f009"
 dependencies = [
  "bare-metal 1.0.0",
  "cortex-m 0.7.3",
@@ -617,9 +618,9 @@ checksum = "6a02e4885ed3bc0f2de90ea6dd45ebcbb66dacffe03547fadbb0eeae2770887d"
 
 [[package]]
 name = "volatile-register"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d67cb4616d99b940db1d6bd28844ff97108b498a6ca850e5b6191a532063286"
+checksum = "9ee8f19f9d74293faf70901bc20ad067dc1ad390d2cbf1e3f75f721ffee908b6"
 dependencies = [
  "vcell",
 ]

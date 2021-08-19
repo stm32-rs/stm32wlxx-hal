@@ -34,7 +34,7 @@ mod tests {
         // initialize I2C2 clocks and pins
         let i2c2 = I2c2::new(
             dp.I2C2,
-            (gpioa.pa12, gpioa.pa11),
+            (gpioa.a12, gpioa.a11),
             Hertz(I2C_FREQUENCY),
             &mut dp.RCC,
             true,
@@ -69,7 +69,7 @@ mod tests {
 
         I2c1::new(
             dp.I2C1,
-            (gpiob.pb8, gpiob.pb7),
+            (gpiob.b8, gpiob.b7),
             Hertz(I2C_FREQUENCY),
             &mut dp.RCC,
             false,
@@ -91,7 +91,7 @@ mod tests {
 
     #[test]
     fn loopback(i2c: &mut I2c1<(pins::B8, pins::B7)>) {
-        defmt::warn!("I2C1 pins PB8 (SCL) and PB7 (SDA) must be connected to I2C pins PA12 (SCL) and PA11 (SDA) for this test to pass");
+        defmt::warn!("I2C1 pins B8 (SCL) and B7 (SDA) must be connected to I2C pins A12 (SCL) and A11 (SDA) for this test to pass");
 
         let cmd: [u8; 1] = [LOOPBACK_DATA_IN];
         let mut response: [u8; 1] = [0; 1];

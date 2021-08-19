@@ -24,7 +24,7 @@ features = [
 ]
 
 # include cortex-m-rt directly in your crate if you need interrupts
-# use the interrupt macro from the hal with `use hal::pac::interrupt;`
+# use the interrupt macro from the hal with `use stm32wl_hal::pac::interrupt;`
 # DO NOT use the interrupt macro from cortex-m-rt, it will fail to compile
 [dependencies]
 cortex-m-rt = "0.7"

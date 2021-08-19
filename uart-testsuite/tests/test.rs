@@ -36,16 +36,16 @@ mod tests {
 
         let lpuart: LpUart<(pins::C0, Dma2Ch6), pins::C1> =
             LpUart::new(dp.LPUART, 115200, uart::Clk::Hsi16, &mut dp.RCC)
-                .enable_rx_dma(gpioc.pc0, dma.d2c6)
-                .enable_tx(gpioc.pc1);
+                .enable_rx_dma(gpioc.c0, dma.d2c6)
+                .enable_tx(gpioc.c1);
         let uart1: Uart1<pins::A10, (pins::A9, Dma1Ch3)> =
             Uart1::new(dp.USART1, 115200, uart::Clk::Hsi16, &mut dp.RCC)
-                .enable_rx(gpioa.pa10)
-                .enable_tx_dma(gpioa.pa9, dma.d1c3);
+                .enable_rx(gpioa.a10)
+                .enable_tx_dma(gpioa.a9, dma.d1c3);
 
         defmt::warn!(
-            "UART tests require PC1 (LPUART TX) connected to PA10 (UART1 RX) and \
-             PC0 (LPUART RX) connected to PA9 (UART1 TX)"
+            "UART tests require C1 (LPUART TX) connected to A10 (UART1 RX) and \
+             C0 (LPUART RX) connected to A9 (UART1 TX)"
         );
 
         TestArgs { lpuart, uart1 }

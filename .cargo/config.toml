@@ -26,3 +26,5 @@ test-uart = "test -p uart-testsuite --target thumbv7em-none-eabi"
 # e.g. cargo unit
 unit = "test --features stm32wl5x_cm4"
 unit-little = "test --features stm32wl5x_cm0p"
+unit-nucleo = "test -p nucleo-wl55jc-bsp --features stm32wl5x_cm4"
+unit-lora-e5 = "test -p lora-e5-bsp"

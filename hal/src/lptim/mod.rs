@@ -483,7 +483,7 @@ pub trait LpTim: sealed::LpTim {
     /// // A11 must be configured as a trigger pin
     /// // otherwise the timer will never start
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let _: LpTim3Trg = LpTim3Trg::new(gpioa.pa11);
+    /// let _: LpTim3Trg = LpTim3Trg::new(gpioa.a11);
     ///
     /// let mut lptim3: LpTim3 = LpTim3::new(dp.LPTIM3, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
     /// lptim3.setup_trigger(Filter::Any, TrgPol::Both, TrgSel3::Pin);

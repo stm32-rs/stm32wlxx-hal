@@ -41,7 +41,7 @@ mod tests {
         let mut dac: Dac = Dac::new(dp.DAC, &mut dp.RCC);
         let adc: Adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
 
-        dac.set_mode_pin(gpioa.pa10.into(), ModePin::NormChipBuf);
+        dac.set_mode_pin(gpioa.a10.into(), ModePin::NormChipBuf);
 
         TestArgs { adc, dac, delay }
     }

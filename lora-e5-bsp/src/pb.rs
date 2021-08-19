@@ -104,7 +104,7 @@ impl D0 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let d0 = D0::new(gpioa.pa0);
+    /// let d0 = D0::new(gpioa.a0);
     /// ```
     pub fn new(a0: pins::A0) -> Self {
         Self {
@@ -125,7 +125,7 @@ impl D0 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let d0 = D0::new(gpioa.pa0);
+    /// let d0 = D0::new(gpioa.a0);
     /// // ... use push button
     /// let c0 = d0.free();
     /// ```
@@ -173,7 +173,7 @@ impl Boot {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let boot = Boot::new(gpiob.pb13);
+    /// let boot = Boot::new(gpiob.b13);
     /// ```
     pub fn new(b13: pins::B13) -> Self {
         Self {
@@ -194,7 +194,7 @@ impl Boot {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let boot = Boot::new(gpiob.pb13);
+    /// let boot = Boot::new(gpiob.b13);
     /// // ... use push button
     /// let b13 = boot.free();
     /// ```

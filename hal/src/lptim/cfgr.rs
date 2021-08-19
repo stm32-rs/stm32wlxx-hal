@@ -28,7 +28,7 @@ impl Default for Prescaler {
     }
 }
 
-/// LPTIM 1 and LPTIM 2 trigger selection.
+/// LPTIM1 and LPTIM2 trigger selection.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
@@ -57,7 +57,7 @@ impl From<TrgSel> for u32 {
     }
 }
 
-/// LPTIM 3 trigger selection.
+/// LPTIM3 trigger selection.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
@@ -98,7 +98,7 @@ pub enum TrgPol {
 pub enum Filter {
     /// Any level change is considered valid.
     Any = 0b00,
-    /// Level change must be stable for at least 2 clock periods
+    /// Level must be stable for at least 2 clock periods
     /// before it is considered as valid.
     Clk2 = 0b01,
     /// Level must be stable for at least 4 clock periods

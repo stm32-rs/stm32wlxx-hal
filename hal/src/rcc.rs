@@ -521,6 +521,21 @@ fn pclk1(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
     hclk1(rcc, cfgr) / div
 }
 
+pub(crate) fn apb1timx(rcc: &pac::RCC) -> Ratio<u32> {
+    let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
+    // * If the APB prescaler (PPREx) selects the PCLKx clock to be HCLK1 not divided,
+    //   the timer clock frequencies are set to the HCLK1 frequency (timer clock = HCLK1).
+    // * If the APB prescaler (PPREx) selects the PCLKx clock to be HCLK1 divided by n,
+    //   the timer clock frequencies are set to HCLK1 divided by (n / 2) (timer clock = 2 x PCLKx).
+    let div: u32 = match cfgr.ppre1().bits() {
+        0b101 => 2, // 4 / 2
+        0b110 => 4, // 8 / 2
+        0b111 => 8, // 16 / 2
+        _ => 1,     // 2 / 2 and all others
+    };
+    hclk1(rcc, &cfgr) / div
+}
+
 /// Calculate the current PCLK1 frequency in hertz
 ///
 /// Fractional frequencies will be rounded down.
@@ -679,24 +694,20 @@ pub fn cpu_systick_hz(rcc: &pac::RCC, src: SystClkSource) -> u32 {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::rcc::lsi_hz;
+/// use stm32wl_hal::{pac, rcc::lsi_hz};
+///
+/// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 ///
 /// // LSI is not divided at power on
-/// assert_eq!(lsi_hz(), 32_000);
+/// assert_eq!(lsi_hz(&dp.RCC), 32_000);
 /// ```
-pub fn lsi_hz() -> u16 {
+pub fn lsi_hz(rcc: &pac::RCC) -> u16 {
     use pac::rcc::csr::LSIPRE_A::{DIV1, DIV128};
     const LSI_BASE_HZ: u16 = 32_000;
     const LSI_DIV_HZ: u16 = 32_000 / 128;
 
     // safety: volatile read with no side effects to an always-on domain
-    match unsafe { pac::Peripherals::steal() }
-        .RCC
-        .csr
-        .read()
-        .lsipre()
-        .variant()
-    {
+    match rcc.csr.read().lsipre().variant() {
         DIV1 => LSI_BASE_HZ,
         DIV128 => LSI_DIV_HZ,
     }

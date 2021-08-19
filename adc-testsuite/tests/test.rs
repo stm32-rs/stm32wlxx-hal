@@ -47,15 +47,14 @@ mod tests {
         let mut cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
 
         rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC);
+        defmt::assert_eq!(rcc::sysclk_hz(&dp.RCC), FREQ);
 
         let delay = new_delay(cp.SYST, &dp.RCC);
 
         dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
         while dp.RCC.cr.read().hsirdy().is_not_ready() {}
         let adc: Adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
-
-        assert_eq!(adc.clock_hz(&dp.RCC), ADC_FREQ);
-        assert_eq!(rcc::sysclk_hz(&dp.RCC), FREQ);
+        defmt::assert_eq!(adc.clock_hz(&dp.RCC), ADC_FREQ);
 
         cp.DCB.enable_trace();
         cp.DWT.enable_cycle_counter();

@@ -15,8 +15,8 @@ use stm32wl_hal::{
 
 #[hal::cortex_m_rt::entry]
 fn main() -> ! {
-    let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    let cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
+    let mut dp: pac::Peripherals = defmt::unwrap!(pac::Peripherals::take());
+    let cp: pac::CorePeripherals = defmt::unwrap!(pac::CorePeripherals::take());
 
     let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
     let mut led1 = Output::default(gpiob.b9);

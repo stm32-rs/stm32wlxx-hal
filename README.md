@@ -9,7 +9,7 @@ This is a **work in progress**, it is unstable, incomplete, and (mostly) unteste
 
 **Use at your own risk.**
 
-There should be enough code for very basic:
+There should be enough code for very basic usage of:
 
 * LoRa TX + RX
 * (G)FSK TX + RX
@@ -17,11 +17,12 @@ There should be enough code for very basic:
 * GPIO
 * UART
 * I2C
+* Low-power timers
 * ADC sampling
 * DAC output
 * ECDSA signing
 * ECDSA verification
-* Cryptographically secure random number generation
+* Secure random number generation
 * AES encryption
 * AES decryption
 

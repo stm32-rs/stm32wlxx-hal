@@ -34,6 +34,7 @@ pub mod dma;
 pub mod gpio;
 pub mod i2c;
 pub mod info;
+pub mod lptim;
 pub mod pka;
 pub mod rcc;
 pub mod rng;

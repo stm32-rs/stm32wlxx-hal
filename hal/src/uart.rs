@@ -136,7 +136,7 @@ impl LpUart<NoRx, NoTx> {
         };
 
         let baud: u64 = baud.into();
-        let freq: u64 = ret.clock_hz(&rcc).into();
+        let freq: u64 = ret.clock_hz(rcc).into();
         assert!(freq >= baud.saturating_mul(3) && freq <= baud.saturating_mul(4096));
 
         let br: u32 = ((freq * 256) / baud) as u32;
@@ -181,7 +181,7 @@ impl Uart1<NoRx, NoTx> {
             tx: NoTx::new(),
         };
 
-        let freq: u32 = ret.clock_hz(&rcc);
+        let freq: u32 = ret.clock_hz(rcc);
 
         // only for oversampling of 16 (default), change for oversampling of 8
         let br: u16 = (freq / baud) as u16;
@@ -225,7 +225,7 @@ impl Uart2<NoRx, NoTx> {
             tx: NoTx::new(),
         };
 
-        let freq: u32 = ret.clock_hz(&rcc);
+        let freq: u32 = ret.clock_hz(rcc);
 
         // only for oversampling of 16 (default), change for oversampling of 8
         let br: u16 = (freq / baud) as u16;

@@ -193,6 +193,16 @@ pub struct SubGhz<RxDma, TxDma> {
 
 impl<RxDma, TxDma> SubGhz<RxDma, TxDma> {
     /// Disable the SPI3 (SubGHz SPI) clock.
+    ///
+    /// # Safety
+    ///
+    /// 1. You are responsible for ensuring the SPI bus is in a state where the
+    ///    clock can be disabled without entering an error state.
+    /// 2. You cannot use the SPI bus while the clock is disabled.
+    /// 3. You are responsible for re-enabling the clock before resuming use
+    ///    of the SPI bus.
+    /// 4. You are reponsible for setting up anything that may have lost state
+    ///    while the clock was disabled.
     pub unsafe fn disable_spi_clock(rcc: &mut pac::RCC) {
         Spi3::<NoDmaCh, NoDmaCh>::disable_clock(rcc)
     }

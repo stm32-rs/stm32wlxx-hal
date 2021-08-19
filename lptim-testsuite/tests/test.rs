@@ -14,6 +14,7 @@ use stm32wl_hal::{
     util::reset_cycle_count,
 };
 
+const LPTIM1_FREQ: u32 = 125_000;
 const LPTIM3_FREQ: u32 = 16_000_000;
 const FREQ: u32 = 48_000_000;
 const CYC_PER_US: u32 = FREQ / 1000 / 1000;
@@ -52,7 +53,7 @@ mod tests {
         let _: LpTim3Trg = LpTim3Trg::new(gpioa.pa11);
 
         let lptim1: LpTim1 =
-            LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, Prescaler::Div1, &mut dp.RCC);
+            LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, Prescaler::Div128, &mut dp.RCC);
         let lptim2: LpTim2 =
             LpTim2::new(dp.LPTIM2, lptim::Clk::Hsi16, Prescaler::Div1, &mut dp.RCC);
         let lptim3: LpTim3 =
@@ -60,7 +61,9 @@ mod tests {
 
         defmt::assert_eq!(LpTim1::clk(&dp.RCC), lptim::Clk::Hsi16);
 
-        defmt::assert_eq!(lptim1.hz(&dp.RCC).to_integer(), LPTIM3_FREQ);
+        defmt::assert_eq!(lptim1.hz(&dp.RCC).to_integer(), LPTIM1_FREQ);
+        defmt::assert_eq!(lptim3.hz(&dp.RCC).to_integer(), LPTIM3_FREQ);
+        defmt::assert_eq!(FREQ % LPTIM1_FREQ, 0);
         defmt::assert_eq!(FREQ % LPTIM3_FREQ, 0);
 
         cp.DCB.enable_trace();
@@ -78,14 +81,14 @@ mod tests {
 
     #[test]
     fn oneshot(ta: &mut TestArgs) {
-        const CYCLES: u16 = 10_000;
+        const CYCLES: u16 = 100;
         let start: u32 = DWT::get_cycle_count();
-        ta.lptim3.start(CYCLES);
-        unwrap!(nb::block!(ta.lptim3.wait()).ok());
+        ta.lptim1.start(CYCLES);
+        unwrap!(nb::block!(ta.lptim1.wait()).ok());
         let end: u32 = DWT::get_cycle_count();
 
         // compare elapsed lptim cycles to elapsed CPU cycles
-        let elapsed: u32 = (end - start) * (FREQ / LPTIM3_FREQ);
+        let elapsed: u32 = (end - start) * (FREQ / LPTIM1_FREQ);
 
         const TOLERANCE: u32 = 100;
         let elapsed_upper: u32 = elapsed + TOLERANCE;

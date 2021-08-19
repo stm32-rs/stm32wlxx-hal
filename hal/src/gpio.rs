@@ -258,7 +258,8 @@ pub(crate) mod sealed {
 pub trait Exti {
     /// Interrupt number for the EXTI.
     ///
-    /// This is shared for EXTI 5-9 and EXTI 10-15.
+    /// * On core 1 this is shared for EXTI 5-9, and 10-15.
+    /// * On core 2 this is shared for EXTI 0-1, 2-3, and 4-15.
     const INTERRUPT: pac::Interrupt;
 
     /// Set the current port as the interrupt source.
@@ -436,7 +437,7 @@ pub mod pins {
     const GPIOB_BASE: usize = 0x4800_0400;
     const GPIOC_BASE: usize = 0x4800_0800;
 
-    use super::{adc, pac, CriticalSection, ExtiTrg, Level, OutputType, Pin, Pull, Speed};
+    use super::{adc, pac, CriticalSection, Level, OutputType, Pin, Pull, Speed};
 
     macro_rules! gpio_struct {
         ($name:ident, $base:expr, $n:expr, $doc:expr) => {
@@ -704,10 +705,14 @@ pub mod pins {
     impl_adc_ch!(B14, adc::Ch::In1);
 
     macro_rules! impl_input_exti {
-        ($port:ident, $n:expr, $exticr:expr, $interrupt:ident) => {
+        ($port:ident, $n:expr, $exticr:expr, $c0interrupt:ident, $c1interrupt:ident) => {
             paste::paste! {
                 impl super::Exti for [<$port:upper $n>] {
-                    const INTERRUPT: pac::Interrupt = pac::Interrupt::$interrupt;
+                    #[cfg(not(feature = "stm32wl5x_cm0p"))]
+                    const INTERRUPT: pac::Interrupt = pac::Interrupt::$c0interrupt;
+
+                    #[cfg(feature = "stm32wl5x_cm0p")]
+                    const INTERRUPT: pac::Interrupt = pac::Interrupt::$c1interrupt;
 
                     #[inline]
                     fn set_port(syscfg: &mut pac::SYSCFG) {
@@ -739,50 +744,50 @@ pub mod pins {
         };
     }
 
-    impl_input_exti!(A, 0, 1, EXTI0);
-    impl_input_exti!(A, 1, 1, EXTI1);
-    impl_input_exti!(A, 2, 1, EXTI2);
-    impl_input_exti!(A, 3, 1, EXTI3);
-    impl_input_exti!(A, 4, 2, EXTI4);
-    impl_input_exti!(A, 5, 2, EXTI9_5);
-    impl_input_exti!(A, 6, 2, EXTI9_5);
-    impl_input_exti!(A, 7, 2, EXTI9_5);
-    impl_input_exti!(A, 8, 3, EXTI9_5);
-    impl_input_exti!(A, 9, 3, EXTI9_5);
-    impl_input_exti!(A, 10, 3, EXTI15_10);
-    impl_input_exti!(A, 11, 3, EXTI15_10);
-    impl_input_exti!(A, 12, 4, EXTI15_10);
-    impl_input_exti!(A, 13, 4, EXTI15_10);
-    impl_input_exti!(A, 14, 4, EXTI15_10);
-    impl_input_exti!(A, 15, 4, EXTI15_10);
+    impl_input_exti!(A, 0, 1, EXTI0, EXTI1_0);
+    impl_input_exti!(A, 1, 1, EXTI1, EXTI1_0);
+    impl_input_exti!(A, 2, 1, EXTI2, EXTI3_2);
+    impl_input_exti!(A, 3, 1, EXTI3, EXTI3_2);
+    impl_input_exti!(A, 4, 2, EXTI4, EXTI15_4);
+    impl_input_exti!(A, 5, 2, EXTI9_5, EXTI15_4);
+    impl_input_exti!(A, 6, 2, EXTI9_5, EXTI15_4);
+    impl_input_exti!(A, 7, 2, EXTI9_5, EXTI15_4);
+    impl_input_exti!(A, 8, 3, EXTI9_5, EXTI15_4);
+    impl_input_exti!(A, 9, 3, EXTI9_5, EXTI15_4);
+    impl_input_exti!(A, 10, 3, EXTI15_10, EXTI15_4);
+    impl_input_exti!(A, 11, 3, EXTI15_10, EXTI15_4);
+    impl_input_exti!(A, 12, 4, EXTI15_10, EXTI15_4);
+    impl_input_exti!(A, 13, 4, EXTI15_10, EXTI15_4);
+    impl_input_exti!(A, 14, 4, EXTI15_10, EXTI15_4);
+    impl_input_exti!(A, 15, 4, EXTI15_10, EXTI15_4);
 
-    impl_input_exti!(B, 0, 1, EXTI0);
-    impl_input_exti!(B, 1, 1, EXTI1);
-    impl_input_exti!(B, 2, 1, EXTI2);
-    impl_input_exti!(B, 3, 1, EXTI3);
-    impl_input_exti!(B, 4, 2, EXTI4);
-    impl_input_exti!(B, 5, 2, EXTI9_5);
-    impl_input_exti!(B, 6, 2, EXTI9_5);
-    impl_input_exti!(B, 7, 2, EXTI9_5);
-    impl_input_exti!(B, 8, 3, EXTI9_5);
-    impl_input_exti!(B, 9, 3, EXTI9_5);
-    impl_input_exti!(B, 10, 3, EXTI15_10);
-    impl_input_exti!(B, 11, 3, EXTI15_10);
-    impl_input_exti!(B, 12, 4, EXTI15_10);
-    impl_input_exti!(B, 13, 4, EXTI15_10);
-    impl_input_exti!(B, 14, 4, EXTI15_10);
-    impl_input_exti!(B, 15, 4, EXTI15_10);
+    impl_input_exti!(B, 0, 1, EXTI0, EXTI1_0);
+    impl_input_exti!(B, 1, 1, EXTI1, EXTI1_0);
+    impl_input_exti!(B, 2, 1, EXTI2, EXTI3_2);
+    impl_input_exti!(B, 3, 1, EXTI3, EXTI3_2);
+    impl_input_exti!(B, 4, 2, EXTI4, EXTI15_4);
+    impl_input_exti!(B, 5, 2, EXTI9_5, EXTI15_4);
+    impl_input_exti!(B, 6, 2, EXTI9_5, EXTI15_4);
+    impl_input_exti!(B, 7, 2, EXTI9_5, EXTI15_4);
+    impl_input_exti!(B, 8, 3, EXTI9_5, EXTI15_4);
+    impl_input_exti!(B, 9, 3, EXTI9_5, EXTI15_4);
+    impl_input_exti!(B, 10, 3, EXTI15_10, EXTI15_4);
+    impl_input_exti!(B, 11, 3, EXTI15_10, EXTI15_4);
+    impl_input_exti!(B, 12, 4, EXTI15_10, EXTI15_4);
+    impl_input_exti!(B, 13, 4, EXTI15_10, EXTI15_4);
+    impl_input_exti!(B, 14, 4, EXTI15_10, EXTI15_4);
+    impl_input_exti!(B, 15, 4, EXTI15_10, EXTI15_4);
 
-    impl_input_exti!(C, 0, 1, EXTI0);
-    impl_input_exti!(C, 1, 1, EXTI1);
-    impl_input_exti!(C, 2, 1, EXTI2);
-    impl_input_exti!(C, 3, 1, EXTI3);
-    impl_input_exti!(C, 4, 2, EXTI4);
-    impl_input_exti!(C, 5, 2, EXTI9_5);
-    impl_input_exti!(C, 6, 2, EXTI9_5);
-    impl_input_exti!(C, 13, 4, EXTI15_10);
-    impl_input_exti!(C, 14, 4, EXTI15_10);
-    impl_input_exti!(C, 15, 4, EXTI15_10);
+    impl_input_exti!(C, 0, 1, EXTI0, EXTI1_0);
+    impl_input_exti!(C, 1, 1, EXTI1, EXTI1_0);
+    impl_input_exti!(C, 2, 1, EXTI2, EXTI3_2);
+    impl_input_exti!(C, 3, 1, EXTI3, EXTI3_2);
+    impl_input_exti!(C, 4, 2, EXTI4, EXTI15_4);
+    impl_input_exti!(C, 5, 2, EXTI9_5, EXTI15_4);
+    impl_input_exti!(C, 6, 2, EXTI9_5, EXTI15_4);
+    impl_input_exti!(C, 13, 4, EXTI15_10, EXTI15_4);
+    impl_input_exti!(C, 14, 4, EXTI15_10, EXTI15_4);
+    impl_input_exti!(C, 15, 4, EXTI15_10, EXTI15_4);
 }
 
 /// Port A GPIOs

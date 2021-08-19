@@ -20,6 +20,27 @@ pub trait PushButton {
     /// Input pin for the push-button
     ///
     /// This can be used to access the EXTI trait for the pin.
+    ///
+    /// # Example
+    ///
+    /// Setup EXTI to fire an interrupt when D0 is pushed.
+    ///
+    /// ```no_run
+    /// use lora_e5_bsp::{
+    ///     hal::{
+    ///         gpio::{Exti, ExtiTrg, PortA},
+    ///         pac,
+    ///     },
+    ///     pb::{PushButton, D0},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let d0 = D0::new(gpioa.a0);
+    ///
+    /// <D0 as PushButton>::Pin::setup_exti_c1(&mut dp.EXTI, &mut dp.SYSCFG, ExtiTrg::Falling);
+    /// ```
     type Pin: Exti;
 
     /// Returns `True` if the button is currently being pushed.

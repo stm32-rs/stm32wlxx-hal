@@ -26,6 +26,27 @@ pub trait PushButton {
     /// Input pin for the push-button
     ///
     /// This can be used to access the EXTI trait for the pin.
+    ///
+    /// # Example
+    ///
+    /// Setup EXTI to fire an interrupt when PB3 is pushed.
+    ///
+    /// ```no_run
+    /// use nucleo_wl55jc_bsp::{
+    ///     hal::{
+    ///         gpio::{Exti, ExtiTrg, PortC},
+    ///         pac,
+    ///     },
+    ///     pb::{Pb3, PushButton},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+    /// let pb3 = Pb3::new(gpioc.c6);
+    ///
+    /// <Pb3 as PushButton>::Pin::setup_exti_c1(&mut dp.EXTI, &mut dp.SYSCFG, ExtiTrg::Falling);
+    /// ```
     type Pin: Exti;
 
     /// Returns `True` if the button is currently being pushed.

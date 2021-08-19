@@ -4,6 +4,20 @@ use crate::{adc, pac};
 use core::ptr::{read_volatile, write_volatile};
 use cortex_m::interrupt::CriticalSection;
 
+/// EXTI triggers.
+///
+/// This is an argument for [`Exti::setup_exti_c1`].
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub enum ExtiTrg {
+    /// Trigger on a falling edge.
+    Falling,
+    /// Trigger on a rising edge.
+    Rising,
+    /// Trigger on both edges.
+    Both,
+}
+
 /// GPIO output types.
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -240,6 +254,177 @@ pub(crate) mod sealed {
     }
 }
 
+/// Input pin extended interrupts.
+pub trait Exti {
+    /// Interrupt number for the EXTI.
+    ///
+    /// * On core 1 this is shared for EXTI 5-9, and 10-15.
+    /// * On core 2 this is shared for EXTI 0-1, 2-3, and 4-15.
+    const INTERRUPT: pac::Interrupt;
+
+    /// Set the current port as the interrupt source.
+    ///
+    /// Only one port (A, B, C) can be active at a time for each pin number.
+    /// For example,
+    /// enabling PA2 will disable PB2 and PC2 if previously enabled.
+    ///
+    /// # Example
+    ///
+    /// Set port C as the pin-6 EXTI port.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins::C6, Exti},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// C6::set_port(&mut dp.SYSCFG);
+    /// ```
+    fn set_port(syscfg: &mut pac::SYSCFG);
+
+    /// Set the rising trigger enable.
+    ///
+    /// # Example
+    ///
+    /// Set C6 to trigger on a rising edge.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins::C6, Exti},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// C6::set_port(&mut dp.SYSCFG);
+    /// C6::set_rising_trigger(&mut dp.EXTI, true);
+    /// ```
+    fn set_rising_trigger(exti: &mut pac::EXTI, en: bool);
+
+    /// Set the falling trigger enable.
+    ///
+    /// # Example
+    ///
+    /// Set C6 to trigger on a falling edge.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins::C6, Exti},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// C6::set_port(&mut dp.SYSCFG);
+    /// C6::set_falling_trggier(&mut dp.EXTI, true);
+    /// ```
+    fn set_falling_trggier(exti: &mut pac::EXTI, en: bool);
+
+    /// Set the core 1 interrupt mask in the EXTI.
+    ///
+    /// This will not mask/unmask the IRQ in the NVIC, use
+    /// [`mask`](Self::mask) and [`unmask`](Self::unmask) for that.
+    ///
+    /// # Example
+    ///
+    /// Unmask C6.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins::C6, Exti},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// C6::set_port(&mut dp.SYSCFG);
+    /// C6::set_c1_mask(&mut dp.EXTI, true);
+    /// ```
+    fn set_c1_mask(exti: &mut pac::EXTI, unmask: bool);
+
+    /// Clear the pending EXTI interrupt.
+    ///
+    /// # Example
+    ///
+    /// See [`gpio-button-irq.rs`].
+    ///
+    /// [`gpio-button-irq.rs`]: https://github.com/newAM/stm32wl-hal/blob/main/examples/examples/gpio-button-irq.rs
+    fn clear_exti();
+
+    /// Setup an input pin as an EXTI interrupt source on core 1.
+    ///
+    /// This is a helper function that wraps:
+    /// 1. [`set_port`](Self::set_port)
+    /// 2. [`set_rising_trigger`](Self::set_rising_trigger)
+    /// 3. [`set_falling_trggier`](Self::set_falling_trggier)
+    /// 4. Unmask with [`set_c1_mask`](Self::set_c1_mask)
+    ///
+    /// # Example
+    ///
+    /// Setup C6 to trigger on both edges.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins::C6, Exti, ExtiTrg},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// C6::setup_exti_c1(&mut dp.EXTI, &mut dp.SYSCFG, ExtiTrg::Both);
+    /// ```
+    fn setup_exti_c1(exti: &mut pac::EXTI, syscfg: &mut pac::SYSCFG, trg: ExtiTrg) {
+        Self::set_port(syscfg);
+        Self::set_rising_trigger(exti, matches!(trg, ExtiTrg::Rising | ExtiTrg::Both));
+        Self::set_falling_trggier(exti, matches!(trg, ExtiTrg::Falling | ExtiTrg::Both));
+        Self::set_c1_mask(exti, true);
+    }
+
+    /// Unmask the interrupt in the NVIC.
+    ///
+    /// This will not unmask the IRQ in the EXTI,
+    /// use [`set_c1_mask`](Self::set_c1_mask) for that.
+    ///
+    /// # Safety
+    ///
+    /// This can break mask-based critical sections.
+    ///
+    /// # Example
+    ///
+    /// Setup and unmask C6 (which will unmask all pins 5-9).
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins::C6, Exti, ExtiTrg},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// C6::setup_exti_c1(&mut dp.EXTI, &mut dp.SYSCFG, ExtiTrg::Both);
+    /// unsafe { C6::unmask() };
+    /// ```
+    #[inline]
+    unsafe fn unmask() {
+        pac::NVIC::unmask(Self::INTERRUPT)
+    }
+
+    /// Mask the interrupt in the NVIC.
+    ///
+    /// This will not mask the IRQ in the EXTI,
+    /// use [`set_c1_mask`](Self::set_c1_mask) for that.
+    ///
+    /// # Example
+    ///
+    /// Mask C6 (which will mask all pins 5-9).
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::gpio::{pins::C6, Exti};
+    ///
+    /// C6::mask();
+    /// ```
+    #[inline]
+    fn mask() {
+        pac::NVIC::mask(Self::INTERRUPT)
+    }
+}
+
 /// GPIO pins
 pub mod pins {
     // Switch to this when avaliable on stable
@@ -252,7 +437,7 @@ pub mod pins {
     const GPIOB_BASE: usize = 0x4800_0400;
     const GPIOC_BASE: usize = 0x4800_0800;
 
-    use super::{adc, CriticalSection, Level, OutputType, Pin, Pull, Speed};
+    use super::{adc, pac, CriticalSection, Level, OutputType, Pin, Pull, Speed};
 
     macro_rules! gpio_struct {
         ($name:ident, $base:expr, $n:expr, $doc:expr) => {
@@ -518,6 +703,91 @@ pub mod pins {
     impl_adc_ch!(B4, adc::Ch::In3);
     impl_adc_ch!(B13, adc::Ch::In0);
     impl_adc_ch!(B14, adc::Ch::In1);
+
+    macro_rules! impl_input_exti {
+        ($port:ident, $n:expr, $exticr:expr, $c0interrupt:ident, $c1interrupt:ident) => {
+            paste::paste! {
+                impl super::Exti for [<$port:upper $n>] {
+                    #[cfg(not(feature = "stm32wl5x_cm0p"))]
+                    const INTERRUPT: pac::Interrupt = pac::Interrupt::$c0interrupt;
+
+                    #[cfg(feature = "stm32wl5x_cm0p")]
+                    const INTERRUPT: pac::Interrupt = pac::Interrupt::$c1interrupt;
+
+                    #[inline]
+                    fn set_port(syscfg: &mut pac::SYSCFG) {
+                        syscfg.[<exticr $exticr>].modify(|_, w| w.[<exti $n>]().[<p $port:lower $n>]());
+                    }
+
+                    #[inline]
+                    fn set_rising_trigger(exti: &mut pac::EXTI, en: bool) {
+                        exti.rtsr1.modify(|_, w| w.[<rt $n>]().bit(en));
+                    }
+
+                    #[inline]
+                    fn set_falling_trggier(exti: &mut pac::EXTI, en: bool) {
+                        exti.ftsr1.modify(|_, w| w.[<ft $n>]().bit(en));
+                    }
+
+                    #[inline]
+                    fn set_c1_mask(exti: &mut pac::EXTI, unmask: bool) {
+                        exti.c1imr1.modify(|_, w| w.[<im $n>]().bit(unmask));
+                    }
+
+                    #[inline]
+                    fn clear_exti() {
+                        // safety: atomic write with no side effects
+                        unsafe { (*pac::EXTI::ptr()).pr1.write(|w| w.[<pif $n>]().set_bit()) }
+                    }
+                }
+            }
+        };
+    }
+
+    impl_input_exti!(A, 0, 1, EXTI0, EXTI1_0);
+    impl_input_exti!(A, 1, 1, EXTI1, EXTI1_0);
+    impl_input_exti!(A, 2, 1, EXTI2, EXTI3_2);
+    impl_input_exti!(A, 3, 1, EXTI3, EXTI3_2);
+    impl_input_exti!(A, 4, 2, EXTI4, EXTI15_4);
+    impl_input_exti!(A, 5, 2, EXTI9_5, EXTI15_4);
+    impl_input_exti!(A, 6, 2, EXTI9_5, EXTI15_4);
+    impl_input_exti!(A, 7, 2, EXTI9_5, EXTI15_4);
+    impl_input_exti!(A, 8, 3, EXTI9_5, EXTI15_4);
+    impl_input_exti!(A, 9, 3, EXTI9_5, EXTI15_4);
+    impl_input_exti!(A, 10, 3, EXTI15_10, EXTI15_4);
+    impl_input_exti!(A, 11, 3, EXTI15_10, EXTI15_4);
+    impl_input_exti!(A, 12, 4, EXTI15_10, EXTI15_4);
+    impl_input_exti!(A, 13, 4, EXTI15_10, EXTI15_4);
+    impl_input_exti!(A, 14, 4, EXTI15_10, EXTI15_4);
+    impl_input_exti!(A, 15, 4, EXTI15_10, EXTI15_4);
+
+    impl_input_exti!(B, 0, 1, EXTI0, EXTI1_0);
+    impl_input_exti!(B, 1, 1, EXTI1, EXTI1_0);
+    impl_input_exti!(B, 2, 1, EXTI2, EXTI3_2);
+    impl_input_exti!(B, 3, 1, EXTI3, EXTI3_2);
+    impl_input_exti!(B, 4, 2, EXTI4, EXTI15_4);
+    impl_input_exti!(B, 5, 2, EXTI9_5, EXTI15_4);
+    impl_input_exti!(B, 6, 2, EXTI9_5, EXTI15_4);
+    impl_input_exti!(B, 7, 2, EXTI9_5, EXTI15_4);
+    impl_input_exti!(B, 8, 3, EXTI9_5, EXTI15_4);
+    impl_input_exti!(B, 9, 3, EXTI9_5, EXTI15_4);
+    impl_input_exti!(B, 10, 3, EXTI15_10, EXTI15_4);
+    impl_input_exti!(B, 11, 3, EXTI15_10, EXTI15_4);
+    impl_input_exti!(B, 12, 4, EXTI15_10, EXTI15_4);
+    impl_input_exti!(B, 13, 4, EXTI15_10, EXTI15_4);
+    impl_input_exti!(B, 14, 4, EXTI15_10, EXTI15_4);
+    impl_input_exti!(B, 15, 4, EXTI15_10, EXTI15_4);
+
+    impl_input_exti!(C, 0, 1, EXTI0, EXTI1_0);
+    impl_input_exti!(C, 1, 1, EXTI1, EXTI1_0);
+    impl_input_exti!(C, 2, 1, EXTI2, EXTI3_2);
+    impl_input_exti!(C, 3, 1, EXTI3, EXTI3_2);
+    impl_input_exti!(C, 4, 2, EXTI4, EXTI15_4);
+    impl_input_exti!(C, 5, 2, EXTI9_5, EXTI15_4);
+    impl_input_exti!(C, 6, 2, EXTI9_5, EXTI15_4);
+    impl_input_exti!(C, 13, 4, EXTI15_10, EXTI15_4);
+    impl_input_exti!(C, 14, 4, EXTI15_10, EXTI15_4);
+    impl_input_exti!(C, 15, 4, EXTI15_10, EXTI15_4);
 }
 
 /// Port A GPIOs

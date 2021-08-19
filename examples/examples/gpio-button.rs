@@ -13,7 +13,7 @@ use stm32wl_hal::{
 
 #[hal::cortex_m_rt::entry]
 fn main() -> ! {
-    let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    let mut dp: pac::Peripherals = defmt::unwrap!(pac::Peripherals::take());
 
     let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     let c6: Input<pins::C6> = Input::new(gpioc.c6, Pull::Up);

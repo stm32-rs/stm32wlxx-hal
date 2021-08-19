@@ -9,7 +9,7 @@ use stm32wl_hal::{self as hal, pac, rcc};
 
 #[hal::cortex_m_rt::entry]
 fn main() -> ! {
-    let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    let dp: pac::Peripherals = defmt::unwrap!(pac::Peripherals::take());
 
     defmt::info!("sysclk_hz: {}", rcc::sysclk_hz(&dp.RCC));
     defmt::info!("hclk1_hz: {}", rcc::hclk1_hz(&dp.RCC));

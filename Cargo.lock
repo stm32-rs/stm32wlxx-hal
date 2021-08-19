@@ -219,6 +219,7 @@ dependencies = [
 name = "examples"
 version = "0.1.0"
 dependencies = [
+ "cortex-m-rt",
  "defmt",
  "defmt-rtt",
  "nucleo-wl55jc-bsp",
@@ -503,7 +504,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 [[package]]
 name = "stm32wl"
 version = "0.13.0"
-source = "git+https://github.com/newAM/stm32wl-rs.git?rev=239ceea719f2e26b70e8680f87a31b4a309b5ff8#239ceea719f2e26b70e8680f87a31b4a309b5ff8"
+source = "git+https://github.com/newAM/stm32wl-rs.git?rev=a1aa8eaf9a3d771ccc1752ffff0fa69bf063f009#a1aa8eaf9a3d771ccc1752ffff0fa69bf063f009"
 dependencies = [
  "bare-metal 1.0.0",
  "cortex-m 0.7.3",

@@ -8,7 +8,7 @@ edition = "2018"
 [dependencies]
 defmt = "0.2"
 defmt-rtt = "0.2"
-cortex-m-rt = "0.6"
+cortex-m-rt = "0.7"
 panic-probe = { version = "0.2", features = ["print-defmt" ] }
 stm32wl-hal = { path = "../hal", features = ["stm32wl5x_cm4", "rt", "defmt"] }
 nucleo-wl55jc-bsp = { path = "../nucleo-wl55jc-bsp" }

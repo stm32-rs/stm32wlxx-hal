@@ -79,6 +79,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "chrono"
+version = "0.4.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "670ad68c9088c2a963aaa298cb369688cf3f9465ce5e2d4ca10e6e0098a1ce73"
+dependencies = [
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
 name = "cortex-m"
 version = "0.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -460,6 +470,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "rtc-testsuite"
+version = "0.1.0"
+dependencies = [
+ "defmt",
+ "defmt-rtt",
+ "defmt-test",
+ "nb 1.0.0",
+ "panic-probe",
+ "stm32wl-hal",
+]
+
+[[package]]
 name = "rustc_version"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -517,6 +539,7 @@ name = "stm32wl-hal"
 version = "0.1.0-alpha.0"
 dependencies = [
  "cfg-if",
+ "chrono",
  "cortex-m 0.7.3",
  "cortex-m-rt",
  "defmt",

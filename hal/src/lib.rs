@@ -38,6 +38,7 @@ pub mod lptim;
 pub mod pka;
 pub mod rcc;
 pub mod rng;
+pub mod rtc;
 pub mod spi;
 pub mod subghz;
 pub mod uart;
@@ -50,6 +51,7 @@ pub use ratio::Ratio;
 #[cfg_attr(docsrs, doc(cfg(feature = "rt")))]
 pub use cortex_m_rt;
 
+pub use chrono;
 pub use cortex_m;
 pub use embedded_hal;
 pub use embedded_time;

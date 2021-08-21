@@ -12,6 +12,7 @@ members = [
     "nucleo-wl55jc-bsp",
     "pka-testsuite",
     "rng-testsuite",
+    "rtc-testsuite",
     "subghz-testsuite",
     "uart-testsuite",
 ]

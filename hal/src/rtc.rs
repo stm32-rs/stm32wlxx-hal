@@ -92,11 +92,11 @@ impl Rtc {
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
-    /// unsafe { pulse_reset_backup_domain(&mut ta.rcc, &mut ta.pwr) };
+    /// unsafe { pulse_reset_backup_domain(&mut dp.RCC, &mut dp.PWR) };
     /// dp.RCC
     ///     .cr
     ///     .modify(|_, w| w.hseon().enabled().hsebyppwr().vddtcxo());
-    /// while ta.rcc.cr.read().hserdy().is_not_ready() {}
+    /// while dp.RCC.cr.read().hserdy().is_not_ready() {}
     ///
     /// let rtc: Rtc = unsafe { Rtc::new(dp.RTC, Clk::Hse, &mut dp.PWR, &mut dp.RCC) };
     /// ```

@@ -221,7 +221,7 @@ impl Rtc {
         });
 
         let year: i32 = date_time.year();
-        assert!(year >= 2000 && year < 2100);
+        assert!((2000..2100).contains(&year));
         let yt: u8 = ((year - 2000) / 10) as u8;
         let yu: u8 = ((year - 2000) % 10) as u8;
 
@@ -274,7 +274,7 @@ impl Rtc {
 
     fn ss_to_us(&self, ss: u32) -> u32 {
         // running in BCD mode, only 15:0 are used
-        let ss: u32 = ss & 0xFFFF_FFFF;
+        let ss: u32 = ss & 0xFFFF;
 
         let pre_s: u32 = self.rtc.prer.read().prediv_s().bits().into();
         // RM0453 Rev 2 page 1012

@@ -5,7 +5,9 @@ use core::{
     convert::{TryFrom, TryInto},
     sync::atomic::{compiler_fence, Ordering::SeqCst},
 };
-use cortex_m::peripheral::syst::SystClkSource;
+use cortex_m::{interrupt::CriticalSection, peripheral::syst::SystClkSource};
+
+pub use pac::rcc::csr::LSIPRE_A as LsiPre;
 
 use crate::pac;
 
@@ -263,7 +265,7 @@ fn set_sysclk_from_msi_range(
     rcc: &mut pac::RCC,
     range: MsiRange,
     vos: Vos,
-    _cs: &cortex_m::interrupt::CriticalSection,
+    _cs: &CriticalSection,
 ) {
     const MSI_CALIBRATION: u8 = 0;
 
@@ -688,7 +690,7 @@ pub fn cpu_systick_hz(rcc: &pac::RCC, src: SystClkSource) -> u32 {
 
 /// Calculate the LSI clock frequency in hertz.
 ///
-/// The LSI is either 32 kHz without the LSI prescaler or 128 Hz with the LSI
+/// The LSI is either 32 kHz without the LSI prescaler or 250 Hz with the LSI
 /// prescaler.
 ///
 /// # Example
@@ -711,4 +713,67 @@ pub fn lsi_hz(rcc: &pac::RCC) -> u16 {
         DIV1 => LSI_BASE_HZ,
         DIV128 => LSI_DIV_HZ,
     }
+}
+
+/// Setup the LSI clock and wait for completion.
+///
+/// # Example
+///
+/// ```no_run
+/// use stm32wl_hal::{
+///     pac,
+///     rcc::{setup_lsi, LsiPre},
+/// };
+///
+/// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+/// setup_lsi(&mut dp.RCC, LsiPre::DIV1);
+/// ```
+#[inline]
+pub fn setup_lsi(rcc: &mut pac::RCC, pre: LsiPre) {
+    let csr = rcc.csr.read();
+    // LSI pre-scaler is applied after an on-off cycle (if a change is required)
+    if csr.lsion().is_on() && csr.lsipre().variant() != pre {
+        rcc.csr.modify(|_, w| w.lsipre().variant(pre).lsion().off());
+    }
+    enable_lsi(rcc)
+}
+
+/// Enable the LSI clock with the currently configured pre-scaler and wait
+/// for completion.
+///
+/// # Example
+///
+/// ```no_run
+/// use stm32wl_hal::{pac, rcc::enable_lsi};
+///
+/// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+/// enable_lsi(&mut dp.RCC);
+/// ```
+#[inline]
+pub fn enable_lsi(rcc: &mut pac::RCC) {
+    rcc.csr.modify(|_, w| w.lsion().on());
+    while rcc.csr.read().lsirdy().is_not_ready() {}
+}
+
+/// Reset the backup domain.
+///
+/// # Safety
+///
+/// 1. This will disable the LSE clock.
+///    Ensure no peripherals are using the LSE clock before calling this function.
+/// 2. This will reset the real-time clock.
+///    Setup the RTC after calling this function.
+///
+/// # Example
+///
+/// ```no_run
+/// use stm32wl_hal::{pac, rcc::pulse_reset_backup_domain};
+///
+/// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+/// unsafe { pulse_reset_backup_domain(&mut dp.RCC, &mut dp.PWR) };
+/// ```
+pub unsafe fn pulse_reset_backup_domain(rcc: &mut pac::RCC, pwr: &mut pac::PWR) {
+    pwr.cr1.modify(|_, w| w.dbp().enabled());
+    rcc.bdcr.modify(|_, w| w.bdrst().set_bit());
+    rcc.bdcr.modify(|_, w| w.bdrst().clear_bit());
 }

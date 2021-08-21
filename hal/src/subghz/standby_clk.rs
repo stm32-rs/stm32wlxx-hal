@@ -10,7 +10,7 @@ pub enum StandbyClk {
     /// RC 13 MHz used in standby mode.
     Rc = 0b0,
     /// HSE32 used in standby mode.
-    Hse32 = 0b1,
+    Hse = 0b1,
 }
 
 impl From<StandbyClk> for u8 {

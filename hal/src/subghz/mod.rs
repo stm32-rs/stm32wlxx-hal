@@ -782,7 +782,7 @@ where
     /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
     /// use stm32wl_hal::subghz::StandbyClk;
     ///
-    /// sg.set_standby(StandbyClk::Hse32)?;
+    /// sg.set_standby(StandbyClk::Hse)?;
     /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     pub fn set_standby(&mut self, standby_clk: StandbyClk) -> Result<(), Error> {

@@ -141,11 +141,11 @@ fn ping_pong(
     defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
 
     unwrap!(sg.set_tcxo_mode(&TCXO_MODE));
-    unwrap!(sg.set_standby(StandbyClk::Hse32));
+    unwrap!(sg.set_standby(StandbyClk::Hse));
     let status: Status = unwrap!(sg.status());
     defmt::assert_ne!(status.cmd(), Ok(CmdStatus::ExecutionFailure));
     defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyHse));
-    unwrap!(sg.set_tx_rx_fallback_mode(FallbackMode::StandbyHse32));
+    unwrap!(sg.set_tx_rx_fallback_mode(FallbackMode::StandbyHse));
 
     unwrap!(sg.set_regulator_mode(RegMode::Ldo));
     unwrap!(sg.set_buffer_base_address(TX_BUF_OFFSET, RX_BUF_OFFSET));
@@ -213,7 +213,7 @@ fn ping_pong(
                     (rx_timeout_ms - elapsed_ms).abs()
                 );
                 defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
-                unwrap!(sg.set_standby(StandbyClk::Hse32));
+                unwrap!(sg.set_standby(StandbyClk::Hse));
                 unwrap!(sg.clear_irq_status(irq_status));
 
                 tx_or_panic(sg, rfs);

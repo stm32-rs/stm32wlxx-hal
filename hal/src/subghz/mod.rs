@@ -111,19 +111,17 @@ impl Nss {
     /// Clear NSS, enabling SPI transactions
     #[inline(always)]
     fn clear() {
-        unsafe { pac::Peripherals::steal() }
-            .PWR
-            .subghzspicr
-            .write(|w| w.nss().clear_bit())
+        unsafe {
+            (*pac::PWR::ptr())
+                .subghzspicr
+                .write(|w| w.nss().clear_bit())
+        }
     }
 
     /// Set NSS, disabling SPI transactions
     #[inline(always)]
     fn set() {
-        unsafe { pac::Peripherals::steal() }
-            .PWR
-            .subghzspicr
-            .write(|w| w.nss().set_bit())
+        unsafe { (*pac::PWR::ptr()).subghzspicr.write(|w| w.nss().set_bit()) }
     }
 }
 
@@ -143,6 +141,29 @@ fn baud_div(rcc: &pac::RCC) -> BaudDiv {
     } else {
         BaudDiv::DIV2
     }
+}
+
+/// Wakeup the radio from sleep mode.
+///
+/// # Safety
+///
+/// 1. This must not be called when the SubGHz radio is in use.
+/// 2. This must not be called when the SubGHz SPI bus is in use.
+///
+/// # Example
+///
+/// See [`SubGhz::set_sleep`]
+#[inline(always)]
+pub unsafe fn wakeup() {
+    Nss::clear();
+    // RM0453 rev 2 page 171 section 5.7.2 "Sleep mode"
+    // on a firmware request via the sub-GHz radio SPI NSS signal
+    // (keeping sub-GHz radio SPI NSS low for at least 20 μs)
+    //
+    // I have found this to be a more reliable mechanism for ensuring NSS is
+    // pulled low for long enough to wake the radio.
+    while rfbusys() {}
+    Nss::set();
 }
 
 /// Unmask the SubGHz IRQ in the NVIC.
@@ -175,13 +196,10 @@ pub fn mask_irq() {
 ///
 /// See RM0453 Rev 1 Section 6.3 Page 228 "Radio busy management" for more
 /// details.
+#[inline(always)]
 pub fn rfbusys() -> bool {
-    unsafe { pac::Peripherals::steal() }
-        .PWR
-        .sr2
-        .read()
-        .rfbusys()
-        .is_busy()
+    // safety: atmoic read with no side-effects
+    unsafe { (*pac::PWR::ptr()).sr2.read().rfbusys().is_busy() }
 }
 
 /// Sub-GHz radio peripheral
@@ -302,7 +320,7 @@ impl<RxDma, TxDma> SubGhz<RxDma, TxDma> {
             if count == 0 {
                 let dp = unsafe { pac::Peripherals::steal() };
                 panic!(
-                    "pwr.sr2=0x{:X} pwr.subghzspicr=0x{:X} pwr.cr1=0x{:X}",
+                    "rfbusys timeout pwr.sr2=0x{:X} pwr.subghzspicr=0x{:X} pwr.cr1=0x{:X}",
                     dp.PWR.sr2.read().bits(),
                     dp.PWR.subghzspicr.read().bits(),
                     dp.PWR.cr1.read().bits(),
@@ -373,11 +391,7 @@ impl SubGhz<NoDmaCh, NoDmaCh> {
 
         let spi: Spi3<NoDmaCh, NoDmaCh> = Spi3::<NoDmaCh, NoDmaCh>::new(spi, baud_div(rcc), rcc);
 
-        Nss::clear();
-        // wait until we know the radio got the NSS
-        // at high clock speeds the radio can miss an NSS pulse
-        while !rfbusys() {}
-        Nss::set();
+        unsafe { wakeup() };
 
         SubGhz {
             spi,
@@ -453,11 +467,7 @@ where
         let spi: Spi3<RxDma, TxDma> =
             Spi3::<RxDma, TxDma>::new(spi, rx_dma, tx_dma, baud_div(rcc), rcc);
 
-        Nss::clear();
-        // wait until we know the radio got the NSS
-        // at high clock speeds the radio can miss an NSS pulse
-        while !rfbusys() {}
-        Nss::set();
+        unsafe { wakeup() };
 
         SubGhz {
             spi,
@@ -719,19 +729,36 @@ where
     /// The cfg argument allows some optional functions to be maintained
     /// in sleep mode.
     ///
+    /// # Safety
+    ///
+    /// 1. After the `set_sleep` command, the sub-GHz radio NSS must not go low
+    ///    for 500 μs.
+    ///    No reason is provided, the reference manual (RM0453 rev 2) simply
+    ///    says "you must".
+    /// 2. The radio cannot be used while in sleep mode.
+    /// 3. The radio must be woken up with [`wakeup`] before resuming use.
+    ///
     /// # Example
     ///
     /// Put the radio into sleep mode.
     ///
     /// ```no_run
+    /// # let cp = unsafe { stm32wl_hal::pac::CorePeripherals::steal() };
+    /// # let dp = unsafe { stm32wl_hal::pac::Peripherals::steal() };
     /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{SleepCfg, StandbyClk};
+    /// # let mut delay = new_delay(cp.SYST, &dp.RCC);
+    /// use stm32wl_hal::{
+    ///     subghz::{wakeup, SleepCfg, StandbyClk},
+    ///     util::new_delay,
+    /// };
     ///
     /// sg.set_standby(StandbyClk::Rc)?;
-    /// sg.set_sleep(SleepCfg::default())?;
+    /// unsafe { sg.set_sleep(SleepCfg::default())? };
+    /// delay.delay_us(500);
+    /// unsafe { wakeup() };
     /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
-    pub fn set_sleep(&mut self, cfg: SleepCfg) -> Result<(), Error> {
+    pub unsafe fn set_sleep(&mut self, cfg: SleepCfg) -> Result<(), Error> {
         self.write(&[OpCode::SetSleep as u8, u8::from(cfg)])
     }
 
@@ -1151,7 +1178,7 @@ where
     /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     pub fn set_tx_rx_fallback_mode(&mut self, fm: FallbackMode) -> Result<(), Error> {
-        self.write(&[OpCode::SetTxRxFallbackMode.into(), fm.into()])
+        self.write(&[OpCode::SetTxRxFallbackMode as u8, fm as u8])
     }
 
     /// Set channel activity detection (CAD) parameters.

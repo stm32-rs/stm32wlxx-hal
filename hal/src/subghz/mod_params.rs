@@ -555,8 +555,8 @@ impl FskModParams {
         };
         let br: u32 = self.bitrate().as_bps();
         let fdev: u32 = self.fdev().as_hertz();
-        let hse32_err: u32 = 32 * (ppm as u32);
-        let freq_err: u32 = 2 * hse32_err;
+        let hse_err: u32 = 32 * (ppm as u32);
+        let freq_err: u32 = 2 * hse_err;
 
         bw > br + 2 * fdev + freq_err
     }

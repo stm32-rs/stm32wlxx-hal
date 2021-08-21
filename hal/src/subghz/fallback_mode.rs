@@ -10,7 +10,7 @@ pub enum FallbackMode {
     /// Standby mode entry.
     Standby = 0x20,
     /// Standby with HSE32 enabled.
-    StandbyHse32 = 0x30,
+    StandbyHse = 0x30,
     /// Frequency synthesizer entry.
     Fs = 0x40,
 }

@@ -10,6 +10,7 @@ use static_assertions as sa;
 
 use bsp::{
     hal::{
+        cortex_m::delay::Delay,
         dma::NoDmaCh,
         dma::{AllDma, Dma1Ch1, Dma2Ch1},
         gpio::{PortA, PortC},
@@ -17,14 +18,14 @@ use bsp::{
         rcc,
         rng::{self, Rng},
         subghz::{
-            rfbusys, AddrComp, CalibrateImage, CfgIrq, CmdStatus, CodingRate, CrcType,
-            FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape, GenericPacketParams,
-            HeaderType, Irq, LoRaBandwidth, LoRaModParams, LoRaPacketParams, LoRaSyncWord, Ocp,
-            PaConfig, PaSel, PacketType, PreambleDetection, RampTime, RegMode, RfFreq,
-            SpreadingFactor, StandbyClk, Status, StatusMode, SubGhz, TcxoMode, TcxoTrim, Timeout,
-            TxParams,
+            rfbusys, wakeup, AddrComp, CalibrateImage, CfgIrq, CmdStatus, CodingRate, CrcType,
+            FallbackMode, FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape,
+            GenericPacketParams, HeaderType, Irq, LoRaBandwidth, LoRaModParams, LoRaPacketParams,
+            LoRaSyncWord, Ocp, PaConfig, PaSel, PacketType, PreambleDetection, RampTime, RegMode,
+            RfFreq, SleepCfg, SpreadingFactor, StandbyClk, Startup, Status, StatusMode, SubGhz,
+            TcxoMode, TcxoTrim, Timeout, TxParams,
         },
-        util::reset_cycle_count,
+        util::{new_delay, reset_cycle_count},
     },
     RfSwitch,
 };
@@ -136,9 +137,16 @@ fn ping_pong(
 ) {
     unwrap!(sg.set_standby(StandbyClk::Rc));
     let status: Status = unwrap!(sg.status());
+    defmt::assert_ne!(status.cmd(), Ok(CmdStatus::ExecutionFailure));
     defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
 
     unwrap!(sg.set_tcxo_mode(&TCXO_MODE));
+    unwrap!(sg.set_standby(StandbyClk::Hse32));
+    let status: Status = unwrap!(sg.status());
+    defmt::assert_ne!(status.cmd(), Ok(CmdStatus::ExecutionFailure));
+    defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyHse));
+    unwrap!(sg.set_tx_rx_fallback_mode(FallbackMode::StandbyHse32));
+
     unwrap!(sg.set_regulator_mode(RegMode::Ldo));
     unwrap!(sg.set_buffer_base_address(TX_BUF_OFFSET, RX_BUF_OFFSET));
     unwrap!(sg.set_pa_config(&PA_CONFIG));
@@ -146,7 +154,7 @@ fn ping_pong(
     unwrap!(sg.set_tx_params(&TX_PARAMS));
 
     let status: Status = unwrap!(sg.status());
-    defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
+    defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyHse));
 
     unwrap!(sg.set_packet_type(pkt));
     match pkt {
@@ -205,13 +213,14 @@ fn ping_pong(
                     (rx_timeout_ms - elapsed_ms).abs()
                 );
                 defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
+                unwrap!(sg.set_standby(StandbyClk::Hse32));
                 unwrap!(sg.clear_irq_status(irq_status));
 
                 tx_or_panic(sg, rfs);
                 break;
             } else if irq_status & Irq::RxDone.mask() != 0 {
                 defmt::info!("RX done");
-                defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
+                defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyHse));
                 unwrap!(sg.clear_irq_status(irq_status));
 
                 let (status, len, ptr) = unwrap!(sg.rx_buffer_status());
@@ -275,6 +284,7 @@ mod tests {
     struct TestArgs {
         sg: SubGhz<Dma1Ch1, Dma2Ch1>,
         rng: Rng,
+        delay: Delay,
         rfs: RfSwitch,
     }
 
@@ -294,6 +304,7 @@ mod tests {
         let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
 
         let rng: Rng = Rng::new(dp.RNG, rng::Clk::MSI, &mut dp.RCC);
+        let delay: Delay = new_delay(cp.SYST, &dp.RCC);
 
         let mut sg: SubGhz<Dma1Ch1, Dma2Ch1> =
             SubGhz::new_with_dma(dp.SPI3, dma.d1c1, dma.d2c1, &mut dp.RCC);
@@ -303,7 +314,12 @@ mod tests {
         cp.DWT.enable_cycle_counter();
         reset_cycle_count(&mut cp.DWT);
 
-        TestArgs { sg, rng, rfs }
+        TestArgs {
+            sg,
+            rng,
+            delay,
+            rfs,
+        }
     }
 
     #[test]
@@ -346,6 +362,24 @@ mod tests {
         unwrap!(sg.read_buffer(0, &mut buf));
         let end: u32 = DWT::get_cycle_count();
         defmt::info!("Cycles 0B: {}", end - start);
+    }
+
+    #[test]
+    fn sleep_enter_exit(ta: &mut TestArgs) {
+        const SLEEP_CFG: SleepCfg = SleepCfg::new()
+            .set_rtc_wakeup_en(false)
+            .set_startup(Startup::Cold);
+
+        unwrap!(unsafe { ta.sg.set_sleep(SLEEP_CFG) });
+        ta.delay.delay_us(500);
+
+        let start: u32 = DWT::get_cycle_count();
+        unsafe { wakeup() }
+        let end: u32 = DWT::get_cycle_count();
+        defmt::info!("{} cycles to wake radio", end - start);
+
+        let status: Status = unwrap!(ta.sg.status());
+        defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
     }
 
     #[test]

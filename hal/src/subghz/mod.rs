@@ -153,7 +153,7 @@ fn baud_div(rcc: &pac::RCC) -> BaudDiv {
 /// # Example
 ///
 /// See [`SubGhz::set_sleep`]
-#[inline(always)]
+#[inline]
 pub unsafe fn wakeup() {
     Nss::clear();
     // RM0453 rev 2 page 171 section 5.7.2 "Sleep mode"
@@ -177,6 +177,7 @@ pub unsafe fn wakeup() {
 /// ```no_run
 /// unsafe { stm32wl_hal::subghz::unmask_irq() };
 /// ```
+#[inline]
 pub unsafe fn unmask_irq() {
     pac::NVIC::unmask(pac::Interrupt::RADIO_IRQ_BUSY)
 }
@@ -188,18 +189,31 @@ pub unsafe fn unmask_irq() {
 /// ```no_run
 /// stm32wl_hal::subghz::mask_irq();
 /// ```
+#[inline]
 pub fn mask_irq() {
     pac::NVIC::mask(pac::Interrupt::RADIO_IRQ_BUSY)
 }
 
 /// Returns `true` if the radio is busy.
 ///
-/// See RM0453 Rev 1 Section 6.3 Page 228 "Radio busy management" for more
+/// This may not be set immediately after NSS going low.
+///
+/// See RM0461 Rev 4 section 5.3 page 181 "Radio busy management" for more
 /// details.
-#[inline(always)]
+#[inline]
 pub fn rfbusys() -> bool {
     // safety: atmoic read with no side-effects
     unsafe { (*pac::PWR::ptr()).sr2.read().rfbusys().is_busy() }
+}
+
+/// Returns `true` if the radio is busy or NSS is low.
+///
+/// See RM0461 Rev 4 section 5.3 page 181 "Radio busy management" for more
+/// details.
+#[inline]
+pub fn rfbusyms() -> bool {
+    // saftey: atomic read with no side-effects
+    unsafe { (*pac::PWR::ptr()).sr2.read().rfbusyms().is_busy() }
 }
 
 /// Sub-GHz radio peripheral
@@ -315,12 +329,12 @@ impl<RxDma, TxDma> SubGhz<RxDma, TxDma> {
     fn poll_not_busy(&self) {
         // TODO: this is a terrible timeout
         let mut count: u32 = 1_000_000;
-        while rfbusys() {
+        while rfbusyms() {
             count -= 1;
             if count == 0 {
                 let dp = unsafe { pac::Peripherals::steal() };
                 panic!(
-                    "rfbusys timeout pwr.sr2=0x{:X} pwr.subghzspicr=0x{:X} pwr.cr1=0x{:X}",
+                    "rfbusyms timeout pwr.sr2=0x{:X} pwr.subghzspicr=0x{:X} pwr.cr1=0x{:X}",
                     dp.PWR.sr2.read().bits(),
                     dp.PWR.subghzspicr.read().bits(),
                     dp.PWR.cr1.read().bits(),

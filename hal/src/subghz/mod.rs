@@ -329,12 +329,12 @@ impl<RxDma, TxDma> SubGhz<RxDma, TxDma> {
     fn poll_not_busy(&self) {
         // TODO: this is a terrible timeout
         let mut count: u32 = 1_000_000;
-        while rfbusyms() {
+        while rfbusys() {
             count -= 1;
             if count == 0 {
                 let dp = unsafe { pac::Peripherals::steal() };
                 panic!(
-                    "rfbusyms timeout pwr.sr2=0x{:X} pwr.subghzspicr=0x{:X} pwr.cr1=0x{:X}",
+                    "rfbusys timeout pwr.sr2=0x{:X} pwr.subghzspicr=0x{:X} pwr.cr1=0x{:X}",
                     dp.PWR.sr2.read().bits(),
                     dp.PWR.subghzspicr.read().bits(),
                     dp.PWR.cr1.read().bits(),

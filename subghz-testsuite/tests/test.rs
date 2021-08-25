@@ -11,12 +11,12 @@ use static_assertions as sa;
 use bsp::{
     hal::{
         cortex_m::delay::Delay,
-        dma::NoDmaCh,
         dma::{AllDma, Dma1Ch1, Dma2Ch1},
-        gpio::{PortA, PortC},
+        gpio::{PortA, PortC, RfNssDbg, SgMisoDbg, SgMosiDbg, SgSckDbg},
         pac::{self, DWT},
         rcc,
         rng::{self, Rng},
+        spi::{SgMiso, SgMosi},
         subghz::{
             rfbusys, wakeup, AddrComp, CalibrateImage, CfgIrq, CmdStatus, CodingRate, CrcType,
             FallbackMode, FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape,
@@ -29,6 +29,8 @@ use bsp::{
     },
     RfSwitch,
 };
+
+type MySubghz = SubGhz<Dma1Ch1, Dma2Ch1>;
 
 const FREQ: u32 = 48_000_000;
 const CYC_PER_US: u32 = FREQ / 1000 / 1000;
@@ -103,7 +105,7 @@ const TX_PARAMS: TxParams = TxParams::new()
 // WARNING will wrap-around eventually, use this for relative timing only
 defmt::timestamp!("{=u32:µs}", DWT::get_cycle_count() / CYC_PER_US);
 
-fn tx_or_panic(sg: &mut SubGhz<Dma1Ch1, Dma2Ch1>, rfs: &mut RfSwitch) {
+fn tx_or_panic(sg: &mut MySubghz, rfs: &mut RfSwitch) {
     rfs.set_tx_lp();
     unwrap!(sg.set_tx(Timeout::DISABLED));
     let start_cc: u32 = DWT::get_cycle_count();
@@ -129,12 +131,7 @@ fn tx_or_panic(sg: &mut SubGhz<Dma1Ch1, Dma2Ch1>, rfs: &mut RfSwitch) {
 /// Both radios transmit `b"PING"`.
 ///
 /// The first radio to recieve `b"PING"` transmits `b"PONG"` in reply.
-fn ping_pong(
-    sg: &mut SubGhz<Dma1Ch1, Dma2Ch1>,
-    rng: &mut Rng,
-    rfs: &mut RfSwitch,
-    pkt: PacketType,
-) {
+fn ping_pong(sg: &mut MySubghz, rng: &mut Rng, rfs: &mut RfSwitch, pkt: PacketType) {
     unwrap!(sg.set_standby(StandbyClk::Rc));
     let status: Status = unwrap!(sg.status());
     defmt::assert_ne!(status.cmd(), Ok(CmdStatus::ExecutionFailure));
@@ -282,7 +279,7 @@ mod tests {
     static mut BUF: [u8; 255] = [0; 255];
 
     struct TestArgs {
-        sg: SubGhz<Dma1Ch1, Dma2Ch1>,
+        sg: MySubghz,
         rng: Rng,
         delay: Delay,
         rfs: RfSwitch,
@@ -306,9 +303,11 @@ mod tests {
         let rng: Rng = Rng::new(dp.RNG, rng::Clk::MSI, &mut dp.RCC);
         let delay: Delay = new_delay(cp.SYST, &dp.RCC);
 
-        let mut sg: SubGhz<Dma1Ch1, Dma2Ch1> =
-            SubGhz::new_with_dma(dp.SPI3, dma.d1c1, dma.d2c1, &mut dp.RCC);
-        sg.enable_spi_debug(gpioa.a4, gpioa.a5, gpioa.a6, gpioa.a7);
+        let sg: MySubghz = MySubghz::new_with_dma(dp.SPI3, dma.d1c1, dma.d2c1, &mut dp.RCC);
+        let _: RfNssDbg = RfNssDbg::new(gpioa.a4);
+        let _: SgSckDbg = SgSckDbg::new(gpioa.a5);
+        let _: SgMisoDbg = SgMisoDbg::new(gpioa.a6);
+        let _: SgMosiDbg = SgMosiDbg::new(gpioa.a7);
 
         cp.DCB.enable_trace();
         cp.DWT.enable_cycle_counter();
@@ -344,7 +343,7 @@ mod tests {
 
     #[test]
     fn buffer_io_no_dma(_: &mut TestArgs) {
-        let mut sg: SubGhz<NoDmaCh, NoDmaCh> = unsafe { SubGhz::<NoDmaCh, NoDmaCh>::steal() };
+        let mut sg: SubGhz<SgMiso, SgMosi> = unsafe { SubGhz::<SgMiso, SgMosi>::steal() };
 
         const DATA: [u8; 255] = [0x45; 255];
         while rfbusys() {}
@@ -384,7 +383,7 @@ mod tests {
 
     #[test]
     fn fsk_ping_pong(ta: &mut TestArgs) {
-        let sg: &mut SubGhz<Dma1Ch1, Dma2Ch1> = &mut ta.sg;
+        let sg: &mut MySubghz = &mut ta.sg;
         let rng: &mut Rng = &mut ta.rng;
         let rfs: &mut RfSwitch = &mut ta.rfs;
 
@@ -393,7 +392,7 @@ mod tests {
 
     #[test]
     fn lora_ping_pong(ta: &mut TestArgs) {
-        let sg: &mut SubGhz<Dma1Ch1, Dma2Ch1> = &mut ta.sg;
+        let sg: &mut MySubghz = &mut ta.sg;
         let rng: &mut Rng = &mut ta.rng;
         let rfs: &mut RfSwitch = &mut ta.rfs;
 

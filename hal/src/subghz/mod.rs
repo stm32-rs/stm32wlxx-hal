@@ -33,13 +33,9 @@ mod tx_params;
 mod value_error;
 
 use crate::{
-    dma::{self, DmaCh, NoDmaCh},
-    gpio::{
-        pins,
-        sealed::{SubGhzSpiMiso, SubGhzSpiMosi, SubGhzSpiNss, SubGhzSpiSck},
-    },
+    dma::DmaCh,
     pac,
-    spi::{BaudDiv, Spi3},
+    spi::{BaudDiv, SgMiso, SgMosi, Spi3},
 };
 
 pub use cad_params::{CadParams, ExitMode, NbCadSymbol};
@@ -78,25 +74,6 @@ use embedded_hal::blocking::spi::{Transfer, Write};
 
 /// Passthrough for SPI errors (for now)
 pub type Error = crate::spi::Error;
-
-#[derive(Debug)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-struct DebugPins {
-    a4: pins::A4,
-    a5: pins::A5,
-    a6: pins::A6,
-    a7: pins::A7,
-}
-
-impl DebugPins {
-    pub const fn new(a4: pins::A4, a5: pins::A5, a6: pins::A6, a7: pins::A7) -> DebugPins {
-        DebugPins { a4, a5, a6, a7 }
-    }
-
-    pub const fn free(self) -> (pins::A4, pins::A5, pins::A6, pins::A7) {
-        (self.a4, self.a5, self.a6, self.a7)
-    }
-}
 
 struct Nss {
     _priv: (),
@@ -218,12 +195,11 @@ pub fn rfbusyms() -> bool {
 
 /// Sub-GHz radio peripheral
 #[derive(Debug)]
-pub struct SubGhz<RxDma, TxDma> {
-    spi: Spi3<RxDma, TxDma>,
-    debug_pins: Option<DebugPins>,
+pub struct SubGhz<MISO, MOSI> {
+    spi: Spi3<MISO, MOSI>,
 }
 
-impl<RxDma, TxDma> SubGhz<RxDma, TxDma> {
+impl<MISO, MOSI> SubGhz<MISO, MOSI> {
     /// Disable the SPI3 (SubGHz SPI) clock.
     ///
     /// # Safety
@@ -236,94 +212,17 @@ impl<RxDma, TxDma> SubGhz<RxDma, TxDma> {
     /// 4. You are reponsible for setting up anything that may have lost state
     ///    while the clock was disabled.
     pub unsafe fn disable_spi_clock(rcc: &mut pac::RCC) {
-        Spi3::<NoDmaCh, NoDmaCh>::disable_clock(rcc)
+        Spi3::<SgMiso, SgMosi>::disable_clock(rcc)
     }
 
     /// Enable the SPI3 (SubGHz SPI) clock.
     pub fn enable_spi_clock(rcc: &mut pac::RCC) {
-        Spi3::<NoDmaCh, NoDmaCh>::enable_clock(rcc)
+        Spi3::<SgMiso, SgMosi>::enable_clock(rcc)
     }
 
     fn pulse_radio_reset(rcc: &mut pac::RCC) {
         rcc.csr.modify(|_, w| w.rfrst().set_bit());
         rcc.csr.modify(|_, w| w.rfrst().clear_bit());
-    }
-
-    /// Enable debug of the SubGHz SPI bus over physical pins.
-    ///
-    /// * A4: NSS
-    /// * A5: SCK
-    /// * A6: MISO
-    /// * A7: MOSI
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{gpio::PortA, pac, subghz::SubGhz};
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// let mut gpioa = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let mut sg = SubGhz::new(dp.SPI3, &mut dp.RCC);
-    /// sg.enable_spi_debug(gpioa.a4, gpioa.a5, gpioa.a6, gpioa.a7);
-    /// ```
-    pub fn enable_spi_debug(
-        &mut self,
-        mut a4: pins::A4,
-        mut a5: pins::A5,
-        mut a6: pins::A6,
-        mut a7: pins::A7,
-    ) {
-        cortex_m::interrupt::free(|cs| {
-            a4.set_subghz_spi_nss_af(cs);
-            a5.set_subghz_spi_sck_af(cs);
-            a6.set_subghz_spi_miso_af(cs);
-            a7.set_subghz_spi_mosi_af(cs);
-        });
-        self.debug_pins = Some(DebugPins::new(a4, a5, a6, a7))
-    }
-
-    /// Disable debug of the SubGHz SPI bus over physical pins.
-    ///
-    /// This will return `None` if debug was not previously enabled with
-    /// [`enable_spi_debug`](crate::subghz::SubGhz::enable_spi_debug).
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{gpio::PortA, pac, subghz::SubGhz};
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// let mut gpioa = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let mut sg = SubGhz::new(dp.SPI3, &mut dp.RCC);
-    /// sg.enable_spi_debug(gpioa.a4, gpioa.a5, gpioa.a6, gpioa.a7);
-    ///
-    /// let (a4, a5, a6, a7) = sg.disable_spi_debug().unwrap();
-    /// ```
-    pub fn disable_spi_debug(&mut self) -> Option<(pins::A4, pins::A5, pins::A6, pins::A7)> {
-        self.debug_pins.take().map(|f| f.free())
-    }
-
-    /// Return `true` if debug of the SubGHz SPI bus over physical pins is
-    /// enabled.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{gpio::PortA, pac, subghz::SubGhz};
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// let mut gpioa = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let mut sg = SubGhz::new(dp.SPI3, &mut dp.RCC);
-    ///
-    /// assert!(!sg.spi_debug_enabled());
-    /// sg.enable_spi_debug(gpioa.a4, gpioa.a5, gpioa.a6, gpioa.a7);
-    /// assert!(sg.spi_debug_enabled());
-    /// ```
-    pub fn spi_debug_enabled(&self) -> bool {
-        self.debug_pins.is_some()
     }
 
     fn poll_not_busy(&self) {
@@ -342,11 +241,26 @@ impl<RxDma, TxDma> SubGhz<RxDma, TxDma> {
             }
         }
     }
+
+    /// Free the SPI3 peripheral and DMA channels from the SubGhz driver.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{pac, subghz::SubGhz};
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let sg = SubGhz::new(dp.SPI3, &mut dp.RCC);
+    /// let (spi, _, _) = sg.free();
+    /// ```
+    pub fn free(self) -> (pac::SPI3, MISO, MOSI) {
+        self.spi.free()
+    }
 }
 
-impl<RxDma, TxDma> SubGhz<RxDma, TxDma>
+impl<MISO, MOSI> SubGhz<MISO, MOSI>
 where
-    Spi3<RxDma, TxDma>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
         + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     fn read(&mut self, opcode: OpCode, data: &mut [u8]) -> Result<(), Error> {
@@ -385,7 +299,7 @@ where
     }
 }
 
-impl SubGhz<NoDmaCh, NoDmaCh> {
+impl SubGhz<SgMiso, SgMosi> {
     /// Create a new sub-GHz radio driver from a peripheral.
     ///
     /// This will reset the radio and the SPI bus, and enable the peripheral
@@ -400,17 +314,14 @@ impl SubGhz<NoDmaCh, NoDmaCh> {
     ///
     /// let sg = SubGhz::new(dp.SPI3, &mut dp.RCC);
     /// ```
-    pub fn new(spi: pac::SPI3, rcc: &mut pac::RCC) -> SubGhz<NoDmaCh, NoDmaCh> {
+    pub fn new(spi: pac::SPI3, rcc: &mut pac::RCC) -> SubGhz<SgMiso, SgMosi> {
         Self::pulse_radio_reset(rcc);
 
-        let spi: Spi3<NoDmaCh, NoDmaCh> = Spi3::<NoDmaCh, NoDmaCh>::new(spi, baud_div(rcc), rcc);
+        let spi: Spi3<SgMiso, SgMosi> = Spi3::new(spi, baud_div(rcc), rcc);
 
         unsafe { wakeup() };
 
-        SubGhz {
-            spi,
-            debug_pins: None,
-        }
+        SubGhz { spi }
     }
 
     /// Steal the SubGHz peripheral from whatever is currently using it.
@@ -435,24 +346,12 @@ impl SubGhz<NoDmaCh, NoDmaCh> {
     /// ```
     ///
     /// [`new`]: SubGhz::new
-    pub unsafe fn steal() -> SubGhz<NoDmaCh, NoDmaCh> {
-        SubGhz {
-            spi: Spi3::steal(),
-            debug_pins: None,
-        }
-    }
-
-    /// Free the SPI3 peripheral from the SubGhz driver.
-    pub fn free(self) -> pac::SPI3 {
-        self.spi.free()
+    pub unsafe fn steal() -> SubGhz<SgMiso, SgMosi> {
+        SubGhz { spi: Spi3::steal() }
     }
 }
 
-impl<RxDma, TxDma> SubGhz<RxDma, TxDma>
-where
-    RxDma: DmaCh + dma::sealed::DmaOps,
-    TxDma: DmaCh + dma::sealed::DmaOps,
-{
+impl<MISO: DmaCh, MOSI: DmaCh> SubGhz<MISO, MOSI> {
     /// Create a new sub-GHz radio driver from a peripheral and two DMA
     /// channels.
     ///
@@ -472,21 +371,17 @@ where
     /// ```
     pub fn new_with_dma(
         spi: pac::SPI3,
-        rx_dma: RxDma,
-        tx_dma: TxDma,
+        miso_dma: MISO,
+        mosi_dma: MOSI,
         rcc: &mut pac::RCC,
-    ) -> SubGhz<RxDma, TxDma> {
+    ) -> Self {
         Self::pulse_radio_reset(rcc);
 
-        let spi: Spi3<RxDma, TxDma> =
-            Spi3::<RxDma, TxDma>::new(spi, rx_dma, tx_dma, baud_div(rcc), rcc);
+        let spi: Spi3<MISO, MOSI> = Spi3::new_with_dma(spi, miso_dma, mosi_dma, baud_div(rcc), rcc);
 
         unsafe { wakeup() };
 
-        SubGhz {
-            spi,
-            debug_pins: None,
-        }
+        SubGhz { spi }
     }
 
     /// Steal the SubGHz peripheral from whatever is currently using it.
@@ -504,50 +399,35 @@ where
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::{dma::AllDma, subghz::SubGhz};
+    /// use stm32wl_hal::{
+    ///     dma::{AllDma, Dma1Ch1, Dma2Ch1},
+    ///     subghz::SubGhz,
+    /// };
     ///
     /// // ... setup happens here
     ///
-    /// let sg = unsafe {
+    /// let sg: SubGhz<Dma1Ch1, Dma2Ch1> = unsafe {
     ///     let dma = AllDma::steal();
     ///     SubGhz::steal_with_dma(dma.d1c1, dma.d2c1)
     /// };
     /// ```
     ///
     /// [`new_with_dma`]: SubGhz::new_with_dma
-    pub unsafe fn steal_with_dma(rx_dma: RxDma, tx_dma: TxDma) -> SubGhz<RxDma, TxDma> {
+    pub unsafe fn steal_with_dma(miso_dma: MISO, mosi_dma: MOSI) -> Self {
         SubGhz {
-            spi: Spi3::steal_with_dma(rx_dma, tx_dma),
-            debug_pins: None,
+            spi: Spi3::steal_with_dma(miso_dma, mosi_dma),
         }
-    }
-
-    /// Free the SPI3 peripheral and DMA channels from the SubGhz driver.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{dma::AllDma, pac, subghz::SubGhz};
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
-    ///
-    /// let sg = SubGhz::new_with_dma(dp.SPI3, dma.d1c1, dma.d2c1, &mut dp.RCC);
-    /// let (spi, d1c1, d2c1) = sg.free();
-    /// ```
-    pub fn free(self) -> (pac::SPI3, RxDma, TxDma) {
-        self.spi.free()
     }
 }
 
 // 5.8.2
 /// Synchronous buffer access commands
-impl<RxDma, TxDma> SubGhz<RxDma, TxDma>
+impl<MISO, MOSI> SubGhz<MISO, MOSI>
 where
-    Spi3<RxDma, TxDma>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
         + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
+    /// Write the radio buffer at the given offset.
     pub fn write_buffer(&mut self, offset: u8, data: &[u8]) -> Result<(), Error> {
         self.poll_not_busy();
         {
@@ -560,6 +440,7 @@ where
         Ok(())
     }
 
+    /// Read the radio buffer at the given offset.
     pub fn read_buffer(&mut self, offset: u8, buf: &mut [u8]) -> Result<Status, Error> {
         let mut status_buf: [u8; 1] = [0];
 
@@ -578,9 +459,9 @@ where
 
 // 5.8.2
 /// Register access
-impl<RxDma, TxDma> SubGhz<RxDma, TxDma>
+impl<MISO, MOSI> SubGhz<MISO, MOSI>
 where
-    Spi3<RxDma, TxDma>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
         + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     fn write_register(&mut self, register: Register, data: &[u8]) -> Result<(), Error> {
@@ -732,9 +613,9 @@ where
 
 // 5.8.3
 /// Operating mode commands
-impl<RxDma, TxDma> SubGhz<RxDma, TxDma>
+impl<MISO, MOSI> SubGhz<MISO, MOSI>
 where
-    Spi3<RxDma, TxDma>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
         + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     /// Put the radio into sleep mode.
@@ -1035,9 +916,9 @@ where
 
 // 5.8.4
 /// Radio configuration commands
-impl<RxDma, TxDma> SubGhz<RxDma, TxDma>
+impl<MISO, MOSI> SubGhz<MISO, MOSI>
 where
-    Spi3<RxDma, TxDma>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
         + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     /// Set the packet type (modulation scheme).
@@ -1405,9 +1286,9 @@ where
 
 // 5.8.5
 /// Communication status and information commands
-impl<RxDma, TxDma> SubGhz<RxDma, TxDma>
+impl<MISO, MOSI> SubGhz<MISO, MOSI>
 where
-    Spi3<RxDma, TxDma>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
         + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     /// Get the radio status.
@@ -1596,9 +1477,9 @@ where
 
 // 5.8.6
 /// IRQ commands
-impl<RxDma, TxDma> SubGhz<RxDma, TxDma>
+impl<MISO, MOSI> SubGhz<MISO, MOSI>
 where
-    Spi3<RxDma, TxDma>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
         + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     /// Set the interrupt configuration.
@@ -1674,9 +1555,9 @@ where
 
 // 5.8.7
 /// Miscellaneous commands
-impl<RxDma, TxDma> SubGhz<RxDma, TxDma>
+impl<MISO, MOSI> SubGhz<MISO, MOSI>
 where
-    Spi3<RxDma, TxDma>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
         + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     /// Calibrate one or several blocks at any time when in standby mode.
@@ -1794,9 +1675,9 @@ where
 
 // 5.8.8
 /// Set TCXO mode command
-impl<RxDma, TxDma> SubGhz<RxDma, TxDma>
+impl<MISO, MOSI> SubGhz<MISO, MOSI>
 where
-    Spi3<RxDma, TxDma>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
         + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     /// Set the TCXO trim and HSE32 ready timeout.

@@ -1,6 +1,7 @@
 //! STM32WL Hardware Abstraction Layer
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![warn(missing_docs)]
 
 #[cfg(any(
     all(feature = "stm32wl5x_cm0p", feature = "stm32wl5x_cm4"),
@@ -26,6 +27,7 @@ cfg_if::cfg_if! {
 
 // This mod MUST go first, so that the others see its macros.
 pub(crate) mod fmt;
+pub(crate) mod macros;
 
 pub mod adc;
 pub mod aes;

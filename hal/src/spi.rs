@@ -1,20 +1,86 @@
 //! Serial peripheral interface
-#![deny(missing_docs)]
+//!
+//! The [`Spi`] struct implement the [`embedded-hal`] traits for transfers.
+//!
+//! # Constructors
+//!
+//! There was a minor cartesian explosion when writing this module.
+//! This will get a lot nicer when [GATs are stablized].
+//!
+//! | Function                            | Bus | plex         | DMA | Mode   |
+//! |-------------------------------------|-----|--------------|-----|--------|
+//! | [`new_spi1_full_duplex`]            | 1   | Full-duplex  | No  | Master |
+//! | [`new_spi1_full_duplex_slave`]      | 1   | Full-duplex  | No  | Slave  |
+//! | [`new_spi1_full_duplex_dma`]        | 1   | Full-duplex  | Yes | Master |
+//! | [`new_spi1_full_duplex_slave_dma`]  | 1   | Full-duplex  | Yes | Slave  |
+//! | [`new_spi1_mosi_simplex`]           | 1   | MOSI-simplex | No  | Master |
+//! | [`new_spi1_mosi_simplex_slave`]     | 1   | MOSI-simplex | No  | Slave  |
+//! | [`new_spi1_mosi_simplex_dma`]       | 1   | MOSI-simplex | Yes | Master |
+//! | [`new_spi1_mosi_simplex_slave_dma`] | 1   | MOSI-simplex | Yes | Slave  |
+//! | [`new_spi1_miso_simplex_slave`]     | 1   | MISO-simplex | No  | Slave  |
+//! | [`new_spi1_miso_simplex_slave_dma`] | 1   | MISO-simplex | Yes | Slave  |
+//! | [`new_spi2_full_duplex`]            | 2   | Full-duplex  | No  | Master |
+//! | [`new_spi2_full_duplex_slave`]      | 2   | Full-duplex  | No  | Slave  |
+//! | [`new_spi2_full_duplex_dma`]        | 2   | Full-duplex  | Yes | Master |
+//! | [`new_spi2_full_duplex_slave_dma`]  | 2   | Full-duplex  | Yes | Slave  |
+//! | [`new_spi2_mosi_simplex`]           | 2   | MOSI-simplex | No  | Master |
+//! | [`new_spi2_mosi_simplex_slave`]     | 2   | MOSI-simplex | No  | Slave  |
+//! | [`new_spi2_mosi_simplex_dma`]       | 2   | MOSI-simplex | Yes | Master |
+//! | [`new_spi2_mosi_simplex_slave_dma`] | 2   | MOSI-simplex | Yes | Slave  |
+//! | [`new_spi2_miso_simplex_slave`]     | 2   | MISO-simplex | No  | Slave  |
+//! | [`new_spi2_miso_simplex_slave_dma`] | 2   | MISO-simplex | Yes | Slave  |
+//!
+//! [GATs are stablized]: https://blog.rust-lang.org/2021/08/03/GATs-stabilization-push.html
+//! [`new_spi1_full_duplex`]: Spi::new_spi1_full_duplex
+//! [`new_spi1_full_duplex_slave`]: Spi::new_spi1_full_duplex_slave
+//! [`new_spi1_full_duplex_dma`]: Spi::new_spi1_full_duplex_dma
+//! [`new_spi1_full_duplex_slave_dma`]: Spi::new_spi1_full_duplex_slave_dma
+//! [`new_spi1_mosi_simplex`]: Spi::new_spi1_mosi_simplex
+//! [`new_spi1_mosi_simplex_slave`]: Spi::new_spi1_mosi_simplex_slave
+//! [`new_spi1_mosi_simplex_dma`]: Spi::new_spi1_mosi_simplex_dma
+//! [`new_spi1_mosi_simplex_slave_dma`]: Spi::new_spi1_mosi_simplex_slave_dma
+//! [`new_spi1_miso_simplex_slave`]: Spi::new_spi1_miso_simplex_slave
+//! [`new_spi1_miso_simplex_slave_dma`]: Spi::new_spi1_miso_simplex_slave_dma
+//! [`new_spi2_full_duplex`]: Spi::new_spi2_full_duplex
+//! [`new_spi2_full_duplex_slave`]: Spi::new_spi2_full_duplex_slave
+//! [`new_spi2_full_duplex_dma`]: Spi::new_spi2_full_duplex_dma
+//! [`new_spi2_full_duplex_slave_dma`]: Spi::new_spi2_full_duplex_slave_dma
+//! [`new_spi2_mosi_simplex`]: Spi::new_spi2_mosi_simplex
+//! [`new_spi2_mosi_simplex_slave`]: Spi::new_spi2_mosi_simplex_slave
+//! [`new_spi2_mosi_simplex_dma`]: Spi::new_spi2_mosi_simplex_dma
+//! [`new_spi2_mosi_simplex_slave_dma`]: Spi::new_spi2_mosi_simplex_slave_dma
+//! [`new_spi2_miso_simplex_slave`]: Spi::new_spi2_miso_simplex_slave
+//! [`new_spi2_miso_simplex_slave_dma`]: Spi::new_spi2_miso_simplex_slave_dma
 
 use crate::{
-    dma::{self, DmaCh, NoDmaCh},
-    gpio,
-    pac::{self, SPI1, SPI2, SPI3},
+    dma::{self, DmaCh},
+    gpio::sealed::{
+        Spi1Miso, Spi1Mosi, Spi1Sck, Spi2Miso, Spi2Mosi, Spi2Sck, SpiMiso, SpiMosi, SpiSck,
+    },
+    pac::{self, SPI1, SPI2},
 };
 
-use core::{
-    ptr::{read_volatile, write_volatile},
-    sync::atomic::{compiler_fence, Ordering::SeqCst},
+pub use embedded_hal::{
+    blocking::spi::{Transfer, Write},
+    spi::{FullDuplex, Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3},
 };
-
-pub use embedded_hal::spi::{Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3};
 
 pub use pac::spi1::cr1::BR_A as BaudDiv;
+
+typestate!(NoSck, "no SCK on a generic SPI structure");
+typestate!(NoMosi, "no MOSI on a generic SPI structure");
+typestate!(NoMiso, "no MISO on a generic SPI structure");
+
+typestate!(SgSck, "the internal Sub-GHz SCK");
+typestate!(SgMosi, "the internal Sub-GHz MOSI");
+typestate!(SgMiso, "the internal Sub-GHz MISO");
+
+typestate!(Master, "a SPI bus master");
+typestate!(Slave, "a SPI bus slave");
+
+impl SpiSck for SgSck {}
+impl SpiMosi for SgMosi {}
+impl SpiMiso for SgMiso {}
 
 /// SPI errors
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -38,262 +104,6 @@ pub enum Error {
     TxDma,
 }
 
-const DR_OFFSET: usize = 0xC;
-const SPI1_BASE: usize = 0x4001_3000;
-const SPI2_BASE: usize = 0x4000_3800;
-const SPI3_BASE: usize = 0x5801_0000;
-
-trait SpiBase {
-    const DR: usize;
-    const DMA_TX_ID: u8;
-    const DMA_RX_ID: u8;
-
-    fn cr1(&self) -> &pac::spi1::CR1;
-    fn cr2(&self) -> &pac::spi1::CR2;
-    fn sr(&self) -> &pac::spi1::SR;
-
-    #[inline(always)]
-    fn status(&self) -> Result<pac::spi1::sr::R, Error> {
-        let sr = self.sr().read();
-        if sr.ovr().bit_is_set() {
-            Err(Error::Overrun)
-        } else if sr.fre().bit_is_set() {
-            Err(Error::Framing)
-        } else if sr.modf().bit_is_set() {
-            Err(Error::ModeFault)
-        } else if sr.crcerr().bit_is_set() {
-            Err(Error::Crc)
-        } else {
-            Ok(sr)
-        }
-    }
-
-    #[inline(always)]
-    fn poll_busy(&self) -> Result<(), Error> {
-        while self.status()?.bsy().is_busy() {}
-        Ok(())
-    }
-
-    fn one_time_dma_setup<RxDma, TxDma>(&mut self, rx_dma: &mut RxDma, tx_dma: &mut TxDma)
-    where
-        RxDma: DmaCh + dma::sealed::DmaOps,
-        TxDma: DmaCh + dma::sealed::DmaOps,
-    {
-        self.cr2()
-            .write(|w| w.txdmaen().enabled().rxdmaen().enabled().frxth().quarter());
-
-        tx_dma.set_cr(dma::Cr::DISABLE);
-        rx_dma.set_cr(dma::Cr::DISABLE);
-
-        rx_dma.clear_all_flags();
-        tx_dma.clear_all_flags();
-
-        rx_dma.set_periph_addr(Self::DR as u32);
-        tx_dma.set_periph_addr(Self::DR as u32);
-
-        rx_dma.set_mux_cr_reqid(Self::DMA_RX_ID);
-        tx_dma.set_mux_cr_reqid(Self::DMA_TX_ID);
-    }
-
-    fn write_word(&mut self, word: u8) -> Result<(), Error> {
-        loop {
-            if !self.status()?.ftlvl().is_full() {
-                unsafe { write_volatile(Self::DR as *mut u8, word) };
-                return Ok(());
-            }
-        }
-    }
-
-    fn read_word(&mut self) -> Result<u8, Error> {
-        loop {
-            if !self.status()?.frlvl().is_empty() {
-                return Ok(unsafe { read_volatile(Self::DR as *const u8) });
-            }
-        }
-    }
-
-    fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Error> {
-        for word in words.iter_mut() {
-            self.write_word(*word)?;
-            *word = self.read_word()?;
-        }
-        Ok(words)
-    }
-
-    fn write(&mut self, words: &[u8]) -> Result<(), Error> {
-        for word in words.iter() {
-            self.write_word(*word)?;
-            let _: u8 = self.read_word()?;
-        }
-        Ok(())
-    }
-
-    fn write_with_dma<RxDma, TxDma>(
-        &mut self,
-        tx_dma: &mut TxDma,
-        rx_dma: &mut RxDma,
-        words: &[u8],
-    ) -> Result<(), Error>
-    where
-        RxDma: DmaCh + dma::sealed::DmaOps,
-        TxDma: DmaCh + dma::sealed::DmaOps,
-    {
-        if words.is_empty() {
-            return Ok(());
-        }
-
-        const RX_CR: dma::Cr = dma::Cr::RESET
-            .set_dir_from_periph()
-            .set_mem_inc(false)
-            .set_enable(true);
-        const TX_CR: dma::Cr = dma::Cr::RESET
-            .set_dir_from_mem()
-            .set_mem_inc(true)
-            .set_enable(true);
-
-        let garbage: [u8; 1] = [0];
-
-        rx_dma.set_mem_addr(garbage.as_ptr() as u32);
-        tx_dma.set_mem_addr(words.as_ptr() as u32);
-
-        let ndt: u32 = words.len() as u32;
-        rx_dma.set_num_data_xfer(ndt);
-        tx_dma.set_num_data_xfer(ndt);
-
-        // RX MUST come before TX
-        rx_dma.set_cr(RX_CR);
-        tx_dma.set_cr(TX_CR);
-
-        let ret: Result<(), Error> = loop {
-            let status = self.status()?;
-            let tx_dma_flags: u8 = tx_dma.flags();
-            let rx_dma_flags: u8 = rx_dma.flags();
-            if tx_dma_flags & dma::flags::XFER_ERR != 0 {
-                break Err(Error::TxDma);
-            }
-            if rx_dma_flags & dma::flags::XFER_ERR != 0 {
-                break Err(Error::RxDma);
-            }
-            if status.bsy().is_not_busy()
-                && tx_dma_flags & dma::flags::XFER_CPL != 0
-                && rx_dma_flags & dma::flags::XFER_CPL != 0
-            {
-                break Ok(());
-            }
-        };
-
-        // TX must come before RX
-        tx_dma.set_cr(dma::Cr::DISABLE);
-        rx_dma.set_cr(dma::Cr::DISABLE);
-
-        rx_dma.clear_all_flags();
-        tx_dma.clear_all_flags();
-
-        ret
-    }
-
-    fn transfer_with_dma<'w, RxDma, TxDma>(
-        &mut self,
-        tx_dma: &mut TxDma,
-        rx_dma: &mut RxDma,
-        words: &'w mut [u8],
-    ) -> Result<&'w [u8], Error>
-    where
-        RxDma: DmaCh + dma::sealed::DmaOps,
-        TxDma: DmaCh + dma::sealed::DmaOps,
-    {
-        if words.is_empty() {
-            return Ok(words);
-        }
-
-        const RX_CR: dma::Cr = dma::Cr::RESET
-            .set_dir_from_periph()
-            .set_mem_inc(true)
-            .set_enable(true);
-        const TX_CR: dma::Cr = dma::Cr::RESET
-            .set_dir_from_mem()
-            .set_mem_inc(true)
-            .set_enable(true);
-
-        rx_dma.set_mem_addr(words.as_ptr() as u32);
-        tx_dma.set_mem_addr(words.as_ptr() as u32);
-
-        rx_dma.set_periph_addr(Self::DR as u32);
-        tx_dma.set_periph_addr(Self::DR as u32);
-
-        let ndt: u32 = words.len() as u32;
-        rx_dma.set_num_data_xfer(ndt);
-        tx_dma.set_num_data_xfer(ndt);
-
-        // RX MUST come before TX
-        rx_dma.set_cr(RX_CR);
-        tx_dma.set_cr(TX_CR);
-
-        let ret: Result<&'w [u8], Error> = loop {
-            let status = self.status()?;
-            let tx_dma_flags: u8 = tx_dma.flags();
-            let rx_dma_flags: u8 = rx_dma.flags();
-            if tx_dma_flags & dma::flags::XFER_ERR != 0 {
-                break Err(Error::TxDma);
-            }
-            if rx_dma_flags & dma::flags::XFER_ERR != 0 {
-                break Err(Error::RxDma);
-            }
-            if status.bsy().is_not_busy()
-                && tx_dma_flags & dma::flags::XFER_CPL != 0
-                && rx_dma_flags & dma::flags::XFER_CPL != 0
-            {
-                break Ok(words);
-            }
-        };
-
-        // DMA disable must come BEFORE memory barrier
-        // TX must come before RX
-        tx_dma.set_cr(dma::Cr::DISABLE);
-        rx_dma.set_cr(dma::Cr::DISABLE);
-
-        rx_dma.clear_all_flags();
-        tx_dma.clear_all_flags();
-
-        // tell the compiler the memory in dst may have changed
-        compiler_fence(SeqCst);
-        // tell the cpu the memory in dst may have changed
-        cortex_m::asm::dmb();
-
-        ret
-    }
-}
-
-macro_rules! impl_spi_base_for {
-    ($name:ident, $dr:expr, $tx_id:expr, $rx_id:expr) => {
-        impl SpiBase for $name {
-            const DR: usize = $dr;
-            const DMA_TX_ID: u8 = $tx_id as u8;
-            const DMA_RX_ID: u8 = $rx_id as u8;
-            #[inline(always)]
-            fn cr1(&self) -> &pac::spi1::CR1 {
-                &self.cr1
-            }
-            #[inline(always)]
-            fn cr2(&self) -> &pac::spi1::CR2 {
-                &self.cr2
-            }
-            #[inline(always)]
-            fn sr(&self) -> &pac::spi1::SR {
-                &self.sr
-            }
-        }
-    };
-}
-
-use pac::dmamux::c0cr::DMAREQ_ID_A::{
-    SPI1_RX_DMA, SPI1_TX_DMA, SPI2_RX_DMA, SPI2_TX_DMA, SUBGHZSPI_RX, SUBGHZSPI_TX,
-};
-
-impl_spi_base_for!(SPI1, SPI1_BASE + DR_OFFSET, SPI1_TX_DMA, SPI1_RX_DMA);
-impl_spi_base_for!(SPI2, SPI2_BASE + DR_OFFSET, SPI2_TX_DMA, SPI2_RX_DMA);
-impl_spi_base_for!(SPI3, SPI3_BASE + DR_OFFSET, SUBGHZSPI_TX, SUBGHZSPI_RX);
-
 const fn cpha_from_phase(phase: Phase) -> bool {
     match phase {
         Phase::CaptureOnFirstTransition => false,
@@ -308,539 +118,1315 @@ const fn cpol_from_polarity(polarity: Polarity) -> bool {
     }
 }
 
-/// SPI1 driver
-#[derive(Debug)]
-pub struct Spi1<MOSI, MISO, SCK, RxDma, TxDma> {
-    base: pac::SPI1,
-    pins: (MOSI, MISO, SCK),
-    rx_dma: RxDma,
-    tx_dma: TxDma,
+use sealed::SpiRegs;
+pub(crate) mod sealed {
+    use super::Error;
+    use crate::{
+        dma::{self, DmaCh},
+        pac,
+    };
+    use core::{
+        ptr::{read_volatile, write_volatile},
+        sync::atomic::{compiler_fence, Ordering::SeqCst},
+    };
+
+    use pac::dmamux::c0cr::DMAREQ_ID_A::{
+        SPI1_RX_DMA, SPI1_TX_DMA, SPI2_RX_DMA, SPI2_TX_DMA, SUBGHZSPI_RX, SUBGHZSPI_TX,
+    };
+
+    const SPI1_BASE: usize = 0x4001_3000;
+    const SPI2_BASE: usize = 0x4000_3800;
+    const SPI3_BASE: usize = 0x5801_0000;
+    const DR_OFFSET: usize = 0xC;
+
+    pub trait SpiRegs: core::ops::Deref<Target = pac::spi1::RegisterBlock> {
+        const DR: usize;
+        const DMA_TX_ID: u8;
+        const DMA_RX_ID: u8;
+
+        fn status(&self) -> Result<pac::spi1::sr::R, Error> {
+            let sr = self.deref().sr.read();
+            if sr.ovr().bit_is_set() {
+                Err(Error::Overrun)
+            } else if sr.fre().bit_is_set() {
+                Err(Error::Framing)
+            } else if sr.modf().bit_is_set() {
+                Err(Error::ModeFault)
+            } else if sr.crcerr().bit_is_set() {
+                Err(Error::Crc)
+            } else {
+                Ok(sr)
+            }
+        }
+
+        fn write_simplex_u8(&mut self, words: &[u8]) -> Result<(), Error> {
+            for word in words.iter() {
+                self.write_word(*word)?;
+            }
+            Ok(())
+        }
+
+        fn read_simplex_u8(&mut self, words: &mut [u8]) -> Result<(), Error> {
+            for word in words.iter_mut() {
+                *word = self.read_word()?;
+            }
+            Ok(())
+        }
+
+        fn read_simplex_u8_dma<RxDma: DmaCh>(
+            &mut self,
+            rx_dma: &mut RxDma,
+            words: &mut [u8],
+        ) -> Result<(), Error> {
+            if words.is_empty() {
+                return Ok(());
+            }
+
+            const CR: dma::Cr = dma::Cr::RESET
+                .set_dir_from_periph()
+                .set_mem_inc(true)
+                .set_enable(true);
+
+            rx_dma.set_mem_addr(words.as_ptr() as u32);
+            rx_dma.set_num_data_xfer(words.len() as u32);
+            rx_dma.set_cr(CR);
+
+            let ret: Result<(), Error> = loop {
+                let status = self.status()?;
+                let rx_dma_flags: u8 = rx_dma.flags();
+                if rx_dma_flags & dma::flags::XFER_ERR != 0 {
+                    break Err(Error::RxDma);
+                }
+                if status.bsy().is_not_busy() && rx_dma_flags & dma::flags::XFER_CPL != 0 {
+                    break Ok(());
+                }
+            };
+
+            rx_dma.set_cr(dma::Cr::DISABLE);
+            rx_dma.clear_all_flags();
+
+            // tell the compiler the memory in dst may have changed
+            compiler_fence(SeqCst);
+            // tell the cpu the memory in dst may have changed
+            cortex_m::asm::dmb();
+
+            ret
+        }
+
+        fn write_simplex_u8_dma<TxDma: DmaCh>(
+            &mut self,
+            tx_dma: &mut TxDma,
+            words: &[u8],
+        ) -> Result<(), Error> {
+            if words.is_empty() {
+                return Ok(());
+            }
+
+            const CR: dma::Cr = dma::Cr::RESET
+                .set_dir_from_mem()
+                .set_mem_inc(true)
+                .set_enable(true);
+
+            tx_dma.set_mem_addr(words.as_ptr() as u32);
+            tx_dma.set_num_data_xfer(words.len() as u32);
+            tx_dma.set_cr(CR);
+
+            let ret: Result<(), Error> = loop {
+                let status = self.status()?;
+                let tx_dma_flags: u8 = tx_dma.flags();
+                if tx_dma_flags & dma::flags::XFER_ERR != 0 {
+                    break Err(Error::TxDma);
+                }
+                if status.bsy().is_not_busy() && tx_dma_flags & dma::flags::XFER_CPL != 0 {
+                    break Ok(());
+                }
+            };
+
+            tx_dma.set_cr(dma::Cr::DISABLE);
+            tx_dma.clear_all_flags();
+
+            ret
+        }
+
+        fn write_full_duplex_u8(&mut self, words: &[u8]) -> Result<(), Error> {
+            for word in words.iter() {
+                self.write_word(*word)?;
+                let _: u8 = self.read_word()?;
+            }
+            Ok(())
+        }
+
+        fn write_full_duplex_u8_dma<RxDma: DmaCh, TxDma: DmaCh>(
+            &mut self,
+            rx_dma: &mut RxDma,
+            tx_dma: &mut TxDma,
+            words: &[u8],
+        ) -> Result<(), Error> {
+            if words.is_empty() {
+                return Ok(());
+            }
+
+            const RX_CR: dma::Cr = dma::Cr::RESET
+                .set_dir_from_periph()
+                .set_mem_inc(false)
+                .set_enable(true);
+            const TX_CR: dma::Cr = dma::Cr::RESET
+                .set_dir_from_mem()
+                .set_mem_inc(true)
+                .set_enable(true);
+
+            let garbage: [u8; 1] = [0];
+
+            rx_dma.set_mem_addr(garbage.as_ptr() as u32);
+            tx_dma.set_mem_addr(words.as_ptr() as u32);
+
+            let ndt: u32 = words.len() as u32;
+            rx_dma.set_num_data_xfer(ndt);
+            tx_dma.set_num_data_xfer(ndt);
+
+            // RX MUST come before TX
+            rx_dma.set_cr(RX_CR);
+            tx_dma.set_cr(TX_CR);
+
+            let ret: Result<(), Error> = loop {
+                let status = self.status()?;
+                let tx_dma_flags: u8 = tx_dma.flags();
+                let rx_dma_flags: u8 = rx_dma.flags();
+                if tx_dma_flags & dma::flags::XFER_ERR != 0 {
+                    break Err(Error::TxDma);
+                }
+                if rx_dma_flags & dma::flags::XFER_ERR != 0 {
+                    break Err(Error::RxDma);
+                }
+                if status.bsy().is_not_busy()
+                    && tx_dma_flags & dma::flags::XFER_CPL != 0
+                    && rx_dma_flags & dma::flags::XFER_CPL != 0
+                {
+                    break Ok(());
+                }
+            };
+
+            // TX must come before RX
+            tx_dma.set_cr(dma::Cr::DISABLE);
+            rx_dma.set_cr(dma::Cr::DISABLE);
+
+            rx_dma.clear_all_flags();
+            tx_dma.clear_all_flags();
+
+            ret
+        }
+
+        fn transfer_u8_dma<'w, RxDma: DmaCh, TxDma: DmaCh>(
+            &mut self,
+            rx_dma: &mut RxDma,
+            tx_dma: &mut TxDma,
+            words: &'w mut [u8],
+        ) -> Result<&'w [u8], Error> {
+            if words.is_empty() {
+                return Ok(words);
+            }
+
+            const RX_CR: dma::Cr = dma::Cr::RESET
+                .set_dir_from_periph()
+                .set_mem_inc(true)
+                .set_enable(true);
+            const TX_CR: dma::Cr = dma::Cr::RESET
+                .set_dir_from_mem()
+                .set_mem_inc(true)
+                .set_enable(true);
+
+            rx_dma.set_mem_addr(words.as_ptr() as u32);
+            tx_dma.set_mem_addr(words.as_ptr() as u32);
+
+            let ndt: u32 = words.len() as u32;
+            rx_dma.set_num_data_xfer(ndt);
+            tx_dma.set_num_data_xfer(ndt);
+
+            // RX MUST come before TX
+            rx_dma.set_cr(RX_CR);
+            tx_dma.set_cr(TX_CR);
+
+            let ret: Result<&'w [u8], Error> = loop {
+                let status = self.status()?;
+                let tx_dma_flags: u8 = tx_dma.flags();
+                let rx_dma_flags: u8 = rx_dma.flags();
+                if tx_dma_flags & dma::flags::XFER_ERR != 0 {
+                    break Err(Error::TxDma);
+                }
+                if rx_dma_flags & dma::flags::XFER_ERR != 0 {
+                    break Err(Error::RxDma);
+                }
+                if status.bsy().is_not_busy()
+                    && tx_dma_flags & dma::flags::XFER_CPL != 0
+                    && rx_dma_flags & dma::flags::XFER_CPL != 0
+                {
+                    break Ok(words);
+                }
+            };
+
+            // DMA disable must come BEFORE memory barrier
+            // TX must come before RX
+            tx_dma.set_cr(dma::Cr::DISABLE);
+            rx_dma.set_cr(dma::Cr::DISABLE);
+
+            rx_dma.clear_all_flags();
+            tx_dma.clear_all_flags();
+
+            // tell the compiler the memory in dst may have changed
+            compiler_fence(SeqCst);
+            // tell the cpu the memory in dst may have changed
+            cortex_m::asm::dmb();
+
+            ret
+        }
+
+        fn write_word(&mut self, word: u8) -> Result<(), Error> {
+            loop {
+                if !self.status()?.ftlvl().is_full() {
+                    unsafe { write_volatile(Self::DR as *mut u8, word) };
+                    return Ok(());
+                }
+            }
+        }
+
+        fn read_word(&mut self) -> Result<u8, Error> {
+            loop {
+                if !self.status()?.frlvl().is_empty() {
+                    return Ok(unsafe { read_volatile(Self::DR as *const u8) });
+                }
+            }
+        }
+
+        fn transfer_u8<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Error> {
+            for word in words.iter_mut() {
+                self.write_word(*word)?;
+                *word = self.read_word()?;
+            }
+            Ok(words)
+        }
+
+        fn nb_read_u8(&mut self) -> nb::Result<u8, Error> {
+            if self.status()?.frlvl().is_empty() {
+                Err(nb::Error::WouldBlock)
+            } else {
+                Ok(unsafe { read_volatile(Self::DR as *const u8) })
+            }
+        }
+
+        fn nb_send_u8(&mut self, word: u8) -> nb::Result<(), Error> {
+            if self.status()?.ftlvl().is_full() {
+                Err(nb::Error::WouldBlock)
+            } else {
+                unsafe { write_volatile(Self::DR as *mut u8, word) };
+                Ok(())
+            }
+        }
+    }
+
+    impl SpiRegs for pac::SPI1 {
+        const DR: usize = SPI1_BASE + DR_OFFSET;
+        const DMA_TX_ID: u8 = SPI1_TX_DMA as u8;
+        const DMA_RX_ID: u8 = SPI1_RX_DMA as u8;
+    }
+
+    impl SpiRegs for pac::SPI2 {
+        const DR: usize = SPI2_BASE + DR_OFFSET;
+        const DMA_TX_ID: u8 = SPI2_TX_DMA as u8;
+        const DMA_RX_ID: u8 = SPI2_RX_DMA as u8;
+    }
+
+    impl SpiRegs for pac::SPI3 {
+        const DR: usize = SPI3_BASE + DR_OFFSET;
+        const DMA_TX_ID: u8 = SUBGHZSPI_TX as u8;
+        const DMA_RX_ID: u8 = SUBGHZSPI_RX as u8;
+    }
 }
 
-/// SPI2 driver
+/// SPI 1 and 2 driver.
 #[derive(Debug)]
-pub struct Spi2<MOSI, MISO, SCK, RxDma, TxDma> {
-    base: pac::SPI2,
-    pins: (MOSI, MISO, SCK),
-    rx_dma: RxDma,
-    tx_dma: TxDma,
+pub struct Spi<SPI, SCK, MISO, MOSI, MODE> {
+    spi: SPI,
+    sck: SCK,
+    miso: MISO,
+    mosi: MOSI,
+    mode: MODE,
 }
 
-/// SPI3 driver
-///
-/// This *should* be private because SPI3 is an internal bus for the SubGHz
-/// radio, which the HAL provides an interface for.
-///
-/// It is public for testing purposes, the radio allows us to write tests
-/// for the SPI driver with hardware that everyone using this HAL will have.
+/// SPI 3 (Sub-GHz) driver.
 #[derive(Debug)]
 #[doc(hidden)]
-pub struct Spi3<RxDma, TxDma> {
-    base: pac::SPI3,
-    rx_dma: RxDma,
-    tx_dma: TxDma,
+pub struct Spi3<MISO, MOSI> {
+    spi: pac::SPI3,
+    miso: MISO,
+    mosi: MOSI,
 }
 
-impl<MOSI, MISO, SCK, RxDma, TxDma> Spi1<MOSI, MISO, SCK, RxDma, TxDma>
-where
-    MOSI: gpio::sealed::Spi1Mosi,
-    MISO: gpio::sealed::Spi1Miso,
-    SCK: gpio::sealed::Spi1Sck,
-{
-    /// Disable the SPI1 clock.
+impl<SCK, MISO, MOSI, MODE> Spi<pac::SPI1, SCK, MISO, MOSI, MODE> {
+    /// Reset the SPI.
     ///
     /// # Safety
     ///
-    /// 1. You are responsible for ensuring the SPI bus is in a state where the
-    ///    clock can be disabled without entering an error state.
-    /// 2. You cannot use the SPI bus while the clock is disabled.
-    /// 3. You are responsible for re-enabling the clock before resuming use
-    ///    of the SPI bus.
-    /// 4. You are reponsible for setting up anything that may have lost state
-    ///    while the clock was disabled.
-    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
-        rcc.apb2enr.modify(|_, w| w.spi1en().disabled());
-    }
-
-    /// Enable the SPI1 clock
-    pub fn enable_clock(rcc: &mut pac::RCC) {
-        rcc.apb2enr.modify(|_, w| w.spi1en().enabled());
-        rcc.apb2enr.read(); // delay after an RCC peripheral clock enabling
-    }
-
-    fn pulse_reset(rcc: &mut pac::RCC) {
+    /// 1. The SPI must not be in-use.
+    /// 2. You are reponsible for setting up the SPI after a reset.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     pac,
+    ///     spi::{Master, NoMiso, NoMosi, NoSck, Spi},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// unsafe { Spi::<pac::SPI1, NoSck, NoMiso, NoMosi, Master>::pulse_reset(&mut dp.RCC) };
+    /// ```
+    #[inline]
+    pub unsafe fn pulse_reset(rcc: &mut pac::RCC) {
         rcc.apb2rstr.modify(|_, w| w.spi1rst().set_bit());
         rcc.apb2rstr.modify(|_, w| w.spi1rst().clear_bit());
     }
 
-    fn init_no_dma(
-        spi1: &mut pac::SPI1,
-        pins: &mut (MOSI, MISO, SCK),
-        mode: Mode,
-        div: BaudDiv,
-        rcc: &mut pac::RCC,
-    ) {
-        Self::enable_clock(rcc);
-        Self::pulse_reset(rcc);
-        cortex_m::interrupt::free(|cs| {
-            pins.0.set_spi1_mosi_af(cs);
-            pins.1.set_spi1_miso_af(cs);
-            pins.2.set_spi1_sck_af(cs);
-        });
-
-        #[rustfmt::skip]
-        spi1.cr1.write(|w|
-            w
-                .ssi().set_bit()
-                .ssm().set_bit()
-                .spe().set_bit()
-                .br().variant(div)
-                .mstr().set_bit()
-                .cpol().bit(cpol_from_polarity(mode.polarity))
-                .cpha().bit(cpha_from_phase(mode.phase))
-        );
-    }
-}
-
-impl<MOSI, MISO, SCK> Spi1<MOSI, MISO, SCK, NoDmaCh, NoDmaCh>
-where
-    MOSI: gpio::sealed::Spi1Mosi,
-    MISO: gpio::sealed::Spi1Miso,
-    SCK: gpio::sealed::Spi1Sck,
-{
-    /// Create a new `Spi1` driver.
-    ///
-    /// This will enable clocks and reset the SPI1 peripheral.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     dma::NoDmaCh,
-    ///     gpio::{pins, PortA},
-    ///     pac,
-    ///     spi::{BaudDiv, Spi1, MODE_0},
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let spi: Spi1<pins::A7, pins::A6, pins::A5, NoDmaCh, NoDmaCh> = Spi1::new(
-    ///     dp.SPI1,
-    ///     (pa.a7, pa.a6, pa.a5),
-    ///     MODE_0,
-    ///     BaudDiv::DIV4,
-    ///     &mut dp.RCC,
-    /// );
-    /// ```
-    pub fn new(
-        mut spi1: pac::SPI1,
-        mut pins: (MOSI, MISO, SCK),
-        mode: Mode,
-        div: BaudDiv,
-        rcc: &mut pac::RCC,
-    ) -> Spi1<MOSI, MISO, SCK, NoDmaCh, NoDmaCh> {
-        Self::init_no_dma(&mut spi1, &mut pins, mode, div, rcc);
-
-        Spi1 {
-            base: spi1,
-            pins,
-            tx_dma: NoDmaCh::new(),
-            rx_dma: NoDmaCh::new(),
-        }
-    }
-
-    /// Free the GPIOs from the SPI driver.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     dma::NoDmaCh,
-    ///     gpio::{pins, PortA},
-    ///     pac,
-    ///     spi::{BaudDiv, Spi1, MODE_0},
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let spi: Spi1<pins::A7, pins::A6, pins::A5, NoDmaCh, NoDmaCh> = Spi1::new(
-    ///     dp.SPI1,
-    ///     (pa.a7, pa.a6, pa.a5),
-    ///     MODE_0,
-    ///     BaudDiv::DIV4,
-    ///     &mut dp.RCC,
-    /// );
-    ///
-    /// // use SPI bus
-    ///
-    /// let (spi1, (a7, a6, a5)) = spi.free();
-    /// ```
-    pub fn free(self) -> (pac::SPI1, (MOSI, MISO, SCK)) {
-        (self.base, self.pins)
-    }
-}
-
-impl<MOSI, MISO, SCK, RxDma, TxDma> Spi1<MOSI, MISO, SCK, RxDma, TxDma>
-where
-    MOSI: gpio::sealed::Spi1Mosi,
-    MISO: gpio::sealed::Spi1Miso,
-    SCK: gpio::sealed::Spi1Sck,
-    RxDma: DmaCh + dma::sealed::DmaOps,
-    TxDma: DmaCh + dma::sealed::DmaOps,
-{
-    /// Create a new `Spi1` driver with DMA operations.
-    ///
-    /// This will enable clocks and reset the SPI1 peripheral.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     dma::{AllDma, Dma1Ch1, Dma2Ch1},
-    ///     gpio::{pins, PortA},
-    ///     pac,
-    ///     spi::{BaudDiv, Spi1, MODE_0},
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
-    ///
-    /// let spi: Spi1<pins::A7, pins::A6, pins::A5, Dma1Ch1, Dma2Ch1> = Spi1::new_with_dma(
-    ///     dp.SPI1,
-    ///     (pa.a7, pa.a6, pa.a5),
-    ///     dma.d1c1,
-    ///     dma.d2c1,
-    ///     MODE_0,
-    ///     BaudDiv::DIV4,
-    ///     &mut dp.RCC,
-    /// );
-    /// ```
-    pub fn new_with_dma(
-        mut spi1: pac::SPI1,
-        mut pins: (MOSI, MISO, SCK),
-        mut rx_dma: RxDma,
-        mut tx_dma: TxDma,
-        mode: Mode,
-        div: BaudDiv,
-        rcc: &mut pac::RCC,
-    ) -> Spi1<MOSI, MISO, SCK, RxDma, TxDma> {
-        Self::init_no_dma(&mut spi1, &mut pins, mode, div, rcc);
-        spi1.one_time_dma_setup(&mut rx_dma, &mut tx_dma);
-        Spi1 {
-            base: spi1,
-            pins,
-            rx_dma,
-            tx_dma,
-        }
-    }
-
-    /// Free the GPIOs and DMA channels from the SPI driver.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     dma::{AllDma, Dma1Ch1, Dma2Ch1},
-    ///     gpio::{pins, PortA},
-    ///     pac,
-    ///     spi::{BaudDiv, Spi1, MODE_0},
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
-    ///
-    /// let spi: Spi1<pins::A7, pins::A6, pins::A5, Dma1Ch1, Dma2Ch1> = Spi1::new_with_dma(
-    ///     dp.SPI1,
-    ///     (pa.a7, pa.a6, pa.a5),
-    ///     dma.d1c1,
-    ///     dma.d2c1,
-    ///     MODE_0,
-    ///     BaudDiv::DIV4,
-    ///     &mut dp.RCC,
-    /// );
-    ///
-    /// // use SPI bus
-    ///
-    /// let (spi1, (a7, a6, a5), tx_dma, rx_dma) = spi.free();
-    /// ```
-    pub fn free(self) -> (pac::SPI1, (MOSI, MISO, SCK), RxDma, TxDma) {
-        (self.base, self.pins, self.rx_dma, self.tx_dma)
-    }
-}
-
-impl<MOSI, MISO, SCK, RxDma, TxDma> Spi2<MOSI, MISO, SCK, RxDma, TxDma>
-where
-    MOSI: gpio::sealed::Spi2Mosi,
-    MISO: gpio::sealed::Spi2Miso,
-    SCK: gpio::sealed::Spi2Sck,
-{
-    /// Disable the SPI2 clock.
+    /// Disable the SPI clock.
     ///
     /// # Safety
     ///
-    /// 1. You are responsible for ensuring the SPI bus is in a state where the
-    ///    clock can be disabled without entering an error state.
-    /// 2. You cannot use the SPI bus while the clock is disabled.
-    /// 3. You are responsible for re-enabling the clock before resuming use
-    ///    of the SPI bus.
-    /// 4. You are reponsible for setting up anything that may have lost state
-    ///    while the clock was disabled.
+    /// 1. You are responsible for ensuring the SPI is in a state where
+    ///    the clock can be disabled without entering an error state.
+    /// 2. You cannot use the SPI while the clock is disabled.
+    /// 3. You are responsible for re-enabling the clock before resuming
+    ///    use of the SPI.
+    /// 4. You are reponsible for setting up anything that may have lost
+    ///    state while the clock was disabled.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     pac,
+    ///     spi::{Master, NoMiso, NoMosi, NoSck, Spi},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// unsafe { Spi::<pac::SPI1, NoSck, NoMiso, NoMosi, Master>::disable_clock(&mut dp.RCC) };
+    /// ```
+    #[inline]
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
-        rcc.apb1enr1.modify(|_, w| w.spi2s2en().disabled());
+        rcc.apb2enr.modify(|_, w| w.spi1en().disabled());
     }
 
-    /// Enable the SPI2 clock
+    /// Enable the SPI clock.
+    ///
+    /// This is done for you in `new_` constructors.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     pac,
+    ///     spi::{Master, NoMiso, NoMosi, NoSck, Spi},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// Spi::<pac::SPI1, NoSck, NoMiso, NoMosi, Master>::enable_clock(&mut dp.RCC);
+    /// ```
+    #[inline]
     pub fn enable_clock(rcc: &mut pac::RCC) {
-        rcc.apb1enr1.modify(|_, w| w.spi2s2en().enabled());
-        rcc.apb1enr1.read(); // delay after an RCC peripheral clock enabling
+        rcc.apb2enr.modify(|_, w| w.spi1en().enabled());
+        rcc.apb2enr.read(); // delay after an RCC peripheral clock enabling
     }
+}
 
-    fn pulse_reset(rcc: &mut pac::RCC) {
+impl<SCK, MISO, MOSI, MODE> Spi<pac::SPI2, SCK, MISO, MOSI, MODE> {
+    /// Reset the SPI.
+    ///
+    /// # Safety
+    ///
+    /// 1. The SPI must not be in-use.
+    /// 2. You are reponsible for setting up the SPI after a reset.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     pac,
+    ///     spi::{Master, NoMiso, NoMosi, NoSck, Spi},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// unsafe { Spi::<pac::SPI2, NoSck, NoMiso, NoMosi, Master>::pulse_reset(&mut dp.RCC) };
+    /// ```
+    #[inline]
+    pub unsafe fn pulse_reset(rcc: &mut pac::RCC) {
         rcc.apb1rstr1.modify(|_, w| w.spi2s2rst().set_bit());
         rcc.apb1rstr1.modify(|_, w| w.spi2s2rst().clear_bit());
     }
 
-    fn init_no_dma(
-        spi2: &mut pac::SPI2,
-        pins: &mut (MOSI, MISO, SCK),
-        mode: Mode,
-        div: BaudDiv,
-        rcc: &mut pac::RCC,
-    ) {
-        Self::enable_clock(rcc);
-        Self::pulse_reset(rcc);
-        cortex_m::interrupt::free(|cs| {
-            pins.0.set_spi2_mosi_af(cs);
-            pins.1.set_spi2_miso_af(cs);
-            pins.2.set_spi2_sck_af(cs);
-        });
-
-        #[rustfmt::skip]
-        spi2.cr1.write(|w|
-            w
-                .ssi().set_bit()
-                .ssm().set_bit()
-                .spe().set_bit()
-                .br().variant(div)
-                .mstr().set_bit()
-                .cpol().bit(cpol_from_polarity(mode.polarity))
-                .cpha().bit(cpha_from_phase(mode.phase))
-        );
-    }
-}
-
-impl<MOSI, MISO, SCK> Spi2<MOSI, MISO, SCK, NoDmaCh, NoDmaCh>
-where
-    MOSI: gpio::sealed::Spi2Mosi,
-    MISO: gpio::sealed::Spi2Miso,
-    SCK: gpio::sealed::Spi2Sck,
-{
-    /// Create a new `Spi2` driver.
+    /// Disable the SPI clock.
     ///
-    /// This will enable clocks and reset the SPI2 peripheral.
+    /// # Safety
+    ///
+    /// 1. You are responsible for ensuring the SPI is in a state where
+    ///    the clock can be disabled without entering an error state.
+    /// 2. You cannot use the SPI while the clock is disabled.
+    /// 3. You are responsible for re-enabling the clock before resuming
+    ///    use of the SPI.
+    /// 4. You are reponsible for setting up anything that may have lost
+    ///    state while the clock was disabled.
     ///
     /// # Example
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     dma::NoDmaCh,
-    ///     gpio::{pins, PortB},
     ///     pac,
-    ///     spi::{BaudDiv, Spi2, MODE_0},
+    ///     spi::{Master, NoMiso, NoMosi, NoSck, Spi},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// let pb: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let spi: Spi2<pins::B15, pins::B14, pins::B13, NoDmaCh, NoDmaCh> = Spi2::new(
-    ///     dp.SPI2,
-    ///     (pb.b15, pb.b14, pb.b13),
-    ///     MODE_0,
-    ///     BaudDiv::DIV4,
-    ///     &mut dp.RCC,
-    /// );
+    /// unsafe { Spi::<pac::SPI2, NoSck, NoMiso, NoMosi, Master>::disable_clock(&mut dp.RCC) };
     /// ```
-    pub fn new(
-        mut spi2: pac::SPI2,
-        mut pins: (MOSI, MISO, SCK),
-        mode: Mode,
-        div: BaudDiv,
-        rcc: &mut pac::RCC,
-    ) -> Spi2<MOSI, MISO, SCK, NoDmaCh, NoDmaCh> {
-        Self::init_no_dma(&mut spi2, &mut pins, mode, div, rcc);
-        Spi2 {
-            base: spi2,
-            pins,
-            tx_dma: NoDmaCh::new(),
-            rx_dma: NoDmaCh::new(),
-        }
+    #[inline]
+    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
+        rcc.apb1enr1.modify(|_, w| w.spi2s2en().disabled());
     }
 
-    /// Free the GPIOs from the SPI driver.
+    /// Enable the SPI clock.
+    ///
+    /// This is done for you in `new_` constructors.
     ///
     /// # Example
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     dma::NoDmaCh,
-    ///     gpio::{pins, PortB},
     ///     pac,
-    ///     spi::{BaudDiv, Spi2, MODE_0},
+    ///     spi::{Master, NoMiso, NoMosi, NoSck, Spi},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// let pb: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let spi: Spi2<pins::B15, pins::B14, pins::B13, NoDmaCh, NoDmaCh> = Spi2::new(
-    ///     dp.SPI2,
-    ///     (pb.b15, pb.b14, pb.b13),
-    ///     MODE_0,
-    ///     BaudDiv::DIV4,
-    ///     &mut dp.RCC,
-    /// );
-    ///
-    /// // use SPI bus
-    ///
-    /// let (spi2, (b15, b14, b13)) = spi.free();
+    /// Spi::<pac::SPI2, NoSck, NoMiso, NoMosi, Master>::enable_clock(&mut dp.RCC);
     /// ```
-    pub fn free(self) -> (pac::SPI2, (MOSI, MISO, SCK)) {
-        (self.base, (self.pins))
-    }
-}
-
-impl<MOSI, MISO, SCK, RxDma, TxDma> Spi2<MOSI, MISO, SCK, RxDma, TxDma>
-where
-    MOSI: gpio::sealed::Spi2Mosi,
-    MISO: gpio::sealed::Spi2Miso,
-    SCK: gpio::sealed::Spi2Sck,
-    RxDma: DmaCh + dma::sealed::DmaOps,
-    TxDma: DmaCh + dma::sealed::DmaOps,
-{
-    /// Create a new `Spi2` driver with DMA operations.
-    ///
-    /// This will enable clocks and reset the SPI2 peripheral.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     dma::{AllDma, Dma1Ch1, Dma2Ch1},
-    ///     gpio::{pins, PortB},
-    ///     pac,
-    ///     spi::{BaudDiv, Spi2, MODE_0},
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// let pb: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
-    ///
-    /// let spi: Spi2<pins::B15, pins::B14, pins::B13, Dma1Ch1, Dma2Ch1> = Spi2::new_with_dma(
-    ///     dp.SPI2,
-    ///     (pb.b15, pb.b14, pb.b13),
-    ///     dma.d1c1,
-    ///     dma.d2c1,
-    ///     MODE_0,
-    ///     BaudDiv::DIV4,
-    ///     &mut dp.RCC,
-    /// );
-    /// ```
-    pub fn new_with_dma(
-        mut spi2: pac::SPI2,
-        mut pins: (MOSI, MISO, SCK),
-        mut rx_dma: RxDma,
-        mut tx_dma: TxDma,
-        mode: Mode,
-        div: BaudDiv,
-        rcc: &mut pac::RCC,
-    ) -> Spi2<MOSI, MISO, SCK, RxDma, TxDma> {
-        Self::init_no_dma(&mut spi2, &mut pins, mode, div, rcc);
-        spi2.one_time_dma_setup(&mut rx_dma, &mut tx_dma);
-        Spi2 {
-            base: spi2,
-            pins,
-            rx_dma,
-            tx_dma,
-        }
-    }
-
-    /// Free the GPIOs and DMA channels from the SPI driver.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     dma::{AllDma, Dma1Ch1, Dma2Ch1},
-    ///     gpio::{pins, PortB},
-    ///     pac,
-    ///     spi::{BaudDiv, Spi2, MODE_0},
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// let pb: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
-    ///
-    /// let spi: Spi2<pins::B15, pins::B14, pins::B13, Dma1Ch1, Dma2Ch1> = Spi2::new_with_dma(
-    ///     dp.SPI2,
-    ///     (pb.b15, pb.b14, pb.b13),
-    ///     dma.d1c1,
-    ///     dma.d2c1,
-    ///     MODE_0,
-    ///     BaudDiv::DIV4,
-    ///     &mut dp.RCC,
-    /// );
-    ///
-    /// // use SPI bus
-    ///
-    /// let (spi2, (b15, b14, b13), tx_dma, rx_dma) = spi.free();
-    /// ```
-    pub fn free(self) -> (pac::SPI2, (MOSI, MISO, SCK), RxDma, TxDma) {
-        (self.base, self.pins, self.rx_dma, self.tx_dma)
+    #[inline]
+    pub fn enable_clock(rcc: &mut pac::RCC) {
+        rcc.apb1enr1.modify(|_, w| w.spi2s2en().enabled());
+        rcc.apb1enr1.read(); // delay after an RCC peripheral clock enabling
     }
 }
 
 #[allow(missing_docs)] // struct is hidden
-impl<RxDma, TxDma> Spi3<RxDma, TxDma> {
-    /// Disable the SPI3 (SubGHz SPI) clock
-    ///
-    /// # Safety
-    ///
-    /// 1. You are responsible for ensuring the SPI bus is in a state where the
-    ///    clock can be disabled without entering an error state.
-    /// 2. You cannot use the SPI bus while the clock is disabled.
-    /// 3. You are responsible for re-enabling the clock before resuming use
-    ///    of the SPI bus.
-    /// 4. You are reponsible for setting up anything that may have lost state
-    ///    while the clock was disabled.
+#[allow(clippy::missing_safety_doc)]
+impl<MISO, MOSI> Spi3<MISO, MOSI> {
+    #[inline]
+    pub unsafe fn pulse_reset(rcc: &mut pac::RCC) {
+        rcc.apb3rstr.modify(|_, w| w.subghzspirst().set_bit());
+        rcc.apb3rstr.modify(|_, w| w.subghzspirst().clear_bit());
+    }
+
+    #[inline]
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.apb3enr.modify(|_, w| w.subghzspien().disabled());
     }
 
-    /// Enable the SPI3 (SubGHz SPI) clock
+    #[inline]
     pub fn enable_clock(rcc: &mut pac::RCC) {
         rcc.apb3enr.modify(|_, w| w.subghzspien().enabled());
         rcc.apb3enr.read(); // delay after an RCC peripheral clock enabling
     }
+}
 
-    /// Pulse the SPI3 (SubGHz SPI) reset
-    pub fn pulse_reset(rcc: &mut pac::RCC) {
-        rcc.apb3rstr.write(|w| w.subghzspirst().set_bit());
-        rcc.apb3rstr.write(|w| w.subghzspirst().clear_bit());
-    }
+macro_rules! impl_new_full_duplex {
+    ($n:expr) => {
+        paste::paste! {
+            impl<SCK, MISO, MOSI> Spi<[<SPI $n>], SCK, MISO, MOSI, Master>
+            where
+                SCK: [<Spi $n Sck>],
+                MISO: [<Spi $n Miso>],
+                MOSI: [<Spi $n Mosi>],
+            {
+                /// Create a new full-duplex master.
+                ///
+                /// # Example
+                ///
+                /// ```no_run
+                /// use stm32wl_hal::{
+                ///     gpio::PortA,
+                ///     pac,
+                ///     spi::{BaudDiv::DIV2, Spi, MODE_0},
+                /// };
+                ///
+                /// let mut dp = pac::Peripherals::take().unwrap();
+                ///
+                /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
+                /// let spi = Spi::new_spi1_full_duplex(
+                ///     dp.SPI1,
+                ///     (pa.a5, pa.a6, pa.a7),
+                ///     MODE_0,
+                ///     DIV2,
+                ///     &mut dp.RCC
+                /// );
+                /// ```
+                pub fn [<new_spi $n _full_duplex>](
+                    spi: [<SPI $n>],
+                    mut pins: (SCK, MISO, MOSI),
+                    mode: Mode,
+                    div: BaudDiv,
+                    rcc: &mut pac::RCC,
+                ) -> Self {
+                    Self::enable_clock(rcc);
+                    unsafe { Self::pulse_reset(rcc) };
 
-    fn init_no_dma(spi3: &mut pac::SPI3, div: BaudDiv, rcc: &mut pac::RCC) {
+                    cortex_m::interrupt::free(|cs| {
+                        pins.0.[<set_spi $n _sck_af>](cs);
+                        pins.1.[<set_spi $n _miso_af>](cs);
+                        pins.2.[<set_spi $n _mosi_af>](cs);
+                    });
+
+                    spi.cr1.write(|w| {
+                        w
+                            .ssi().set_bit()
+                            .ssm().set_bit()
+                            .spe().set_bit()
+                            .br().variant(div)
+                            .mstr().set_bit()
+                            .cpol().bit(cpol_from_polarity(mode.polarity))
+                            .cpha().bit(cpha_from_phase(mode.phase))
+                    });
+
+                    Self {
+                        spi,
+                        sck: pins.0,
+                        miso: pins.1,
+                        mosi: pins.2,
+                        mode: Master::new(),
+                    }
+                }
+            }
+        }
+    };
+}
+
+impl_new_full_duplex!(1);
+impl_new_full_duplex!(2);
+
+macro_rules! impl_new_full_duplex_slave {
+    ($n:expr) => {
+        paste::paste! {
+            impl<SCK, MISO, MOSI> Spi<[<SPI $n>], SCK, MISO, MOSI, Slave>
+            where
+                SCK: [<Spi $n Sck>],
+                MISO: [<Spi $n Miso>],
+                MOSI: [<Spi $n Mosi>],
+            {
+                /// Create a new full-duplex slave.
+                ///
+                /// # Example
+                ///
+                /// ```no_run
+                /// use stm32wl_hal::{
+                ///     gpio::PortA,
+                ///     pac,
+                ///     spi::{Spi, MODE_0},
+                /// };
+                ///
+                /// let mut dp = pac::Peripherals::take().unwrap();
+                ///
+                /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
+                /// let spi = Spi::new_spi1_full_duplex_slave(
+                ///     dp.SPI1,
+                ///     (pa.a5, pa.a6, pa.a7),
+                ///     MODE_0,
+                ///     &mut dp.RCC
+                /// );
+                /// ```
+                pub fn [<new_spi $n _full_duplex_slave>](
+                    spi: [<SPI $n>],
+                    mut pins: (SCK, MISO, MOSI),
+                    mode: Mode,
+                    rcc: &mut pac::RCC,
+                ) -> Self {
+                    Self::enable_clock(rcc);
+                    unsafe { Self::pulse_reset(rcc) };
+
+                    cortex_m::interrupt::free(|cs| {
+                        pins.0.[<set_spi $n _sck_af>](cs);
+                        pins.1.[<set_spi $n _miso_af>](cs);
+                        pins.2.[<set_spi $n _mosi_af>](cs);
+                    });
+
+                    spi.cr1.write(|w| {
+                        w
+                            .ssi().set_bit()
+                            .ssm().set_bit()
+                            .spe().set_bit()
+                            .cpol().bit(cpol_from_polarity(mode.polarity))
+                            .cpha().bit(cpha_from_phase(mode.phase))
+                    });
+
+                    Self {
+                        spi,
+                        sck: pins.0,
+                        miso: pins.1,
+                        mosi: pins.2,
+                        mode: Slave::new(),
+                    }
+                }
+            }
+        }
+    };
+}
+
+impl_new_full_duplex_slave!(1);
+impl_new_full_duplex_slave!(2);
+
+macro_rules! impl_new_full_duplex_dma {
+    ($n:expr) => {
+        paste::paste! {
+            impl<SCK, MISO, MOSI, MISODMA, MOSIDMA> Spi<[<SPI $n>], SCK, (MISO, MISODMA), (MOSI, MOSIDMA), Master>
+            where
+                SCK: [<Spi $n Sck>],
+                MISO: [<Spi $n Miso>],
+                MOSI: [<Spi $n Mosi>],
+                MISODMA: DmaCh,
+                MOSIDMA: DmaCh,
+            {
+                /// Create a new full-duplex master with DMA transfers.
+                ///
+                /// # Example
+                ///
+                /// ```no_run
+                /// use stm32wl_hal::{
+                ///     dma::AllDma,
+                ///     gpio::PortA,
+                ///     pac,
+                ///     spi::{BaudDiv::DIV2, Spi, MODE_0},
+                /// };
+                ///
+                /// let mut dp = pac::Peripherals::take().unwrap();
+                ///
+                /// let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
+                /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
+                /// let spi = Spi::new_spi1_full_duplex_dma(
+                ///     dp.SPI1,
+                ///     (pa.a5, pa.a6, pa.a7),
+                ///     (dma.d1c1, dma.d1c2),
+                ///     MODE_0,
+                ///     DIV2,
+                ///     &mut dp.RCC,
+                /// );
+                /// ```
+                pub fn [<new_spi $n _full_duplex_dma>](
+                    spi: [<SPI $n>],
+                    mut pins: (SCK, MISO, MOSI),
+                    mut dmas: (MISODMA, MOSIDMA),
+                    mode: Mode,
+                    div: BaudDiv,
+                    rcc: &mut pac::RCC,
+                ) -> Self {
+                    Self::enable_clock(rcc);
+                    unsafe { Self::pulse_reset(rcc) };
+
+                    cortex_m::interrupt::free(|cs| {
+                        pins.0.[<set_spi $n _sck_af>](cs);
+                        pins.1.[<set_spi $n _miso_af>](cs);
+                        pins.2.[<set_spi $n _mosi_af>](cs);
+                    });
+
+                    spi.cr1.write(|w| {
+                        w
+                            .ssi().set_bit()
+                            .ssm().set_bit()
+                            .spe().set_bit()
+                            .br().variant(div)
+                            .mstr().set_bit()
+                            .cpol().bit(cpol_from_polarity(mode.polarity))
+                            .cpha().bit(cpha_from_phase(mode.phase))
+                    });
+
+                    dmas.0.set_cr(dma::Cr::DISABLE);
+                    dmas.0.clear_all_flags();
+                    dmas.0.set_periph_addr([<SPI $n>]::DR as u32);
+                    dmas.0.set_mux_cr_reqid([<SPI $n>]::DMA_RX_ID);
+
+                    dmas.1.set_cr(dma::Cr::DISABLE);
+                    dmas.1.clear_all_flags();
+                    dmas.1.set_periph_addr([<SPI $n>]::DR as u32);
+                    dmas.1.set_mux_cr_reqid([<SPI $n>]::DMA_TX_ID);
+
+                    spi.cr2
+                        .write(|w| w.txdmaen().enabled().rxdmaen().enabled().frxth().quarter());
+
+                    Self {
+                        spi,
+                        sck: pins.0,
+                        miso: (pins.1, dmas.0),
+                        mosi: (pins.2, dmas.1),
+                        mode: Master::new(),
+                    }
+                }
+            }
+        }
+    };
+}
+
+impl_new_full_duplex_dma!(1);
+impl_new_full_duplex_dma!(2);
+
+macro_rules! impl_new_full_duplex_slave_dma {
+    ($n:expr) => {
+        paste::paste! {
+            impl<SCK, MISO, MOSI, MISODMA, MOSIDMA> Spi<[<SPI $n>], SCK, (MISO, MISODMA), (MOSI, MOSIDMA), Slave>
+            where
+                SCK: [<Spi $n Sck>],
+                MISO: [<Spi $n Miso>],
+                MOSI: [<Spi $n Mosi>],
+                MISODMA: DmaCh,
+                MOSIDMA: DmaCh,
+            {
+                /// Create a new full-duplex slave with DMA transfers.
+                ///
+                /// # Example
+                ///
+                /// ```no_run
+                /// use stm32wl_hal::{
+                ///     dma::AllDma,
+                ///     gpio::PortA,
+                ///     pac,
+                ///     spi::{Spi, MODE_0},
+                /// };
+                ///
+                /// let mut dp = pac::Peripherals::take().unwrap();
+                ///
+                /// let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
+                /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
+                /// let spi = Spi::new_spi1_full_duplex_slave_dma(
+                ///     dp.SPI1,
+                ///     (pa.a5, pa.a6, pa.a7),
+                ///     (dma.d1c1, dma.d1c2),
+                ///     MODE_0,
+                ///     &mut dp.RCC,
+                /// );
+                /// ```
+                pub fn [<new_spi $n _full_duplex_slave_dma>](
+                    spi: [<SPI $n>],
+                    mut pins: (SCK, MISO, MOSI),
+                    mut dmas: (MISODMA, MOSIDMA),
+                    mode: Mode,
+                    rcc: &mut pac::RCC,
+                ) -> Self {
+                    Self::enable_clock(rcc);
+                    unsafe { Self::pulse_reset(rcc) };
+
+                    cortex_m::interrupt::free(|cs| {
+                        pins.0.[<set_spi $n _sck_af>](cs);
+                        pins.1.[<set_spi $n _miso_af>](cs);
+                        pins.2.[<set_spi $n _mosi_af>](cs);
+                    });
+
+                    spi.cr1.write(|w| {
+                        w
+                            .ssi().set_bit()
+                            .ssm().set_bit()
+                            .spe().set_bit()
+                            .cpol().bit(cpol_from_polarity(mode.polarity))
+                            .cpha().bit(cpha_from_phase(mode.phase))
+                    });
+
+                    dmas.0.set_cr(dma::Cr::DISABLE);
+                    dmas.0.clear_all_flags();
+                    dmas.0.set_periph_addr([<SPI $n>]::DR as u32);
+                    dmas.0.set_mux_cr_reqid([<SPI $n>]::DMA_TX_ID);
+
+                    dmas.1.set_cr(dma::Cr::DISABLE);
+                    dmas.1.clear_all_flags();
+                    dmas.1.set_periph_addr([<SPI $n>]::DR as u32);
+                    dmas.1.set_mux_cr_reqid([<SPI $n>]::DMA_RX_ID);
+
+                    spi.cr2
+                        .write(|w| w.txdmaen().enabled().rxdmaen().enabled().frxth().quarter());
+
+                    Self {
+                        spi,
+                        sck: pins.0,
+                        miso: (pins.1, dmas.0),
+                        mosi: (pins.2, dmas.1),
+                        mode: Slave::new(),
+                    }
+                }
+            }
+        }
+    };
+}
+
+impl_new_full_duplex_slave_dma!(1);
+impl_new_full_duplex_slave_dma!(2);
+
+macro_rules! impl_new_mosi_simplex {
+    ($n:expr) => {
+        paste::paste! {
+            impl<SCK, MOSI> Spi<[<SPI $n>], SCK, NoMiso, MOSI, Master>
+            where
+                SCK: [<Spi $n Sck>],
+                MOSI: [<Spi $n Mosi>],
+            {
+                /// Create a new MOSI-simplex master.
+                ///
+                /// # Example
+                ///
+                /// ```no_run
+                /// use stm32wl_hal::{
+                ///     gpio::PortA,
+                ///     pac,
+                ///     spi::{BaudDiv::DIV2, Spi, MODE_0},
+                /// };
+                ///
+                /// let mut dp = pac::Peripherals::take().unwrap();
+                ///
+                /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
+                /// let spi = Spi::new_spi1_mosi_simplex(
+                ///     dp.SPI1,
+                ///     (pa.a5, pa.a7),
+                ///     MODE_0,
+                ///     DIV2,
+                ///     &mut dp.RCC,
+                /// );
+                /// ```
+                pub fn [<new_spi $n _mosi_simplex>](
+                    spi: [<SPI $n>],
+                    mut pins: (SCK, MOSI),
+                    mode: Mode,
+                    div: BaudDiv,
+                    rcc: &mut pac::RCC,
+                ) -> Self {
+                    Self::enable_clock(rcc);
+                    unsafe { Self::pulse_reset(rcc) };
+
+                    cortex_m::interrupt::free(|cs| {
+                        pins.0.[<set_spi $n _sck_af>](cs);
+                        pins.1.[<set_spi $n _mosi_af>](cs);
+                    });
+
+                    spi.cr1.write(|w|
+                        w
+                            .bidimode().set_bit()
+                            .bidioe().set_bit()
+                            .ssi().set_bit()
+                            .ssm().set_bit()
+                            .spe().set_bit()
+                            .br().variant(div)
+                            .mstr().set_bit()
+                            .cpol().bit(cpol_from_polarity(mode.polarity))
+                            .cpha().bit(cpha_from_phase(mode.phase))
+                    );
+
+                    Self {
+                        spi,
+                        sck: pins.0,
+                        miso: NoMiso::new(),
+                        mosi: pins.1,
+                        mode: Master::new(),
+                    }
+                }
+            }
+        }
+    };
+}
+
+impl_new_mosi_simplex!(1);
+impl_new_mosi_simplex!(2);
+
+macro_rules! impl_new_mosi_simplex_slave {
+    ($n:expr) => {
+        paste::paste! {
+            impl<SCK, MOSI> Spi<[<SPI $n>], SCK, NoMiso, MOSI, Slave>
+            where
+                SCK: [<Spi $n Sck>],
+                MOSI: [<Spi $n Mosi>],
+            {
+                /// Create a new MOSI-simplex slave.
+                ///
+                /// # Example
+                ///
+                /// ```no_run
+                /// use stm32wl_hal::{
+                ///     gpio::PortA,
+                ///     pac,
+                ///     spi::{Spi, MODE_0},
+                /// };
+                ///
+                /// let mut dp = pac::Peripherals::take().unwrap();
+                ///
+                /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
+                /// let spi = Spi::new_spi1_mosi_simplex_slave(
+                ///     dp.SPI1,
+                ///     (pa.a5, pa.a7),
+                ///     MODE_0,
+                ///     &mut dp.RCC,
+                /// );
+                /// ```
+                pub fn [<new_spi $n _mosi_simplex_slave>](
+                    spi: [<SPI $n>],
+                    mut pins: (SCK, MOSI),
+                    mode: Mode,
+                    rcc: &mut pac::RCC,
+                ) -> Self {
+                    Self::enable_clock(rcc);
+                    unsafe { Self::pulse_reset(rcc) };
+
+                    cortex_m::interrupt::free(|cs| {
+                        pins.0.[<set_spi $n _sck_af>](cs);
+                        pins.1.[<set_spi $n _mosi_af>](cs);
+                    });
+
+                    spi.cr1.write(|w|
+                        w
+                            .rxonly().set_bit()
+                            .ssi().set_bit()
+                            .ssm().set_bit()
+                            .spe().set_bit()
+                            .cpol().bit(cpol_from_polarity(mode.polarity))
+                            .cpha().bit(cpha_from_phase(mode.phase))
+                    );
+
+                    Self {
+                        spi,
+                        sck: pins.0,
+                        miso: NoMiso::new(),
+                        mosi: pins.1,
+                        mode: Slave::new(),
+                    }
+                }
+            }
+        }
+    };
+}
+
+impl_new_mosi_simplex_slave!(1);
+impl_new_mosi_simplex_slave!(2);
+
+macro_rules! impl_new_mosi_simplex_dma {
+    ($n:expr) => {
+        paste::paste! {
+            impl<SCK, MOSI, MOSIDMA> Spi<[<SPI $n>], SCK, NoMiso, (MOSI, MOSIDMA), Master>
+            where
+                SCK: [<Spi $n Sck>],
+                MOSI: [<Spi $n Mosi>],
+                MOSIDMA: DmaCh,
+            {
+                /// Create a new MOSI-simplex master with DMA transfers.
+                ///
+                /// # Example
+                ///
+                /// ```no_run
+                /// use stm32wl_hal::{
+                ///     dma::AllDma,
+                ///     gpio::PortA,
+                ///     pac,
+                ///     spi::{BaudDiv::DIV2, Spi, MODE_0},
+                /// };
+                ///
+                /// let mut dp = pac::Peripherals::take().unwrap();
+                ///
+                /// let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
+                /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
+                /// let spi = Spi::new_spi1_mosi_simplex_dma(
+                ///     dp.SPI1,
+                ///     (pa.a5, pa.a7),
+                ///     dma.d1c1,
+                ///     MODE_0,
+                ///     DIV2,
+                ///     &mut dp.RCC,
+                /// );
+                /// ```
+                pub fn [<new_spi $n _mosi_simplex_dma>](
+                    spi: [<SPI $n>],
+                    mut pins: (SCK, MOSI),
+                    mut dma: MOSIDMA,
+                    mode: Mode,
+                    div: BaudDiv,
+                    rcc: &mut pac::RCC,
+                ) -> Self {
+                    Self::enable_clock(rcc);
+                    unsafe { Self::pulse_reset(rcc) };
+
+                    cortex_m::interrupt::free(|cs| {
+                        pins.0.[<set_spi $n _sck_af>](cs);
+                        pins.1.[<set_spi $n _mosi_af>](cs);
+                    });
+
+                    spi.cr1.write(|w|
+                        w
+                            .bidimode().set_bit()
+                            .bidioe().set_bit()
+                            .ssi().set_bit()
+                            .ssm().set_bit()
+                            .spe().set_bit()
+                            .br().variant(div)
+                            .mstr().set_bit()
+                            .cpol().bit(cpol_from_polarity(mode.polarity))
+                            .cpha().bit(cpha_from_phase(mode.phase))
+                    );
+
+                    dma.set_cr(dma::Cr::DISABLE);
+                    dma.clear_all_flags();
+                    dma.set_periph_addr([<SPI $n>]::DR as u32);
+                    dma.set_mux_cr_reqid([<SPI $n>]::DMA_TX_ID);
+
+                    spi.cr2.write(|w| w.txdmaen().enabled());
+
+                    Self {
+                        spi,
+                        sck: pins.0,
+                        miso: NoMiso::new(),
+                        mosi: (pins.1, dma),
+                        mode: Master::new(),
+                    }
+                }
+            }
+        }
+    };
+}
+
+impl_new_mosi_simplex_dma!(1);
+impl_new_mosi_simplex_dma!(2);
+
+macro_rules! impl_new_mosi_simplex_slave_dma {
+    ($n:expr) => {
+        paste::paste! {
+            impl<SCK, MOSI, MOSIDMA> Spi<[<SPI $n>], SCK, NoMiso, (MOSI, MOSIDMA), Slave>
+            where
+                SCK: [<Spi $n Sck>],
+                MOSI: [<Spi $n Mosi>],
+                MOSIDMA: DmaCh,
+            {
+                /// Create a new MOSI-simplex slave with DMA transfers.
+                ///
+                /// # Example
+                ///
+                /// ```no_run
+                /// use stm32wl_hal::{
+                ///     dma::AllDma,
+                ///     gpio::PortA,
+                ///     pac,
+                ///     spi::{Spi, MODE_0},
+                /// };
+                ///
+                /// let mut dp = pac::Peripherals::take().unwrap();
+                ///
+                /// let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
+                /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
+                /// let spi = Spi::new_spi1_mosi_simplex_slave_dma(
+                ///     dp.SPI1,
+                ///     (pa.a5, pa.a7),
+                ///     dma.d1c1,
+                ///     MODE_0,
+                ///     &mut dp.RCC,
+                /// );
+                /// ```
+                pub fn [<new_spi $n _mosi_simplex_slave_dma>](
+                    spi: [<SPI $n>],
+                    mut pins: (SCK, MOSI),
+                    mut dma: MOSIDMA,
+                    mode: Mode,
+                    rcc: &mut pac::RCC,
+                ) -> Self {
+                    Self::enable_clock(rcc);
+                    unsafe { Self::pulse_reset(rcc) };
+
+                    cortex_m::interrupt::free(|cs| {
+                        pins.0.[<set_spi $n _sck_af>](cs);
+                        pins.1.[<set_spi $n _mosi_af>](cs);
+                    });
+
+                    spi.cr1.write(|w|
+                        w
+                            .rxonly().set_bit()
+                            .ssi().set_bit()
+                            .ssm().set_bit()
+                            .spe().set_bit()
+                            .cpol().bit(cpol_from_polarity(mode.polarity))
+                            .cpha().bit(cpha_from_phase(mode.phase))
+                    );
+
+                    dma.set_cr(dma::Cr::DISABLE);
+                    dma.clear_all_flags();
+                    dma.set_periph_addr([<SPI $n>]::DR as u32);
+                    dma.set_mux_cr_reqid([<SPI $n>]::DMA_RX_ID);
+
+                    spi.cr2.write(|w| w.rxdmaen().enabled().frxth().quarter());
+
+                    Self {
+                        spi,
+                        sck: pins.0,
+                        miso: NoMiso::new(),
+                        mosi: (pins.1, dma),
+                        mode: Slave::new(),
+                    }
+                }
+            }
+        }
+    };
+}
+
+impl_new_mosi_simplex_slave_dma!(1);
+impl_new_mosi_simplex_slave_dma!(2);
+
+macro_rules! impl_new_miso_simplex {
+    ($n:expr) => {
+        paste::paste! {
+            impl<SCK, MISO> Spi<[<SPI $n>], SCK, MISO, NoMosi, Slave>
+            where
+                SCK: [<Spi $n Sck>],
+                MISO: [<Spi $n Miso>],
+            {
+                /// Create a new MOSI-simplex slave.
+                ///
+                /// # Example
+                ///
+                /// ```no_run
+                /// use stm32wl_hal::{
+                ///     gpio::PortA,
+                ///     pac,
+                ///     spi::{Spi, MODE_0},
+                /// };
+                ///
+                /// let mut dp = pac::Peripherals::take().unwrap();
+                ///
+                /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
+                /// let spi = Spi::new_spi1_miso_simplex_slave(
+                ///     dp.SPI1,
+                ///     (pa.a5, pa.a6),
+                ///     MODE_0,
+                ///     &mut dp.RCC,
+                /// );
+                /// ```
+                pub fn [<new_spi $n _miso_simplex_slave>](
+                    spi: [<SPI $n>],
+                    mut pins: (SCK, MISO),
+                    mode: Mode,
+                    rcc: &mut pac::RCC,
+                ) -> Self {
+                    Self::enable_clock(rcc);
+                    unsafe { Self::pulse_reset(rcc) };
+
+                    cortex_m::interrupt::free(|cs| {
+                        pins.0.[<set_spi $n _sck_af>](cs);
+                        pins.1.[<set_spi $n _miso_af>](cs);
+                    });
+
+                    spi.cr1.write(|w| {
+                        w
+                            .bidimode().set_bit()
+                            .bidioe().set_bit()
+                            .ssi().set_bit()
+                            .ssm().set_bit()
+                            .spe().set_bit()
+                            .cpol().bit(cpol_from_polarity(mode.polarity))
+                            .cpha().bit(cpha_from_phase(mode.phase))
+                    });
+
+                    Self {
+                        spi,
+                        sck: pins.0,
+                        miso: pins.1,
+                        mosi: NoMosi::new(),
+                        mode: Slave::new(),
+                    }
+                }
+            }
+        }
+    };
+}
+
+impl_new_miso_simplex!(1);
+impl_new_miso_simplex!(2);
+
+macro_rules! impl_new_miso_simplex_dma {
+    ($n:expr) => {
+        paste::paste! {
+            impl<SCK, MISO, MISODMA> Spi<[<SPI $n>], SCK, (MISO, MISODMA), NoMosi, Slave>
+            where
+            SCK: [<Spi $n Sck>],
+            MISO: [<Spi $n Miso>],
+                MISODMA: DmaCh,
+            {
+                /// Create a new MISO-simplex slave with DMA transfers.
+                ///
+                /// # Example
+                ///
+                /// ```no_run
+                /// use stm32wl_hal::{
+                ///     dma::AllDma,
+                ///     gpio::PortA,
+                ///     pac,
+                ///     spi::{Spi, MODE_0},
+                /// };
+                ///
+                /// let mut dp = pac::Peripherals::take().unwrap();
+                ///
+                /// let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
+                /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
+                /// let spi = Spi::new_spi1_miso_simplex_slave_dma(
+                ///     dp.SPI1,
+                ///     (pa.a5, pa.a6),
+                ///     dma.d1c1,
+                ///     MODE_0,
+                ///     &mut dp.RCC,
+                /// );
+                /// ```
+                pub fn [<new_spi $n _miso_simplex_slave_dma>](
+                    spi: [<SPI $n>],
+                    mut pins: (SCK, MISO),
+                    mut dma: MISODMA,
+                    mode: Mode,
+                    rcc: &mut pac::RCC,
+                ) -> Self {
+                    Self::enable_clock(rcc);
+                    unsafe { Self::pulse_reset(rcc) };
+
+                    cortex_m::interrupt::free(|cs| {
+                        pins.0.[<set_spi $n _sck_af>](cs);
+                        pins.1.[<set_spi $n _miso_af>](cs);
+                    });
+
+                    spi.cr1.write(|w| {
+                        w
+                            .bidimode().set_bit()
+                            .bidioe().set_bit()
+                            .ssi().set_bit()
+                            .ssm().set_bit()
+                            .spe().set_bit()
+                            .cpol().bit(cpol_from_polarity(mode.polarity))
+                            .cpha().bit(cpha_from_phase(mode.phase))
+                    });
+
+                    dma.set_cr(dma::Cr::DISABLE);
+                    dma.clear_all_flags();
+                    dma.set_periph_addr([<SPI $n>]::DR as u32);
+                    dma.set_mux_cr_reqid([<SPI $n>]::DMA_TX_ID);
+
+                    spi.cr2.write(|w| w.txdmaen().enabled());
+
+                    Self {
+                        spi,
+                        sck: pins.0,
+                        miso: (pins.1, dma),
+                        mosi: NoMosi::new(),
+                        mode: Slave::new(),
+                    }
+                }
+            }
+        }
+    };
+}
+
+impl_new_miso_simplex_dma!(1);
+impl_new_miso_simplex_dma!(2);
+
+impl Spi3<SgMiso, SgMosi> {
+    pub(crate) fn new(spi: pac::SPI3, div: BaudDiv, rcc: &mut pac::RCC) -> Self {
         Self::enable_clock(rcc);
-        Self::pulse_reset(rcc);
+        unsafe { Self::pulse_reset(rcc) };
 
         #[rustfmt::skip]
-        spi3.cr1.write(|w|
+        spi.cr1.write(|w| {
             w
                 .ssi().set_bit()
                 .ssm().set_bit()
@@ -850,246 +1436,330 @@ impl<RxDma, TxDma> Spi3<RxDma, TxDma> {
                 // hard coded because we know the SPI mode of the radio
                 .cpol().idle_low()
                 .cpha().first_edge()
-        );
-    }
-}
+        });
 
-#[allow(missing_docs)] // struct is hidden
-impl Spi3<NoDmaCh, NoDmaCh> {
-    pub fn new(mut spi3: pac::SPI3, div: BaudDiv, rcc: &mut pac::RCC) -> Spi3<NoDmaCh, NoDmaCh> {
-        Self::init_no_dma(&mut spi3, div, rcc);
-
-        Spi3 {
-            base: spi3,
-            tx_dma: NoDmaCh::new(),
-            rx_dma: NoDmaCh::new(),
+        Self {
+            spi,
+            mosi: SgMosi::new(),
+            miso: SgMiso::new(),
         }
     }
 
-    #[allow(clippy::missing_safety_doc)]
-    pub unsafe fn steal() -> Spi3<NoDmaCh, NoDmaCh> {
-        Spi3 {
-            base: pac::Peripherals::steal().SPI3,
-            tx_dma: NoDmaCh::new(),
-            rx_dma: NoDmaCh::new(),
+    pub(crate) unsafe fn steal() -> Self {
+        Self {
+            spi: pac::Peripherals::steal().SPI3,
+            mosi: SgMosi::new(),
+            miso: SgMiso::new(),
         }
-    }
-
-    pub fn free(self) -> pac::SPI3 {
-        self.base
     }
 }
 
-#[allow(missing_docs)] // struct is hidden
-impl<RxDma, TxDma> Spi3<RxDma, TxDma>
-where
-    RxDma: DmaCh + dma::sealed::DmaOps,
-    TxDma: DmaCh + dma::sealed::DmaOps,
-{
-    pub fn new(
-        mut spi3: pac::SPI3,
-        mut rx_dma: RxDma,
-        mut tx_dma: TxDma,
+impl<MISO, MOSI> Spi3<MISO, MOSI> {
+    pub(crate) fn free(self) -> (pac::SPI3, MISO, MOSI) {
+        (self.spi, self.miso, self.mosi)
+    }
+}
+
+impl<MISODMA: DmaCh, MOSIDMA: DmaCh> Spi3<MISODMA, MOSIDMA> {
+    pub(crate) fn new_with_dma(
+        spi: pac::SPI3,
+        mut miso_dma: MISODMA,
+        mut mosi_dma: MOSIDMA,
         div: BaudDiv,
         rcc: &mut pac::RCC,
-    ) -> Spi3<RxDma, TxDma> {
-        Self::init_no_dma(&mut spi3, div, rcc);
-        spi3.one_time_dma_setup(&mut rx_dma, &mut tx_dma);
-        Spi3 {
-            base: spi3,
-            tx_dma,
-            rx_dma,
+    ) -> Self {
+        Self::enable_clock(rcc);
+        unsafe { Self::pulse_reset(rcc) };
+
+        #[rustfmt::skip]
+        spi.cr1.write(|w| {
+            w
+                .ssi().set_bit()
+                .ssm().set_bit()
+                .spe().set_bit()
+                .br().variant(div)
+                .mstr().set_bit()
+                // hard coded because we know the SPI mode of the radio
+                .cpol().idle_low()
+                .cpha().first_edge()
+        });
+
+        mosi_dma.set_cr(dma::Cr::DISABLE);
+        mosi_dma.clear_all_flags();
+        mosi_dma.set_periph_addr(pac::SPI3::DR as u32);
+        mosi_dma.set_mux_cr_reqid(pac::SPI3::DMA_TX_ID);
+
+        miso_dma.set_cr(dma::Cr::DISABLE);
+        miso_dma.clear_all_flags();
+        miso_dma.set_periph_addr(pac::SPI3::DR as u32);
+        miso_dma.set_mux_cr_reqid(pac::SPI3::DMA_RX_ID);
+
+        spi.cr2
+            .write(|w| w.txdmaen().enabled().rxdmaen().enabled().frxth().quarter());
+
+        Self {
+            spi,
+            miso: miso_dma,
+            mosi: mosi_dma,
         }
     }
 
-    #[allow(clippy::missing_safety_doc)]
-    pub unsafe fn steal_with_dma(rx_dma: RxDma, tx_dma: TxDma) -> Spi3<RxDma, TxDma> {
-        Spi3 {
-            base: pac::Peripherals::steal().SPI3,
-            rx_dma,
-            tx_dma,
+    pub(crate) unsafe fn steal_with_dma(miso_dma: MISODMA, mosi_dma: MOSIDMA) -> Self {
+        Self {
+            spi: pac::Peripherals::steal().SPI3,
+            miso: miso_dma,
+            mosi: mosi_dma,
         }
     }
+}
 
-    pub fn free(self) -> (pac::SPI3, RxDma, TxDma) {
-        (self.base, self.rx_dma, self.tx_dma)
+impl<SPI: SpiRegs, SCK, MISO, MOSI> Spi<SPI, SCK, MISO, MOSI, Slave> {
+    /// Set the internal slave select.
+    ///
+    /// This is only implemented for SPI slaves.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     dma::AllDma,
+    ///     gpio::PortA,
+    ///     pac,
+    ///     spi::{Spi, MODE_0},
+    /// };
+    ///
+    /// let mut dp = pac::Peripherals::take().unwrap();
+    ///
+    /// let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
+    /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let mut spi = Spi::new_spi1_full_duplex_slave_dma(
+    ///     dp.SPI1,
+    ///     (pa.a5, pa.a6, pa.a7),
+    ///     (dma.d1c1, dma.d1c2),
+    ///     MODE_0,
+    ///     &mut dp.RCC,
+    /// );
+    ///
+    /// // set SSI slow, enabling SPI transfers
+    /// spi.set_ssi(false);
+    ///
+    /// // .. use spi
+    ///
+    /// // set SSI high, disabling SPI transfers
+    /// spi.set_ssi(true);
+    /// ```
+    pub fn set_ssi(&mut self, ssi: bool) {
+        self.spi.cr1.modify(|_, w| w.ssi().bit(ssi))
     }
 }
 
-impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Transfer<u8>
-    for Spi1<MOSI, MISO, SCK, NoDmaCh, NoDmaCh>
-where
-    MOSI: gpio::sealed::Spi1Mosi,
-    MISO: gpio::sealed::Spi1Miso,
-    SCK: gpio::sealed::Spi1Sck,
-{
-    type Error = Error;
-
-    #[inline(always)]
-    fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
-        self.base.transfer(words)
+impl<SPI, SCK, MISO, MOSI, MODE> Spi<SPI, SCK, MISO, MOSI, MODE> {
+    /// Free the SPI peripheral, pins, and DMA channel(s) from the driver.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     dma::AllDma,
+    ///     gpio::PortA,
+    ///     pac,
+    ///     spi::{BaudDiv::DIV2, Spi, MODE_0},
+    /// };
+    ///
+    /// let mut dp = pac::Peripherals::take().unwrap();
+    ///
+    /// let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
+    /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let spi = Spi::new_spi1_full_duplex_dma(
+    ///     dp.SPI1,
+    ///     (pa.a5, pa.a6, pa.a7),
+    ///     (dma.d1c1, dma.d1c2),
+    ///     MODE_0,
+    ///     DIV2,
+    ///     &mut dp.RCC,
+    /// );
+    /// // .. use spi
+    /// let (spi1, a5, (a6, d1c1), (a7, d1c2)) = spi.free();
+    /// ```
+    pub fn free(self) -> (SPI, SCK, MISO, MOSI) {
+        (self.spi, self.sck, self.miso, self.mosi)
     }
 }
 
-impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Write<u8>
-    for Spi1<MOSI, MISO, SCK, NoDmaCh, NoDmaCh>
-where
-    MOSI: gpio::sealed::Spi1Mosi,
-    MISO: gpio::sealed::Spi1Miso,
-    SCK: gpio::sealed::Spi1Sck,
-{
-    type Error = Error;
+/// Blocking read (slave mode)
+pub trait Read {
+    /// Read from the SPI slave, blocking until `words` is full.
+    fn read(&mut self, words: &mut [u8]) -> Result<(), Error>;
+}
 
-    #[inline(always)]
+impl<SPI: SpiRegs, SCK: SpiSck, MOSI: SpiMosi> Read for Spi<SPI, SCK, NoMiso, MOSI, Slave> {
+    fn read(&mut self, words: &mut [u8]) -> Result<(), Error> {
+        self.spi.read_simplex_u8(words)
+    }
+}
+
+impl<SPI: SpiRegs, SCK: SpiSck, MOSI: SpiMosi, MOSIDMA: DmaCh> Read
+    for Spi<SPI, SCK, NoMiso, (MOSI, MOSIDMA), Slave>
+{
+    fn read(&mut self, words: &mut [u8]) -> Result<(), Error> {
+        self.spi.read_simplex_u8_dma(&mut self.mosi.1, words)
+    }
+}
+
+impl<SPI: SpiRegs, SCK: SpiSck, MISO: SpiMiso, MOSI: SpiMosi> Read
+    for Spi<SPI, SCK, MISO, MOSI, Slave>
+{
+    fn read(&mut self, words: &mut [u8]) -> Result<(), Error> {
+        self.spi.read_simplex_u8(words)
+    }
+}
+
+impl<SPI: SpiRegs, SCK: SpiSck, MISO: SpiMiso, MOSI: SpiMosi, MOSIDMA: DmaCh, MISODMA: DmaCh> Read
+    for Spi<SPI, SCK, (MISO, MISODMA), (MOSI, MOSIDMA), Slave>
+{
+    fn read(&mut self, words: &mut [u8]) -> Result<(), Error> {
+        self.spi.read_simplex_u8_dma(&mut self.mosi.1, words)
+    }
+}
+
+impl<SPI: SpiRegs, SCK: SpiSck, MISO: SpiMiso> Write<u8> for Spi<SPI, SCK, MISO, NoMosi, Slave> {
+    type Error = Error;
     fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
-        self.base.write(words)
+        self.spi.write_simplex_u8(words)
     }
 }
 
-impl<MOSI, MISO, SCK, RxDma, TxDma> embedded_hal::blocking::spi::Transfer<u8>
-    for Spi1<MOSI, MISO, SCK, RxDma, TxDma>
-where
-    MOSI: gpio::sealed::Spi1Mosi,
-    MISO: gpio::sealed::Spi1Miso,
-    SCK: gpio::sealed::Spi1Sck,
-    RxDma: DmaCh + dma::sealed::DmaOps,
-    TxDma: DmaCh + dma::sealed::DmaOps,
+impl<SPI: SpiRegs, SCK: SpiSck, MISO: SpiMiso, MISODMA: DmaCh> Write<u8>
+    for Spi<SPI, SCK, (MISO, MISODMA), NoMosi, Slave>
 {
     type Error = Error;
-
-    #[inline(always)]
-    fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
-        self.base
-            .transfer_with_dma(&mut self.tx_dma, &mut self.rx_dma, words)
-    }
-}
-
-impl<MOSI, MISO, SCK, RxDma, TxDma> embedded_hal::blocking::spi::Write<u8>
-    for Spi1<MOSI, MISO, SCK, RxDma, TxDma>
-where
-    MOSI: gpio::sealed::Spi1Mosi,
-    MISO: gpio::sealed::Spi1Miso,
-    SCK: gpio::sealed::Spi1Sck,
-    RxDma: DmaCh + dma::sealed::DmaOps,
-    TxDma: DmaCh + dma::sealed::DmaOps,
-{
-    type Error = Error;
-
-    #[inline(always)]
     fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
-        self.base
-            .write_with_dma(&mut self.tx_dma, &mut self.rx_dma, words)
+        self.spi.write_simplex_u8_dma(&mut self.miso.1, words)
     }
 }
 
-impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Transfer<u8>
-    for Spi2<MOSI, MISO, SCK, NoDmaCh, NoDmaCh>
-where
-    MOSI: gpio::sealed::Spi2Mosi,
-    MISO: gpio::sealed::Spi2Miso,
-    SCK: gpio::sealed::Spi2Sck,
+impl<SPI: SpiRegs, SCK: SpiSck, MOSI: SpiMosi, MOSIDMA: DmaCh> Write<u8>
+    for Spi<SPI, SCK, NoMiso, (MOSI, MOSIDMA), Master>
 {
     type Error = Error;
-
-    #[inline(always)]
-    fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
-        self.base.transfer(words)
-    }
-}
-
-impl<MOSI, MISO, SCK> embedded_hal::blocking::spi::Write<u8>
-    for Spi2<MOSI, MISO, SCK, NoDmaCh, NoDmaCh>
-where
-    MOSI: gpio::sealed::Spi2Mosi,
-    MISO: gpio::sealed::Spi2Miso,
-    SCK: gpio::sealed::Spi2Sck,
-{
-    type Error = Error;
-
-    #[inline(always)]
     fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
-        self.base.write(words)
+        self.spi.write_simplex_u8_dma(&mut self.mosi.1, words)
     }
 }
 
-impl<MOSI, MISO, SCK, RxDma, TxDma> embedded_hal::blocking::spi::Transfer<u8>
-    for Spi2<MOSI, MISO, SCK, RxDma, TxDma>
-where
-    MOSI: gpio::sealed::Spi2Mosi,
-    MISO: gpio::sealed::Spi2Miso,
-    SCK: gpio::sealed::Spi2Sck,
-    RxDma: DmaCh + dma::sealed::DmaOps,
-    TxDma: DmaCh + dma::sealed::DmaOps,
-{
+impl<SPI: SpiRegs, SCK: SpiSck, MOSI: SpiMosi> Write<u8> for Spi<SPI, SCK, NoMiso, MOSI, Master> {
     type Error = Error;
-
-    #[inline(always)]
-    fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
-        self.base
-            .transfer_with_dma(&mut self.tx_dma, &mut self.rx_dma, words)
-    }
-}
-
-impl<MOSI, MISO, SCK, RxDma, TxDma> embedded_hal::blocking::spi::Write<u8>
-    for Spi2<MOSI, MISO, SCK, RxDma, TxDma>
-where
-    MOSI: gpio::sealed::Spi2Mosi,
-    MISO: gpio::sealed::Spi2Miso,
-    SCK: gpio::sealed::Spi2Sck,
-    RxDma: DmaCh + dma::sealed::DmaOps,
-    TxDma: DmaCh + dma::sealed::DmaOps,
-{
-    type Error = Error;
-
-    #[inline(always)]
     fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
-        self.base
-            .write_with_dma(&mut self.tx_dma, &mut self.rx_dma, words)
+        self.spi.write_simplex_u8(words)
     }
 }
 
-impl embedded_hal::blocking::spi::Transfer<u8> for Spi3<NoDmaCh, NoDmaCh> {
-    type Error = Error;
-
-    #[inline(always)]
-    fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
-        self.base.transfer(words)
-    }
-}
-
-impl embedded_hal::blocking::spi::Write<u8> for Spi3<NoDmaCh, NoDmaCh> {
-    type Error = Error;
-
-    #[inline(always)]
-    fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
-        self.base.write(words)
-    }
-}
-
-impl<RxDma, TxDma> embedded_hal::blocking::spi::Transfer<u8> for Spi3<RxDma, TxDma>
-where
-    RxDma: DmaCh + dma::sealed::DmaOps,
-    TxDma: DmaCh + dma::sealed::DmaOps,
+impl<SPI: SpiRegs, SCK: SpiSck, MISO: SpiMiso, MOSI: SpiMosi> Write<u8>
+    for Spi<SPI, SCK, MISO, MOSI, Master>
 {
     type Error = Error;
-
-    #[inline(always)]
-    fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
-        self.base
-            .transfer_with_dma(&mut self.tx_dma, &mut self.rx_dma, words)
+    fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
+        self.spi.write_full_duplex_u8(words)
     }
 }
 
-impl<RxDma, TxDma> embedded_hal::blocking::spi::Write<u8> for Spi3<RxDma, TxDma>
-where
-    RxDma: DmaCh + dma::sealed::DmaOps,
-    TxDma: DmaCh + dma::sealed::DmaOps,
+impl<SPI: SpiRegs, SCK: SpiSck, MISO: SpiMiso, MOSI: SpiMosi> Write<u8>
+    for Spi<SPI, SCK, MISO, MOSI, Slave>
 {
     type Error = Error;
-
-    #[inline(always)]
     fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
-        self.base
-            .write_with_dma(&mut self.tx_dma, &mut self.rx_dma, words)
+        self.spi.write_simplex_u8(words)
+    }
+}
+
+impl<SPI: SpiRegs, SCK: SpiSck, MISO: SpiMiso, MOSI: SpiMosi, MISODMA: DmaCh, MOSIDMA: DmaCh>
+    Write<u8> for Spi<SPI, SCK, (MISO, MISODMA), (MOSI, MOSIDMA), Master>
+{
+    type Error = Error;
+    fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
+        self.spi
+            .write_full_duplex_u8_dma(&mut self.miso.1, &mut self.mosi.1, words)
+    }
+}
+
+impl<SPI: SpiRegs, SCK: SpiSck, MISO: SpiMiso, MOSI: SpiMosi, MISODMA: DmaCh, MOSIDMA: DmaCh>
+    Write<u8> for Spi<SPI, SCK, (MISO, MISODMA), (MOSI, MOSIDMA), Slave>
+{
+    type Error = Error;
+    fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
+        self.spi.write_simplex_u8_dma(&mut self.miso.1, words)
+    }
+}
+
+impl<SPI: SpiRegs, SCK: SpiSck, MISO: SpiMiso, MOSI: SpiMosi> FullDuplex<u8>
+    for Spi<SPI, SCK, MISO, MOSI, Master>
+{
+    type Error = Error;
+    fn read(&mut self) -> nb::Result<u8, Self::Error> {
+        self.spi.nb_read_u8()
+    }
+    fn send(&mut self, word: u8) -> nb::Result<(), Self::Error> {
+        self.spi.nb_send_u8(word)
+    }
+}
+
+impl<SPI: SpiRegs, SCK: SpiSck, MISO: SpiMiso, MOSI: SpiMosi> Transfer<u8>
+    for Spi<SPI, SCK, MISO, MOSI, Master>
+{
+    type Error = Error;
+    fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
+        self.spi.transfer_u8(words)
+    }
+}
+
+impl<SPI: SpiRegs, SCK: SpiSck, MISO: SpiMiso, MOSI: SpiMosi, MISODMA: DmaCh, MOSIDMA: DmaCh>
+    Transfer<u8> for Spi<SPI, SCK, (MISO, MISODMA), (MOSI, MOSIDMA), Master>
+{
+    type Error = Error;
+    fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
+        self.spi
+            .transfer_u8_dma(&mut self.miso.1, &mut self.mosi.1, words)
+    }
+}
+
+impl<SPI: SpiRegs, SCK: SpiSck, MISO: SpiMiso, MOSI: SpiMosi, MISODMA: DmaCh, MOSIDMA: DmaCh>
+    Transfer<u8> for Spi<SPI, SCK, (MISO, MISODMA), (MOSI, MOSIDMA), Slave>
+{
+    type Error = Error;
+    fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
+        self.spi
+            .transfer_u8_dma(&mut self.mosi.1, &mut self.miso.1, words)
+    }
+}
+
+// sub-GHz SPI traits
+
+impl Transfer<u8> for Spi3<SgMiso, SgMosi> {
+    type Error = Error;
+    fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
+        self.spi.transfer_u8(words)
+    }
+}
+
+impl<MISODMA: DmaCh, MOSIDMA: DmaCh> Transfer<u8> for Spi3<MISODMA, MOSIDMA> {
+    type Error = Error;
+    fn transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
+        self.spi
+            .transfer_u8_dma(&mut self.miso, &mut self.mosi, words)
+    }
+}
+
+impl Write<u8> for Spi3<SgMiso, SgMosi> {
+    type Error = Error;
+    fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
+        self.spi.write_full_duplex_u8(words)
+    }
+}
+
+impl<MISODMA: DmaCh, MOSIDMA: DmaCh> Write<u8> for Spi3<MISODMA, MOSIDMA> {
+    type Error = Error;
+    fn write(&mut self, words: &[u8]) -> Result<(), Self::Error> {
+        self.spi
+            .write_full_duplex_u8_dma(&mut self.miso, &mut self.mosi, words)
     }
 }

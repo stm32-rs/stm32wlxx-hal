@@ -203,10 +203,10 @@ pub(crate) mod sealed {
     af_trait!(Spi2Miso, set_spi2_miso_af);
     af_trait!(Spi2Sck, set_spi2_sck_af);
     af_trait!(Spi2Nss, set_spi2_nss_af);
-    af_trait!(SubGhzSpiMosi, set_subghz_spi_mosi_af);
-    af_trait!(SubGhzSpiMiso, set_subghz_spi_miso_af);
-    af_trait!(SubGhzSpiSck, set_subghz_spi_sck_af);
-    af_trait!(SubGhzSpiNss, set_subghz_spi_nss_af);
+    af_trait!(Spi3Mosi, set_spi3_mosi_af);
+    af_trait!(Spi3Miso, set_spi3_miso_af);
+    af_trait!(Spi3Sck, set_spi3_sck_af);
+    af_trait!(Spi3Nss, set_spi3_nss_af);
     af_trait!(I2c1Sda, set_i2c1_sda_af);
     af_trait!(I2c1Scl, set_i2c1_scl_af);
     af_trait!(I2c1Smba, set_i2c1_smba_af);
@@ -248,10 +248,19 @@ pub(crate) mod sealed {
     af_trait!(LpTim3Etr, set_lptim3_etr_af);
     af_trait!(LpTim3In1, set_lptim3_in1_af);
 
-    /// Indicate a GPIO pin can be sampled by the ADC
+    /// Indicate a GPIO pin can be sampled by the ADC.
     pub trait AdcCh {
         const ADC_CH: adc::Ch;
     }
+
+    /// Indicate a pin has any SPI NSS implementation.
+    pub trait SpiNss {}
+    /// Indicate a pin has any SPI SCK implementation.
+    pub trait SpiSck {}
+    /// Indicate a pin has any SPI MOSI implementation.
+    pub trait SpiMosi {}
+    /// Indicate a pin has any SPI MISO implementation.
+    pub trait SpiMiso {}
 }
 
 /// Input pin extended interrupts.
@@ -557,6 +566,10 @@ pub mod pins {
                 }
             }
         };
+        ($trt:ident, $gpio:ident, $method:ident, $num:expr, $common:ident) => {
+            impl_af!($trt, $gpio, $method, $num);
+            impl super::sealed::$common for $gpio {}
+        };
     }
 
     impl_af!(LpTim1Out, A4, set_lptim1_out_af, 1);
@@ -571,11 +584,11 @@ pub mod pins {
     impl_af!(LpTim1Etr, C3, set_lptim1_etr_af, 1);
 
     impl_af!(LpTim3Out, A1, set_lptim3_out_af, 3);
-    impl_af!(Spi2Miso, A5, set_spi2_miso_af, 3);
-    impl_af!(Spi2Nss, A9, set_spi2_nss_af, 3);
+    impl_af!(Spi2Miso, A5, set_spi2_miso_af, 3, SpiMiso);
+    impl_af!(Spi2Nss, A9, set_spi2_nss_af, 3, SpiNss);
     impl_af!(LpTim3Etr, A11, set_lptim3_etr_af, 3);
     impl_af!(LpTim3In1, A12, set_lptim3_in1_af, 3);
-    impl_af!(Spi2Mosi, C1, set_spi2_mosi_af, 3);
+    impl_af!(Spi2Mosi, C1, set_spi2_mosi_af, 3, SpiMosi);
 
     impl_af!(I2c3Smba, A0, set_i2c3_smba_af, 4);
     impl_af!(I2c1Smba, A1, set_i2c1_smba_af, 4);
@@ -604,29 +617,29 @@ pub mod pins {
     impl_af!(I2c3Scl, C0, set_i2c3_scl_af, 4);
     impl_af!(I2c3Sda, C1, set_i2c3_sda_af, 4);
 
-    impl_af!(Spi1Sck, A0, set_spi1_sck_af, 5);
-    impl_af!(Spi1Nss, A4, set_spi1_nss_af, 5);
-    impl_af!(Spi1Sck, A5, set_spi1_sck_af, 5);
-    impl_af!(Spi1Miso, A6, set_spi1_miso_af, 5);
-    impl_af!(Spi1Mosi, A7, set_spi1_mosi_af, 5);
-    impl_af!(Spi2Sck, A8, set_spi2_sck_af, 5);
-    impl_af!(Spi2Sck, A9, set_spi2_sck_af, 5);
-    impl_af!(Spi2Mosi, A10, set_spi2_mosi_af, 5);
-    impl_af!(Spi1Miso, A11, set_spi1_miso_af, 5);
-    impl_af!(Spi1Mosi, A12, set_spi1_mosi_af, 5);
-    impl_af!(Spi1Nss, A15, set_spi1_nss_af, 5);
-    impl_af!(Spi1Nss, B2, set_spi1_nss_af, 5);
-    impl_af!(Spi1Sck, B3, set_spi1_sck_af, 5);
-    impl_af!(Spi1Miso, B4, set_spi1_miso_af, 5);
-    impl_af!(Spi1Mosi, B5, set_spi1_mosi_af, 5);
-    impl_af!(Spi2Nss, B9, set_spi2_nss_af, 5);
-    impl_af!(Spi2Sck, B10, set_spi2_sck_af, 5);
-    impl_af!(Spi2Nss, B12, set_spi2_nss_af, 5);
-    impl_af!(Spi2Sck, B13, set_spi2_sck_af, 5);
-    impl_af!(Spi2Miso, B14, set_spi2_miso_af, 5);
-    impl_af!(Spi2Mosi, B15, set_spi2_mosi_af, 5);
-    impl_af!(Spi2Mosi, C3, set_spi2_mosi_af, 5);
-    impl_af!(Spi2Miso, C2, set_spi2_miso_af, 5);
+    impl_af!(Spi1Sck, A0, set_spi1_sck_af, 5, SpiSck);
+    impl_af!(Spi1Nss, A4, set_spi1_nss_af, 5, SpiNss);
+    impl_af!(Spi1Sck, A5, set_spi1_sck_af, 5, SpiSck);
+    impl_af!(Spi1Miso, A6, set_spi1_miso_af, 5, SpiMiso);
+    impl_af!(Spi1Mosi, A7, set_spi1_mosi_af, 5, SpiMosi);
+    impl_af!(Spi2Sck, A8, set_spi2_sck_af, 5, SpiSck);
+    impl_af!(Spi2Sck, A9, set_spi2_sck_af, 5, SpiSck);
+    impl_af!(Spi2Mosi, A10, set_spi2_mosi_af, 5, SpiMosi);
+    impl_af!(Spi1Miso, A11, set_spi1_miso_af, 5, SpiMiso);
+    impl_af!(Spi1Mosi, A12, set_spi1_mosi_af, 5, SpiMosi);
+    impl_af!(Spi1Nss, A15, set_spi1_nss_af, 5, SpiNss);
+    impl_af!(Spi1Nss, B2, set_spi1_nss_af, 5, SpiNss);
+    impl_af!(Spi1Sck, B3, set_spi1_sck_af, 5, SpiSck);
+    impl_af!(Spi1Miso, B4, set_spi1_miso_af, 5, SpiMiso);
+    impl_af!(Spi1Mosi, B5, set_spi1_mosi_af, 5, SpiMosi);
+    impl_af!(Spi2Nss, B9, set_spi2_nss_af, 5, SpiNss);
+    impl_af!(Spi2Sck, B10, set_spi2_sck_af, 5, SpiSck);
+    impl_af!(Spi2Nss, B12, set_spi2_nss_af, 5, SpiNss);
+    impl_af!(Spi2Sck, B13, set_spi2_sck_af, 5, SpiSck);
+    impl_af!(Spi2Miso, B14, set_spi2_miso_af, 5, SpiMiso);
+    impl_af!(Spi2Mosi, B15, set_spi2_mosi_af, 5, SpiMosi);
+    impl_af!(Spi2Mosi, C3, set_spi2_mosi_af, 5, SpiMosi);
+    impl_af!(Spi2Miso, C2, set_spi2_miso_af, 5, SpiMiso);
 
     impl_af!(RfBusy, A12, set_rfbusy_af, 6);
     impl_af!(RfIrq0, B3, set_rf_irq0_af, 6);
@@ -663,10 +676,10 @@ pub mod pins {
     impl_af!(LpUart1Rx, C0, set_lpuart1_rx_af, 8);
     impl_af!(LpUart1Tx, C1, set_lpuart1_tx_af, 8);
 
-    impl_af!(SubGhzSpiNss, A4, set_subghz_spi_nss_af, 13);
-    impl_af!(SubGhzSpiSck, A5, set_subghz_spi_sck_af, 13);
-    impl_af!(SubGhzSpiMiso, A6, set_subghz_spi_miso_af, 13);
-    impl_af!(SubGhzSpiMosi, A7, set_subghz_spi_mosi_af, 13);
+    impl_af!(Spi3Nss, A4, set_spi3_nss_af, 13);
+    impl_af!(Spi3Sck, A5, set_spi3_sck_af, 13);
+    impl_af!(Spi3Miso, A6, set_spi3_miso_af, 13);
+    impl_af!(Spi3Mosi, A7, set_spi3_mosi_af, 13);
 
     impl_af!(LpTim2Out, A4, set_lptim2_out_af, 14);
     impl_af!(LpTim2Etr, A5, set_lptim2_etr_af, 14);
@@ -1687,7 +1700,7 @@ pub struct RfBusy {
 }
 
 impl RfBusy {
-    /// Create a new RF Busy pin from a pin A12.
+    /// Create a new RF Busy pin from pin A12.
     ///
     /// # Example
     ///
@@ -1737,7 +1750,7 @@ pub struct RfIrq0 {
 }
 
 impl RfIrq0 {
-    /// Create a new RF IRQ 0 pin from a pin B3.
+    /// Create a new RF IRQ 0 pin from pin B3.
     ///
     /// # Example
     ///
@@ -1787,7 +1800,7 @@ pub struct RfIrq1 {
 }
 
 impl RfIrq1 {
-    /// Create a new RF IRQ 1 pin from a pin B5.
+    /// Create a new RF IRQ 1 pin from pin B5.
     ///
     /// # Example
     ///
@@ -1837,7 +1850,7 @@ pub struct RfIrq2 {
 }
 
 impl RfIrq2 {
-    /// Create a new RF IRQ 2 pin from a pin B8.
+    /// Create a new RF IRQ 2 pin from pin B8.
     ///
     /// # Example
     ///
@@ -1875,6 +1888,206 @@ impl RfIrq2 {
     /// let b8: pins::B8 = b8.free();
     /// ```
     pub fn free(self) -> pins::B8 {
+        self.pin
+    }
+}
+
+/// RF NSS debug pin.
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct RfNssDbg {
+    pin: pins::A4,
+}
+
+impl RfNssDbg {
+    /// Create a new NSS debug pin from pin A4.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, PortA, RfNssDbg},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let a4: RfNssDbg = RfNssDbg::new(gpioa.a4);
+    /// ```
+    pub fn new(mut pin: pins::A4) -> Self {
+        use sealed::Spi3Nss;
+        cortex_m::interrupt::free(|cs| pin.set_spi3_nss_af(cs));
+        Self { pin }
+    }
+
+    /// Free the GPIO pin.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, PortA, RfNssDbg},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let a4: RfNssDbg = RfNssDbg::new(gpioa.a4);
+    /// let a4: pins::A4 = a4.free();
+    /// ```
+    pub fn free(self) -> pins::A4 {
+        self.pin
+    }
+}
+
+/// RF SCK debug pin.
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct SgSckDbg {
+    pin: pins::A5,
+}
+
+impl SgSckDbg {
+    /// Create a new SCK debug pin from pin A5.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, PortA, SgSckDbg},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let a5: SgSckDbg = SgSckDbg::new(gpioa.a5);
+    /// ```
+    pub fn new(mut pin: pins::A5) -> Self {
+        use sealed::Spi3Sck;
+        cortex_m::interrupt::free(|cs| pin.set_spi3_sck_af(cs));
+        Self { pin }
+    }
+
+    /// Free the GPIO pin.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, PortA, SgSckDbg},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let a5: SgSckDbg = SgSckDbg::new(gpioa.a5);
+    /// let a5: pins::A5 = a5.free();
+    /// ```
+    pub fn free(self) -> pins::A5 {
+        self.pin
+    }
+}
+
+/// RF MISO debug pin.
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct SgMisoDbg {
+    pin: pins::A6,
+}
+
+impl SgMisoDbg {
+    /// Create a new MISO debug pin from pin A6.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, PortA, SgMisoDbg},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let a6: SgMisoDbg = SgMisoDbg::new(gpioa.a6);
+    /// ```
+    pub fn new(mut pin: pins::A6) -> Self {
+        use sealed::Spi3Miso;
+        cortex_m::interrupt::free(|cs| pin.set_spi3_miso_af(cs));
+        Self { pin }
+    }
+
+    /// Free the GPIO pin.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, PortA, SgMisoDbg},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let a6: SgMisoDbg = SgMisoDbg::new(gpioa.a6);
+    /// let a6: pins::A6 = a6.free();
+    /// ```
+    pub fn free(self) -> pins::A6 {
+        self.pin
+    }
+}
+
+/// RF MOSI debug pin.
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct SgMosiDbg {
+    pin: pins::A7,
+}
+
+impl SgMosiDbg {
+    /// Create a new MISO debug pin from pin A7.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, PortA, SgMosiDbg},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let a7: SgMosiDbg = SgMosiDbg::new(gpioa.a7);
+    /// ```
+    pub fn new(mut pin: pins::A7) -> Self {
+        use sealed::Spi3Mosi;
+        cortex_m::interrupt::free(|cs| pin.set_spi3_mosi_af(cs));
+        Self { pin }
+    }
+
+    /// Free the GPIO pin.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, PortA, SgMosiDbg},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let a7: SgMosiDbg = SgMosiDbg::new(gpioa.a7);
+    /// let a7: pins::A7 = a7.free();
+    /// ```
+    pub fn free(self) -> pins::A7 {
         self.pin
     }
 }

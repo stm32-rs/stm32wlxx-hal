@@ -1,5 +1,4 @@
 //! Device eletronic signature
-#![forbid(missing_docs)]
 
 use core::{
     convert::{TryFrom, TryInto},

@@ -25,7 +25,6 @@
 //! lptim1.start(16_000_u16);
 //! nb::block!(lptim1.wait());
 //! ```
-#![warn(missing_docs)]
 
 mod cfgr;
 mod cr;

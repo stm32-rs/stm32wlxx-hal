@@ -409,7 +409,7 @@ pub(crate) mod sealed {
             if self.status()?.frlvl().is_empty() {
                 Err(nb::Error::WouldBlock)
             } else {
-                return Ok(unsafe { read_volatile(Self::DR as *const u8) });
+                Ok(unsafe { read_volatile(Self::DR as *const u8) })
             }
         }
 
@@ -612,6 +612,7 @@ impl<SCK, MISO, MOSI, MODE> Spi<pac::SPI2, SCK, MISO, MOSI, MODE> {
 }
 
 #[allow(missing_docs)] // struct is hidden
+#[allow(clippy::missing_safety_doc)]
 impl<MISO, MOSI> Spi3<MISO, MOSI> {
     #[inline]
     pub unsafe fn pulse_reset(rcc: &mut pac::RCC) {
@@ -792,9 +793,9 @@ macro_rules! impl_new_full_duplex_dma {
                 ///
                 /// ```no_run
                 /// use stm32wl_hal::{
+                ///     dma::AllDma,
                 ///     gpio::PortA,
                 ///     pac,
-                ///     dma::AllDma,
                 ///     spi::{BaudDiv::DIV2, Spi, MODE_0},
                 /// };
                 ///
@@ -885,9 +886,9 @@ macro_rules! impl_new_full_duplex_slave_dma {
                 ///
                 /// ```no_run
                 /// use stm32wl_hal::{
+                ///     dma::AllDma,
                 ///     gpio::PortA,
                 ///     pac,
-                ///     dma::AllDma,
                 ///     spi::{Spi, MODE_0},
                 /// };
                 ///
@@ -1115,9 +1116,9 @@ macro_rules! impl_new_mosi_simplex_dma {
                 ///
                 /// ```no_run
                 /// use stm32wl_hal::{
+                ///     dma::AllDma,
                 ///     gpio::PortA,
                 ///     pac,
-                ///     dma::AllDma,
                 ///     spi::{BaudDiv::DIV2, Spi, MODE_0},
                 /// };
                 ///
@@ -1201,9 +1202,9 @@ macro_rules! impl_new_mosi_simplex_slave_dma {
                 ///
                 /// ```no_run
                 /// use stm32wl_hal::{
+                ///     dma::AllDma,
                 ///     gpio::PortA,
                 ///     pac,
-                ///     dma::AllDma,
                 ///     spi::{Spi, MODE_0},
                 /// };
                 ///
@@ -1352,9 +1353,9 @@ macro_rules! impl_new_miso_simplex_dma {
                 ///
                 /// ```no_run
                 /// use stm32wl_hal::{
+                ///     dma::AllDma,
                 ///     gpio::PortA,
                 ///     pac,
-                ///     dma::AllDma,
                 ///     spi::{Spi, MODE_0},
                 /// };
                 ///
@@ -1521,9 +1522,9 @@ impl<SPI: SpiRegs, SCK, MISO, MOSI> Spi<SPI, SCK, MISO, MOSI, Slave> {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
+    ///     dma::AllDma,
     ///     gpio::PortA,
     ///     pac,
-    ///     dma::AllDma,
     ///     spi::{Spi, MODE_0},
     /// };
     ///
@@ -1559,9 +1560,9 @@ impl<SPI, SCK, MISO, MOSI, MODE> Spi<SPI, SCK, MISO, MOSI, MODE> {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
+    ///     dma::AllDma,
     ///     gpio::PortA,
     ///     pac,
-    ///     dma::AllDma,
     ///     spi::{BaudDiv::DIV2, Spi, MODE_0},
     /// };
     ///

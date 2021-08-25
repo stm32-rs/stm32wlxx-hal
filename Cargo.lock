@@ -512,6 +512,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 
 [[package]]
+name = "spi-testsuite"
+version = "0.1.0"
+dependencies = [
+ "defmt",
+ "defmt-rtt",
+ "defmt-test",
+ "nb 1.0.0",
+ "panic-probe",
+ "stm32wl-hal",
+]
+
+[[package]]
 name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

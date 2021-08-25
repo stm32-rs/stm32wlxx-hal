@@ -1,5 +1,4 @@
 //! Direct memory access controller
-#![deny(missing_docs)]
 
 // developers notes:
 //
@@ -35,21 +34,6 @@ pub mod flags {
     pub const XFER_HLF: u8 = 1 << 2;
     /// Transfer error
     pub const XFER_ERR: u8 = 1 << 3;
-}
-
-/// [Typestate] to for no DMA channel on a generic structure.
-///
-/// [Typestate]: https://docs.rust-embedded.org/book/static-guarantees/typestate-programming.html
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct NoDmaCh {
-    _priv: (),
-}
-
-impl NoDmaCh {
-    pub(crate) const fn new() -> Self {
-        NoDmaCh { _priv: () }
-    }
 }
 
 const DMA1_BASE: usize = 0x4002_0000;
@@ -160,7 +144,7 @@ pub(crate) mod sealed {
 }
 
 /// DMA channel trait
-pub trait DmaCh {
+pub trait DmaCh: sealed::DmaOps {
     /// DMA IRQ number.
     const IRQ: pac::Interrupt;
 

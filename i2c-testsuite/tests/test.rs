@@ -78,7 +78,7 @@ mod tests {
 
     #[test]
     fn sht31_measurement(i2c: &mut I2c1<(pins::B8, pins::B7)>) {
-        defmt::warn!("A SHT31 sensor must be connected to the board on pins PB8 (SCL) & PB7 (SDA) for this test to work");
+        defmt::warn!("A SHT31 sensor must be connected to the board on pins B8 (SCL) & B7 (SDA) for this test to work");
         let cmd: [u8; 2] = [0x2C, 0x06];
         let mut response: [u8; 6] = [0; 6];
 

@@ -1,40 +1,13 @@
 //! Universal synchronous/asynchronous receiver transmitter
 use crate::{
-    dma::{self, sealed::DmaOps, DmaCh},
+    dma::{self, DmaCh},
     gpio::{self},
     pac, rcc, Ratio,
 };
 use embedded_hal::prelude::*;
 
-/// [Typestate] to for no RX on generic UART structure.
-///
-/// [Typestate]: https://docs.rust-embedded.org/book/static-guarantees/typestate-programming.html
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct NoRx {
-    _priv: (),
-}
-
-impl NoRx {
-    pub(crate) const fn new() -> Self {
-        NoRx { _priv: () }
-    }
-}
-
-/// [Typestate] to for no TX on generic UART structure.
-///
-/// [Typestate]: https://docs.rust-embedded.org/book/static-guarantees/typestate-programming.html
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct NoTx {
-    _priv: (),
-}
-
-impl NoTx {
-    pub(crate) const fn new() -> Self {
-        NoTx { _priv: () }
-    }
-}
+typestate!(NoRx, "no RX on a generic UART structure");
+typestate!(NoTx, "no TX on a generic UART structure");
 
 /// UART clock selection.
 #[derive(Debug)]
@@ -505,7 +478,7 @@ macro_rules! impl_tx_en_dis {
             ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
             ///         .enable_tx_dma(gpiob.b11, dma.d2c7);
             /// ```
-            pub fn enable_tx_dma<TxPin: gpio::sealed::$trt, TxDma: DmaCh + DmaOps>(
+            pub fn enable_tx_dma<TxPin: gpio::sealed::$trt, TxDma: DmaCh>(
                 self,
                 mut tx: TxPin,
                 mut tx_dma: TxDma,
@@ -631,7 +604,7 @@ macro_rules! impl_rx_en_dis {
             ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
             ///         .enable_rx_dma(gpiob.b10, dma.d2c2);
             /// ```
-            pub fn enable_rx_dma<RxPin: gpio::sealed::$trt, RxDma: DmaCh + DmaOps>(
+            pub fn enable_rx_dma<RxPin: gpio::sealed::$trt, RxDma: DmaCh>(
                 self,
                 mut rx: RxPin,
                 mut rx_dma: RxDma,
@@ -755,7 +728,7 @@ macro_rules! impl_eh_traits {
             for $uart<RX, (TxPin, TxDma)>
         where
             TxPin: gpio::sealed::$tx_trait,
-            TxDma: DmaCh + DmaOps,
+            TxDma: DmaCh,
         {
             type Error = Error;
 
@@ -818,7 +791,7 @@ macro_rules! impl_eh_traits {
         impl<RxPin, RxDma, TX> $uart<(RxPin, RxDma), TX>
         where
             RxPin: gpio::sealed::$rx_trait,
-            RxDma: DmaCh + DmaOps,
+            RxDma: DmaCh,
         {
             /// This is not an embedded-hal trait, it is added simply for
             /// parity with what exists on the TX side.

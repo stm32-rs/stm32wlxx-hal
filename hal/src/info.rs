@@ -104,6 +104,7 @@ impl Uid {
 ///
 /// let uid: Uid = uid();
 /// ```
+#[inline]
 pub fn uid() -> Uid {
     unsafe {
         [
@@ -125,6 +126,7 @@ pub fn uid() -> Uid {
 /// // valid for the NUCLEO-WL55JC2 dev board
 /// assert_eq!(flash_size_kibibyte(), 256);
 /// ```
+#[inline]
 pub fn flash_size_kibibyte() -> u16 {
     unsafe { read(0x1FFF_75E0 as *const u16) }
 }
@@ -139,6 +141,7 @@ pub fn flash_size_kibibyte() -> u16 {
 /// // valid for the NUCLEO-WL55JC2 dev board
 /// assert_eq!(flash_size(), 256 * 1024);
 /// ```
+#[inline]
 pub fn flash_size() -> u32 {
     u32::from(flash_size_kibibyte()) << 10
 }
@@ -191,6 +194,7 @@ impl From<Package> for u8 {
 /// // valid for the NUCLEO-WL55JC2 dev board
 /// assert_eq!(package, Ok(info::Package::UFBGA73));
 /// ```
+#[inline]
 pub fn package() -> Result<Package, u8> {
     let raw: u16 = unsafe { read(0x1FFF_7500 as *const u16) } & 0xF;
     (raw as u8).try_into()
@@ -293,6 +297,7 @@ pub const UID64: *const u8 = 0x1FFF_7580 as *const u8;
 /// assert_eq!(uid64.company_id(), 0x0080E1);
 /// // uid64.devnum() is unique
 /// ```
+#[inline]
 pub fn uid64() -> Uid64 {
     let hi: u32 = unsafe { read(0x1FFF_7580 as *const u32) };
     let lo: u32 = unsafe { read(0x1FFF_7584 as *const u32) };
@@ -308,6 +313,7 @@ pub fn uid64() -> Uid64 {
 ///
 /// let devnum: u32 = info::uid64_devnum();
 /// ```
+#[inline]
 pub fn uid64_devnum() -> u32 {
     unsafe { read(UID64 as *const u32) }
 }

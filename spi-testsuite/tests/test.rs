@@ -47,6 +47,17 @@ unsafe fn setup() -> TestArgs {
     }
 }
 
+const BAUD_RATES: [BaudDiv; 8] = [
+    BaudDiv::DIV256,
+    BaudDiv::DIV128,
+    BaudDiv::DIV64,
+    BaudDiv::DIV32,
+    BaudDiv::DIV16,
+    BaudDiv::DIV8,
+    BaudDiv::DIV4,
+    BaudDiv::DIV2,
+];
+
 const DATA: &[u8] = b"hey";
 
 #[defmt_test::tests]
@@ -72,198 +83,213 @@ mod tests {
 
     #[test]
     fn full_duplex_loopback() {
-        let mut ta: TestArgs = unsafe { setup() };
+        for &br in BAUD_RATES.iter() {
+            let mut ta: TestArgs = unsafe { setup() };
 
-        let mut s = Spi::new_spi2_full_duplex_slave(
-            ta.spi2,
-            (ta.pa.a9, ta.pc.c2, ta.pc.c3),
-            MODE_0,
-            &mut ta.rcc,
-        );
+            let mut s = Spi::new_spi2_full_duplex_slave(
+                ta.spi2,
+                (ta.pa.a9, ta.pc.c2, ta.pc.c3),
+                MODE_0,
+                &mut ta.rcc,
+            );
 
-        let mut m = Spi::new_spi1_full_duplex(
-            ta.spi1,
-            (ta.pa.a5, ta.pa.a6, ta.pa.a7),
-            MODE_0,
-            BaudDiv::DIV256,
-            &mut ta.rcc,
-        );
+            let mut m = Spi::new_spi1_full_duplex(
+                ta.spi1,
+                (ta.pa.a5, ta.pa.a6, ta.pa.a7),
+                MODE_0,
+                br,
+                &mut ta.rcc,
+            );
 
-        for _ in 0..8 {
-            s.set_ssi(false);
-            unwrap!(m.write(DATA));
-            let mut buf: [u8; 3] = [0; 3];
-            unwrap!(s.read(&mut buf));
-            s.set_ssi(true);
-            defmt::assert_eq!(buf, DATA);
-        }
+            for _ in 0..8 {
+                s.set_ssi(false);
+                unwrap!(m.write(DATA));
+                let mut buf: [u8; 3] = [0; 3];
+                unwrap!(s.read(&mut buf));
+                s.set_ssi(true);
+                defmt::assert_eq!(buf, DATA);
+            }
 
-        for _ in 0..8 {
-            s.set_ssi(false);
-            unwrap!(s.write(DATA));
-            let mut buf: [u8; 3] = [0x12, 0x34, 0x56];
-            unwrap!(m.transfer(&mut buf));
-            s.set_ssi(true);
-            defmt::assert_eq!(buf, DATA);
+            for _ in 0..8 {
+                s.set_ssi(false);
+                unwrap!(s.write(DATA));
+                let mut buf: [u8; 3] = [0x12, 0x34, 0x56];
+                unwrap!(m.transfer(&mut buf));
+                s.set_ssi(true);
+                defmt::assert_eq!(buf, DATA);
 
-            let mut slave_buf: [u8; 3] = [0; 3];
-            unwrap!(s.read(&mut slave_buf));
-            defmt::assert_eq!(slave_buf, [0x12, 0x34, 0x56]);
+                let mut slave_buf: [u8; 3] = [0; 3];
+                unwrap!(s.read(&mut slave_buf));
+                defmt::assert_eq!(slave_buf, [0x12, 0x34, 0x56]);
+            }
         }
     }
 
     #[test]
     fn full_duplex_loopback_dma() {
-        let mut ta: TestArgs = unsafe { setup() };
+        for &br in BAUD_RATES.iter() {
+            let mut ta: TestArgs = unsafe { setup() };
 
-        let mut s = Spi::new_spi2_full_duplex_slave_dma(
-            ta.spi2,
-            (ta.pa.a9, ta.pc.c2, ta.pc.c3),
-            (ta.dma.d1c1, ta.dma.d1c2),
-            MODE_0,
-            &mut ta.rcc,
-        );
+            let mut s = Spi::new_spi2_full_duplex_slave_dma(
+                ta.spi2,
+                (ta.pa.a9, ta.pc.c2, ta.pc.c3),
+                (ta.dma.d1c1, ta.dma.d1c2),
+                MODE_0,
+                &mut ta.rcc,
+            );
 
-        let mut m = Spi::new_spi1_full_duplex_dma(
-            ta.spi1,
-            (ta.pa.a5, ta.pa.a6, ta.pa.a7),
-            (ta.dma.d2c1, ta.dma.d2c2),
-            MODE_0,
-            BaudDiv::DIV256,
-            &mut ta.rcc,
-        );
+            let mut m = Spi::new_spi1_full_duplex_dma(
+                ta.spi1,
+                (ta.pa.a5, ta.pa.a6, ta.pa.a7),
+                (ta.dma.d2c1, ta.dma.d2c2),
+                MODE_0,
+                br,
+                &mut ta.rcc,
+            );
 
-        for _ in 0..8 {
-            s.set_ssi(false);
-            unwrap!(m.write(DATA));
-            let mut buf: [u8; 3] = [0; 3];
-            unwrap!(s.read(&mut buf));
-            s.set_ssi(true);
-            defmt::assert_eq!(buf, DATA);
-        }
+            for _ in 0..8 {
+                s.set_ssi(false);
+                unwrap!(m.write(DATA));
+                let mut buf: [u8; 3] = [0; 3];
+                unwrap!(s.read(&mut buf));
+                s.set_ssi(true);
+                defmt::assert_eq!(buf, DATA);
+            }
 
-        for _ in 0..8 {
-            s.set_ssi(false);
-            unwrap!(s.write(DATA));
-            let mut buf: [u8; 3] = [0x12, 0x34, 0x56];
-            unwrap!(m.transfer(&mut buf));
-            s.set_ssi(true);
-            defmt::assert_eq!(buf, DATA);
+            for _ in 0..8 {
+                s.set_ssi(false);
+                unwrap!(s.write(DATA));
+                let mut buf: [u8; 3] = [0x12, 0x34, 0x56];
+                unwrap!(m.transfer(&mut buf));
+                s.set_ssi(true);
+                defmt::assert_eq!(buf, DATA);
 
-            let mut slave_buf: [u8; 3] = [0; 3];
-            unwrap!(s.read(&mut slave_buf));
-            defmt::assert_eq!(slave_buf, [0x12, 0x34, 0x56]);
+                let mut slave_buf: [u8; 3] = [0; 3];
+                unwrap!(s.read(&mut slave_buf));
+                defmt::assert_eq!(slave_buf, [0x12, 0x34, 0x56]);
+            }
         }
     }
 
     #[test]
     fn mosi_simplex_loopback() {
-        let mut ta: TestArgs = unsafe { setup() };
+        for &br in BAUD_RATES.iter() {
+            let mut ta: TestArgs = unsafe { setup() };
 
-        let mut s =
-            Spi::new_spi2_mosi_simplex_slave(ta.spi2, (ta.pa.a9, ta.pc.c3), MODE_0, &mut ta.rcc);
+            let mut s = Spi::new_spi2_mosi_simplex_slave(
+                ta.spi2,
+                (ta.pa.a9, ta.pc.c3),
+                MODE_0,
+                &mut ta.rcc,
+            );
 
-        let mut m = Spi::new_spi1_mosi_simplex(
-            ta.spi1,
-            (ta.pa.a5, ta.pa.a7),
-            MODE_0,
-            BaudDiv::DIV256,
-            &mut ta.rcc,
-        );
+            let mut m =
+                Spi::new_spi1_mosi_simplex(ta.spi1, (ta.pa.a5, ta.pa.a7), MODE_0, br, &mut ta.rcc);
 
-        for _ in 0..8 {
-            s.set_ssi(false);
-            unwrap!(m.write(DATA));
-            let mut buf: [u8; 3] = [0; 3];
-            unwrap!(s.read(&mut buf));
-            s.set_ssi(true);
-            defmt::assert_eq!(buf, DATA);
+            for _ in 0..8 {
+                s.set_ssi(false);
+                unwrap!(m.write(DATA));
+                let mut buf: [u8; 3] = [0; 3];
+                unwrap!(s.read(&mut buf));
+                s.set_ssi(true);
+                defmt::assert_eq!(buf, DATA);
+            }
         }
     }
 
     #[test]
     fn mosi_simplex_loopback_dma() {
-        let mut ta: TestArgs = unsafe { setup() };
+        for &br in BAUD_RATES.iter() {
+            let mut ta: TestArgs = unsafe { setup() };
 
-        let mut s = Spi::new_spi2_mosi_simplex_slave_dma(
-            ta.spi2,
-            (ta.pa.a9, ta.pc.c3),
-            ta.dma.d1c2,
-            MODE_0,
-            &mut ta.rcc,
-        );
+            let mut s = Spi::new_spi2_mosi_simplex_slave_dma(
+                ta.spi2,
+                (ta.pa.a9, ta.pc.c3),
+                ta.dma.d1c2,
+                MODE_0,
+                &mut ta.rcc,
+            );
 
-        let mut m = Spi::new_spi1_mosi_simplex_dma(
-            ta.spi1,
-            (ta.pa.a5, ta.pa.a7),
-            ta.dma.d1c1,
-            MODE_0,
-            BaudDiv::DIV256,
-            &mut ta.rcc,
-        );
+            let mut m = Spi::new_spi1_mosi_simplex_dma(
+                ta.spi1,
+                (ta.pa.a5, ta.pa.a7),
+                ta.dma.d1c1,
+                MODE_0,
+                br,
+                &mut ta.rcc,
+            );
 
-        for _ in 0..8 {
-            s.set_ssi(false);
-            unwrap!(m.write(DATA));
-            let mut buf: [u8; 3] = [0; 3];
-            unwrap!(s.read(&mut buf));
-            s.set_ssi(true);
-            defmt::assert_eq!(buf, DATA);
+            for _ in 0..8 {
+                s.set_ssi(false);
+                unwrap!(m.write(DATA));
+                let mut buf: [u8; 3] = [0; 3];
+                unwrap!(s.read(&mut buf));
+                s.set_ssi(true);
+                defmt::assert_eq!(buf, DATA);
+            }
         }
     }
 
     #[test]
     fn miso_simplex_loopback() {
-        let mut ta: TestArgs = unsafe { setup() };
+        for &br in BAUD_RATES.iter() {
+            let mut ta: TestArgs = unsafe { setup() };
 
-        let mut s =
-            Spi::new_spi2_miso_simplex_slave(ta.spi2, (ta.pa.a9, ta.pc.c2), MODE_0, &mut ta.rcc);
+            let mut s = Spi::new_spi2_miso_simplex_slave(
+                ta.spi2,
+                (ta.pa.a9, ta.pc.c2),
+                MODE_0,
+                &mut ta.rcc,
+            );
 
-        let mut m = Spi::new_spi1_full_duplex(
-            ta.spi1,
-            (ta.pa.a5, ta.pa.a6, ta.pa.a7),
-            MODE_0,
-            BaudDiv::DIV256,
-            &mut ta.rcc,
-        );
+            let mut m = Spi::new_spi1_full_duplex(
+                ta.spi1,
+                (ta.pa.a5, ta.pa.a6, ta.pa.a7),
+                MODE_0,
+                br,
+                &mut ta.rcc,
+            );
 
-        for _ in 0..8 {
-            s.set_ssi(false);
-            unwrap!(s.write(DATA));
-            let mut buf: [u8; 3] = [0; 3];
-            unwrap!(m.transfer(&mut buf));
-            s.set_ssi(true);
-            defmt::assert_eq!(buf, DATA);
+            for _ in 0..8 {
+                s.set_ssi(false);
+                unwrap!(s.write(DATA));
+                let mut buf: [u8; 3] = [0; 3];
+                unwrap!(m.transfer(&mut buf));
+                s.set_ssi(true);
+                defmt::assert_eq!(buf, DATA);
+            }
         }
     }
 
     #[test]
     fn miso_simplex_loopback_dma() {
-        let mut ta: TestArgs = unsafe { setup() };
+        for &br in BAUD_RATES.iter() {
+            let mut ta: TestArgs = unsafe { setup() };
 
-        let mut s = Spi::new_spi2_miso_simplex_slave_dma(
-            ta.spi2,
-            (ta.pa.a9, ta.pc.c2),
-            ta.dma.d1c2,
-            MODE_0,
-            &mut ta.rcc,
-        );
+            let mut s = Spi::new_spi2_miso_simplex_slave_dma(
+                ta.spi2,
+                (ta.pa.a9, ta.pc.c2),
+                ta.dma.d1c2,
+                MODE_0,
+                &mut ta.rcc,
+            );
 
-        let mut m = Spi::new_spi1_full_duplex(
-            ta.spi1,
-            (ta.pa.a5, ta.pa.a6, ta.pa.a7),
-            MODE_0,
-            BaudDiv::DIV256,
-            &mut ta.rcc,
-        );
+            let mut m = Spi::new_spi1_full_duplex(
+                ta.spi1,
+                (ta.pa.a5, ta.pa.a6, ta.pa.a7),
+                MODE_0,
+                br,
+                &mut ta.rcc,
+            );
 
-        for _ in 0..8 {
-            s.set_ssi(false);
-            unwrap!(s.write(DATA));
-            let mut buf: [u8; 3] = [0; 3];
-            unwrap!(m.transfer(&mut buf));
-            s.set_ssi(true);
-            defmt::assert_eq!(buf, DATA);
+            for _ in 0..8 {
+                s.set_ssi(false);
+                unwrap!(s.write(DATA));
+                let mut buf: [u8; 3] = [0; 3];
+                unwrap!(m.transfer(&mut buf));
+                s.set_ssi(true);
+                defmt::assert_eq!(buf, DATA);
+            }
         }
     }
 }

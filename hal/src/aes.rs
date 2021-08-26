@@ -97,15 +97,12 @@ impl Aes {
     /// use stm32wl_hal::{aes::Aes, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// let mut aes = Aes::new(dp.AES, &mut dp.RCC);
+    /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
     /// ```
+    #[inline]
     pub fn new(aes: pac::AES, rcc: &mut pac::RCC) -> Aes {
-        rcc.ahb3enr.modify(|_, w| w.aesen().set_bit());
-        rcc.ahb3enr.read(); // delay after an RCC peripheral clock enabling
-
-        rcc.ahb3rstr.modify(|_, w| w.aesrst().set_bit());
-        rcc.ahb3rstr.modify(|_, w| w.aesrst().clear_bit());
+        Self::enable_clock(rcc);
+        unsafe { Self::pulse_reset(rcc) };
 
         Aes { aes }
     }
@@ -117,16 +114,73 @@ impl Aes {
     /// ```no_run
     /// use stm32wl_hal::{aes::Aes, pac};
     ///
-    /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rcc = dp.RCC;
-    /// let aes = dp.AES;
-    ///
-    /// let mut aes_driver = Aes::new(aes, &mut rcc);
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
     /// // ... use AES
-    /// let aes = aes_driver.free();
+    /// let aes: pac::AES = aes.free();
     /// ```
+    #[inline]
     pub fn free(self) -> pac::AES {
         self.aes
+    }
+
+    /// Reset the AES peripheral.
+    ///
+    /// [`new`](Self::new) will pulse reset for you.
+    ///
+    /// # Safety
+    ///
+    /// 1. Ensure nothing is using the AES peripheral before pulsing reset.
+    ///
+    /// # Example
+    ///
+    /// See [`steal`](Self::steal).
+    #[inline]
+    pub unsafe fn pulse_reset(rcc: &mut pac::RCC) {
+        rcc.ahb3rstr.modify(|_, w| w.aesrst().set_bit());
+        rcc.ahb3rstr.modify(|_, w| w.aesrst().clear_bit());
+    }
+
+    /// Disable the AES peripheral clock.
+    ///
+    /// # Safety
+    ///
+    /// 1. Ensure nothing is using the AES peripheral before disabling the clock.
+    /// 2. You are responsible for re-enabling the clock before using the AES peripheral.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{aes::Aes, pac};
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
+    /// // ... use AES
+    ///
+    /// // safety: AES is not in use
+    /// unsafe { Aes::disable_clock(&mut dp.RCC) };
+    ///
+    /// // have a low power nap or something
+    ///
+    /// Aes::enable_clock(&mut dp.RCC);
+    /// // ... use AES
+    /// ```
+    #[inline]
+    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
+        rcc.ahb3enr.modify(|_, w| w.aesen().disabled());
+    }
+
+    /// Enable the AES peripheral clock.
+    ///
+    /// [`new`](Self::new) will enable clocks for you.
+    ///
+    /// # Example
+    ///
+    /// See [`steal`](Self::steal).
+    #[inline]
+    pub fn enable_clock(rcc: &mut pac::RCC) {
+        rcc.ahb3enr.modify(|_, w| w.aesen().enabled());
+        rcc.ahb3enr.read(); // delay after an RCC peripheral clock enabling
     }
 
     /// Steal the AES peripheral from whatever is currently using it.
@@ -135,24 +189,33 @@ impl Aes {
     ///
     /// # Safety
     ///
-    /// This will create a new AES peripheral, bypassing the singleton checks
-    /// that normally occur.
-    /// You are responsible for ensuring that the driver has exclusive access to
-    /// the AES peripheral.
-    /// You are also responsible for ensuring the AES peripheral has been setup
-    /// correctly.
+    /// 1. Ensure that the code stealing the AES peripheral has exclusive access.
+    ///    Singleton checks are bypassed with this method.
+    /// 2. You are responsible for resetting the AES peripheral and enabling
+    ///    the AES peripheral clock before use.
     ///
     /// # Example
     ///
-    /// ```
-    /// use stm32wl_hal::aes::Aes;
+    /// ```no_run
+    /// use stm32wl_hal::{aes::Aes, pac};
     ///
-    /// // ... setup happens here
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// // AES cannot be used via registers now
+    /// let _: pac::AES = dp.AES;
     ///
-    /// let aes = unsafe { Aes::steal() };
+    /// // safety: nothing is using the peripheral
+    /// unsafe { Aes::pulse_reset(&mut dp.RCC) };
+    ///
+    /// Aes::enable_clock(&mut dp.RCC);
+    ///
+    /// // safety
+    /// // 1. We have exclusive access
+    /// // 2. peripheral has been setup
+    /// let aes: Aes = unsafe { Aes::steal() };
     /// ```
     ///
     /// [`new`]: Aes::new
+    #[inline]
     pub unsafe fn steal() -> Aes {
         let dp: pac::Peripherals = pac::Peripherals::steal();
         Aes { aes: dp.AES }
@@ -172,6 +235,7 @@ impl Aes {
     /// ```
     #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
     #[cfg_attr(docsrs, doc(cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))))]
+    #[inline]
     pub unsafe fn unmask_irq() {
         pac::NVIC::unmask(pac::Interrupt::AES)
     }
@@ -225,7 +289,10 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut aes = unsafe { stm32wl_hal::aes::Aes::steal() };
+    /// use stm32wl_hal::{aes::Aes, pac};
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
     ///
     /// // this is a bad key, I am just using values from the NIST testsuite
     /// const KEY: [u32; 4] = [0; 4];
@@ -282,7 +349,10 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut aes = unsafe { stm32wl_hal::aes::Aes::steal() };
+    /// use stm32wl_hal::{aes::Aes, pac};
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
     ///
     /// // this is a bad key, I am just using values from the NIST testsuite
     /// const KEY: [u32; 4] = [0; 4];
@@ -333,7 +403,10 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut aes = unsafe { stm32wl_hal::aes::Aes::steal() };
+    /// use stm32wl_hal::{aes::Aes, pac};
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
     ///
     /// // this is a bad key, I am just using values from the NIST testsuite
     /// const KEY: [u32; 4] = [0; 4];
@@ -390,7 +463,10 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// # let mut aes = unsafe { stm32wl_hal::aes::Aes::steal() };
+    /// use stm32wl_hal::{aes::Aes, pac};
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
     ///
     /// // this is a bad key, I am just using values from the NIST testsuite
     /// const KEY: [u32; 4] = [0; 4];

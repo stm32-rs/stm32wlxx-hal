@@ -47,7 +47,7 @@ unsafe fn setup() -> TestArgs {
     }
 }
 
-const BAUD_RATES: [BaudRate; 8] = [
+const BAUD_RATES: [BaudRate; 7] = [
     BaudRate::Div256,
     BaudRate::Div128,
     BaudRate::Div64,
@@ -55,7 +55,7 @@ const BAUD_RATES: [BaudRate; 8] = [
     BaudRate::Div16,
     BaudRate::Div8,
     BaudRate::Div4,
-    BaudRate::Div2,
+    // BaudRate::Div2, // has signal integrity issues
 ];
 
 const DATA: &[u8] = b"hey";
@@ -76,8 +76,7 @@ mod tests {
         defmt::assert_eq!(rcc::sysclk_hz(&dp.RCC), FREQ);
 
         defmt::warn!(
-            "SPI tests require (SCK, MISO, MOSI) pins SPI1 (A5, A6, A7) connected to \
-            SPI2 (A9, C2, C3) with a resistance (1kΩ will work)"
+            "SPI tests require (SCK, MISO, MOSI) pins SPI1 (A5, A6, A7) connected to SPI2 (A9, C2, C3)"
         );
     }
 

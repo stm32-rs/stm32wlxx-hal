@@ -251,7 +251,10 @@ pub(crate) mod sealed {
                 if rx_dma_flags & dma::flags::XFER_ERR != 0 {
                     break Err(Error::RxDma);
                 }
-                if status.bsy().is_not_busy() && rx_dma_flags & dma::flags::XFER_CPL != 0 {
+                if status.bsy().is_not_busy()
+                    && status.frlvl().is_empty()
+                    && rx_dma_flags & dma::flags::XFER_CPL != 0
+                {
                     break Ok(());
                 }
             };
@@ -291,7 +294,10 @@ pub(crate) mod sealed {
                 if tx_dma_flags & dma::flags::XFER_ERR != 0 {
                     break Err(Error::TxDma);
                 }
-                if status.bsy().is_not_busy() && tx_dma_flags & dma::flags::XFER_CPL != 0 {
+                if status.bsy().is_not_busy()
+                    && status.ftlvl().is_empty()
+                    && tx_dma_flags & dma::flags::XFER_CPL != 0
+                {
                     break Ok(());
                 }
             };
@@ -353,6 +359,8 @@ pub(crate) mod sealed {
                     break Err(Error::RxDma);
                 }
                 if status.bsy().is_not_busy()
+                    && status.ftlvl().is_empty()
+                    && status.frlvl().is_empty()
                     && tx_dma_flags & dma::flags::XFER_CPL != 0
                     && rx_dma_flags & dma::flags::XFER_CPL != 0
                 {
@@ -411,6 +419,8 @@ pub(crate) mod sealed {
                     break Err(Error::RxDma);
                 }
                 if status.bsy().is_not_busy()
+                    && status.ftlvl().is_empty()
+                    && status.frlvl().is_empty()
                     && tx_dma_flags & dma::flags::XFER_CPL != 0
                     && rx_dma_flags & dma::flags::XFER_CPL != 0
                 {
@@ -1648,6 +1658,14 @@ impl<SPI, SCK, MISO, MOSI, MODE> Spi<SPI, SCK, MISO, MOSI, MODE> {
     /// ```
     pub fn free(self) -> (SPI, SCK, MISO, MOSI) {
         (self.spi, self.sck, self.miso, self.mosi)
+    }
+}
+
+impl<SPI: SpiRegs, SCK, MISO, MOSI, MODE> Spi<SPI, SCK, MISO, MOSI, MODE> {
+    /// Read the SPI status register.
+    #[inline]
+    pub fn status(&self) -> pac::spi1::sr::R {
+        self.spi.sr.read()
     }
 }
 

@@ -35,7 +35,7 @@ mod value_error;
 use crate::{
     dma::DmaCh,
     pac,
-    spi::{BaudDiv, SgMiso, SgMosi, Spi3},
+    spi::{BaudRate, SgMiso, SgMosi, Spi3},
 };
 
 pub use cad_params::{CadParams, ExitMode, NbCadSymbol};
@@ -108,15 +108,15 @@ impl Drop for Nss {
     }
 }
 
-fn baud_div(rcc: &pac::RCC) -> BaudDiv {
+fn baud_rate(rcc: &pac::RCC) -> BaudRate {
     // see RM0453 rev 1 section 7.2.13 page 291
     // The sub-GHz radio SPI clock is derived from the PCLK3 clock.
     // The SUBGHZSPI_SCK frequency is obtained by PCLK3 divided by two.
     // The SUBGHZSPI_SCK clock maximum speed must not exceed 16 MHz.
     if crate::rcc::hclk3_hz(rcc) > 32_000_000 {
-        BaudDiv::DIV4
+        BaudRate::Div4
     } else {
-        BaudDiv::DIV2
+        BaudRate::Div2
     }
 }
 
@@ -317,7 +317,7 @@ impl SubGhz<SgMiso, SgMosi> {
     pub fn new(spi: pac::SPI3, rcc: &mut pac::RCC) -> SubGhz<SgMiso, SgMosi> {
         Self::pulse_radio_reset(rcc);
 
-        let spi: Spi3<SgMiso, SgMosi> = Spi3::new(spi, baud_div(rcc), rcc);
+        let spi: Spi3<SgMiso, SgMosi> = Spi3::new(spi, baud_rate(rcc), rcc);
 
         unsafe { wakeup() };
 
@@ -377,7 +377,8 @@ impl<MISO: DmaCh, MOSI: DmaCh> SubGhz<MISO, MOSI> {
     ) -> Self {
         Self::pulse_radio_reset(rcc);
 
-        let spi: Spi3<MISO, MOSI> = Spi3::new_with_dma(spi, miso_dma, mosi_dma, baud_div(rcc), rcc);
+        let spi: Spi3<MISO, MOSI> =
+            Spi3::new_with_dma(spi, miso_dma, mosi_dma, baud_rate(rcc), rcc);
 
         unsafe { wakeup() };
 

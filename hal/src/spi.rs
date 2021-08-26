@@ -744,6 +744,8 @@ macro_rules! impl_new_full_duplex {
                             .cpha().bit(cpha_from_phase(mode.phase))
                     });
 
+                    spi.cr2.write(|w| w.frxth().quarter());
+
                     Self {
                         spi,
                         sck: pins.0,
@@ -813,6 +815,8 @@ macro_rules! impl_new_full_duplex_slave {
                             .cpol().bit(cpol_from_polarity(mode.polarity))
                             .cpha().bit(cpha_from_phase(mode.phase))
                     });
+
+                    spi.cr2.write(|w| w.frxth().quarter());
 
                     Self {
                         spi,
@@ -1070,6 +1074,8 @@ macro_rules! impl_new_mosi_simplex {
                             .cpha().bit(cpha_from_phase(mode.phase))
                     );
 
+                    spi.cr2.write(|w| w.frxth().quarter());
+
                     Self {
                         spi,
                         sck: pins.0,
@@ -1138,6 +1144,8 @@ macro_rules! impl_new_mosi_simplex_slave {
                             .cpol().bit(cpol_from_polarity(mode.polarity))
                             .cpha().bit(cpha_from_phase(mode.phase))
                     );
+
+                    spi.cr2.write(|w| w.frxth().quarter());
 
                     Self {
                         spi,
@@ -1223,7 +1231,7 @@ macro_rules! impl_new_mosi_simplex_dma {
                     dma.set_periph_addr([<SPI $n>]::DR as u32);
                     dma.set_mux_cr_reqid([<SPI $n>]::DMA_TX_ID);
 
-                    spi.cr2.write(|w| w.txdmaen().enabled());
+                    spi.cr2.write(|w| w.txdmaen().enabled().frxth().quarter());
 
                     Self {
                         spi,
@@ -1376,6 +1384,8 @@ macro_rules! impl_new_miso_simplex {
                             .cpha().bit(cpha_from_phase(mode.phase))
                     });
 
+                    spi.cr2.write(|w| w.frxth().quarter());
+
                     Self {
                         spi,
                         sck: pins.0,
@@ -1456,7 +1466,7 @@ macro_rules! impl_new_miso_simplex_dma {
                     dma.set_periph_addr([<SPI $n>]::DR as u32);
                     dma.set_mux_cr_reqid([<SPI $n>]::DMA_TX_ID);
 
-                    spi.cr2.write(|w| w.txdmaen().enabled());
+                    spi.cr2.write(|w| w.txdmaen().enabled().frxth().quarter());
 
                     Self {
                         spi,
@@ -1491,6 +1501,7 @@ impl Spi3<SgMiso, SgMosi> {
                 .cpol().idle_low()
                 .cpha().first_edge()
         });
+        spi.cr2.write(|w| w.frxth().quarter());
 
         Self {
             spi,

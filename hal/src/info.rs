@@ -217,9 +217,9 @@ impl Uid64 {
     /// ```no_run
     /// use stm32wl_hal::info::uid64;
     ///
-    /// let dev_num: u32 = uid64().dev_num();
+    /// let devnum: u32 = uid64().devnum();
     /// ```
-    pub const fn dev_num(&self) -> u32 {
+    pub const fn devnum(&self) -> u32 {
         (self.uid >> 32) as u32
     }
 
@@ -291,10 +291,23 @@ pub const UID64: *const u8 = 0x1FFF_7580 as *const u8;
 /// let uid64: info::Uid64 = info::uid64();
 /// assert_eq!(uid64.dev_id(), 0x15);
 /// assert_eq!(uid64.company_id(), 0x0080E1);
-/// // uid64.dev_num() is unique
+/// // uid64.devnum() is unique
 /// ```
 pub fn uid64() -> Uid64 {
     let hi: u32 = unsafe { read(0x1FFF_7580 as *const u32) };
     let lo: u32 = unsafe { read(0x1FFF_7584 as *const u32) };
     (((hi as u64) << 32) | (lo as u64)).into()
+}
+
+/// Get the 32-bit device number from the IEEE 64-bit unique device ID (UID64)
+///
+/// # Example
+///
+/// ```no_run
+/// use stm32wl_hal::info;
+///
+/// let devnum: u32 = info::uid64_devnum();
+/// ```
+pub fn uid64_devnum() -> u32 {
+    unsafe { read(UID64 as *const u32) }
 }

@@ -65,8 +65,6 @@ pub use embedded_hal::{
     spi::{FullDuplex, Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3},
 };
 
-pub use pac::spi1::cr1::BR_A as BaudDiv;
-
 typestate!(NoSck, "no SCK on a generic SPI structure");
 typestate!(NoMosi, "no MOSI on a generic SPI structure");
 typestate!(NoMiso, "no MISO on a generic SPI structure");
@@ -81,6 +79,62 @@ typestate!(Slave, "a SPI bus slave");
 impl SpiSck for SgSck {}
 impl SpiMosi for SgMosi {}
 impl SpiMiso for SgMiso {}
+
+use pac::spi1::cr1::BR_A;
+
+/// Baud rate divisors.
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[repr(u8)]
+pub enum BaudRate {
+    /// Source clock / 256
+    Div256 = BR_A::DIV256 as u8,
+    /// Source clock / 128
+    Div128 = BR_A::DIV128 as u8,
+    /// Source clock / 64
+    Div64 = BR_A::DIV64 as u8,
+    /// Source clock / 32
+    Div32 = BR_A::DIV32 as u8,
+    /// Source clock / 16
+    Div16 = BR_A::DIV16 as u8,
+    /// Source clock / 8
+    Div8 = BR_A::DIV8 as u8,
+    /// Source clock / 4
+    Div4 = BR_A::DIV4 as u8,
+    /// Source clock / 2
+    Div2 = BR_A::DIV2 as u8,
+}
+
+impl BaudRate {
+    /// Get baud rate divisor.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal::spi::BaudRate;
+    ///
+    /// assert_eq!(BaudRate::Div256.div(), 256);
+    /// assert_eq!(BaudRate::Div128.div(), 128);
+    /// assert_eq!(BaudRate::Div64.div(), 64);
+    /// assert_eq!(BaudRate::Div32.div(), 32);
+    /// assert_eq!(BaudRate::Div16.div(), 16);
+    /// assert_eq!(BaudRate::Div8.div(), 8);
+    /// assert_eq!(BaudRate::Div4.div(), 4);
+    /// assert_eq!(BaudRate::Div2.div(), 2);
+    /// ```
+    pub const fn div(&self) -> u16 {
+        match self {
+            BaudRate::Div256 => 256,
+            BaudRate::Div128 => 128,
+            BaudRate::Div64 => 64,
+            BaudRate::Div32 => 32,
+            BaudRate::Div16 => 16,
+            BaudRate::Div8 => 8,
+            BaudRate::Div4 => 4,
+            BaudRate::Div2 => 2,
+        }
+    }
+}
 
 /// SPI errors
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -649,7 +703,7 @@ macro_rules! impl_new_full_duplex {
                 /// use stm32wl_hal::{
                 ///     gpio::PortA,
                 ///     pac,
-                ///     spi::{BaudDiv::DIV2, Spi, MODE_0},
+                ///     spi::{BaudRate::Div2, Spi, MODE_0},
                 /// };
                 ///
                 /// let mut dp = pac::Peripherals::take().unwrap();
@@ -659,7 +713,7 @@ macro_rules! impl_new_full_duplex {
                 ///     dp.SPI1,
                 ///     (pa.a5, pa.a6, pa.a7),
                 ///     MODE_0,
-                ///     DIV2,
+                ///     Div2,
                 ///     &mut dp.RCC
                 /// );
                 /// ```
@@ -667,7 +721,7 @@ macro_rules! impl_new_full_duplex {
                     spi: [<SPI $n>],
                     mut pins: (SCK, MISO, MOSI),
                     mode: Mode,
-                    div: BaudDiv,
+                    div: BaudRate,
                     rcc: &mut pac::RCC,
                 ) -> Self {
                     Self::enable_clock(rcc);
@@ -684,7 +738,7 @@ macro_rules! impl_new_full_duplex {
                             .ssi().set_bit()
                             .ssm().set_bit()
                             .spe().set_bit()
-                            .br().variant(div)
+                            .br().bits(div as u8)
                             .mstr().set_bit()
                             .cpol().bit(cpol_from_polarity(mode.polarity))
                             .cpha().bit(cpha_from_phase(mode.phase))
@@ -796,7 +850,7 @@ macro_rules! impl_new_full_duplex_dma {
                 ///     dma::AllDma,
                 ///     gpio::PortA,
                 ///     pac,
-                ///     spi::{BaudDiv::DIV2, Spi, MODE_0},
+                ///     spi::{BaudRate::Div2, Spi, MODE_0},
                 /// };
                 ///
                 /// let mut dp = pac::Peripherals::take().unwrap();
@@ -808,7 +862,7 @@ macro_rules! impl_new_full_duplex_dma {
                 ///     (pa.a5, pa.a6, pa.a7),
                 ///     (dma.d1c1, dma.d1c2),
                 ///     MODE_0,
-                ///     DIV2,
+                ///     Div2,
                 ///     &mut dp.RCC,
                 /// );
                 /// ```
@@ -817,7 +871,7 @@ macro_rules! impl_new_full_duplex_dma {
                     mut pins: (SCK, MISO, MOSI),
                     mut dmas: (MISODMA, MOSIDMA),
                     mode: Mode,
-                    div: BaudDiv,
+                    div: BaudRate,
                     rcc: &mut pac::RCC,
                 ) -> Self {
                     Self::enable_clock(rcc);
@@ -834,7 +888,7 @@ macro_rules! impl_new_full_duplex_dma {
                             .ssi().set_bit()
                             .ssm().set_bit()
                             .spe().set_bit()
-                            .br().variant(div)
+                            .br().bits(div as u8)
                             .mstr().set_bit()
                             .cpol().bit(cpol_from_polarity(mode.polarity))
                             .cpha().bit(cpha_from_phase(mode.phase))
@@ -974,7 +1028,7 @@ macro_rules! impl_new_mosi_simplex {
                 /// use stm32wl_hal::{
                 ///     gpio::PortA,
                 ///     pac,
-                ///     spi::{BaudDiv::DIV2, Spi, MODE_0},
+                ///     spi::{BaudRate::Div2, Spi, MODE_0},
                 /// };
                 ///
                 /// let mut dp = pac::Peripherals::take().unwrap();
@@ -984,7 +1038,7 @@ macro_rules! impl_new_mosi_simplex {
                 ///     dp.SPI1,
                 ///     (pa.a5, pa.a7),
                 ///     MODE_0,
-                ///     DIV2,
+                ///     Div2,
                 ///     &mut dp.RCC,
                 /// );
                 /// ```
@@ -992,7 +1046,7 @@ macro_rules! impl_new_mosi_simplex {
                     spi: [<SPI $n>],
                     mut pins: (SCK, MOSI),
                     mode: Mode,
-                    div: BaudDiv,
+                    div: BaudRate,
                     rcc: &mut pac::RCC,
                 ) -> Self {
                     Self::enable_clock(rcc);
@@ -1010,7 +1064,7 @@ macro_rules! impl_new_mosi_simplex {
                             .ssi().set_bit()
                             .ssm().set_bit()
                             .spe().set_bit()
-                            .br().variant(div)
+                            .br().bits(div as u8)
                             .mstr().set_bit()
                             .cpol().bit(cpol_from_polarity(mode.polarity))
                             .cpha().bit(cpha_from_phase(mode.phase))
@@ -1119,7 +1173,7 @@ macro_rules! impl_new_mosi_simplex_dma {
                 ///     dma::AllDma,
                 ///     gpio::PortA,
                 ///     pac,
-                ///     spi::{BaudDiv::DIV2, Spi, MODE_0},
+                ///     spi::{BaudRate::Div2, Spi, MODE_0},
                 /// };
                 ///
                 /// let mut dp = pac::Peripherals::take().unwrap();
@@ -1131,7 +1185,7 @@ macro_rules! impl_new_mosi_simplex_dma {
                 ///     (pa.a5, pa.a7),
                 ///     dma.d1c1,
                 ///     MODE_0,
-                ///     DIV2,
+                ///     Div2,
                 ///     &mut dp.RCC,
                 /// );
                 /// ```
@@ -1140,7 +1194,7 @@ macro_rules! impl_new_mosi_simplex_dma {
                     mut pins: (SCK, MOSI),
                     mut dma: MOSIDMA,
                     mode: Mode,
-                    div: BaudDiv,
+                    div: BaudRate,
                     rcc: &mut pac::RCC,
                 ) -> Self {
                     Self::enable_clock(rcc);
@@ -1158,7 +1212,7 @@ macro_rules! impl_new_mosi_simplex_dma {
                             .ssi().set_bit()
                             .ssm().set_bit()
                             .spe().set_bit()
-                            .br().variant(div)
+                            .br().bits(div as u8)
                             .mstr().set_bit()
                             .cpol().bit(cpol_from_polarity(mode.polarity))
                             .cpha().bit(cpha_from_phase(mode.phase))
@@ -1421,7 +1475,7 @@ impl_new_miso_simplex_dma!(1);
 impl_new_miso_simplex_dma!(2);
 
 impl Spi3<SgMiso, SgMosi> {
-    pub(crate) fn new(spi: pac::SPI3, div: BaudDiv, rcc: &mut pac::RCC) -> Self {
+    pub(crate) fn new(spi: pac::SPI3, div: BaudRate, rcc: &mut pac::RCC) -> Self {
         Self::enable_clock(rcc);
         unsafe { Self::pulse_reset(rcc) };
 
@@ -1431,7 +1485,7 @@ impl Spi3<SgMiso, SgMosi> {
                 .ssi().set_bit()
                 .ssm().set_bit()
                 .spe().set_bit()
-                .br().variant(div)
+                .br().bits(div as u8)
                 .mstr().set_bit()
                 // hard coded because we know the SPI mode of the radio
                 .cpol().idle_low()
@@ -1465,7 +1519,7 @@ impl<MISODMA: DmaCh, MOSIDMA: DmaCh> Spi3<MISODMA, MOSIDMA> {
         spi: pac::SPI3,
         mut miso_dma: MISODMA,
         mut mosi_dma: MOSIDMA,
-        div: BaudDiv,
+        div: BaudRate,
         rcc: &mut pac::RCC,
     ) -> Self {
         Self::enable_clock(rcc);
@@ -1477,7 +1531,7 @@ impl<MISODMA: DmaCh, MOSIDMA: DmaCh> Spi3<MISODMA, MOSIDMA> {
                 .ssi().set_bit()
                 .ssm().set_bit()
                 .spe().set_bit()
-                .br().variant(div)
+                .br().bits(div as u8)
                 .mstr().set_bit()
                 // hard coded because we know the SPI mode of the radio
                 .cpol().idle_low()
@@ -1563,7 +1617,7 @@ impl<SPI, SCK, MISO, MOSI, MODE> Spi<SPI, SCK, MISO, MOSI, MODE> {
     ///     dma::AllDma,
     ///     gpio::PortA,
     ///     pac,
-    ///     spi::{BaudDiv::DIV2, Spi, MODE_0},
+    ///     spi::{BaudRate::Div2, Spi, MODE_0},
     /// };
     ///
     /// let mut dp = pac::Peripherals::take().unwrap();
@@ -1575,7 +1629,7 @@ impl<SPI, SCK, MISO, MOSI, MODE> Spi<SPI, SCK, MISO, MOSI, MODE> {
     ///     (pa.a5, pa.a6, pa.a7),
     ///     (dma.d1c1, dma.d1c2),
     ///     MODE_0,
-    ///     DIV2,
+    ///     Div2,
     ///     &mut dp.RCC,
     /// );
     /// // .. use spi

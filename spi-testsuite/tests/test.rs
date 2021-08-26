@@ -11,8 +11,8 @@ use stm32wl_hal::{
     embedded_hal::blocking::spi::{Transfer, Write},
     gpio::{PortA, PortC},
     pac::{self, DWT},
-    rcc::{self},
-    spi::{BaudDiv, Read, Spi, MODE_0},
+    rcc,
+    spi::{BaudRate, Read, Spi, MODE_0},
     util::reset_cycle_count,
 };
 
@@ -47,15 +47,15 @@ unsafe fn setup() -> TestArgs {
     }
 }
 
-const BAUD_RATES: [BaudDiv; 8] = [
-    BaudDiv::DIV256,
-    BaudDiv::DIV128,
-    BaudDiv::DIV64,
-    BaudDiv::DIV32,
-    BaudDiv::DIV16,
-    BaudDiv::DIV8,
-    BaudDiv::DIV4,
-    BaudDiv::DIV2,
+const BAUD_RATES: [BaudRate; 8] = [
+    BaudRate::Div256,
+    BaudRate::Div128,
+    BaudRate::Div64,
+    BaudRate::Div32,
+    BaudRate::Div16,
+    BaudRate::Div8,
+    BaudRate::Div4,
+    BaudRate::Div2,
 ];
 
 const DATA: &[u8] = b"hey";
@@ -84,6 +84,7 @@ mod tests {
     #[test]
     fn full_duplex_loopback() {
         for &br in BAUD_RATES.iter() {
+            defmt::debug!("div {}", br.div());
             let mut ta: TestArgs = unsafe { setup() };
 
             let mut s = Spi::new_spi2_full_duplex_slave(
@@ -128,6 +129,7 @@ mod tests {
     #[test]
     fn full_duplex_loopback_dma() {
         for &br in BAUD_RATES.iter() {
+            defmt::debug!("div {}", br.div());
             let mut ta: TestArgs = unsafe { setup() };
 
             let mut s = Spi::new_spi2_full_duplex_slave_dma(
@@ -174,6 +176,7 @@ mod tests {
     #[test]
     fn mosi_simplex_loopback() {
         for &br in BAUD_RATES.iter() {
+            defmt::debug!("div {}", br.div());
             let mut ta: TestArgs = unsafe { setup() };
 
             let mut s = Spi::new_spi2_mosi_simplex_slave(
@@ -200,6 +203,7 @@ mod tests {
     #[test]
     fn mosi_simplex_loopback_dma() {
         for &br in BAUD_RATES.iter() {
+            defmt::debug!("div {}", br.div());
             let mut ta: TestArgs = unsafe { setup() };
 
             let mut s = Spi::new_spi2_mosi_simplex_slave_dma(
@@ -233,6 +237,7 @@ mod tests {
     #[test]
     fn miso_simplex_loopback() {
         for &br in BAUD_RATES.iter() {
+            defmt::debug!("div {}", br.div());
             let mut ta: TestArgs = unsafe { setup() };
 
             let mut s = Spi::new_spi2_miso_simplex_slave(
@@ -264,6 +269,7 @@ mod tests {
     #[test]
     fn miso_simplex_loopback_dma() {
         for &br in BAUD_RATES.iter() {
+            defmt::debug!("div {}", br.div());
             let mut ta: TestArgs = unsafe { setup() };
 
             let mut s = Spi::new_spi2_miso_simplex_slave_dma(

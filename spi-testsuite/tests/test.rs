@@ -5,6 +5,7 @@
 
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
+use itertools::iproduct;
 use panic_probe as _;
 use stm32wl_hal::{
     dma::AllDma,
@@ -12,7 +13,7 @@ use stm32wl_hal::{
     gpio::{PortA, PortC},
     pac::{self, DWT},
     rcc,
-    spi::{BaudRate, Read, Spi, MODE_0},
+    spi::{BaudRate, Mode, Read, Spi, MODE_0, MODE_1, MODE_2, MODE_3},
     util::reset_cycle_count,
 };
 
@@ -58,6 +59,17 @@ const BAUD_RATES: [BaudRate; 7] = [
     // BaudRate::Div2, // has signal integrity issues
 ];
 
+const SPI_MODES: [Mode; 4] = [MODE_0, MODE_1, MODE_2, MODE_3];
+
+fn mode_num(m: Mode) -> u8 {
+    match m {
+        MODE_0 => 0,
+        MODE_1 => 1,
+        MODE_2 => 2,
+        MODE_3 => 3,
+    }
+}
+
 const DATA: &[u8] = b"hey";
 
 #[defmt_test::tests]
@@ -82,21 +94,21 @@ mod tests {
 
     #[test]
     fn full_duplex_loopback() {
-        for &br in BAUD_RATES.iter() {
-            defmt::debug!("div {}", br.div());
+        for (&br, &mode) in iproduct!(BAUD_RATES.iter(), SPI_MODES.iter()) {
+            defmt::debug!("÷{} MODE_{}", br.div(), mode_num(mode));
             let mut ta: TestArgs = unsafe { setup() };
 
             let mut s = Spi::new_spi2_full_duplex_slave(
                 ta.spi2,
                 (ta.pa.a9, ta.pc.c2, ta.pc.c3),
-                MODE_0,
+                mode,
                 &mut ta.rcc,
             );
 
             let mut m = Spi::new_spi1_full_duplex(
                 ta.spi1,
                 (ta.pa.a5, ta.pa.a6, ta.pa.a7),
-                MODE_0,
+                mode,
                 br,
                 &mut ta.rcc,
             );
@@ -127,15 +139,15 @@ mod tests {
 
     #[test]
     fn full_duplex_loopback_dma() {
-        for &br in BAUD_RATES.iter() {
-            defmt::debug!("div {}", br.div());
+        for (&br, &mode) in iproduct!(BAUD_RATES.iter(), SPI_MODES.iter()) {
+            defmt::debug!("÷{} MODE_{}", br.div(), mode_num(mode));
             let mut ta: TestArgs = unsafe { setup() };
 
             let mut s = Spi::new_spi2_full_duplex_slave_dma(
                 ta.spi2,
                 (ta.pa.a9, ta.pc.c2, ta.pc.c3),
                 (ta.dma.d1c1, ta.dma.d1c2),
-                MODE_0,
+                mode,
                 &mut ta.rcc,
             );
 
@@ -143,7 +155,7 @@ mod tests {
                 ta.spi1,
                 (ta.pa.a5, ta.pa.a6, ta.pa.a7),
                 (ta.dma.d2c1, ta.dma.d2c2),
-                MODE_0,
+                mode,
                 br,
                 &mut ta.rcc,
             );
@@ -174,19 +186,15 @@ mod tests {
 
     #[test]
     fn mosi_simplex_loopback() {
-        for &br in BAUD_RATES.iter() {
-            defmt::debug!("div {}", br.div());
+        for (&br, &mode) in iproduct!(BAUD_RATES.iter(), SPI_MODES.iter()) {
+            defmt::debug!("÷{} MODE_{}", br.div(), mode_num(mode));
             let mut ta: TestArgs = unsafe { setup() };
 
-            let mut s = Spi::new_spi2_mosi_simplex_slave(
-                ta.spi2,
-                (ta.pa.a9, ta.pc.c3),
-                MODE_0,
-                &mut ta.rcc,
-            );
+            let mut s =
+                Spi::new_spi2_mosi_simplex_slave(ta.spi2, (ta.pa.a9, ta.pc.c3), mode, &mut ta.rcc);
 
             let mut m =
-                Spi::new_spi1_mosi_simplex(ta.spi1, (ta.pa.a5, ta.pa.a7), MODE_0, br, &mut ta.rcc);
+                Spi::new_spi1_mosi_simplex(ta.spi1, (ta.pa.a5, ta.pa.a7), mode, br, &mut ta.rcc);
 
             for _ in 0..8 {
                 s.set_ssi(false);
@@ -201,15 +209,15 @@ mod tests {
 
     #[test]
     fn mosi_simplex_loopback_dma() {
-        for &br in BAUD_RATES.iter() {
-            defmt::debug!("div {}", br.div());
+        for (&br, &mode) in iproduct!(BAUD_RATES.iter(), SPI_MODES.iter()) {
+            defmt::debug!("÷{} MODE_{}", br.div(), mode_num(mode));
             let mut ta: TestArgs = unsafe { setup() };
 
             let mut s = Spi::new_spi2_mosi_simplex_slave_dma(
                 ta.spi2,
                 (ta.pa.a9, ta.pc.c3),
                 ta.dma.d1c2,
-                MODE_0,
+                mode,
                 &mut ta.rcc,
             );
 
@@ -217,7 +225,7 @@ mod tests {
                 ta.spi1,
                 (ta.pa.a5, ta.pa.a7),
                 ta.dma.d1c1,
-                MODE_0,
+                mode,
                 br,
                 &mut ta.rcc,
             );
@@ -235,21 +243,17 @@ mod tests {
 
     #[test]
     fn miso_simplex_loopback() {
-        for &br in BAUD_RATES.iter() {
-            defmt::debug!("div {}", br.div());
+        for (&br, &mode) in iproduct!(BAUD_RATES.iter(), SPI_MODES.iter()) {
+            defmt::debug!("÷{} MODE_{}", br.div(), mode_num(mode));
             let mut ta: TestArgs = unsafe { setup() };
 
-            let mut s = Spi::new_spi2_miso_simplex_slave(
-                ta.spi2,
-                (ta.pa.a9, ta.pc.c2),
-                MODE_0,
-                &mut ta.rcc,
-            );
+            let mut s =
+                Spi::new_spi2_miso_simplex_slave(ta.spi2, (ta.pa.a9, ta.pc.c2), mode, &mut ta.rcc);
 
             let mut m = Spi::new_spi1_full_duplex(
                 ta.spi1,
                 (ta.pa.a5, ta.pa.a6, ta.pa.a7),
-                MODE_0,
+                mode,
                 br,
                 &mut ta.rcc,
             );
@@ -267,22 +271,22 @@ mod tests {
 
     #[test]
     fn miso_simplex_loopback_dma() {
-        for &br in BAUD_RATES.iter() {
-            defmt::debug!("div {}", br.div());
+        for (&br, &mode) in iproduct!(BAUD_RATES.iter(), SPI_MODES.iter()) {
+            defmt::debug!("÷{} MODE_{}", br.div(), mode_num(mode));
             let mut ta: TestArgs = unsafe { setup() };
 
             let mut s = Spi::new_spi2_miso_simplex_slave_dma(
                 ta.spi2,
                 (ta.pa.a9, ta.pc.c2),
                 ta.dma.d1c2,
-                MODE_0,
+                mode,
                 &mut ta.rcc,
             );
 
             let mut m = Spi::new_spi1_full_duplex(
                 ta.spi1,
                 (ta.pa.a5, ta.pa.a6, ta.pa.a7),
-                MODE_0,
+                mode,
                 br,
                 &mut ta.rcc,
             );

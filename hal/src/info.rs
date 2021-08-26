@@ -271,7 +271,7 @@ impl From<Uid64> for u64 {
 impl Display for Uid64 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("Uid64")
-            .field("dev_num", &self.dev_num())
+            .field("devnum", &self.devnum())
             .field("company_id", &self.company_id())
             .field("dev_id", &self.dev_id())
             .finish()

@@ -1,4 +1,4 @@
-//! Direct memory access controller
+//! Direct memory access
 
 // developers notes:
 //
@@ -24,15 +24,15 @@ use super::pac;
 
 pub use cr::{Cr, Dir, Priority, Size};
 
-/// IRQ flags
+/// IRQ flags.
 pub mod flags {
     /// Global interrupt, combination of all other interrupts.
     pub const GLOBAL: u8 = 1 << 0;
-    /// Transfer complete
+    /// Transfer complete.
     pub const XFER_CPL: u8 = 1 << 1;
-    /// Transfer hald complete
+    /// Transfer hald complete.
     pub const XFER_HLF: u8 = 1 << 2;
-    /// Transfer error
+    /// Transfer error.
     pub const XFER_ERR: u8 = 1 << 3;
 }
 
@@ -143,7 +143,7 @@ pub(crate) mod sealed {
     }
 }
 
-/// DMA channel trait
+/// DMA channel trait.
 pub trait DmaCh: sealed::DmaOps {
     /// DMA IRQ number.
     const IRQ: pac::Interrupt;
@@ -216,62 +216,64 @@ pub trait DmaCh: sealed::DmaOps {
 }
 
 macro_rules! dma_ch {
-    ($name:ident, $base:expr, $ch:expr, $irq:ident) => {
-        /// DMA channel
-        #[derive(Debug)]
-        #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-        pub struct $name {
-            pub(crate) dma: Dma<$base, $ch>,
-        }
-
-        impl $name {
-            const fn new() -> Self {
-                Self { dma: Dma::new() }
-            }
-        }
-
-        impl DmaCh for $name {
-            const IRQ: pac::Interrupt = irq_num::$irq;
-
-            #[inline]
-            fn flags(&self) -> u8 {
-                self.dma.flags()
+    ($ctrl:expr, $ch:expr, $irq:ident) => {
+        paste::paste! {
+            #[doc = "Controller " $ctrl " channel " $ch "."]
+            #[derive(Debug)]
+            #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+            pub struct [<Dma $ctrl Ch $ch>] {
+                pub(crate) dma: Dma<[<DMA $ctrl _BASE>], { $ch - 1 }>,
             }
 
-            #[inline]
-            fn clear_flags(&mut self, flags: u8) {
-                self.dma.clear_flags(flags)
+            impl [<Dma $ctrl Ch $ch>] {
+                const fn new() -> Self {
+                    Self { dma: Dma::new() }
+                }
             }
-        }
 
-        impl sealed::DmaOps for $name {
-            #[inline]
-            fn set_periph_addr(&mut self, pa: u32) {
-                self.dma.set_periph_addr(pa)
+            impl DmaCh for [<Dma $ctrl Ch $ch>] {
+                const IRQ: pac::Interrupt = irq_num::$irq;
+
+                #[inline]
+                fn flags(&self) -> u8 {
+                    self.dma.flags()
+                }
+
+                #[inline]
+                fn clear_flags(&mut self, flags: u8) {
+                    self.dma.clear_flags(flags)
+                }
             }
-            #[inline]
-            fn set_mem_addr(&mut self, ma: u32) {
-                self.dma.set_mem_addr(ma)
-            }
-            #[inline]
-            fn set_num_data_xfer(&mut self, ndt: u32) {
-                self.dma.set_num_data_xfer(ndt)
-            }
-            #[inline]
-            fn set_cr(&mut self, cr: Cr) {
-                self.dma.set_cr(cr)
-            }
-            #[inline]
-            fn set_mux_cr_reqid(&mut self, req_id: u8) {
-                self.dma.set_mux_cr_reqid(req_id)
-            }
-            #[inline]
-            fn sync_ovr(&self) -> bool {
-                self.dma.sync_ovr()
-            }
-            #[inline]
-            fn clr_sync_ovr(&mut self) {
-                self.dma.clr_sync_ovr()
+
+            impl sealed::DmaOps for [<Dma $ctrl Ch $ch>] {
+                #[inline]
+                fn set_periph_addr(&mut self, pa: u32) {
+                    self.dma.set_periph_addr(pa)
+                }
+                #[inline]
+                fn set_mem_addr(&mut self, ma: u32) {
+                    self.dma.set_mem_addr(ma)
+                }
+                #[inline]
+                fn set_num_data_xfer(&mut self, ndt: u32) {
+                    self.dma.set_num_data_xfer(ndt)
+                }
+                #[inline]
+                fn set_cr(&mut self, cr: Cr) {
+                    self.dma.set_cr(cr)
+                }
+                #[inline]
+                fn set_mux_cr_reqid(&mut self, req_id: u8) {
+                    self.dma.set_mux_cr_reqid(req_id)
+                }
+                #[inline]
+                fn sync_ovr(&self) -> bool {
+                    self.dma.sync_ovr()
+                }
+                #[inline]
+                fn clr_sync_ovr(&mut self) {
+                    self.dma.clr_sync_ovr()
+                }
             }
         }
     };
@@ -315,20 +317,20 @@ mod irq_num {
     pub const DMA2_CH7: Interrupt = Interrupt::DMA2_CH7_1_DMAMUX1_OVR;
 }
 
-dma_ch!(Dma1Ch1, DMA1_BASE, 0, DMA1_CH1);
-dma_ch!(Dma1Ch2, DMA1_BASE, 1, DMA1_CH2);
-dma_ch!(Dma1Ch3, DMA1_BASE, 2, DMA1_CH3);
-dma_ch!(Dma1Ch4, DMA1_BASE, 3, DMA1_CH4);
-dma_ch!(Dma1Ch5, DMA1_BASE, 4, DMA1_CH5);
-dma_ch!(Dma1Ch6, DMA1_BASE, 5, DMA1_CH6);
-dma_ch!(Dma1Ch7, DMA1_BASE, 6, DMA1_CH7);
-dma_ch!(Dma2Ch1, DMA2_BASE, 0, DMA2_CH1);
-dma_ch!(Dma2Ch2, DMA2_BASE, 1, DMA2_CH2);
-dma_ch!(Dma2Ch3, DMA2_BASE, 2, DMA2_CH3);
-dma_ch!(Dma2Ch4, DMA2_BASE, 3, DMA2_CH4);
-dma_ch!(Dma2Ch5, DMA2_BASE, 4, DMA2_CH5);
-dma_ch!(Dma2Ch6, DMA2_BASE, 5, DMA2_CH6);
-dma_ch!(Dma2Ch7, DMA2_BASE, 6, DMA2_CH7);
+dma_ch!(1, 1, DMA1_CH1);
+dma_ch!(1, 2, DMA1_CH2);
+dma_ch!(1, 3, DMA1_CH3);
+dma_ch!(1, 4, DMA1_CH4);
+dma_ch!(1, 5, DMA1_CH5);
+dma_ch!(1, 6, DMA1_CH6);
+dma_ch!(1, 7, DMA1_CH7);
+dma_ch!(2, 1, DMA2_CH1);
+dma_ch!(2, 2, DMA2_CH2);
+dma_ch!(2, 3, DMA2_CH3);
+dma_ch!(2, 4, DMA2_CH4);
+dma_ch!(2, 5, DMA2_CH5);
+dma_ch!(2, 6, DMA2_CH6);
+dma_ch!(2, 7, DMA2_CH7);
 
 /// All DMA channels.
 #[derive(Debug)]
@@ -340,7 +342,7 @@ pub struct AllDma {
     pub d2: Dma2,
 }
 
-/// DMA controller 1 channels.
+/// All DMA controller 1 channels.
 #[derive(Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Dma1 {
@@ -360,7 +362,7 @@ pub struct Dma1 {
     pub c7: Dma1Ch7,
 }
 
-/// DMA controller 2 channels.
+/// All DMA controller 2 channels.
 #[derive(Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Dma2 {

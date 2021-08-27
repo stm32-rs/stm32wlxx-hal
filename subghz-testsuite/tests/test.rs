@@ -303,7 +303,7 @@ mod tests {
         let rng: Rng = Rng::new(dp.RNG, rng::Clk::MSI, &mut dp.RCC);
         let delay: Delay = new_delay(cp.SYST, &dp.RCC);
 
-        let sg: MySubghz = MySubghz::new_with_dma(dp.SPI3, dma.d1c1, dma.d2c1, &mut dp.RCC);
+        let sg: MySubghz = MySubghz::new_with_dma(dp.SPI3, dma.d1.c1, dma.d2.c1, &mut dp.RCC);
         let _: RfNssDbg = RfNssDbg::new(gpioa.a4);
         let _: SgSckDbg = SgSckDbg::new(gpioa.a5);
         let _: SgMisoDbg = SgMisoDbg::new(gpioa.a6);

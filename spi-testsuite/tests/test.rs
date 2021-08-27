@@ -146,7 +146,7 @@ mod tests {
             let mut s = Spi::new_spi2_full_duplex_slave_dma(
                 ta.spi2,
                 (ta.pa.a9, ta.pc.c2, ta.pc.c3),
-                (ta.dma.d1c1, ta.dma.d1c2),
+                (ta.dma.d1.c1, ta.dma.d1.c2),
                 mode,
                 &mut ta.rcc,
             );
@@ -154,7 +154,7 @@ mod tests {
             let mut m = Spi::new_spi1_full_duplex_dma(
                 ta.spi1,
                 (ta.pa.a5, ta.pa.a6, ta.pa.a7),
-                (ta.dma.d2c1, ta.dma.d2c2),
+                (ta.dma.d2.c1, ta.dma.d2.c2),
                 mode,
                 br,
                 &mut ta.rcc,
@@ -216,7 +216,7 @@ mod tests {
             let mut s = Spi::new_spi2_mosi_simplex_slave_dma(
                 ta.spi2,
                 (ta.pa.a9, ta.pc.c3),
-                ta.dma.d1c2,
+                ta.dma.d1.c2,
                 mode,
                 &mut ta.rcc,
             );
@@ -224,7 +224,7 @@ mod tests {
             let mut m = Spi::new_spi1_mosi_simplex_dma(
                 ta.spi1,
                 (ta.pa.a5, ta.pa.a7),
-                ta.dma.d1c1,
+                ta.dma.d1.c1,
                 mode,
                 br,
                 &mut ta.rcc,
@@ -278,7 +278,7 @@ mod tests {
             let mut s = Spi::new_spi2_miso_simplex_slave_dma(
                 ta.spi2,
                 (ta.pa.a9, ta.pc.c2),
-                ta.dma.d1c2,
+                ta.dma.d1.c2,
                 mode,
                 &mut ta.rcc,
             );

@@ -874,7 +874,7 @@ macro_rules! impl_new_full_duplex_dma {
                 /// let spi = Spi::new_spi1_full_duplex_dma(
                 ///     dp.SPI1,
                 ///     (pa.a5, pa.a6, pa.a7),
-                ///     (dma.d1c1, dma.d1c2),
+                ///     (dma.d1.c1, dma.d1.c2),
                 ///     MODE_0,
                 ///     Div2,
                 ///     &mut dp.RCC,
@@ -967,7 +967,7 @@ macro_rules! impl_new_full_duplex_slave_dma {
                 /// let spi = Spi::new_spi1_full_duplex_slave_dma(
                 ///     dp.SPI1,
                 ///     (pa.a5, pa.a6, pa.a7),
-                ///     (dma.d1c1, dma.d1c2),
+                ///     (dma.d1.c1, dma.d1.c2),
                 ///     MODE_0,
                 ///     &mut dp.RCC,
                 /// );
@@ -1201,7 +1201,7 @@ macro_rules! impl_new_mosi_simplex_dma {
                 /// let spi = Spi::new_spi1_mosi_simplex_dma(
                 ///     dp.SPI1,
                 ///     (pa.a5, pa.a7),
-                ///     dma.d1c1,
+                ///     dma.d1.c1,
                 ///     MODE_0,
                 ///     Div2,
                 ///     &mut dp.RCC,
@@ -1287,7 +1287,7 @@ macro_rules! impl_new_mosi_simplex_slave_dma {
                 /// let spi = Spi::new_spi1_mosi_simplex_slave_dma(
                 ///     dp.SPI1,
                 ///     (pa.a5, pa.a7),
-                ///     dma.d1c1,
+                ///     dma.d1.c1,
                 ///     MODE_0,
                 ///     &mut dp.RCC,
                 /// );
@@ -1440,7 +1440,7 @@ macro_rules! impl_new_miso_simplex_dma {
                 /// let spi = Spi::new_spi1_miso_simplex_slave_dma(
                 ///     dp.SPI1,
                 ///     (pa.a5, pa.a6),
-                ///     dma.d1c1,
+                ///     dma.d1.c1,
                 ///     MODE_0,
                 ///     &mut dp.RCC,
                 /// );
@@ -1610,7 +1610,7 @@ impl<SPI: SpiRegs, SCK, MISO, MOSI> Spi<SPI, SCK, MISO, MOSI, Slave> {
     /// let mut spi = Spi::new_spi1_full_duplex_slave_dma(
     ///     dp.SPI1,
     ///     (pa.a5, pa.a6, pa.a7),
-    ///     (dma.d1c1, dma.d1c2),
+    ///     (dma.d1.c1, dma.d1.c2),
     ///     MODE_0,
     ///     &mut dp.RCC,
     /// );
@@ -1648,7 +1648,7 @@ impl<SPI, SCK, MISO, MOSI, MODE> Spi<SPI, SCK, MISO, MOSI, MODE> {
     /// let spi = Spi::new_spi1_full_duplex_dma(
     ///     dp.SPI1,
     ///     (pa.a5, pa.a6, pa.a7),
-    ///     (dma.d1c1, dma.d1c2),
+    ///     (dma.d1.c1, dma.d1.c2),
     ///     MODE_0,
     ///     Div2,
     ///     &mut dp.RCC,

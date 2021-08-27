@@ -476,7 +476,7 @@ macro_rules! impl_tx_en_dis {
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
             /// let uart: LpUart<NoRx, (pins::B11, Dma2Ch7)> =
             ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
-            ///         .enable_tx_dma(gpiob.b11, dma.d2c7);
+            ///         .enable_tx_dma(gpiob.b11, dma.d2.c7);
             /// ```
             pub fn enable_tx_dma<TxPin: gpio::sealed::$trt, TxDma: DmaCh>(
                 self,
@@ -602,7 +602,7 @@ macro_rules! impl_rx_en_dis {
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
             /// let uart: LpUart<(pins::B10, Dma2Ch2), NoTx> =
             ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
-            ///         .enable_rx_dma(gpiob.b10, dma.d2c2);
+            ///         .enable_rx_dma(gpiob.b10, dma.d2.c2);
             /// ```
             pub fn enable_rx_dma<RxPin: gpio::sealed::$trt, RxDma: DmaCh>(
                 self,

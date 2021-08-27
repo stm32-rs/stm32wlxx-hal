@@ -496,7 +496,7 @@ impl Adc {
     ///
     /// # Safety
     ///
-    /// 1. Ensure nothing is using the ADC before pulsing reset.
+    /// 1. Ensure nothing is using the ADC before calling this function.
     /// 2. You are responsible for setting up the ADC after a reset.
     #[inline]
     pub unsafe fn pulse_reset(rcc: &mut pac::RCC) {

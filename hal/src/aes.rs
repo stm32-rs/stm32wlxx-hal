@@ -130,7 +130,7 @@ impl Aes {
     ///
     /// # Safety
     ///
-    /// 1. Ensure nothing is using the AES peripheral before pulsing reset.
+    /// 1. Ensure nothing is using the AES peripheral before calling this function.
     ///
     /// # Example
     ///

@@ -321,7 +321,7 @@ pub trait LpTim: sealed::LpTim {
     ///
     /// # Safety
     ///
-    /// 1. Ensure nothing is using the timer before pulsing reset.
+    /// 1. Ensure nothing is using the timer before calling this function.
     /// 2. You are responsible for setting up the timer after a reset.
     unsafe fn pulse_reset(rcc: &mut pac::RCC);
 

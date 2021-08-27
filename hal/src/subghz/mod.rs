@@ -367,7 +367,7 @@ impl<MISO: DmaCh, MOSI: DmaCh> SubGhz<MISO, MOSI> {
     ///
     /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
     ///
-    /// let sg = SubGhz::new_with_dma(dp.SPI3, dma.d1c1, dma.d2c1, &mut dp.RCC);
+    /// let sg = SubGhz::new_with_dma(dp.SPI3, dma.d1.c1, dma.d2.c1, &mut dp.RCC);
     /// ```
     pub fn new_with_dma(
         spi: pac::SPI3,
@@ -409,7 +409,7 @@ impl<MISO: DmaCh, MOSI: DmaCh> SubGhz<MISO, MOSI> {
     ///
     /// let sg: SubGhz<Dma1Ch1, Dma2Ch1> = unsafe {
     ///     let dma = AllDma::steal();
-    ///     SubGhz::steal_with_dma(dma.d1c1, dma.d2c1)
+    ///     SubGhz::steal_with_dma(dma.d1.c1, dma.d2.c1)
     /// };
     /// ```
     ///

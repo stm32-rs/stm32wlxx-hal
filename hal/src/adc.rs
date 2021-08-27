@@ -569,9 +569,9 @@ impl Adc {
 
                 src / prescaler
             }
-            CKMODE_A::PCLK_DIV2 => crate::rcc::pllpclk(rcc, &rcc.pllcfgr.read()) / 2,
-            CKMODE_A::PCLK_DIV4 => crate::rcc::pllpclk(rcc, &rcc.pllcfgr.read()) / 4,
-            CKMODE_A::PCLK => crate::rcc::pllpclk(rcc, &rcc.pllcfgr.read()),
+            CKMODE_A::PCLK_DIV2 => crate::rcc::pclk2(rcc, &rcc.cfgr.read()) / 2,
+            CKMODE_A::PCLK_DIV4 => crate::rcc::pclk2(rcc, &rcc.cfgr.read()) / 4,
+            CKMODE_A::PCLK => crate::rcc::pclk2(rcc, &rcc.cfgr.read()),
         };
 
         source_freq.to_integer()

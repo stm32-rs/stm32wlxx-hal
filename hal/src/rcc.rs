@@ -557,7 +557,7 @@ pub fn pclk1_hz(rcc: &pac::RCC) -> u32 {
     pclk1(rcc, &cfgr).to_integer()
 }
 
-fn pclk2(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
+pub(crate) fn pclk2(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
     let div: u32 = ppre_div(cfgr.ppre2().bits()).into();
     hclk1(rcc, cfgr) / div
 }

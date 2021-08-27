@@ -486,7 +486,10 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{adc::{self, Adc}, pac};
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac,
+    /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut adc: Adc = Adc::new(dp.ADC, adc::Clk::PClkDiv4, &mut dp.RCC);
@@ -512,7 +515,10 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{adc::{self, Adc}, pac};
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac,
+    /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut adc: Adc = Adc::new(dp.ADC, adc::Clk::PClkDiv4, &mut dp.RCC);

@@ -212,8 +212,9 @@ mod tests {
         let vref_cal: u16 = adc::vref_cal();
         let vref: u16 = ta.adc.vref();
 
-        let delta: i16 = (vref_cal as i16) - (vref as i16);
-        defmt::assert!(delta.abs() < 10);
+        let delta: i16 = ((vref_cal as i16) - (vref as i16)).abs();
+        defmt::info!("vref: {} Δ {}", vref, delta);
+        defmt::assert!(delta < 25);
 
         ta.adc.disable();
         ta.adc.set_clock_source(original, &mut ta.rcc);

@@ -866,6 +866,7 @@ impl PortA {
     /// let a0: pins::A0 = gpioa.a0;
     /// ```
     #[allow(unused_variables)]
+    #[inline]
     pub fn split(gpioa: pac::GPIOA, rcc: &mut pac::RCC) -> Self {
         Self::enable_clock(rcc);
         rcc.ahb2rstr.modify(|_, w| w.gpioarst().set_bit());
@@ -898,6 +899,7 @@ impl PortA {
     /// ```
     ///
     /// [`split`]: crate::gpio::PortA::split
+    #[inline]
     pub unsafe fn steal() -> Self {
         Self::GPIOS
     }
@@ -909,11 +911,13 @@ impl PortA {
     /// 1. You cannot use any port-A GPIO pin while the clock is disabled.
     /// 2. You are responsible for re-enabling the clock before resuming use
     ///    of any port A GPIO.
+    #[inline]
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpioaen().disabled());
     }
 
     /// Enable the GPIOA clock.
+    #[inline]
     pub fn enable_clock(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpioaen().enabled());
         rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
@@ -983,6 +987,7 @@ impl PortB {
     /// let b0: pins::B0 = gpiob.b0;
     /// ```
     #[allow(unused_variables)]
+    #[inline]
     pub fn split(gpiob: pac::GPIOB, rcc: &mut pac::RCC) -> Self {
         Self::enable_clock(rcc);
         rcc.ahb2rstr.modify(|_, w| w.gpiobrst().set_bit());
@@ -1015,6 +1020,7 @@ impl PortB {
     /// ```
     ///
     /// [`split`]: crate::gpio::PortB::split
+    #[inline]
     pub unsafe fn steal() -> Self {
         Self::GPIOS
     }
@@ -1026,11 +1032,13 @@ impl PortB {
     /// 1. You cannot use any port-B GPIO pin while the clock is disabled.
     /// 2. You are responsible for re-enabling the clock before resuming use
     ///    of any port B GPIO.
+    #[inline]
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpioben().disabled());
     }
 
     /// Enable the GPIOB clock.
+    #[inline]
     pub fn enable_clock(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpioben().enabled());
         rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
@@ -1088,6 +1096,7 @@ impl PortC {
     /// let c0: pins::C0 = gpioc.c0;
     /// ```
     #[allow(unused_variables)]
+    #[inline]
     pub fn split(gpioc: pac::GPIOC, rcc: &mut pac::RCC) -> Self {
         Self::enable_clock(rcc);
         rcc.ahb2rstr.modify(|_, w| w.gpiocrst().set_bit());
@@ -1120,6 +1129,7 @@ impl PortC {
     /// ```
     ///
     /// [`split`]: crate::gpio::PortC::split
+    #[inline]
     pub unsafe fn steal() -> Self {
         Self::GPIOS
     }
@@ -1131,11 +1141,13 @@ impl PortC {
     /// 1. You cannot use any port-C GPIO pin while the clock is disabled.
     /// 2. You are responsible for re-enabling the clock before resuming use
     ///    of any port C GPIO.
+    #[inline]
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpiocen().disabled());
     }
 
     /// Enable the GPIOC clock.
+    #[inline]
     pub fn enable_clock(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpiocen().enabled());
         rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
@@ -1163,6 +1175,7 @@ impl Level {
     /// assert_eq!(Level::High.toggle(), Level::Low);
     /// assert_eq!(Level::Low.toggle(), Level::High);
     /// ```
+    #[inline]
     pub const fn toggle(self) -> Level {
         match self {
             Level::Low => Level::High,
@@ -1180,6 +1193,7 @@ impl Level {
     /// assert_eq!(Level::Low.is_low(), true);
     /// assert_eq!(Level::High.is_low(), false);
     /// ```
+    #[inline]
     pub fn is_low(&self) -> bool {
         matches!(self, Self::Low)
     }
@@ -1194,6 +1208,7 @@ impl Level {
     /// assert_eq!(Level::High.is_high(), true);
     /// assert_eq!(Level::Low.is_high(), false);
     /// ```
+    #[inline]
     pub fn is_high(&self) -> bool {
         matches!(self, Self::High)
     }
@@ -1229,6 +1244,7 @@ impl OutputArgs {
     ///
     /// assert_eq!(OutputArgs::new(), OutputArgs::default());
     /// ```
+    #[inline]
     pub const fn new() -> Self {
         OutputArgs {
             speed: Speed::High,
@@ -1315,8 +1331,10 @@ where
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut c0: Output<pins::C0> = Output::default(gpioc.c0);
     /// ```
+    #[inline]
     pub fn default(pin: P) -> Self {
-        Self::new(pin, &OutputArgs::new())
+        const OA: OutputArgs = OutputArgs::new();
+        Self::new(pin, &OA)
     }
 
     /// Steal the output GPIO from whatever is currently using it.
@@ -1337,6 +1355,7 @@ where
     ///
     /// let b11: Output<pins::B11> = unsafe { Output::steal() };
     /// ```
+    #[inline]
     pub unsafe fn steal() -> Self {
         Output { pin: P::steal() }
     }
@@ -1359,6 +1378,7 @@ where
     /// let c0: Output<pins::C0> = Output::default(gpioc.c0);
     /// let c0: pins::C0 = c0.free();
     /// ```
+    #[inline]
     pub fn free(self) -> P {
         self.pin
     }
@@ -1385,6 +1405,7 @@ where
     /// c0.set_level(Level::High);
     /// c0.set_level(Level::Low);
     /// ```
+    #[inline]
     pub fn set_level(&mut self, level: Level) {
         self.pin.set_output_level(level)
     }
@@ -1410,6 +1431,7 @@ where
     /// let mut c0: Output<pins::C0> = Output::default(gpioc.c0);
     /// c0.set_level_high();
     /// ```
+    #[inline]
     pub fn set_level_high(&mut self) {
         self.set_level(Level::High)
     }
@@ -1435,6 +1457,7 @@ where
     /// let mut c0: Output<pins::C0> = Output::default(gpioc.c0);
     /// c0.set_level_low();
     /// ```
+    #[inline]
     pub fn set_level_low(&mut self) {
         self.set_level(Level::Low)
     }
@@ -1457,6 +1480,7 @@ where
     /// let mut c0: Output<pins::C0> = Output::default(gpioc.c0);
     /// c0.set_level(c0.level().toggle());
     /// ```
+    #[inline]
     pub fn level(&self) -> Level {
         self.pin.output_level()
     }
@@ -1468,11 +1492,13 @@ where
 {
     type Error = core::convert::Infallible;
 
+    #[inline]
     fn set_low(&mut self) -> Result<(), Self::Error> {
         self.pin.set_output_level(Level::Low);
         Ok(())
     }
 
+    #[inline]
     fn set_high(&mut self) -> Result<(), Self::Error> {
         self.pin.set_output_level(Level::High);
         Ok(())
@@ -1483,10 +1509,12 @@ impl<P> embedded_hal::digital::v2::StatefulOutputPin for Output<P>
 where
     P: sealed::PinOps,
 {
+    #[inline]
     fn is_set_high(&self) -> Result<bool, Self::Error> {
         Ok(self.pin.output_level().is_high())
     }
 
+    #[inline]
     fn is_set_low(&self) -> Result<bool, Self::Error> {
         Ok(self.pin.output_level().is_low())
     }
@@ -1549,6 +1577,7 @@ where
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut c0: Input<pins::C0> = Input::default(gpioc.c0);
     /// ```
+    #[inline]
     pub fn default(pin: P) -> Self {
         Self::new(pin, Pull::None)
     }
@@ -1571,6 +1600,7 @@ where
     ///
     /// let c6: Input<pins::C6> = unsafe { Input::steal() };
     /// ```
+    #[inline]
     pub unsafe fn steal() -> Self {
         Input { pin: P::steal() }
     }
@@ -1593,6 +1623,7 @@ where
     /// let c0_input: Input<pins::C0> = Input::default(gpioc.c0);
     /// let c0: pins::C0 = c0_input.free();
     /// ```
+    #[inline]
     pub fn free(self) -> P {
         self.pin
     }
@@ -1617,6 +1648,7 @@ where
     ///
     /// let button_3_is_pressed: bool = c6.level() == Level::High;
     /// ```
+    #[inline]
     pub fn level(&self) -> Level {
         self.pin.input_level()
     }
@@ -1654,9 +1686,7 @@ where
     /// let mut b14: Analog<pins::B14> = Analog::new(gpiob.b14);
     /// ```
     pub fn new(mut pin: P) -> Self {
-        cortex_m::interrupt::free(|cs| unsafe {
-            pin.set_mode(cs, sealed::Mode::Analog);
-        });
+        cortex_m::interrupt::free(|cs| unsafe { pin.set_mode(cs, sealed::Mode::Analog) });
         Analog { pin }
     }
 
@@ -1737,6 +1767,7 @@ impl RfBusy {
     /// let a12: RfBusy = RfBusy::new(gpioa.a12);
     /// let a12: pins::A12 = a12.free();
     /// ```
+    #[inline]
     pub fn free(self) -> pins::A12 {
         self.pin
     }

@@ -345,8 +345,8 @@ pub unsafe fn set_sysclk_hse(
 
     while rcc.cr.read().hserdy().is_not_ready() {}
 
-    let current_freq: u32 = sysclk_hz(rcc);
-    if target_sysclk_hz > current_freq {
+    let current_sysclk_hz: u32 = sysclk_hz(rcc);
+    if target_sysclk_hz > current_sysclk_hz {
         // freq increase, set new flash latency first
         set_flash_latency(flash, rcc, target_sysclk_hz, vos);
         rcc.cfgr.modify(|_, w| w.sw().hse32());
@@ -389,13 +389,13 @@ pub unsafe fn set_sysclk_hsi(
     rcc: &mut pac::RCC,
     cs: &CriticalSection,
 ) {
-    let current_freq: u32 = sysclk_hz(rcc);
-
     rcc.cr.modify(|_, w| w.hsion().enabled());
     while rcc.cr.read().hsirdy().is_not_ready() {}
 
+    let current_sysclk_hz: u32 = sysclk_hz(rcc);
     const TARGET_SYSCLK_HZ: u32 = 16_000_000;
-    if TARGET_SYSCLK_HZ > current_freq {
+
+    if TARGET_SYSCLK_HZ > current_sysclk_hz {
         // freq increase, set new flash latency first
         set_flash_latency(flash, rcc, TARGET_SYSCLK_HZ, Vos::V1_0);
         rcc.cfgr.modify(|_, w| w.sw().hsi16());
@@ -445,6 +445,9 @@ pub unsafe fn set_sysclk_msi(
     range: MsiRange,
     cs: &CriticalSection,
 ) {
+    // startup the MSI clock
+    rcc.cr.modify(|_, w| w.msion().enabled());
+
     let vos: Vos = range.vos();
 
     // increase VOS range
@@ -453,28 +456,10 @@ pub unsafe fn set_sysclk_msi(
         while pwr.sr2.read().vosf().is_change() {}
     }
 
-    set_sysclk_msi_with_vos(flash, pwr, rcc, range, vos, cs);
-
-    // decrease VOS range
-    if vos == Vos::V1_0 {
-        pwr.cr1.modify(|_, w| w.vos().v1_0());
-    }
-}
-
-unsafe fn set_sysclk_msi_with_vos(
-    flash: &mut pac::FLASH,
-    pwr: &mut pac::PWR,
-    rcc: &mut pac::RCC,
-    range: MsiRange,
-    vos: Vos,
-    cs: &CriticalSection,
-) {
-    // startup the MSI clock
-    rcc.cr.modify(|_, w| w.msion().enabled());
-
     let cfgr = rcc.cfgr.read();
 
-    // ES0500 Rev 3 erratum handling
+    // ES0500 Rev 3 erratum handling:
+    //
     // A voltage drop to 1.08 V may occur on the 1.2 V regulated supply when the
     // MSI frequency is changed as follows:
     // * from MSI at 400 kHz to MSI at 24 MHz and above
@@ -491,19 +476,33 @@ unsafe fn set_sysclk_msi_with_vos(
         if ((current_range == MsiRange::Range400k) && (range >= MsiRange::Range24M))
             || ((current_range == MsiRange::Range1M) && (range == MsiRange::Range48M))
         {
-            // forgive me for the recursion
-            set_sysclk_msi_with_vos(flash, pwr, rcc, MsiRange::Range16M, vos, cs)
+            set_sysclk_msi_inner(flash, rcc, MsiRange::Range16M, vos, cs)
         }
     }
 
-    let current_freq: u32 = sysclk(rcc, &cfgr).to_integer();
+    set_sysclk_msi_inner(flash, rcc, range, vos, cs);
 
-    // MSI was enabled earlier, wait for it to be ready
+    // decrease VOS range
+    if vos == Vos::V1_0 {
+        pwr.cr1.modify(|_, w| w.vos().v1_0());
+    }
+}
+
+unsafe fn set_sysclk_msi_inner(
+    flash: &mut pac::FLASH,
+    rcc: &mut pac::RCC,
+    range: MsiRange,
+    vos: Vos,
+    _cs: &CriticalSection,
+) {
+    // MSI was enabled by the caller, wait for it to be ready
     // MSIRGSEL can only be set when MSI is ready (or off)
     while rcc.cr.read().msirdy().is_not_ready() {}
 
+    let current_sysclk_hz: u32 = sysclk_hz(rcc);
     let target_sysclk_hz: u32 = range.to_hz();
-    if target_sysclk_hz > current_freq {
+
+    if target_sysclk_hz > current_sysclk_hz {
         // freq increase, set new flash latency first
         set_flash_latency(flash, rcc, target_sysclk_hz, vos);
         rcc.cr

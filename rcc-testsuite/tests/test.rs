@@ -47,7 +47,7 @@ impl SysClkSrc {
     }
 }
 
-const CLKS: [SysClkSrc; 15] = [
+const CLKS: [SysClkSrc; 14] = [
     SysClkSrc::Hsi,
     SysClkSrc::Hse(Vos::V1_0),
     SysClkSrc::Hse(Vos::V1_2),

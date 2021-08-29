@@ -238,16 +238,6 @@ pub enum Vos {
     V1_0 = 0b10,
 }
 
-// impl From<Vos> for pac::pwr::cr1::VOS_A {
-//     #[inline(always)]
-//     fn from(vos: Vos) -> Self {
-//         match vos {
-//             Vos::V1_2 => pac::pwr::cr1::VOS_A::V1_2,
-//             Vos::V1_0 => pac::pwr::cr1::VOS_A::V1_0,
-//         }
-//     }
-// }
-
 /// Prescaler divisor.
 /// Works for SHDHPRE, C2HPRE, HPRE.
 const fn pre_div(pre: u8) -> u16 {

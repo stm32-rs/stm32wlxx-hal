@@ -47,11 +47,11 @@ impl SysClkSrc {
     }
 }
 
-const CLKS: [SysClkSrc; 14] = [
+const CLKS: [SysClkSrc; 15] = [
     SysClkSrc::Hsi,
     SysClkSrc::Hse(Vos::V1_0),
     SysClkSrc::Hse(Vos::V1_2),
-    // SysClkSrc::Msi(MsiRange::Range100k),
+    SysClkSrc::Msi(MsiRange::Range100k),
     SysClkSrc::Msi(MsiRange::Range200k),
     SysClkSrc::Msi(MsiRange::Range400k),
     SysClkSrc::Msi(MsiRange::Range800k),

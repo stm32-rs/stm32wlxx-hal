@@ -27,7 +27,7 @@ mod tests {
     fn init() -> I2c1<(pins::B8, pins::B7)> {
         let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
 
-        rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC);
+        unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
         let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
         let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
 

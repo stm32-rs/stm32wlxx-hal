@@ -35,11 +35,10 @@ mod tests {
     #[init]
     fn init() -> Rng {
         let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
-        let mut rcc = dp.RCC;
 
-        rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut rcc);
+        unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
 
-        Rng::new(dp.RNG, Clk::MSI, &mut rcc)
+        Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC)
     }
 
     /// Not really a test, just a benchmark

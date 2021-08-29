@@ -27,7 +27,7 @@ mod tests {
         let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
         let cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
 
-        rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC);
+        unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
 
         let delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
 

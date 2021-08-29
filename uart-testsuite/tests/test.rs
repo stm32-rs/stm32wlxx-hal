@@ -25,7 +25,7 @@ mod tests {
     #[init]
     fn init() -> TestArgs {
         let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
-        rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC);
+        unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
 
         dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
         while dp.RCC.cr.read().hsirdy().is_not_ready() {}

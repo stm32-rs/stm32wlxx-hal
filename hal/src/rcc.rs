@@ -1,124 +1,111 @@
 //! Reset and clocking control
+//!
+//! Unlike other HALs clocks do not get frozen.
+//! A lot of applications for this chip will require low-power,
+//! and there are many scenarios where you will want to adjust the clocks.
+//!
+//! Quickstart: [`set_sysclk_msi_max`]
 
-use crate::Ratio;
-use core::{
-    convert::{TryFrom, TryInto},
-    sync::atomic::{compiler_fence, Ordering::SeqCst},
-};
+use crate::{pac, Ratio};
+use core::convert::{TryFrom, TryInto};
 use cortex_m::{interrupt::CriticalSection, peripheral::syst::SystClkSource};
 
+use pac::flash::acr::LATENCY_A;
 pub use pac::rcc::csr::LSIPRE_A as LsiPre;
 
-use crate::pac;
+fn hclk3_prescaler_div(rcc: &pac::RCC) -> u16 {
+    pre_div(rcc.extcfgr.read().shdhpre().bits())
+}
 
-fn rcc_set_flash_latency_from_msi_range(
-    flash: &pac::FLASH,
-    rcc: &pac::RCC,
-    msi_range: MsiRange,
-    vos: Vos,
-) {
-    let msi_freq: u32 = msi_range.as_hertz();
+fn set_flash_latency(flash: &pac::FLASH, rcc: &pac::RCC, target_sysclk_hz: u32, vos: Vos) {
     let div: u32 = u32::from(hclk3_prescaler_div(rcc));
-    let flash_clk_src_freq: u32 = msi_freq / div;
+    let flash_clk_src_freq: u32 = target_sysclk_hz / div;
 
-    let latency: FlashLatency = FlashLatency::from_hertz(vos, flash_clk_src_freq);
+    let ws: LATENCY_A = match vos {
+        Vos::V1_2 => match flash_clk_src_freq {
+            0..=18_000_000 => LATENCY_A::WS0,
+            18_000_001..=36_000_000 => LATENCY_A::WS1,
+            _ => LATENCY_A::WS2,
+        },
+        Vos::V1_0 => match flash_clk_src_freq {
+            0..=6_000_000 => LATENCY_A::WS0,
+            6_000_001..=12_000_000 => LATENCY_A::WS1,
+            _ => LATENCY_A::WS2,
+        },
+    };
 
-    flash.acr.modify(|_, w| w.latency().variant(latency.into()));
+    flash.acr.modify(|_, w| w.latency().variant(ws));
 
-    while flash.acr.read().latency().bits() != (latency as u8) {
-        compiler_fence(SeqCst);
-    }
+    while flash.acr.read().latency().variant() != Some(ws) {}
 }
 
-#[repr(u8)]
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-enum FlashLatency {
-    /// Zero wait state.
-    Zero = 0b000,
-    /// One wait state.
-    One = 0b001,
-    /// Two wait states.
-    Two = 0b010,
-}
-
-impl FlashLatency {
-    pub const fn from_hertz(vos: Vos, hz: u32) -> FlashLatency {
-        match vos {
-            Vos::Range1 => match hz {
-                0..=18_000_000 => FlashLatency::Zero,
-                19_000_000..=36_000_000 => FlashLatency::One,
-                _ => FlashLatency::Two,
-            },
-            Vos::Range2 => match hz {
-                0..=6_000_000 => FlashLatency::Zero,
-                7_000_000..=12_000_000 => FlashLatency::One,
-                _ => FlashLatency::Two,
-            },
-        }
-    }
-}
-
-impl From<FlashLatency> for u8 {
-    fn from(x: FlashLatency) -> Self {
-        x as u8
-    }
-}
-
-impl From<FlashLatency> for pac::flash::acr::LATENCY_A {
-    fn from(fl: FlashLatency) -> Self {
-        match fl {
-            FlashLatency::Zero => pac::flash::acr::LATENCY_A::WS0,
-            FlashLatency::One => pac::flash::acr::LATENCY_A::WS1,
-            FlashLatency::Two => pac::flash::acr::LATENCY_A::WS2,
-        }
-    }
-}
-
-/// MSI clock ranges
+/// MSI clock ranges.
+// developers: this exists because the MSI range appears in two different registers.
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
-enum MsiRange {
-    /// Around 100 kHz.
-    Range0 = 0b0000,
-    /// Around 200 kHz.
-    Range1 = 0b0001,
-    /// Around 400 kHz.
-    Range2 = 0b0010,
-    /// Around 800 kHz.
-    Range3 = 0b0011,
-    /// Around 1 MHz.
-    Range4 = 0b0100,
-    /// Around 2 MHz.
-    Range5 = 0b0101,
-    /// Around 4 MHz.
-    Range6 = 0b0110,
-    /// Around 8 MHz.
-    Range7 = 0b0111,
-    /// Around 16 MHz.
-    Range8 = 0b1000,
-    /// Around 24 MHz.
-    Range9 = 0b1001,
-    /// Around 32 MHz.
-    Range10 = 0b1010,
-    /// Around 48 MHz.
-    Range11 = 0b1011,
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub enum MsiRange {
+    /// Range 0 around 100 kHz.
+    Range100k = 0b0000,
+    /// Range 1 around 200 kHz.
+    Range200k = 0b0001,
+    /// Range 2 around 400 kHz.
+    Range400k = 0b0010,
+    /// Range 3 around 800 kHz.
+    Range800k = 0b0011,
+    /// Range 4 around 1 MHz.
+    Range1M = 0b0100,
+    /// Range 5 around 2 MHz.
+    Range2M = 0b0101,
+    /// Range 6 around 4 MHz.
+    Range4M = 0b0110,
+    /// Range 7 around 8 MHz.
+    Range8M = 0b0111,
+    /// Range 8 around 16 MHz.
+    Range16M = 0b1000,
+    /// Range 9 around 24 MHz.
+    Range24M = 0b1001,
+    /// Range 10 around 32 MHz.
+    Range32M = 0b1010,
+    /// Range 11 around 48 MHz.
+    Range48M = 0b1011,
 }
 
 impl MsiRange {
-    pub const fn as_hertz(&self) -> u32 {
+    /// Get the frequency for an MSI range in hertz.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal::rcc::MsiRange;
+    ///
+    /// assert_eq!(MsiRange::Range100k, 100_000);
+    /// assert_eq!(MsiRange::Range200k, 200_000);
+    /// assert_eq!(MsiRange::Range400k, 400_000);
+    /// assert_eq!(MsiRange::Range800k, 800_000);
+    /// assert_eq!(MsiRange::Range1M, 1_000_000);
+    /// assert_eq!(MsiRange::Range2M, 2_000_000);
+    /// assert_eq!(MsiRange::Range4M, 4_000_000);
+    /// assert_eq!(MsiRange::Range8M, 8_000_000);
+    /// assert_eq!(MsiRange::Range16M, 16_000_000);
+    /// assert_eq!(MsiRange::Range24M, 24_000_000);
+    /// assert_eq!(MsiRange::Range32M, 32_000_000);
+    /// assert_eq!(MsiRange::Range48M, 48_000_000);
+    /// ```
+    pub const fn to_hz(&self) -> u32 {
         match self {
-            MsiRange::Range0 => 100_000,
-            MsiRange::Range1 => 200_000,
-            MsiRange::Range2 => 400_000,
-            MsiRange::Range3 => 800_000,
-            MsiRange::Range4 => 1_000_000,
-            MsiRange::Range5 => 2_000_000,
-            MsiRange::Range6 => 4_000_000,
-            MsiRange::Range7 => 8_000_000,
-            MsiRange::Range8 => 16_000_000,
-            MsiRange::Range9 => 24_000_000,
-            MsiRange::Range10 => 32_000_000,
-            MsiRange::Range11 => 48_000_000,
+            MsiRange::Range100k => 100_000,
+            MsiRange::Range200k => 200_000,
+            MsiRange::Range400k => 400_000,
+            MsiRange::Range800k => 800_000,
+            MsiRange::Range1M => 1_000_000,
+            MsiRange::Range2M => 2_000_000,
+            MsiRange::Range4M => 4_000_000,
+            MsiRange::Range8M => 8_000_000,
+            MsiRange::Range16M => 16_000_000,
+            MsiRange::Range24M => 24_000_000,
+            MsiRange::Range32M => 32_000_000,
+            MsiRange::Range48M => 48_000_000,
         }
     }
 
@@ -126,7 +113,7 @@ impl MsiRange {
     ///
     /// The unwraps in this function are desired because the other values are
     /// reserved.
-    pub fn from_rcc(rcc: &pac::RCC) -> MsiRange {
+    fn from_rcc(rcc: &pac::RCC) -> MsiRange {
         use pac::rcc::cr::MSIRGSEL_A::{CR, CSR};
 
         let cr = rcc.cr.read();
@@ -135,11 +122,19 @@ impl MsiRange {
             CR => unwrap!(cr.msirange().bits().try_into()),
         }
     }
+
+    fn vos(&self) -> Vos {
+        if self > &MsiRange::Range16M {
+            Vos::V1_2
+        } else {
+            Vos::V1_0
+        }
+    }
 }
 
 impl Default for MsiRange {
     fn default() -> Self {
-        MsiRange::Range6
+        MsiRange::Range4M
     }
 }
 
@@ -153,18 +148,18 @@ impl TryFrom<u8> for MsiRange {
     type Error = u8;
     fn try_from(x: u8) -> Result<Self, Self::Error> {
         match x {
-            0b0000 => Ok(MsiRange::Range0),
-            0b0001 => Ok(MsiRange::Range1),
-            0b0010 => Ok(MsiRange::Range2),
-            0b0011 => Ok(MsiRange::Range3),
-            0b0100 => Ok(MsiRange::Range4),
-            0b0101 => Ok(MsiRange::Range5),
-            0b0110 => Ok(MsiRange::Range6),
-            0b0111 => Ok(MsiRange::Range7),
-            0b1000 => Ok(MsiRange::Range8),
-            0b1001 => Ok(MsiRange::Range9),
-            0b1010 => Ok(MsiRange::Range10),
-            0b1011 => Ok(MsiRange::Range11),
+            0b0000 => Ok(MsiRange::Range100k),
+            0b0001 => Ok(MsiRange::Range200k),
+            0b0010 => Ok(MsiRange::Range400k),
+            0b0011 => Ok(MsiRange::Range800k),
+            0b0100 => Ok(MsiRange::Range1M),
+            0b0101 => Ok(MsiRange::Range2M),
+            0b0110 => Ok(MsiRange::Range4M),
+            0b0111 => Ok(MsiRange::Range8M),
+            0b1000 => Ok(MsiRange::Range16M),
+            0b1001 => Ok(MsiRange::Range24M),
+            0b1010 => Ok(MsiRange::Range32M),
+            0b1011 => Ok(MsiRange::Range48M),
             _ => Err(x),
         }
     }
@@ -173,24 +168,42 @@ impl TryFrom<u8> for MsiRange {
 impl From<MsiRange> for pac::rcc::cr::MSIRANGE_A {
     fn from(mr: MsiRange) -> Self {
         match mr {
-            MsiRange::Range0 => pac::rcc::cr::MSIRANGE_A::RANGE100K,
-            MsiRange::Range1 => pac::rcc::cr::MSIRANGE_A::RANGE200K,
-            MsiRange::Range2 => pac::rcc::cr::MSIRANGE_A::RANGE400K,
-            MsiRange::Range3 => pac::rcc::cr::MSIRANGE_A::RANGE800K,
-            MsiRange::Range4 => pac::rcc::cr::MSIRANGE_A::RANGE1M,
-            MsiRange::Range5 => pac::rcc::cr::MSIRANGE_A::RANGE2M,
-            MsiRange::Range6 => pac::rcc::cr::MSIRANGE_A::RANGE4M,
-            MsiRange::Range7 => pac::rcc::cr::MSIRANGE_A::RANGE8M,
-            MsiRange::Range8 => pac::rcc::cr::MSIRANGE_A::RANGE16M,
-            MsiRange::Range9 => pac::rcc::cr::MSIRANGE_A::RANGE24M,
-            MsiRange::Range10 => pac::rcc::cr::MSIRANGE_A::RANGE32M,
-            MsiRange::Range11 => pac::rcc::cr::MSIRANGE_A::RANGE48M,
+            MsiRange::Range100k => pac::rcc::cr::MSIRANGE_A::RANGE100K,
+            MsiRange::Range200k => pac::rcc::cr::MSIRANGE_A::RANGE200K,
+            MsiRange::Range400k => pac::rcc::cr::MSIRANGE_A::RANGE400K,
+            MsiRange::Range800k => pac::rcc::cr::MSIRANGE_A::RANGE800K,
+            MsiRange::Range1M => pac::rcc::cr::MSIRANGE_A::RANGE1M,
+            MsiRange::Range2M => pac::rcc::cr::MSIRANGE_A::RANGE2M,
+            MsiRange::Range4M => pac::rcc::cr::MSIRANGE_A::RANGE4M,
+            MsiRange::Range8M => pac::rcc::cr::MSIRANGE_A::RANGE8M,
+            MsiRange::Range16M => pac::rcc::cr::MSIRANGE_A::RANGE16M,
+            MsiRange::Range24M => pac::rcc::cr::MSIRANGE_A::RANGE24M,
+            MsiRange::Range32M => pac::rcc::cr::MSIRANGE_A::RANGE32M,
+            MsiRange::Range48M => pac::rcc::cr::MSIRANGE_A::RANGE48M,
         }
     }
 }
 
-fn hclk3_prescaler_div(rcc: &pac::RCC) -> u16 {
-    pre_div(rcc.extcfgr.read().shdhpre().bits())
+/// Voltage scaling
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[repr(u8)]
+pub enum Vos {
+    /// High-performance range (range 1)
+    ///
+    /// * The main regulator provides a typical output voltage at 1.2 V.
+    /// * The system clock frequency can be up to 64 MHz.
+    /// * The Flash memory access time for read access is minimum.
+    /// * Write and erase operations are possible.
+    V1_2 = 0b01,
+    /// Low-power range (range 2)
+    ///
+    /// * The main regulator provides a typical output voltage at 1.0 V.
+    /// * The system clock frequency can be up to 16 MHz.
+    /// * The Flash memory access time for a read access is increased as
+    ///   compared to range 1.
+    /// * Write and erase operations are possible.
+    V1_0 = 0b10,
 }
 
 /// Prescaler divisor.
@@ -226,115 +239,274 @@ const fn ppre_div(pre: u8) -> u8 {
     }
 }
 
-/// Voltage scaling
+/// Set the sysclk to use the HSE 32MHz clock.
 ///
-/// See RM0453 rev 1 section 6.1.4 dynamic voltage scaling management
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[repr(u8)]
-enum Vos {
-    /// High-performance range
-    ///
-    /// The main regulator provides a typical output voltage at 1.2 V.
-    /// The system clock  frequency can be up to 64 MHz.
-    /// The Flash memory access time for read access is minimum.
-    /// Write and erase operations are possible.
-    Range1 = 0b01,
-    /// Low-power range
-    ///
-    /// The main regulator provides a typical output voltage at 1.0 V.
-    /// The system clock frequency can be up to 16 MHz.
-    /// The Flash memory access time for a read access is increased as compared
-    /// to range 1.
-    /// Write and erase operations are possible.
-    #[allow(dead_code)]
-    Range2 = 0b10,
-}
+/// The VOS argument selects the voltage range which determines the clock
+/// prescaler:
+/// * 1.2V: 32MHz (div 1)
+/// * 1.0V: 16MHz (div 2)
+///
+/// # Safety
+///
+/// 1. Peripherals must not be in-use before calling this function.
+/// 2. Peripherals may need their prescalers adjusted for the new sysclk frequency.
+///
+/// # Example
+///
+/// ```no_run
+/// use stm32wl_hal::{
+///     pac,
+///     rcc::{set_sysclk_hse, Vos},
+/// };
+///
+/// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+/// cortex_m::interrupt::free(|cs| unsafe {
+///     set_sysclk_hse(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC, Vos::V1_2, cs)
+/// });
+/// ```
+#[allow(unused_variables)]
+pub unsafe fn set_sysclk_hse(
+    flash: &mut pac::FLASH,
+    pwr: &mut pac::PWR,
+    rcc: &mut pac::RCC,
+    vos: Vos,
+    cs: &CriticalSection,
+) {
+    use pac::rcc::cr::HSEPRE_A;
+    let (pre, target_sysclk_hz): (HSEPRE_A, u32) = match vos {
+        Vos::V1_2 => (HSEPRE_A::DIV1, 32_000_000),
+        Vos::V1_0 => (HSEPRE_A::DIV2, 16_000_000),
+    };
 
-impl From<Vos> for pac::pwr::cr1::VOS_A {
-    fn from(vos: Vos) -> Self {
-        match vos {
-            Vos::Range1 => pac::pwr::cr1::VOS_A::V1_2,
-            Vos::Range2 => pac::pwr::cr1::VOS_A::V1_0,
-        }
+    // increase VOS range
+    if vos == Vos::V1_2 {
+        pwr.cr1.modify(|_, w| w.vos().v1_2());
+        while pwr.sr2.read().vosf().is_change() {}
+    }
+
+    // setting HSEBYPWR is only valid when HSE is off
+    // assume the user knows what they are doing in this scenario
+    if rcc.cr.read().hseon().is_disabled() {
+        rcc.cr.modify(|_, w| {
+            w.hseon()
+                .enabled()
+                .hsepre()
+                .variant(pre)
+                .hsebyppwr()
+                .vddtcxo()
+        });
+    } else {
+        rcc.cr
+            .modify(|_, w| w.hseon().enabled().hsepre().variant(pre));
+    }
+
+    while rcc.cr.read().hserdy().is_not_ready() {}
+
+    let current_sysclk_hz: u32 = sysclk_hz(rcc);
+    if target_sysclk_hz > current_sysclk_hz {
+        // freq increase, set new flash latency first
+        set_flash_latency(flash, rcc, target_sysclk_hz, vos);
+        rcc.cfgr.modify(|_, w| w.sw().hse32());
+        while !rcc.cfgr.read().sws().is_hse32() {}
+    } else {
+        // freq decrease, set new flash latency last
+        rcc.cfgr.modify(|_, w| w.sw().hse32());
+        while !rcc.cfgr.read().sws().is_hse32() {}
+        set_flash_latency(flash, rcc, target_sysclk_hz, vos);
+    }
+
+    // decrease VOS range
+    if vos == Vos::V1_0 {
+        pwr.cr1.modify(|_, w| w.vos().v1_0());
     }
 }
 
-fn set_sysclk_from_msi_range(
+/// Set the sysclk to use the HSI 16MHz clock.
+///
+/// # Safety
+///
+/// 1. Peripherals must not be in-use before calling this function.
+/// 2. Peripherals may need their prescalers adjusted for the new sysclk frequency.
+///
+/// # Example
+///
+/// ```no_run
+/// use stm32wl_hal::{pac, rcc::set_sysclk_hsi};
+///
+/// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+/// cortex_m::interrupt::free(|cs| unsafe {
+///     set_sysclk_hsi(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC, cs)
+/// });
+/// ```
+#[allow(unused_variables)]
+pub unsafe fn set_sysclk_hsi(
     flash: &mut pac::FLASH,
     pwr: &mut pac::PWR,
+    rcc: &mut pac::RCC,
+    cs: &CriticalSection,
+) {
+    rcc.cr.modify(|_, w| w.hsion().enabled());
+    while rcc.cr.read().hsirdy().is_not_ready() {}
+
+    let current_sysclk_hz: u32 = sysclk_hz(rcc);
+    const TARGET_SYSCLK_HZ: u32 = 16_000_000;
+
+    if TARGET_SYSCLK_HZ > current_sysclk_hz {
+        // freq increase, set new flash latency first
+        set_flash_latency(flash, rcc, TARGET_SYSCLK_HZ, Vos::V1_0);
+        rcc.cfgr.modify(|_, w| w.sw().hsi16());
+        while !rcc.cfgr.read().sws().is_hsi16() {}
+    } else {
+        // freq decrease, set new flash latency last
+        rcc.cfgr.modify(|_, w| w.sw().hsi16());
+        while !rcc.cfgr.read().sws().is_hsi16() {}
+        set_flash_latency(flash, rcc, TARGET_SYSCLK_HZ, Vos::V1_0);
+    }
+
+    // decrease VOS range
+    pwr.cr1.modify(|_, w| w.vos().v1_0());
+}
+
+/// Set the sysclk from an MSI range.
+///
+/// # Safety
+///
+/// 1. Peripherals must not be in-use before calling this function.
+/// 2. Peripherals may need their prescalers adjusted for the new sysclk frequency.
+///
+/// # Example
+///
+/// ```no_run
+/// use stm32wl_hal::{
+///     pac,
+///     rcc::{set_sysclk_msi, MsiRange},
+/// };
+///
+/// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+/// cortex_m::interrupt::free(|cs| unsafe {
+///     set_sysclk_msi(
+///         &mut dp.FLASH,
+///         &mut dp.PWR,
+///         &mut dp.RCC,
+///         MsiRange::Range48M,
+///         cs,
+///     )
+/// });
+/// ```
+pub unsafe fn set_sysclk_msi(
+    flash: &mut pac::FLASH,
+    pwr: &mut pac::PWR,
+    rcc: &mut pac::RCC,
+    range: MsiRange,
+    cs: &CriticalSection,
+) {
+    // startup the MSI clock
+    rcc.cr.modify(|_, w| w.msion().enabled());
+
+    let vos: Vos = range.vos();
+
+    // increase VOS range
+    if vos == Vos::V1_2 {
+        pwr.cr1.modify(|_, w| w.vos().v1_2());
+        while pwr.sr2.read().vosf().is_change() {}
+    }
+
+    let cfgr = rcc.cfgr.read();
+
+    // ES0500 Rev 3 erratum handling:
+    //
+    // A voltage drop to 1.08 V may occur on the 1.2 V regulated supply when the
+    // MSI frequency is changed as follows:
+    // * from MSI at 400 kHz to MSI at 24 MHz and above
+    // * from MSI at 1 MHZ to MSI at 48 MHz
+    // As a result, the voltage drop may cause CPU HardFault.
+    // To ensure there is no impact on the 1.2 V supply, introduce an
+    // intermediate MSI frequency
+    //
+    // Open question:
+    // Does this apply when the CPU is clocked by the PLL via MSI?
+    if cfgr.sws().is_msi() {
+        let current_range: MsiRange = MsiRange::from_rcc(rcc);
+
+        if ((current_range == MsiRange::Range400k) && (range >= MsiRange::Range24M))
+            || ((current_range == MsiRange::Range1M) && (range == MsiRange::Range48M))
+        {
+            set_sysclk_msi_inner(flash, rcc, MsiRange::Range16M, vos, cs)
+        }
+    }
+
+    set_sysclk_msi_inner(flash, rcc, range, vos, cs);
+
+    // decrease VOS range
+    if vos == Vos::V1_0 {
+        pwr.cr1.modify(|_, w| w.vos().v1_0());
+    }
+}
+
+unsafe fn set_sysclk_msi_inner(
+    flash: &mut pac::FLASH,
     rcc: &mut pac::RCC,
     range: MsiRange,
     vos: Vos,
     _cs: &CriticalSection,
 ) {
-    const MSI_CALIBRATION: u8 = 0;
+    // MSI was enabled by the caller, wait for it to be ready
+    // MSIRGSEL can only be set when MSI is ready (or off)
+    while rcc.cr.read().msirdy().is_not_ready() {}
 
-    pwr.cr1.modify(|_, w| w.vos().variant(vos.into()));
+    let current_sysclk_hz: u32 = sysclk_hz(rcc);
+    let target_sysclk_hz: u32 = range.to_hz();
 
-    let cfgr = rcc.cfgr.read();
+    if target_sysclk_hz > current_sysclk_hz {
+        // freq increase, set new flash latency first
+        set_flash_latency(flash, rcc, target_sysclk_hz, vos);
+        rcc.cr
+            .modify(|_, w| w.msirgsel().cr().msirange().variant(range.into()));
+        rcc.icscr.modify(|_, w| w.msitrim().bits(0));
 
-    if !(cfgr.sws().is_msi() || cfgr.sws().is_pllr() && rcc.pllcfgr.read().pllsrc().is_msi()) {
+        // switch to MSI clock source
         rcc.cfgr.modify(|_, w| w.sw().msi());
-    }
-
-    if range > MsiRange::from_rcc(rcc) {
-        rcc_set_flash_latency_from_msi_range(flash, rcc, range, vos);
-        rcc.cr
-            .modify(|_, w| w.msirgsel().cr().msirange().variant(range.into()));
-        rcc.icscr.modify(|_, w| w.msitrim().bits(MSI_CALIBRATION));
+        while !rcc.cfgr.read().sws().is_msi() {}
     } else {
-        rcc.cr
-            .modify(|_, w| w.msirgsel().cr().msirange().variant(range.into()));
-        rcc.icscr.modify(|_, w| w.msitrim().bits(MSI_CALIBRATION));
-        rcc_set_flash_latency_from_msi_range(flash, rcc, range, vos);
-    }
+        // freq decrease, set new flash latency last
+        // defmt::info!("rcc.cr write: {:#X}", rcc.cr.read().bits());
+        // cortex_m::asm::delay(range.to_hz());
+        rcc.cr.modify(|_, w| w.msirange().variant(range.into()));
+        // defmt::info!("rcc.cr write: {:#X}", rcc.cr.read().bits());
+        // cortex_m::asm::delay(range.to_hz());
+        rcc.cr.modify(|_, w| w.msirgsel().cr());
+        // defmt::info!("msitrim");
+        // cortex_m::asm::delay(range.to_hz());
+        rcc.icscr.modify(|_, w| w.msitrim().bits(0));
 
-    // HCLK1 configuration
-    rcc.cfgr.modify(|_, w| w.hpre().div1());
-    while rcc.cfgr.read().hpref().is_not_applied() {
-        compiler_fence(SeqCst);
-    }
+        // switch to MSI clock source
+        rcc.cfgr.modify(|_, w| w.sw().msi());
+        while !rcc.cfgr.read().sws().is_msi() {}
 
-    // HCLK3 configuration
-    rcc.extcfgr.modify(|_, w| w.shdhpre().div1());
-    while rcc.extcfgr.read().shdhpref().is_not_applied() {
-        compiler_fence(SeqCst);
-    }
-
-    // PCLK1 configuration
-    rcc.cfgr.modify(|_, w| w.ppre1().div1());
-    while rcc.cfgr.read().ppre1f().is_not_applied() {
-        compiler_fence(SeqCst);
-    }
-
-    // PCLK2 configuration
-    rcc.cfgr.modify(|_, w| w.ppre2().div1());
-    while rcc.cfgr.read().ppre2f().is_not_applied() {
-        compiler_fence(SeqCst);
-    }
-
-    assert!(rcc.cr.read().msirdy().bit_is_set());
-    rcc.cfgr.modify(|_, w| w.sw().msi());
-    while !rcc.cfgr.read().sws().is_msi() {
-        compiler_fence(SeqCst);
+        set_flash_latency(flash, rcc, target_sysclk_hz, vos);
     }
 }
 
-/// Set the sysclk to the MSI source at 48MHz
+/// Set the sysclk to the MSI source at 48MHz.
 ///
-/// This function is currently a hack.
-/// In the future this should look more like other HALs:
-/// * Return a clock structure
-/// * Constration RCC
-/// * Allow other frequencies to be set
-pub fn set_sysclk_to_msi_48megahertz(
-    flash: &mut pac::FLASH,
-    pwr: &mut pac::PWR,
-    rcc: &mut pac::RCC,
-) {
-    cortex_m::interrupt::free(|cs| {
-        set_sysclk_from_msi_range(flash, pwr, rcc, MsiRange::Range11, Vos::Range1, cs)
-    })
+/// This is a convenience function that wraps [`set_sysclk_msi`]
+/// to set the system clock to the highest frequency.
+///
+/// # Safety
+///
+/// 1. Peripherals must not be in-use before calling this function.
+/// 2. Peripherals may need their prescalers adjusted for the new sysclk frequency.
+///
+/// # Example
+///
+/// ```no_run
+/// use stm32wl_hal::{pac, rcc::set_sysclk_msi_max};
+///
+/// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+/// unsafe { set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
+/// ```
+pub unsafe fn set_sysclk_msi_max(flash: &mut pac::FLASH, pwr: &mut pac::PWR, rcc: &mut pac::RCC) {
+    cortex_m::interrupt::free(|cs| set_sysclk_msi(flash, pwr, rcc, MsiRange::Range48M, cs))
 }
 
 #[cfg_attr(feature = "stm32wl5x_cm0p", allow(dead_code))]
@@ -346,7 +518,7 @@ fn pllclk(rcc: &pac::RCC, pllcfgr: &pac::rcc::pllcfgr::R) -> Ratio<u32> {
 
     let src_freq: u32 = match pllcfgr.pllsrc().variant() {
         PLLSRC::NOCLOCK => 0,
-        PLLSRC::MSI => MsiRange::from_rcc(rcc).as_hertz(),
+        PLLSRC::MSI => MsiRange::from_rcc(rcc).to_hz(),
         PLLSRC::HSI16 => 16_000_000,
         PLLSRC::HSE32 => match rcc.cr.read().hsepre().variant() {
             DIV1 => 32_000_000,
@@ -376,7 +548,7 @@ pub(crate) fn sysclk(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
     };
 
     match cfgr.sws().variant() {
-        MSI => Ratio::new_raw(MsiRange::from_rcc(rcc).as_hertz(), 1),
+        MSI => Ratio::new_raw(MsiRange::from_rcc(rcc).to_hz(), 1),
         HSI16 => Ratio::new_raw(16_000_000, 1),
         HSE32 => match rcc.cr.read().hsepre().variant() {
             DIV1 => Ratio::new_raw(32_000_000, 1),
@@ -387,7 +559,7 @@ pub(crate) fn sysclk(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
             let src_freq: u32 = match pllcfgr.pllsrc().variant() {
                 // cannot be executing this code if there is no clock
                 PLLSRC::NOCLOCK => unreachable!(),
-                PLLSRC::MSI => MsiRange::from_rcc(rcc).as_hertz(),
+                PLLSRC::MSI => MsiRange::from_rcc(rcc).to_hz(),
                 PLLSRC::HSI16 => 16_000_000,
                 PLLSRC::HSE32 => match rcc.cr.read().hsepre().variant() {
                     DIV1 => 32_000_000,
@@ -703,6 +875,7 @@ pub fn cpu_systick_hz(rcc: &pac::RCC, src: SystClkSource) -> u32 {
 /// // LSI is not divided at power on
 /// assert_eq!(lsi_hz(&dp.RCC), 32_000);
 /// ```
+#[inline]
 pub fn lsi_hz(rcc: &pac::RCC) -> u16 {
     use pac::rcc::csr::LSIPRE_A::{DIV1, DIV128};
     const LSI_BASE_HZ: u16 = 32_000;
@@ -772,6 +945,7 @@ pub fn enable_lsi(rcc: &mut pac::RCC) {
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 /// unsafe { pulse_reset_backup_domain(&mut dp.RCC, &mut dp.PWR) };
 /// ```
+#[inline]
 pub unsafe fn pulse_reset_backup_domain(rcc: &mut pac::RCC, pwr: &mut pac::PWR) {
     pwr.cr1.modify(|_, w| w.dbp().enabled());
     rcc.bdcr.modify(|_, w| w.bdrst().set_bit());

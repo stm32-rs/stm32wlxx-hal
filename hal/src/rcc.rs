@@ -79,18 +79,18 @@ impl MsiRange {
     /// ```
     /// use stm32wl_hal::rcc::MsiRange;
     ///
-    /// assert_eq!(MsiRange::Range100k, 100_000);
-    /// assert_eq!(MsiRange::Range200k, 200_000);
-    /// assert_eq!(MsiRange::Range400k, 400_000);
-    /// assert_eq!(MsiRange::Range800k, 800_000);
-    /// assert_eq!(MsiRange::Range1M, 1_000_000);
-    /// assert_eq!(MsiRange::Range2M, 2_000_000);
-    /// assert_eq!(MsiRange::Range4M, 4_000_000);
-    /// assert_eq!(MsiRange::Range8M, 8_000_000);
-    /// assert_eq!(MsiRange::Range16M, 16_000_000);
-    /// assert_eq!(MsiRange::Range24M, 24_000_000);
-    /// assert_eq!(MsiRange::Range32M, 32_000_000);
-    /// assert_eq!(MsiRange::Range48M, 48_000_000);
+    /// assert_eq!(MsiRange::Range100k.to_hz(), 100_000);
+    /// assert_eq!(MsiRange::Range200k.to_hz(), 200_000);
+    /// assert_eq!(MsiRange::Range400k.to_hz(), 400_000);
+    /// assert_eq!(MsiRange::Range800k.to_hz(), 800_000);
+    /// assert_eq!(MsiRange::Range1M.to_hz(), 1_000_000);
+    /// assert_eq!(MsiRange::Range2M.to_hz(), 2_000_000);
+    /// assert_eq!(MsiRange::Range4M.to_hz(), 4_000_000);
+    /// assert_eq!(MsiRange::Range8M.to_hz(), 8_000_000);
+    /// assert_eq!(MsiRange::Range16M.to_hz(), 16_000_000);
+    /// assert_eq!(MsiRange::Range24M.to_hz(), 24_000_000);
+    /// assert_eq!(MsiRange::Range32M.to_hz(), 32_000_000);
+    /// assert_eq!(MsiRange::Range48M.to_hz(), 48_000_000);
     /// ```
     pub const fn to_hz(&self) -> u32 {
         match self {
@@ -112,7 +112,7 @@ impl MsiRange {
     /// Get the current MSI clock range from hardware registers.
     ///
     /// The unwraps in this function are desired because the other values are
-    /// reserved.
+    /// impossible to set in hardware.
     fn from_rcc(rcc: &pac::RCC) -> MsiRange {
         use pac::rcc::cr::MSIRGSEL_A::{CR, CSR};
 

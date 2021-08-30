@@ -91,7 +91,7 @@ pub fn setup_wakeup_pins(pwr: &mut pac::PWR, wp1: WakeupPin, wp2: WakeupPin, wp3
 ///
 /// # Safety
 ///
-/// 1. Existing shutdown mode will result in a power-on-reset.
+/// 1. Exiting shutdown mode will result in a power-on-reset.
 /// 2. Wakeup pins should be configured with [`setup_wakeup_pins`] unless
 ///    you intend to wakeup only via reset.
 ///

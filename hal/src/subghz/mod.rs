@@ -21,6 +21,7 @@ mod pa_config;
 mod packet_params;
 mod packet_status;
 mod packet_type;
+mod pkt_ctrl;
 mod pmode;
 mod reg_mode;
 mod rf_frequency;
@@ -59,6 +60,7 @@ pub use packet_params::{
 };
 pub use packet_status::{FskPacketStatus, LoRaPacketStatus};
 pub use packet_type::PacketType;
+pub use pkt_ctrl::{InfSeqSel, PktCtrl};
 pub use pmode::PMode;
 pub use reg_mode::RegMode;
 pub use rf_frequency::RfFreq;
@@ -487,31 +489,20 @@ where
     }
 
     /// Set the LoRa bit synchronization.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::BitSync;
-    ///
-    /// const BIT_SYNC: BitSync = BitSync::RESET.set_rx_data_inv(true);
-    /// sg.set_bit_sync(BIT_SYNC)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_bit_sync(&mut self, bs: BitSync) -> Result<(), Error> {
         self.write_register(Register::GBSYNC, &[bs.as_raw()])
     }
 
+    /// Set the generic packet control register.
+    pub fn set_pkt_ctrl(&mut self, pkt_ctrl: PktCtrl) -> Result<(), Error> {
+        self.write_register(Register::GPKTCTL1A, &[pkt_ctrl.as_raw()])
+    }
+
     /// Set the initial value for generic packet whitening.
     ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// sg.set_initial_whitening(0xA5)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
-    pub fn set_initial_whitening(&mut self, init: u8) -> Result<(), Error> {
+    /// This sets the first 8 bits, the 9th bit is set with
+    /// [`set_pkt_ctrl`](Self::set_pkt_ctrl).
+    pub fn set_init_whitening(&mut self, init: u8) -> Result<(), Error> {
         self.write_register(Register::GWHITEINIRL, &[init])
     }
 
@@ -1807,22 +1798,24 @@ impl From<OpCode> for u8 {
 pub(crate) enum Register {
     /// Generic bit synchronization.
     GBSYNC = 0x06AC,
+    /// Generic packet control.
+    GPKTCTL1A = 0x06B8,
+    /// Generic whitening.
+    GWHITEINIRL = 0x06B9,
     /// Generic CRC initial.
     GCRCINIRH = 0x06BC,
     /// Generic CRC polynomial.
     GCRCPOLRH = 0x06BE,
-    /// Generic whitening.
-    GWHITEINIRL = 0x06B9,
-    /// PA over current protection.
-    PAOCP = 0x08E7,
+    /// Generic synchronization word 7.
+    GSYNC7 = 0x06C0,
     /// LoRa synchronization word MSB.
     LSYNCH = 0x0740,
     /// LoRa synchronization word LSB.
     LSYNCL = 0x0741,
-    /// Generic synchronization word 7.
-    GSYNC7 = 0x06C0,
     /// Receiver gain control.
     RXGAINC = 0x08AC,
+    /// PA over current protection.
+    PAOCP = 0x08E7,
     /// HSE32 OSC_IN capacitor trim.
     HSEINTRIM = 0x0911,
     /// HSE32 OSC_OUT capacitor trim.

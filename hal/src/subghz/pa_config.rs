@@ -48,7 +48,7 @@ impl PaConfig {
     /// const PA_CONFIG: PaConfig = PaConfig::new().set_pa(PaSel::Lp).set_pa_duty_cycle(0x4);
     /// # assert_eq!(PA_CONFIG.as_slice()[1], 0x04);
     /// ```
-    #[must_use = "set_pa_duty_cycle returns a new PaConfig"]
+    #[must_use = "set_pa_duty_cycle returns a modified PaConfig"]
     pub const fn set_pa_duty_cycle(mut self, pa_duty_cycle: u8) -> PaConfig {
         self.buf[1] = pa_duty_cycle & 0b111;
         self
@@ -66,7 +66,7 @@ impl PaConfig {
     /// const PA_CONFIG: PaConfig = PaConfig::new().set_pa(PaSel::Hp).set_hp_max(0x2);
     /// # assert_eq!(PA_CONFIG.as_slice()[2], 0x02);
     /// ```
-    #[must_use = "set_hp_max returns a new PaConfig"]
+    #[must_use = "set_hp_max returns a modified PaConfig"]
     pub const fn set_hp_max(mut self, hp_max: u8) -> PaConfig {
         self.buf[2] = hp_max & 0b111;
         self
@@ -84,7 +84,7 @@ impl PaConfig {
     /// # assert_eq!(PA_CONFIG_HP.as_slice()[3], 0x00);
     /// # assert_eq!(PA_CONFIG_LP.as_slice()[3], 0x01);
     /// ```
-    #[must_use = "set_pa returns a new PaConfig"]
+    #[must_use = "set_pa returns a modified PaConfig"]
     pub const fn set_pa(mut self, pa: PaSel) -> PaConfig {
         self.buf[3] = pa as u8;
         self

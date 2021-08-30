@@ -38,13 +38,35 @@ impl BitSync {
     /// const BIT_SYNC: BitSync = BitSync::RESET.set_simple_bit_sync_en(true);
     /// # assert_eq!(u8::from(BIT_SYNC), 0x40u8);
     /// ```
-    #[must_use = "set_simple_bit_sync_en returns a new BitSync"]
+    #[must_use = "set_simple_bit_sync_en returns a modified BitSync"]
     pub const fn set_simple_bit_sync_en(mut self, en: bool) -> BitSync {
-        self.val |= (en as u8) << 6;
+        if en {
+            self.val |= 1 << 6;
+        } else {
+            self.val &= !(1 << 6);
+        }
         self
     }
 
-    /// LoRa receive data inversion.
+    /// Returns `true` if simple bit synchronization is enabled.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal::subghz::BitSync;
+    ///
+    /// let bs: BitSync = BitSync::RESET;
+    /// assert_eq!(bs.simple_bit_sync_en(), false);
+    /// let bs: BitSync = bs.set_simple_bit_sync_en(true);
+    /// assert_eq!(bs.simple_bit_sync_en(), true);
+    /// let bs: BitSync = bs.set_simple_bit_sync_en(false);
+    /// assert_eq!(bs.simple_bit_sync_en(), false);
+    /// ```
+    pub const fn simple_bit_sync_en(&self) -> bool {
+        self.val & (1 << 6) != 0
+    }
+
+    /// LoRa RX data inversion.
     ///
     /// # Example
     ///
@@ -56,10 +78,32 @@ impl BitSync {
     /// const BIT_SYNC: BitSync = BitSync::RESET.set_rx_data_inv(true);
     /// # assert_eq!(u8::from(BIT_SYNC), 0x20u8);
     /// ```
-    #[must_use = "set_rx_data_inv returns a new BitSync"]
+    #[must_use = "set_rx_data_inv returns a modified BitSync"]
     pub const fn set_rx_data_inv(mut self, inv: bool) -> BitSync {
-        self.val |= (inv as u8) << 5;
+        if inv {
+            self.val |= 1 << 5;
+        } else {
+            self.val &= !(1 << 5);
+        }
         self
+    }
+
+    /// Returns `true` if LoRa RX data is inverted.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal::subghz::BitSync;
+    ///
+    /// let bs: BitSync = BitSync::RESET;
+    /// assert_eq!(bs.rx_data_inv(), false);
+    /// let bs: BitSync = bs.set_rx_data_inv(true);
+    /// assert_eq!(bs.rx_data_inv(), true);
+    /// let bs: BitSync = bs.set_rx_data_inv(false);
+    /// assert_eq!(bs.rx_data_inv(), false);
+    /// ```
+    pub const fn rx_data_inv(&self) -> bool {
+        self.val & (1 << 5) != 0
     }
 
     /// LoRa normal bit synchronization enable.
@@ -74,10 +118,32 @@ impl BitSync {
     /// const BIT_SYNC: BitSync = BitSync::RESET.set_norm_bit_sync_en(true);
     /// # assert_eq!(u8::from(BIT_SYNC), 0x10u8);
     /// ```
-    #[must_use = "set_norm_bit_sync_en returns a new BitSync"]
+    #[must_use = "set_norm_bit_sync_en returns a modified BitSync"]
     pub const fn set_norm_bit_sync_en(mut self, en: bool) -> BitSync {
-        self.val |= (en as u8) << 4;
+        if en {
+            self.val |= 1 << 4;
+        } else {
+            self.val &= !(1 << 4);
+        }
         self
+    }
+
+    /// Returns `true` if normal bit synchronization is enabled.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wl_hal::subghz::BitSync;
+    ///
+    /// let bs: BitSync = BitSync::RESET;
+    /// assert_eq!(bs.norm_bit_sync_en(), false);
+    /// let bs: BitSync = bs.set_norm_bit_sync_en(true);
+    /// assert_eq!(bs.norm_bit_sync_en(), true);
+    /// let bs: BitSync = bs.set_norm_bit_sync_en(false);
+    /// assert_eq!(bs.norm_bit_sync_en(), false);
+    /// ```
+    pub const fn norm_bit_sync_en(&self) -> bool {
+        self.val & (1 << 4) != 0
     }
 }
 

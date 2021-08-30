@@ -675,8 +675,14 @@ where
     /// Put the radio into standby mode using the HSE32 clock.
     ///
     /// ```no_run
+    /// # let mut dp = unsafe { stm32wl_hal::pac::Peripherals::steal() };
     /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
     /// use stm32wl_hal::subghz::StandbyClk;
+    ///
+    /// dp.RCC
+    ///     .cr
+    ///     .modify(|_, w| w.hseon().enabled().hsebyppwr().vddtcxo());
+    /// while dp.RCC.cr.read().hserdy().is_not_ready() {}
     ///
     /// sg.set_standby(StandbyClk::Hse)?;
     /// # Ok::<(), stm32wl_hal::subghz::Error>(())

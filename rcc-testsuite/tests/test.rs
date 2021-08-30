@@ -10,7 +10,8 @@ use panic_probe as _;
 use stm32wl_hal::{
     cortex_m::{self, interrupt::CriticalSection},
     pac,
-    rcc::{self, MsiRange, Vos},
+    pwr::{enter_lprun_msi, exit_lprun, LprunRange},
+    rcc::{self, set_sysclk_msi_max, MsiRange, Vos},
 };
 
 #[derive(defmt::Format)]
@@ -46,6 +47,16 @@ impl SysClkSrc {
         }
     }
 }
+
+const LPRUN_RANGES: [LprunRange; 4] = [
+    // STLink drops the connection when switching to 100k
+    // works with a different probe
+    // LprunRange::Range100k,
+    LprunRange::Range200k,
+    LprunRange::Range400k,
+    LprunRange::Range800k,
+    LprunRange::Range1M,
+];
 
 const CLKS: [SysClkSrc; 14] = [
     SysClkSrc::Hsi,
@@ -115,5 +126,26 @@ mod tests {
             });
             defmt::assert_eq!(rcc::sysclk_hz(&ta.rcc), to.to_hz());
         }
+
+        unsafe { set_sysclk_msi_max(&mut ta.flash, &mut ta.pwr, &mut ta.rcc) };
+    }
+
+    #[test]
+    fn enter_exit_lprun(ta: &mut TestArgs) {
+        for &lprunrange in LPRUN_RANGES.iter() {
+            defmt::info!("{}", lprunrange);
+
+            cortex_m::interrupt::free(|cs| unsafe {
+                enter_lprun_msi(&mut ta.flash, &mut ta.pwr, &mut ta.rcc, lprunrange, cs)
+            });
+            cortex_m::interrupt::free(|cs| unsafe {
+                enter_lprun_msi(&mut ta.flash, &mut ta.pwr, &mut ta.rcc, lprunrange, cs)
+            });
+
+            exit_lprun(&mut ta.pwr);
+            exit_lprun(&mut ta.pwr);
+        }
+
+        unsafe { set_sysclk_msi_max(&mut ta.flash, &mut ta.pwr, &mut ta.rcc) };
     }
 }

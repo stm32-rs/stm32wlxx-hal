@@ -64,7 +64,7 @@
 //! openssl ecparam -list_curves
 //! ```
 //!
-//! [p256-cortex-m4]: (https://crates.io/crates/p256-cortex-m4)
+//! [p256-cortex-m4]: https://crates.io/crates/p256-cortex-m4
 
 use crate::pac::{self, pka::cr::MODE_A};
 use core::{

@@ -10,6 +10,7 @@ pub enum PMode {
     /// Power saving mode.
     ///
     /// Reduces sensitivity.
+    #[allow(clippy::identity_op)]
     PowerSaving = (0x25 << 2) | 0b00,
     /// Boost mode level 1.
     ///

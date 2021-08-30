@@ -22,17 +22,11 @@ pub enum WakeupPin {
 
 impl WakeupPin {
     const fn en(&self) -> bool {
-        match self {
-            WakeupPin::Disabled => false,
-            _ => true,
-        }
+        !matches!(self, WakeupPin::Disabled)
     }
 
     const fn edge(&self) -> bool {
-        match self {
-            WakeupPin::Falling => true,
-            _ => false,
-        }
+        matches!(self, WakeupPin::Falling)
     }
 }
 

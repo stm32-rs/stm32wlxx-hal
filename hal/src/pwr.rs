@@ -54,7 +54,7 @@ impl WakeupPin {
 ///     pwr::{setup_wakeup_pins, WakeupPin},
 /// };
 ///
-/// let mut cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
+/// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 /// setup_wakeup_pins(
 ///     &mut dp.PWR,
 ///     WakeupPin::Falling,
@@ -107,7 +107,7 @@ pub fn setup_wakeup_pins(pwr: &mut pac::PWR, wp1: WakeupPin, wp2: WakeupPin, wp3
 ///
 /// // ... do things
 ///
-/// unsafe { stm32wl_hal::pwr::shutdown() };
+/// unsafe { shutdown() };
 /// ```
 #[inline]
 pub unsafe fn shutdown() -> ! {

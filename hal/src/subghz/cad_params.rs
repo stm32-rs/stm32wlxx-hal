@@ -3,7 +3,7 @@ use crate::subghz::Timeout;
 /// Number of symbols used for channel activity detection scans.
 ///
 /// Argument of [`CadParams::set_num_symbol`].
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum NbCadSymbol {

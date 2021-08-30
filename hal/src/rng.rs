@@ -24,7 +24,7 @@ use core::{
 pub use rand_core;
 
 /// RNG error types
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error {
     /// A seed error (noise error) occured.

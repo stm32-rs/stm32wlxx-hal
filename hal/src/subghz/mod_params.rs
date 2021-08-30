@@ -1,5 +1,5 @@
 /// Bandwidth options for [`FskModParams`].
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum FskBandwidth {
     /// 4.8 kHz double-sideband
@@ -175,7 +175,7 @@ impl PartialOrd for FskBandwidth {
 }
 
 /// Pulse shaping options for [`FskModParams`].
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum FskPulseShape {
     /// No filtering applied.
@@ -192,7 +192,7 @@ pub enum FskPulseShape {
 
 /// Bitrate argument for [`FskModParams::set_bitrate`] and
 /// [`BpskModParams::set_bitrate`].
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct FskBitrate {
     bits: u32,
 }
@@ -283,7 +283,7 @@ impl PartialOrd for FskBitrate {
 }
 
 /// Frequency deviation argument for [`FskModParams::set_fdev`]
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct FskFdev {
     bits: u32,
@@ -598,7 +598,7 @@ impl Default for FskModParams {
 /// LoRa spreading factor.
 ///
 /// Argument of [`LoRaModParams::set_sf`].
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum SpreadingFactor {
@@ -629,7 +629,7 @@ impl From<SpreadingFactor> for u8 {
 /// LoRa bandwidth.
 ///
 /// Argument of [`LoRaModParams::set_bw`].
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum LoRaBandwidth {
@@ -705,7 +705,7 @@ impl PartialOrd for LoRaBandwidth {
 /// LoRa forward error correction coding rate.
 ///
 /// Argument of [`LoRaModParams::set_cr`].
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum CodingRate {

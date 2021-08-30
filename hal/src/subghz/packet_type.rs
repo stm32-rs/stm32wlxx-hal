@@ -4,7 +4,7 @@
 ///
 /// [`set_packet_type`]: crate::subghz::SubGhz::set_packet_type
 #[repr(u8)]
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum PacketType {
     /// FSK (frequency shift keying) generic packet type.

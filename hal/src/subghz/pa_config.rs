@@ -119,7 +119,7 @@ impl Default for PaConfig {
 ///
 /// Argument of [`PaConfig::set_pa`].
 #[repr(u8)]
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum PaSel {
     /// High power amplifier.
     Hp = 0b0,

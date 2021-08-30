@@ -1155,7 +1155,7 @@ impl PortC {
 }
 
 /// Digital input or output level.
-#[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Clone, Copy, Hash)]
+#[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Level {
     /// GPIO logic low.

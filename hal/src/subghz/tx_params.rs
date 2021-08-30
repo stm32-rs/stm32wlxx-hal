@@ -1,7 +1,7 @@
 /// Power amplifier ramp time for FSK, MSK, and LoRa modulation.
 ///
 /// Argument of [`set_ramp_time`][`crate::subghz::TxParams::set_ramp_time`].
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum RampTime {

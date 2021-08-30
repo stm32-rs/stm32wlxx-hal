@@ -6,7 +6,7 @@ use cortex_m::interrupt::CriticalSection;
 
 /// EXTI triggers.
 ///
-/// This is an argument for [`Exti::setup_exti_c1`].
+/// Argument of [`Exti::setup_exti_c1`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ExtiTrg {

@@ -1,6 +1,6 @@
 /// Image calibration.
 ///
-/// An argument of [`calibrate_image`].
+/// Argument of [`calibrate_image`].
 ///
 /// [`calibrate_image`]: crate::subghz::SubGhz::calibrate_image
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -77,7 +77,7 @@ impl Default for CalibrateImage {
 
 /// Block calibration.
 ///
-/// An argument of [`calibrate`].
+/// Argument of [`calibrate`].
 ///
 /// [`calibrate`]: crate::subghz::SubGhz::calibrate
 #[derive(PartialEq, Eq, Debug, Clone, Copy, Hash)]

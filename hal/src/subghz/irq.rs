@@ -1,7 +1,6 @@
 /// Interrupt lines.
 ///
-/// This is an argument of [`CfgIrq::irq_enable`] and
-/// [`CfgIrq::irq_disable`].
+/// Argument of [`CfgIrq::irq_enable`] and [`CfgIrq::irq_disable`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum IrqLine {

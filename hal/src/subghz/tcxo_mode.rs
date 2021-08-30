@@ -76,7 +76,7 @@ impl TcxoTrim {
 
 /// TCXO trim and HSE32 ready timeout.
 ///
-/// This is an argument of [`set_tcxo_mode`].
+/// Argument of [`set_tcxo_mode`].
 ///
 /// [`set_tcxo_mode`]: crate::subghz::SubGhz::set_tcxo_mode
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]

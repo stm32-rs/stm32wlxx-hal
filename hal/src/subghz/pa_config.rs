@@ -117,7 +117,7 @@ impl Default for PaConfig {
 
 /// Power amplifier selection.
 ///
-/// This is an argument of [`PaConfig::set_pa`].
+/// Argument of [`PaConfig::set_pa`].
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum PaSel {

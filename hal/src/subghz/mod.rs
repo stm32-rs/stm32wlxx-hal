@@ -20,6 +20,7 @@ mod pa_config;
 mod packet_params;
 mod packet_status;
 mod packet_type;
+mod pmode;
 mod reg_mode;
 mod rf_frequency;
 mod rx_timeout_stop;
@@ -56,6 +57,7 @@ pub use packet_params::{
 };
 pub use packet_status::{FskPacketStatus, LoRaPacketStatus};
 pub use packet_type::PacketType;
+pub use pmode::PMode;
 pub use reg_mode::RegMode;
 pub use rf_frequency::RfFreq;
 pub use rx_timeout_stop::RxTimeoutStop;
@@ -311,7 +313,6 @@ impl SubGhz<SgMiso, SgMosi> {
     /// use stm32wl_hal::{pac, subghz::SubGhz};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
     /// let sg = SubGhz::new(dp.SPI3, &mut dp.RCC);
     /// ```
     pub fn new(spi: pac::SPI3, rcc: &mut pac::RCC) -> SubGhz<SgMiso, SgMosi> {
@@ -548,6 +549,21 @@ where
     /// ```
     pub fn set_lora_sync_word(&mut self, sync_word: LoRaSyncWord) -> Result<(), Error> {
         self.write_register(Register::LSYNCH, &sync_word.bytes())
+    }
+
+    /// Set the RX gain control.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
+    /// use stm32wl_hal::subghz::PMode;
+    ///
+    /// sg.set_rx_gain(PMode::Boost)?;
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
+    /// ```
+    pub fn set_rx_gain(&mut self, pmode: PMode) -> Result<(), Error> {
+        self.write_register(Register::RXGAINC, &[pmode as u8])
     }
 
     /// Set the power amplifier over current protection.
@@ -1782,6 +1798,8 @@ pub(crate) enum Register {
     LSYNCL = 0x0741,
     /// Generic synchronization word 7.
     GSYNC7 = 0x06C0,
+    /// Receiver gain control.
+    RXGAINC = 0x08AC,
     /// HSE32 OSC_IN capacitor trim.
     HSEINTRIM = 0x0911,
     /// HSE32 OSC_OUT capacitor trim.

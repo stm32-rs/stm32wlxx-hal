@@ -14,7 +14,11 @@
     all(feature = "stm32wl5x_cm0p", feature = "stm32wle5"),
     all(feature = "stm32wl5x_cm4", feature = "stm32wle5"),
 ))]
-compile_error!("Multile chip features activated. You must activate exactly one of the following features: stm32wl5x_cm0p, stm32wl5x_cm4, stm32wle5");
+compile_error!(
+    "Multile chip features activated. \
+    You must activate exactly one of the following features: \
+    stm32wl5x_cm0p, stm32wl5x_cm4, stm32wle5"
+);
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "stm32wl5x_cm0p")] {

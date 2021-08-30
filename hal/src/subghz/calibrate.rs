@@ -46,7 +46,7 @@ impl CalibrateImage {
     /// # Panics
     ///
     /// * Panics if `freq1` is less than `freq2`.
-    /// * Panics if `freq1` or `freq1` is not a multiple of 4MHz.
+    /// * Panics if `freq1` or `freq2` is not a multiple of 4MHz.
     /// * Panics if `freq1` or `freq2` is greater than `1020`.
     ///
     /// # Example

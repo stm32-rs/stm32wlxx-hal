@@ -684,30 +684,7 @@ impl LpTim1 {
     ///
     /// # Example
     ///
-    /// Setup a one-shot timer that starts after a transition on pin
-    /// [`A11`](crate::gpio::pins::A11).
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     embedded_hal::timer::CountDown,
-    ///     gpio::PortA,
-    ///     lptim::{self, Filter, LpTim, LpTim3, LpTim3Trg, Prescaler::Div1, TrgPol},
-    ///     pac,
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.write(|w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let mut lptim3: LpTim3 = LpTim3::new(dp.LPTIM3, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
-    /// let lptim3trg: LpTim3Trg = lptim3.new_trigger_pin(pa.a11, Filter::Any, TrgPol::Both);
-    /// lptim3.start(12_345_u16);
-    /// // timer will only start after any transition on pin A11
-    /// nb::block!(lptim3.wait());
-    /// ```
+    /// See [`LpTim3::new_trigger_pin`].
     pub fn new_trigger_pin<P: LpTim1Etr>(
         &mut self,
         filter: Filter,
@@ -732,32 +709,7 @@ impl LpTim1 {
     ///
     /// # Example
     ///
-    /// Setup a one-shot timer that starts after a transition on pin A11.
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     embedded_hal::timer::CountDown,
-    ///     gpio::PortA,
-    ///     lptim::{self, Filter, LpTim, LpTim3, LpTim3Trg, Prescaler::Div1, TrgPol},
-    ///     pac,
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.write(|w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let mut lptim3: LpTim3 = LpTim3::new(dp.LPTIM3, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
-    /// let lptim3trg: LpTim3Trg = lptim3.new_trigger_pin(pa.a11, Filter::Any, TrgPol::Both);
-    /// lptim3.start(12_345_u16);
-    /// // timer will only start after any transition on pin A11
-    /// nb::block!(lptim3.wait());
-    ///
-    /// // free the pin
-    /// let a11 = lptim3.free_trigger_pin(lptim3trg);
-    /// ```
+    /// See [`LpTim3::free_trigger_pin`].
     pub fn free_trigger_pin<P: LpTim1Etr>(&mut self, pin: LpTim1Trg<P>) -> P {
         debug_assert!(!self.is_enabled());
         self.as_mut_tim()
@@ -790,30 +742,7 @@ impl LpTim2 {
     ///
     /// # Example
     ///
-    /// Setup a one-shot timer that starts after a transition on pin
-    /// [`A11`](crate::gpio::pins::A11).
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     embedded_hal::timer::CountDown,
-    ///     gpio::PortA,
-    ///     lptim::{self, Filter, LpTim, LpTim3, LpTim3Trg, Prescaler::Div1, TrgPol},
-    ///     pac,
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.write(|w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let mut lptim3: LpTim3 = LpTim3::new(dp.LPTIM3, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
-    /// let lptim3trg: LpTim3Trg = lptim3.new_trigger_pin(pa.a11, Filter::Any, TrgPol::Both);
-    /// lptim3.start(12_345_u16);
-    /// // timer will only start after any transition on pin A11
-    /// nb::block!(lptim3.wait());
-    /// ```
+    /// See [`LpTim3::new_trigger_pin`].
     pub fn new_trigger_pin<P: LpTim2Etr>(
         &mut self,
         filter: Filter,
@@ -838,32 +767,7 @@ impl LpTim2 {
     ///
     /// # Example
     ///
-    /// Setup a one-shot timer that starts after a transition on pin A11.
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     embedded_hal::timer::CountDown,
-    ///     gpio::PortA,
-    ///     lptim::{self, Filter, LpTim, LpTim3, LpTim3Trg, Prescaler::Div1, TrgPol},
-    ///     pac,
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.write(|w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let mut lptim3: LpTim3 = LpTim3::new(dp.LPTIM3, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
-    /// let lptim3trg: LpTim3Trg = lptim3.new_trigger_pin(pa.a11, Filter::Any, TrgPol::Both);
-    /// lptim3.start(12_345_u16);
-    /// // timer will only start after any transition on pin A11
-    /// nb::block!(lptim3.wait());
-    ///
-    /// // free the pin
-    /// let a11 = lptim3.free_trigger_pin(lptim3trg);
-    /// ```
+    /// See [`LpTim3::free_trigger_pin`].
     pub fn free_trigger_pin<P: LpTim2Etr>(&mut self, pin: LpTim2Trg<P>) -> P {
         debug_assert!(!self.is_enabled());
         self.as_mut_tim()

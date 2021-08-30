@@ -649,7 +649,7 @@ where
     }
 
     /// Set the maximum SMPS drive capability.
-    pub fn set_smps_max_drv(&mut self, drv: SmpsDrv) -> Result<(), Error> {
+    pub fn set_smps_drv(&mut self, drv: SmpsDrv) -> Result<(), Error> {
         self.write_register(Register::SMPSC2, &[(drv as u8) << 1])
     }
 }

@@ -133,7 +133,7 @@ impl PktCtrl {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{PktCtrl, InfSeqSel};
+    /// use stm32wl_hal::subghz::{InfSeqSel, PktCtrl};
     ///
     /// let pc: PktCtrl = PktCtrl::RESET;
     /// assert_eq!(pc.inf_seq_sel(), InfSeqSel::Five);

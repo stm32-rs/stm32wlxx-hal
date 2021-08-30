@@ -7,8 +7,8 @@ use panic_probe as _;
 use stm32wl_hal::{
     embedded_hal::digital::v2::ToggleableOutputPin,
     embedded_hal::timer::CountDown,
-    gpio::{pins, LpTim3Trg, Output, PortA, PortB},
-    lptim::{self, Filter, LpTim, LpTim1, LpTim2, LpTim3, Prescaler, TrgPol, TrgSel3},
+    gpio::{pins, Output, PortA, PortB},
+    lptim::{self, Filter, LpTim, LpTim1, LpTim2, LpTim3, Prescaler, TrgPol},
     pac::{self, DWT},
     rcc,
     util::reset_cycle_count,
@@ -48,9 +48,8 @@ mod tests {
 
         defmt::assert_eq!(LpTim1::clk(&dp.RCC), lptim::Clk::Pclk);
 
-        let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+        let _: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
         let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-        let _: LpTim3Trg = LpTim3Trg::new(gpioa.a11);
 
         let lptim1: LpTim1 =
             LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, Prescaler::Div128, &mut dp.RCC);
@@ -105,8 +104,9 @@ mod tests {
         const CYCLES: u16 = 10_000;
         unsafe { LpTim3::pulse_reset(&mut ta.rcc) };
 
-        ta.lptim3
-            .setup_trigger(Filter::Any, TrgPol::Both, TrgSel3::Pin);
+        let a11 = unsafe { PortA::steal() }.a11;
+
+        ta.lptim3.new_trigger_pin(a11, Filter::Any, TrgPol::Both);
         ta.lptim3.start(CYCLES);
 
         // wait 10 LPTIM3 cycles

@@ -6,7 +6,7 @@ use crate::subghz::Timeout;
 /// least + 200 mV higher than the selected `TcxoTrim` voltage level.
 ///
 /// Used by [`TcxoMode`].
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum TcxoTrim {

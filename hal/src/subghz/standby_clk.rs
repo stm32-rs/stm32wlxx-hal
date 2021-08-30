@@ -3,7 +3,7 @@
 /// Used by [`set_standby`].
 ///
 /// [`set_standby`]: crate::subghz::SubGhz::set_standby
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum StandbyClk {

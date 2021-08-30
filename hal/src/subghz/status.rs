@@ -5,7 +5,7 @@
 ///
 /// This is returned by [`Status::mode`].
 #[repr(u8)]
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum StatusMode {
     /// Standby mode with RC 13MHz.
@@ -55,7 +55,7 @@ impl StatusMode {
 ///
 /// This is returned by [`Status::cmd`].
 #[repr(u8)]
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum CmdStatus {
     /// Data available to host.

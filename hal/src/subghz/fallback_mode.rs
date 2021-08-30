@@ -3,7 +3,7 @@
 /// Argument of [`set_tx_rx_fallback_mode`].
 ///
 /// [`set_tx_rx_fallback_mode`]: crate::subghz::SubGhz::set_tx_rx_fallback_mode.
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum FallbackMode {

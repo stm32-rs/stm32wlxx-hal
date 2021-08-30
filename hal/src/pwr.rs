@@ -178,7 +178,7 @@ pub fn enable_shutdown(pwr: &mut pac::PWR, scb: &mut pac::SCB) {
 
 /// MSI clock ranges for [`enter_lprun_msi`].
 #[repr(u8)]
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum LprunRange {
     /// Range 0 around 100 kHz.

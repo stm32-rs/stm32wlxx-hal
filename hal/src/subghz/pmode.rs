@@ -4,7 +4,7 @@
 ///
 /// [`set_rx_gain`]: crate::subghz::SubGhz::set_rx_gain
 #[repr(u8)]
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum PMode {
     /// Power saving mode.

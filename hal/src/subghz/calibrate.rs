@@ -80,7 +80,7 @@ impl Default for CalibrateImage {
 /// Argument of [`calibrate`].
 ///
 /// [`calibrate`]: crate::subghz::SubGhz::calibrate
-#[derive(PartialEq, Eq, Debug, Clone, Copy, Hash)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum Calibrate {

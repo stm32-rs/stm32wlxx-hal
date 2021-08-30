@@ -1,7 +1,7 @@
 /// Interrupt lines.
 ///
 /// Argument of [`CfgIrq::irq_enable`] and [`CfgIrq::irq_disable`].
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum IrqLine {
     /// Global interrupt.
@@ -36,7 +36,7 @@ impl IrqLine {
 /// See table 37 "IRQ bit mapping and definition" in the reference manual for
 /// more information.
 #[repr(u16)]
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Irq {
     /// Packet transmission finished.

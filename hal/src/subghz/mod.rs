@@ -7,6 +7,7 @@
 //!
 //! [link]: https://community.st.com/s/question/0D53W00000hR8kpSAC/stm32wl55-erratum-clairification
 
+mod bit_sync;
 mod cad_params;
 mod calibrate;
 mod fallback_mode;
@@ -39,6 +40,7 @@ use crate::{
     spi::{BaudRate, SgMiso, SgMosi, Spi3},
 };
 
+pub use bit_sync::BitSync;
 pub use cad_params::{CadParams, ExitMode, NbCadSymbol};
 pub use calibrate::{Calibrate, CalibrateImage};
 pub use fallback_mode::FallbackMode;
@@ -443,6 +445,9 @@ where
     }
 
     /// Read the radio buffer at the given offset.
+    ///
+    /// The offset and length of a received packet is provided by
+    /// [`rx_buffer_status`](Self::rx_buffer_status).
     pub fn read_buffer(&mut self, offset: u8, buf: &mut [u8]) -> Result<Status, Error> {
         let mut status_buf: [u8; 1] = [0];
 
@@ -479,6 +484,22 @@ where
         self.poll_not_busy();
 
         Ok(())
+    }
+
+    /// Set the LoRa bit synchronization.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
+    /// use stm32wl_hal::subghz::BitSync;
+    ///
+    /// const BIT_SYNC: BitSync = BitSync::RESET.set_rx_data_inv(true);
+    /// sg.set_bit_sync(BIT_SYNC)?;
+    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
+    /// ```
+    pub fn set_bit_sync(&mut self, bs: BitSync) -> Result<(), Error> {
+        self.write_register(Register::GBSYNC, &[bs.as_raw()])
     }
 
     /// Set the initial value for generic packet whitening.
@@ -1784,6 +1805,8 @@ impl From<OpCode> for u8 {
 #[allow(dead_code)]
 #[allow(clippy::upper_case_acronyms)]
 pub(crate) enum Register {
+    /// Generic bit synchronization.
+    GBSYNC = 0x06AC,
     /// Generic CRC initial.
     GCRCINIRH = 0x06BC,
     /// Generic CRC polynomial.

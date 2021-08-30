@@ -3,7 +3,7 @@
 /// Used by [`set_pa_ocp`].
 ///
 /// [`set_pa_ocp`]: crate::subghz::SubGhz::set_pa_ocp
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum Ocp {

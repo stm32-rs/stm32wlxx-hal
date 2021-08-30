@@ -42,7 +42,7 @@ fn set_flash_latency(flash: &pac::FLASH, rcc: &pac::RCC, target_sysclk_hz: u32, 
 /// MSI clock ranges.
 // developers: this exists because the MSI range appears in two different registers.
 #[repr(u8)]
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum MsiRange {
     /// Range 0 around 100 kHz.

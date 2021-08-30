@@ -678,7 +678,7 @@ impl Pka {
 
 /// Sign bit for ECDSA coefficient signing and verification.
 #[repr(u32)]
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Sign {
     /// Positive.

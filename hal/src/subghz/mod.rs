@@ -27,6 +27,7 @@ mod reg_mode;
 mod rf_frequency;
 mod rx_timeout_stop;
 mod sleep_cfg;
+mod smps;
 mod standby_clk;
 mod stats;
 mod status;
@@ -66,6 +67,7 @@ pub use reg_mode::RegMode;
 pub use rf_frequency::RfFreq;
 pub use rx_timeout_stop::RxTimeoutStop;
 pub use sleep_cfg::{SleepCfg, Startup};
+pub use smps::SmpsDrv;
 pub use standby_clk::StandbyClk;
 pub use stats::{FskStats, LoRaStats, Stats};
 pub use status::{CmdStatus, Status, StatusMode};
@@ -644,6 +646,11 @@ where
     /// SMPS clock detection must be enabled fore enabling the SMPS.
     pub fn set_smps_clock_det_en(&mut self, en: bool) -> Result<(), Error> {
         self.write_register(Register::SMPSC0, &[(en as u8) << 6])
+    }
+
+    /// Set the maximum SMPS drive capability.
+    pub fn set_smps_drv(&mut self, drv: SmpsDrv) -> Result<(), Error> {
+        self.write_register(Register::SMPSC2, &[(drv as u8) << 1])
     }
 }
 
@@ -1799,7 +1806,6 @@ impl From<OpCode> for u8 {
 }
 
 #[repr(u16)]
-#[allow(dead_code)]
 #[allow(clippy::upper_case_acronyms)]
 pub(crate) enum Register {
     /// Generic bit synchronization.
@@ -1817,6 +1823,7 @@ pub(crate) enum Register {
     /// LoRa synchronization word MSB.
     LSYNCH = 0x0740,
     /// LoRa synchronization word LSB.
+    #[allow(dead_code)]
     LSYNCL = 0x0741,
     /// Receiver gain control.
     RXGAINC = 0x08AC,
@@ -1826,8 +1833,13 @@ pub(crate) enum Register {
     HSEINTRIM = 0x0911,
     /// HSE32 OSC_OUT capacitor trim.
     HSEOUTTRIM = 0x0912,
-    /// SMPS control 0 register.
+    /// SMPS control 0.
     SMPSC0 = 0x0916,
+    /// Power control.
+    #[allow(dead_code)]
+    PC = 0x091A,
+    /// SMPS control 2.
+    SMPSC2 = 0x0923,
 }
 
 impl Register {

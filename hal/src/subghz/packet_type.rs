@@ -1,6 +1,6 @@
 /// Packet type definition.
 ///
-/// An argument of [`set_packet_type`]
+/// Argument of [`set_packet_type`]
 ///
 /// [`set_packet_type`]: crate::subghz::SubGhz::set_packet_type
 #[repr(u8)]

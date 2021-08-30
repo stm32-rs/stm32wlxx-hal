@@ -1,6 +1,6 @@
 /// RF frequency structure.
 ///
-/// This is an argument of [`set_rf_frequency`].
+/// Argument of [`set_rf_frequency`].
 ///
 /// [`set_rf_frequency`]: crate::subghz::SubGhz::set_rf_frequency
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]

@@ -94,8 +94,8 @@ impl Timeout {
     /// This will return the nearest timeout value possible, or a
     /// [`ValueError`] if the value is out of bounds.
     ///
-    /// This is an expensive function to call outside of `const` contexts.
-    /// Use [`from_millis_sat`] for efficient runtime timeouts.
+    /// Use [`from_millis_sat`](Self::from_millis_sat) for runtime timeout
+    /// construction.
     /// This is not _that_ useful right now, it is simply future proofing for a
     /// time when `Result::unwrap` is avaliable for `const fn`.
     ///
@@ -180,7 +180,8 @@ impl Timeout {
     /// limits.
     ///
     /// This is an expensive function to call outside of `const` contexts.
-    /// Use [`from_millis_sat`] for efficient runtime timeouts.
+    /// Use [`from_millis_sat`](Self::from_millis_sat) for runtime timeout
+    /// construction.
     ///
     /// # Example
     ///
@@ -245,10 +246,7 @@ impl Timeout {
     /// # Example
     ///
     /// ```
-    /// use core::time::Duration;
     /// use stm32wl_hal::subghz::Timeout;
-    ///
-    /// const DURATION_MAX_NS: u64 = 262_143_984_376;
     ///
     /// assert_eq!(Timeout::from_millis_sat(0), Timeout::MIN);
     /// assert_eq!(Timeout::from_millis_sat(262_144), Timeout::MAX);

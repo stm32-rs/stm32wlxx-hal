@@ -1,4 +1,10 @@
-//! STM32WL Hardware Abstraction Layer
+//! STM32WL Hardware Abstraction Layer.
+//!
+//! This documentation was generated for the
+#![cfg_attr(feature = "stm32wl5x_cm0p", doc = "STM32WL5X (CM0+ core).")]
+#![cfg_attr(feature = "stm32wl5x_cm4", doc = "STM32WL5X (CM4 core).")]
+#![cfg_attr(feature = "stm32wl5x_cm0p", doc = "STM32WLE5.")]
+//!
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_docs)]

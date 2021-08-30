@@ -102,7 +102,7 @@ pub fn setup_wakeup_pins(pwr: &mut pac::PWR, wp1: WakeupPin, wp2: WakeupPin, wp3
 ///
 /// let mut cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
 /// // SLEEPDEEP is implemented with retention
-/// // generally you will want to clear this at power-on
+/// // generally you will want to clear this at power-on when using shutdown
 /// cp.SCB.clear_sleepdeep();
 ///
 /// // ... do things

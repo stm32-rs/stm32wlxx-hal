@@ -420,7 +420,7 @@ impl FskModParams {
     /// # assert_eq!(MOD_PARAMS.as_slice()[2], 0x7D);
     /// # assert_eq!(MOD_PARAMS.as_slice()[3], 0x00);
     /// ```
-    #[must_use = "set_bitrate returns a new FskModParams"]
+    #[must_use = "set_bitrate returns a modified FskModParams"]
     pub const fn set_bitrate(mut self, bitrate: FskBitrate) -> FskModParams {
         let bits: u32 = bitrate.into_bits();
         self.buf[1] = ((bits >> 16) & 0xFF) as u8;
@@ -439,7 +439,7 @@ impl FskModParams {
     /// const MOD_PARAMS: FskModParams = FskModParams::new().set_pulse_shape(FskPulseShape::Bt03);
     /// # assert_eq!(MOD_PARAMS.as_slice()[4], 0x08);
     /// ```
-    #[must_use = "set_pulse_shape returns a new FskModParams"]
+    #[must_use = "set_pulse_shape returns a modified FskModParams"]
     pub const fn set_pulse_shape(mut self, shape: FskPulseShape) -> FskModParams {
         self.buf[4] = shape as u8;
         self
@@ -472,7 +472,7 @@ impl FskModParams {
     /// const MOD_PARAMS: FskModParams = FskModParams::new().set_bandwidth(FskBandwidth::Bw9);
     /// # assert_eq!(MOD_PARAMS.as_slice()[5], 0x1E);
     /// ```
-    #[must_use = "set_pulse_shape returns a new FskModParams"]
+    #[must_use = "set_pulse_shape returns a modified FskModParams"]
     pub const fn set_bandwidth(mut self, bw: FskBandwidth) -> FskModParams {
         self.buf[5] = bw as u8;
         self
@@ -507,7 +507,7 @@ impl FskModParams {
     /// # assert_eq!(MOD_PARAMS.as_slice()[7], 0x80);
     /// # assert_eq!(MOD_PARAMS.as_slice()[8], 0x00);
     /// ```
-    #[must_use = "set_fdev returns a new FskModParams"]
+    #[must_use = "set_fdev returns a modified FskModParams"]
     pub const fn set_fdev(mut self, fdev: FskFdev) -> FskModParams {
         let bits: u32 = fdev.into_bits();
         self.buf[6] = ((bits >> 16) & 0xFF) as u8;
@@ -889,7 +889,7 @@ impl BpskModParams {
     /// # assert_eq!(MOD_PARAMS.as_slice()[2], 0x0A);
     /// # assert_eq!(MOD_PARAMS.as_slice()[3], 0xAA);
     /// ```
-    #[must_use = "set_bitrate returns a new BpskModParams"]
+    #[must_use = "set_bitrate returns a modified BpskModParams"]
     pub const fn set_bitrate(mut self, bitrate: FskBitrate) -> BpskModParams {
         let bits: u32 = bitrate.into_bits();
         self.buf[1] = ((bits >> 16) & 0xFF) as u8;

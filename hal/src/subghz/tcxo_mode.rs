@@ -116,7 +116,7 @@ impl TcxoMode {
     /// const TCXO_MODE: TcxoMode = TcxoMode::new().set_txco_trim(TcxoTrim::Volts1pt6);
     /// # assert_eq!(TCXO_MODE.as_slice()[1], 0x00);
     /// ```
-    #[must_use = "set_txco_trim returns a new TcxoMode"]
+    #[must_use = "set_txco_trim returns a modified TcxoMode"]
     pub const fn set_txco_trim(mut self, tcxo_trim: TcxoTrim) -> TcxoMode {
         self.buf[1] = tcxo_trim as u8;
         self
@@ -137,7 +137,7 @@ impl TcxoMode {
     /// # assert_eq!(TCXO_MODE.as_slice()[3], 0x42);
     /// # assert_eq!(TCXO_MODE.as_slice()[4], 0x40);
     /// ```
-    #[must_use = "set_timeout returns a new TcxoMode"]
+    #[must_use = "set_timeout returns a modified TcxoMode"]
     pub const fn set_timeout(mut self, timeout: Timeout) -> TcxoMode {
         let timeout_bits: u32 = timeout.into_bits();
         self.buf[2] = ((timeout_bits >> 16) & 0xFF) as u8;

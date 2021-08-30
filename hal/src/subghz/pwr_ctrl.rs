@@ -1,6 +1,6 @@
 /// Power-supply current limit.
 ///
-/// Argument of [`PwrCtrl::set_current_limit`].
+/// Argument of [`PwrCtrl::set_current_lim`].
 #[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]

@@ -41,7 +41,7 @@ impl PktCtrl {
     }
 
     /// Get the raw value of the [`PktCtrl`] register.
-    pub const fn as_raw(&self) -> u8 {
+    pub const fn as_bits(&self) -> u8 {
         self.val
     }
 

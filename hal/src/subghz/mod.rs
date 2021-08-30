@@ -470,6 +470,19 @@ where
     }
 }
 
+// helper to pack register writes into a single buffer to avoid multiple DMA
+// transfers
+macro_rules! wr_reg {
+    [$reg:ident, $($data:expr),+] => {
+        &[
+            OpCode::WriteRegister as u8,
+            Register::$reg.address().to_be_bytes()[0],
+            Register::$reg.address().to_be_bytes()[1],
+            $($data),+
+        ]
+    };
+}
+
 // 5.8.2
 /// Register access
 impl<MISO, MOSI> SubGhz<MISO, MOSI>
@@ -477,6 +490,7 @@ where
     Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
         + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
+    // register write with variable length data
     fn write_register(&mut self, register: Register, data: &[u8]) -> Result<(), Error> {
         let addr: [u8; 2] = register.address().to_be_bytes();
 
@@ -494,12 +508,12 @@ where
 
     /// Set the LoRa bit synchronization.
     pub fn set_bit_sync(&mut self, bs: BitSync) -> Result<(), Error> {
-        self.write_register(Register::GBSYNC, &[bs.as_bits()])
+        self.write(wr_reg![GBSYNC, bs.as_bits()])
     }
 
     /// Set the generic packet control register.
     pub fn set_pkt_ctrl(&mut self, pkt_ctrl: PktCtrl) -> Result<(), Error> {
-        self.write_register(Register::GPKTCTL1A, &[pkt_ctrl.as_bits()])
+        self.write(wr_reg![GPKTCTL1A, pkt_ctrl.as_bits()])
     }
 
     /// Set the initial value for generic packet whitening.
@@ -507,7 +521,7 @@ where
     /// This sets the first 8 bits, the 9th bit is set with
     /// [`set_pkt_ctrl`](Self::set_pkt_ctrl).
     pub fn set_init_whitening(&mut self, init: u8) -> Result<(), Error> {
-        self.write_register(Register::GWHITEINIRL, &[init])
+        self.write(wr_reg![GWHITEINIRL, init])
     }
 
     /// Set the initial value for generic packet CRC polynomial.
@@ -520,7 +534,8 @@ where
     /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     pub fn set_crc_polynomial(&mut self, polynomial: u16) -> Result<(), Error> {
-        self.write_register(Register::GCRCINIRH, &polynomial.to_be_bytes())
+        let bytes: [u8; 2] = polynomial.to_be_bytes();
+        self.write(wr_reg![GCRCINIRH, bytes[0], bytes[1]])
     }
 
     /// Set the generic packet CRC polynomial.
@@ -533,7 +548,8 @@ where
     /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     pub fn set_initial_crc_polynomial(&mut self, polynomial: u16) -> Result<(), Error> {
-        self.write_register(Register::GCRCPOLRH, &polynomial.to_be_bytes())
+        let bytes: [u8; 2] = polynomial.to_be_bytes();
+        self.write(wr_reg![GCRCPOLRH, bytes[0], bytes[1]])
     }
 
     /// Set the synchronization word registers.
@@ -564,7 +580,8 @@ where
     /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     pub fn set_lora_sync_word(&mut self, sync_word: LoRaSyncWord) -> Result<(), Error> {
-        self.write_register(Register::LSYNCH, &sync_word.bytes())
+        let bytes: [u8; 2] = sync_word.bytes();
+        self.write(wr_reg![LSYNCH, bytes[0], bytes[1]])
     }
 
     /// Set the RX gain control.
@@ -579,7 +596,7 @@ where
     /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     pub fn set_rx_gain(&mut self, pmode: PMode) -> Result<(), Error> {
-        self.write_register(Register::RXGAINC, &[pmode as u8])
+        self.write(wr_reg![RXGAINC, pmode as u8])
     }
 
     /// Set the power amplifier over current protection.
@@ -606,7 +623,7 @@ where
     /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     pub fn set_pa_ocp(&mut self, ocp: Ocp) -> Result<(), Error> {
-        self.write_register(Register::PAOCP, &[ocp as u8])
+        self.write(wr_reg![PAOCP, ocp as u8])
     }
 
     /// Set the HSE32 crystal OSC_IN load capaitor trimming.
@@ -623,7 +640,7 @@ where
     /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     pub fn set_hse_in_trim(&mut self, trim: HseTrim) -> Result<(), Error> {
-        self.write_register(Register::HSEINTRIM, &[trim.into()])
+        self.write(wr_reg![HSEINTRIM, trim.into()])
     }
 
     /// Set the HSE32 crystal OSC_OUT load capaitor trimming.
@@ -640,24 +657,24 @@ where
     /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
     pub fn set_hse_out_trim(&mut self, trim: HseTrim) -> Result<(), Error> {
-        self.write_register(Register::HSEOUTTRIM, &[trim.into()])
+        self.write(wr_reg![HSEOUTTRIM, trim.into()])
     }
 
     /// Set the SMPS clock detection enabled.
     ///
     /// SMPS clock detection must be enabled fore enabling the SMPS.
     pub fn set_smps_clock_det_en(&mut self, en: bool) -> Result<(), Error> {
-        self.write_register(Register::SMPSC0, &[(en as u8) << 6])
+        self.write(wr_reg![SMPSC0, (en as u8) << 6])
     }
 
     /// Set the power current limiting.
     pub fn set_pwr_ctrl(&mut self, pwr_ctrl: PwrCtrl) -> Result<(), Error> {
-        self.write_register(Register::PC, &[pwr_ctrl.as_bits()])
+        self.write(wr_reg![PC, pwr_ctrl.as_bits()])
     }
 
     /// Set the maximum SMPS drive capability.
     pub fn set_smps_drv(&mut self, drv: SmpsDrv) -> Result<(), Error> {
-        self.write_register(Register::SMPSC2, &[(drv as u8) << 1])
+        self.write(wr_reg![SMPSC2, (drv as u8) << 1])
     }
 }
 

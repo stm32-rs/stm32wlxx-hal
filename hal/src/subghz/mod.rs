@@ -638,6 +638,13 @@ where
     pub fn set_hse_out_trim(&mut self, trim: HseTrim) -> Result<(), Error> {
         self.write_register(Register::HSEOUTTRIM, &[trim.into()])
     }
+
+    /// Set the SMPS clock detection enabled.
+    ///
+    /// SMPS clock detection must be enabled fore enabling the SMPS.
+    pub fn set_smps_clock_det_en(&mut self, en: bool) -> Result<(), Error> {
+        self.write_register(Register::SMPSC0, &[(en as u8) << 6])
+    }
 }
 
 // 5.8.3
@@ -1723,12 +1730,11 @@ where
     ///
     /// ```no_run
     /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use core::time::Duration;
     /// use stm32wl_hal::subghz::{TcxoMode, TcxoTrim, Timeout};
     ///
     /// const TCXO_MODE: TcxoMode = TcxoMode::new()
     ///     .set_txco_trim(TcxoTrim::Volts1pt7)
-    ///     .set_timeout(Timeout::from_duration_sat(Duration::from_millis(10)));
+    ///     .set_timeout(Timeout::from_millis_sat(10));
     /// sg.set_tcxo_mode(&TCXO_MODE)?;
     /// # Ok::<(), stm32wl_hal::subghz::Error>(())
     /// ```
@@ -1820,6 +1826,8 @@ pub(crate) enum Register {
     HSEINTRIM = 0x0911,
     /// HSE32 OSC_OUT capacitor trim.
     HSEOUTTRIM = 0x0912,
+    /// SMPS control 0 register.
+    SMPSC0 = 0x0916,
 }
 
 impl Register {

@@ -185,16 +185,14 @@ fn ping_pong(sg: &mut MySubghz, rng: &mut Rng, rfs: &mut RfSwitch, pkt: PacketTy
         defmt::info!("Attempt: {}/{}", attempt, MAX_ATTEMPTS);
 
         // 45 - 300 ms
-        let timeout: Timeout = {
+        let (rx_timeout, rx_timeout_ms): (Timeout, i32) = {
             let rand_u8: u8 = unwrap!(rng.try_u8());
-            let millis: u64 = u64::from(rand_u8).saturating_add(45);
-            let dur: Duration = Duration::from_millis(millis);
-            Timeout::from_duration_sat(dur)
+            let millis: u32 = u32::from(rand_u8).saturating_add(45);
+            (Timeout::from_millis_sat(millis), millis as i32)
         };
 
-        let rx_timeout_ms: i32 = timeout.as_duration().as_millis() as i32;
         defmt::debug!("RX with timeout {:?} ms", rx_timeout_ms);
-        unwrap!(sg.set_rx(timeout));
+        unwrap!(sg.set_rx(rx_timeout));
 
         let start_cc: u32 = DWT::get_cycle_count();
         loop {

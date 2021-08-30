@@ -44,6 +44,20 @@ impl From<RampTime> for core::time::Duration {
     }
 }
 
+impl From<RampTime> for embedded_time::duration::Microseconds {
+    fn from(rt: RampTime) -> Self {
+        match rt {
+            RampTime::Micros10 => embedded_time::duration::Microseconds(10),
+            RampTime::Micros20 => embedded_time::duration::Microseconds(20),
+            RampTime::Micros40 => embedded_time::duration::Microseconds(40),
+            RampTime::Micros80 => embedded_time::duration::Microseconds(80),
+            RampTime::Micros200 => embedded_time::duration::Microseconds(200),
+            RampTime::Micros800 => embedded_time::duration::Microseconds(800),
+            RampTime::Micros1700 => embedded_time::duration::Microseconds(1700),
+            RampTime::Micros3400 => embedded_time::duration::Microseconds(3400),
+        }
+    }
+}
 /// Transmit parameters, output power and power amplifier ramp up time.
 ///
 /// Argument of [`set_tx_params`][`crate::subghz::SubGhz::set_tx_params`].

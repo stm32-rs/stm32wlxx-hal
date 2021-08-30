@@ -23,6 +23,7 @@ mod packet_status;
 mod packet_type;
 mod pkt_ctrl;
 mod pmode;
+mod pwr_ctrl;
 mod reg_mode;
 mod rf_frequency;
 mod rx_timeout_stop;
@@ -63,6 +64,7 @@ pub use packet_status::{FskPacketStatus, LoRaPacketStatus};
 pub use packet_type::PacketType;
 pub use pkt_ctrl::{InfSeqSel, PktCtrl};
 pub use pmode::PMode;
+pub use pwr_ctrl::{CurrentLim, PwrCtrl};
 pub use reg_mode::RegMode;
 pub use rf_frequency::RfFreq;
 pub use rx_timeout_stop::RxTimeoutStop;
@@ -492,12 +494,12 @@ where
 
     /// Set the LoRa bit synchronization.
     pub fn set_bit_sync(&mut self, bs: BitSync) -> Result<(), Error> {
-        self.write_register(Register::GBSYNC, &[bs.as_raw()])
+        self.write_register(Register::GBSYNC, &[bs.as_bits()])
     }
 
     /// Set the generic packet control register.
     pub fn set_pkt_ctrl(&mut self, pkt_ctrl: PktCtrl) -> Result<(), Error> {
-        self.write_register(Register::GPKTCTL1A, &[pkt_ctrl.as_raw()])
+        self.write_register(Register::GPKTCTL1A, &[pkt_ctrl.as_bits()])
     }
 
     /// Set the initial value for generic packet whitening.
@@ -646,6 +648,11 @@ where
     /// SMPS clock detection must be enabled fore enabling the SMPS.
     pub fn set_smps_clock_det_en(&mut self, en: bool) -> Result<(), Error> {
         self.write_register(Register::SMPSC0, &[(en as u8) << 6])
+    }
+
+    /// Set the power current limiting.
+    pub fn set_pwr_ctrl(&mut self, pwr_ctrl: PwrCtrl) -> Result<(), Error> {
+        self.write_register(Register::PC, &[pwr_ctrl.as_bits()])
     }
 
     /// Set the maximum SMPS drive capability.
@@ -1836,7 +1843,6 @@ pub(crate) enum Register {
     /// SMPS control 0.
     SMPSC0 = 0x0916,
     /// Power control.
-    #[allow(dead_code)]
     PC = 0x091A,
     /// SMPS control 2.
     SMPSC2 = 0x0923,

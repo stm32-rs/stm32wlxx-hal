@@ -123,7 +123,7 @@ impl defmt::Format for FskPacketStatus {
             fmt,
             r#"FskPacketStatus {{
     status: {},
-    preamble_error: {},
+    preamble_err: {},
     sync_err: {},
     adrs_err: {},
     crc_err: {},
@@ -135,7 +135,7 @@ impl defmt::Format for FskPacketStatus {
     rssi_avg: {},
 }}"#,
             self.status(),
-            self.preamble_error(),
+            self.preamble_err(),
             self.sync_err(),
             self.adrs_err(),
             self.crc_err(),
@@ -153,7 +153,7 @@ impl core::fmt::Display for FskPacketStatus {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("FskPacketStatus")
             .field("status", &self.status())
-            .field("preamble_error", &self.preamble_error())
+            .field("preamble_err", &self.preamble_err())
             .field("sync_err", &self.sync_err())
             .field("adrs_err", &self.adrs_err())
             .field("crc_err", &self.crc_err())

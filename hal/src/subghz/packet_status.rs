@@ -37,7 +37,7 @@ impl FskPacketStatus {
     }
 
     /// Returns `true` if a preabmle error occured.
-    pub const fn preamble_error(&self) -> bool {
+    pub const fn preamble_err(&self) -> bool {
         (self.buf[1] & (1 << 7)) != 0
     }
 
@@ -74,6 +74,11 @@ impl FskPacketStatus {
     /// Returns `true` when a packet has been sent.
     pub const fn pkt_sent(&self) -> bool {
         (self.buf[1] & 1) != 0
+    }
+
+    /// Returns `true` if any error occured.
+    pub const fn any_err(&self) -> bool {
+        (self.buf[1] & 0xFC) != 0
     }
 
     /// RSSI level when the synchronization address is detected.

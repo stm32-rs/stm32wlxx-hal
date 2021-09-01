@@ -863,7 +863,7 @@ where
     ///    a synchronization word when in (G)FSK modulation mode,
     ///    or a header when in LoRa modulation mode.
     /// 4. If no packet is received during the listen period defined by
-    ///    2 x `rx_period` + `sleep_period`, the sleep mode is entered for a
+    ///    2 × `rx_period` + `sleep_period`, the sleep mode is entered for a
     ///    duration of `sleep_period`. At the end of the receive period,
     ///    the sub-GHz radio takes some time to save the context before starting
     ///    the sleep period.

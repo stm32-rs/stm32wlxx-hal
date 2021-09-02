@@ -1,6 +1,6 @@
 //! Low-power timers
 //!
-//! Unlike other modules all functionality is exposed via a single trait shared
+//! Unlike other modules most functionality is exposed via a single trait shared
 //! for all timers, [`LpTim`].
 //!
 //! # Example
@@ -403,6 +403,26 @@ pub trait LpTim: sealed::LpTim {
     }
 
     /// Enable and disable interrupts.
+    ///
+    /// # Example
+    ///
+    /// Enable all IRQs.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     lptim::{self, LpTim, LpTim1, Prescaler::Div1},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.write(|w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
+    /// lptim1.set_ier(lptim::irq::ALL);
+    /// ```
     #[inline]
     fn set_ier(&mut self, ier: u32) {
         self.as_mut_tim().set_ier(ier)

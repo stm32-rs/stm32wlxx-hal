@@ -69,14 +69,14 @@ impl Rtc {
     /// ```no_run
     /// use stm32wl_hal::{
     ///     pac,
-    ///     rcc::{pulse_reset_backup_domain, setup_lsi, LsiPre},
+    ///     rcc::{enable_lsi, pulse_reset_backup_domain},
     ///     rtc::{Clk, Rtc},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// unsafe { pulse_reset_backup_domain(&mut dp.RCC, &mut dp.PWR) };
-    /// setup_lsi(&mut dp.RCC, LsiPre::DIV1);
+    /// enable_lsi(&mut dp.RCC, LsiPre::DIV1);
     ///
     /// let rtc: Rtc = unsafe { Rtc::new(dp.RTC, Clk::Lsi, &mut dp.PWR, &mut dp.RCC) };
     /// ```

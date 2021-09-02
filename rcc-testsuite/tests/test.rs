@@ -11,7 +11,7 @@ use stm32wl_hal::{
     cortex_m::{self, interrupt::CriticalSection},
     pac,
     pwr::{enter_lprun_msi, exit_lprun, LprunRange},
-    rcc::{self, set_sysclk_msi_max, setup_lsi, LsiPre, MsiRange, Vos},
+    rcc::{self, lsi_hz, set_sysclk_msi_max, setup_lsi, LsiPre, MsiRange, Vos},
 };
 
 #[derive(defmt::Format)]
@@ -91,8 +91,6 @@ fn HardFault(_ef: &cortex_m_rt::ExceptionFrame) -> ! {
 
 #[defmt_test::tests]
 mod tests {
-    use stm32wl_hal::rcc::lsi_hz;
-
     use super::*;
 
     struct TestArgs {
@@ -175,6 +173,8 @@ mod tests {
             }
         }
 
+        const LSI_PRESCALERS: [TestPre; 2] = [TestPre::Div1, TestPre::Div128];
+
         for (from, to) in iproduct!(LSI_PRESCALERS.iter(), LSI_PRESCALERS.iter()) {
             defmt::info!("LSI disabled from {} to {}", from, to);
 
@@ -187,7 +187,6 @@ mod tests {
             assert_eq!(lsi_hz(&ta.rcc), to.hz());
         }
 
-        const LSI_PRESCALERS: [TestPre; 2] = [TestPre::Div1, TestPre::Div128];
         for (from, to) in iproduct!(LSI_PRESCALERS.iter(), LSI_PRESCALERS.iter()) {
             defmt::info!("LSI enabled from {} to {}", from, to);
 

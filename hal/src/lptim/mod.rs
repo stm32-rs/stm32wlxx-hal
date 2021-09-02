@@ -45,18 +45,34 @@ use void::Void;
 /// Timer IRQs.
 pub mod irq {
     /// Repetition register update OK.
+    ///
+    /// Set by hardware when the APB bus write to the RCR register has been
+    /// successfully completed.
     pub const REPOK: u32 = 1 << 8;
-    /// LPTIM update event occured.
+    /// Update event occured.
     pub const UE: u32 = 1 << 7;
     /// Counter direction change up to down.
+    ///
+    /// Set by hardware when the counter direction changes from up to down.
     pub const DOWN: u32 = 1 << 6;
     /// Counter direction change down to up.
+    ///
+    /// Set by hardware when the counter direction changes from down to up.
     pub const UP: u32 = 1 << 5;
     /// Autoreload register update OK.
+    ///
+    /// Set by hardware when the APB bus write to the ARR register has been
+    /// successfully completed.
     pub const ARROK: u32 = 1 << 4;
     /// Compare register update OK.
+    ///
+    /// Set by hardware when the APB bus write to the CMP register has been
+    /// successfully completed.
     pub const CMPOK: u32 = 1 << 3;
-    /// Extern trigger edge event.
+    /// External trigger edge event.
+    ///
+    /// Set by hardware when a valid edge on the selected external trigger
+    /// input has occurred.
     pub const EXTTRIG: u32 = 1 << 2;
     /// Autoreload match.
     ///
@@ -695,6 +711,7 @@ impl<P> LpTim1Trg<P> {
     }
 }
 
+// TODO: move to LpTim trait when GATs are stablized
 impl LpTim1 {
     /// Setup a new pin trigger.
     ///
@@ -753,6 +770,7 @@ impl<P> LpTim2Trg<P> {
     }
 }
 
+// TODO: move to LpTim trait when GATs are stablized
 impl LpTim2 {
     /// Setup a new pin trigger.
     ///
@@ -811,6 +829,7 @@ impl LpTim3Trg {
     }
 }
 
+// TODO: move to LpTim trait when GATs are stablized
 impl LpTim3 {
     /// Setup a new pin trigger.
     ///

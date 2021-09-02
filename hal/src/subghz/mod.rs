@@ -1,5 +1,7 @@
 //! Sub-GHz radio operating in the 150 - 960 MHz ISM band
 //!
+//! The main radio type is [`SubGhz`].
+//!
 //! ## LoRa user notice
 //!
 //! The Sub-GHz radio may have an undocumented erratum, see this ST community
@@ -675,6 +677,33 @@ where
     /// Set the maximum SMPS drive capability.
     pub fn set_smps_drv(&mut self, drv: SmpsDrv) -> Result<(), Error> {
         self.write(wr_reg![SMPSC2, (drv as u8) << 1])
+    }
+
+    /// Set the node address.
+    ///
+    /// Used with [`GenericPacketParams::set_addr_comp`] to filter packets based
+    /// on node address.
+    pub fn set_node_addr(&mut self, addr: u8) -> Result<(), Error> {
+        self.write(wr_reg![NODE, addr])
+    }
+
+    /// Set the broadcast address.
+    ///
+    /// Used with [`GenericPacketParams::set_addr_comp`] to filter packets based
+    /// on broadcast address.
+    pub fn set_broadcast_addr(&mut self, addr: u8) -> Result<(), Error> {
+        self.write(wr_reg![BROADCAST, addr])
+    }
+
+    /// Set both the broadcast address and node address.
+    ///
+    /// This is a combination of [`set_node_addr`] and [`set_broadcast_addr`]
+    /// in a single SPI transfer.
+    ///
+    /// [`set_node_addr`]: Self::set_node_addr
+    /// [`set_broadcast_addr`]: Self::set_broadcast_addr
+    pub fn set_addrs(&mut self, node: u8, broadcast: u8) -> Result<(), Error> {
+        self.write(wr_reg![NODE, node, broadcast])
     }
 }
 
@@ -1844,6 +1873,10 @@ pub(crate) enum Register {
     GCRCPOLRH = 0x06BE,
     /// Generic synchronization word 7.
     GSYNC7 = 0x06C0,
+    /// Node address.
+    NODE = 0x06CD,
+    /// Broadcast address.
+    BROADCAST = 0x06CE,
     /// LoRa synchronization word MSB.
     LSYNCH = 0x0740,
     /// LoRa synchronization word LSB.

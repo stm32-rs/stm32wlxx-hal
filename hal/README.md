@@ -27,7 +27,7 @@ features = [
 # use the interrupt macro from the hal with `use stm32wl_hal::pac::interrupt;`
 # DO NOT use the interrupt macro from cortex-m-rt, it will fail to compile
 [dependencies]
-cortex-m-rt = "0.7"
+cortex-m-rt = "0.6"
 ```
 
 **Note:** To avoid version mismatches do not include `cortex-m`, `embedded-hal`,

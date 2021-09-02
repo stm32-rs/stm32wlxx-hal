@@ -915,6 +915,8 @@ pub unsafe fn setup_lsi(rcc: &mut pac::RCC, pre: LsiPre) {
     // LSI pre-scaler is applied after an on-off cycle (if a change is required)
     if csr.lsion().is_on() && csr.lsipre().variant() != pre {
         rcc.csr.modify(|_, w| w.lsipre().variant(pre).lsion().off());
+    } else {
+        rcc.csr.modify(|_, w| w.lsipre().variant(pre));
     }
     enable_lsi(rcc)
 }

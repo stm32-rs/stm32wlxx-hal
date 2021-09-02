@@ -11,7 +11,7 @@ use stm32wl_hal::{
     cortex_m::{self, interrupt::CriticalSection},
     pac,
     pwr::{enter_lprun_msi, exit_lprun, LprunRange},
-    rcc::{self, set_sysclk_msi_max, MsiRange, Vos},
+    rcc::{self, lsi_hz, set_sysclk_msi_max, setup_lsi, LsiPre, MsiRange, Vos},
 };
 
 #[derive(defmt::Format)]
@@ -147,5 +147,54 @@ mod tests {
         }
 
         unsafe { set_sysclk_msi_max(&mut ta.flash, &mut ta.pwr, &mut ta.rcc) };
+    }
+
+    #[test]
+    fn lsi_to_from(ta: &mut TestArgs) {
+        #[derive(defmt::Format, Clone, Copy)]
+        enum TestPre {
+            Div1,
+            Div128,
+        }
+        impl TestPre {
+            const fn hz(&self) -> u16 {
+                match self {
+                    TestPre::Div1 => 32_000,
+                    TestPre::Div128 => 250,
+                }
+            }
+        }
+        impl From<&TestPre> for LsiPre {
+            fn from(tp: &TestPre) -> Self {
+                match tp {
+                    TestPre::Div1 => LsiPre::DIV1,
+                    TestPre::Div128 => LsiPre::DIV128,
+                }
+            }
+        }
+
+        const LSI_PRESCALERS: [TestPre; 2] = [TestPre::Div1, TestPre::Div128];
+
+        for (from, to) in iproduct!(LSI_PRESCALERS.iter(), LSI_PRESCALERS.iter()) {
+            defmt::info!("LSI disabled from {} to {}", from, to);
+
+            ta.rcc.csr.modify(|_, w| w.lsion().off());
+            unsafe { setup_lsi(&mut ta.rcc, from.into()) };
+            assert_eq!(lsi_hz(&ta.rcc), from.hz());
+
+            ta.rcc.csr.modify(|_, w| w.lsion().off());
+            unsafe { setup_lsi(&mut ta.rcc, to.into()) };
+            assert_eq!(lsi_hz(&ta.rcc), to.hz());
+        }
+
+        for (from, to) in iproduct!(LSI_PRESCALERS.iter(), LSI_PRESCALERS.iter()) {
+            defmt::info!("LSI enabled from {} to {}", from, to);
+
+            unsafe { setup_lsi(&mut ta.rcc, from.into()) };
+            assert_eq!(lsi_hz(&ta.rcc), from.hz());
+
+            unsafe { setup_lsi(&mut ta.rcc, to.into()) };
+            assert_eq!(lsi_hz(&ta.rcc), to.hz());
+        }
     }
 }

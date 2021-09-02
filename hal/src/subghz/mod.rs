@@ -858,7 +858,7 @@ where
     /// 1. Save sub-GHz radio configuration.
     /// 2. Enter Receive mode and listen for a preamble for the specified `rx_period`.
     /// 3. Upon the detection of a preamble, the `rx_period` timeout is stopped
-    ///    and restarted with the value 2 x `rx_period` + `sleep_period`.
+    ///    and restarted with the value 2 × `rx_period` + `sleep_period`.
     ///    During this new period, the sub-GHz radio looks for the detection of
     ///    a synchronization word when in (G)FSK modulation mode,
     ///    or a header when in LoRa modulation mode.

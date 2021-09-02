@@ -700,7 +700,7 @@ pub(crate) fn apb1timx(rcc: &pac::RCC) -> Ratio<u32> {
     // * If the APB prescaler (PPREx) selects the PCLKx clock to be HCLK1 not divided,
     //   the timer clock frequencies are set to the HCLK1 frequency (timer clock = HCLK1).
     // * If the APB prescaler (PPREx) selects the PCLKx clock to be HCLK1 divided by n,
-    //   the timer clock frequencies are set to HCLK1 divided by (n / 2) (timer clock = 2 x PCLKx).
+    //   the timer clock frequencies are set to HCLK1 divided by (n / 2) (timer clock = 2 × PCLKx).
     let div: u32 = match cfgr.ppre1().bits() {
         0b101 => 2, // 4 / 2
         0b110 => 4, // 8 / 2
@@ -890,6 +890,14 @@ pub fn lsi_hz(rcc: &pac::RCC) -> u16 {
 
 /// Setup the LSI clock and wait for completion.
 ///
+/// This will temporarily disable the LSI clock if the prescaler needs to be
+/// changed.
+///
+/// # Safety
+///
+/// 1. Ensure there are no peripherals using the LSI clock source before calling
+///    this function.
+///
 /// # Example
 ///
 /// ```no_run
@@ -899,10 +907,10 @@ pub fn lsi_hz(rcc: &pac::RCC) -> u16 {
 /// };
 ///
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-/// setup_lsi(&mut dp.RCC, LsiPre::DIV1);
+/// unsafe { setup_lsi(&mut dp.RCC, LsiPre::DIV1) };
 /// ```
 #[inline]
-pub fn setup_lsi(rcc: &mut pac::RCC, pre: LsiPre) {
+pub unsafe fn setup_lsi(rcc: &mut pac::RCC, pre: LsiPre) {
     let csr = rcc.csr.read();
     // LSI pre-scaler is applied after an on-off cycle (if a change is required)
     if csr.lsion().is_on() && csr.lsipre().variant() != pre {

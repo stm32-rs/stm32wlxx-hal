@@ -47,7 +47,7 @@ impl FskPacketStatus {
     }
 
     /// Returns `true` if an address error occured.
-    pub const fn adrs_err(&self) -> bool {
+    pub const fn addr_err(&self) -> bool {
         (self.buf[1] & (1 << 5)) != 0
     }
 
@@ -125,7 +125,7 @@ impl defmt::Format for FskPacketStatus {
     status: {},
     preamble_err: {},
     sync_err: {},
-    adrs_err: {},
+    addr_err: {},
     crc_err: {},
     length_err: {},
     abort_err: {},
@@ -137,7 +137,7 @@ impl defmt::Format for FskPacketStatus {
             self.status(),
             self.preamble_err(),
             self.sync_err(),
-            self.adrs_err(),
+            self.addr_err(),
             self.crc_err(),
             self.length_err(),
             self.abort_err(),
@@ -155,7 +155,7 @@ impl core::fmt::Display for FskPacketStatus {
             .field("status", &self.status())
             .field("preamble_err", &self.preamble_err())
             .field("sync_err", &self.sync_err())
-            .field("adrs_err", &self.adrs_err())
+            .field("addr_err", &self.addr_err())
             .field("crc_err", &self.crc_err())
             .field("length_err", &self.length_err())
             .field("abort_err", &self.abort_err())

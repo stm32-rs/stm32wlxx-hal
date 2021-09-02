@@ -60,7 +60,7 @@ const FSK_PACKET_PARAMS: GenericPacketParams = GenericPacketParams::new()
     .set_preamble_len(PREAMBLE_LEN)
     .set_preamble_detection(PreambleDetection::Bit8)
     .set_sync_word_len(SYNC_WORD_LEN_BITS)
-    .set_addr_comp(AddrComp::Disabled)
+    .set_addr_comp(AddrComp::Node)
     .set_header_type(HeaderType::Fixed)
     .set_payload_len(DATA_LEN)
     .set_crc_type(CrcType::Byte2)
@@ -217,6 +217,13 @@ fn ping_pong(sg: &mut MySubghz, rng: &mut Rng, rfs: &mut RfSwitch, pkt: PacketTy
                 defmt::info!("RX done");
                 defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyHse));
                 unwrap!(sg.clear_irq_status(irq_status));
+
+                match pkt {
+                    PacketType::Fsk => defmt::info!("{}", sg.fsk_packet_status()),
+                    PacketType::LoRa => defmt::info!("{}", sg.lora_packet_status()),
+                    PacketType::Bpsk => defmt::todo!(),
+                    PacketType::Msk => defmt::todo!(),
+                }
 
                 let (status, len, ptr) = unwrap!(sg.rx_buffer_status());
                 defmt::assert_eq!(len, DATA_LEN);

@@ -76,7 +76,7 @@ impl Rtc {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// unsafe { pulse_reset_backup_domain(&mut dp.RCC, &mut dp.PWR) };
-    /// enable_lsi(&mut dp.RCC, LsiPre::DIV1);
+    /// enable_lsi(&mut dp.RCC);
     ///
     /// let rtc: Rtc = unsafe { Rtc::new(dp.RTC, Clk::Lsi, &mut dp.PWR, &mut dp.RCC) };
     /// ```

@@ -911,13 +911,13 @@ pub fn lsi_hz(rcc: &pac::RCC) -> u16 {
 /// ```
 #[inline]
 pub unsafe fn setup_lsi(rcc: &mut pac::RCC, pre: LsiPre) {
-    let csr = rcc.csr.read();
-    // LSI pre-scaler is applied after an on-off cycle (if a change is required)
-    if csr.lsion().is_on() && csr.lsipre().variant() != pre {
-        rcc.csr.modify(|_, w| w.lsipre().variant(pre).lsion().off());
-    } else {
-        rcc.csr.modify(|_, w| w.lsipre().variant(pre));
-    }
+    rcc.csr.modify(|r, w| {
+        // LSI pre-scaler is applied after an on-off cycle
+        // leave LSI on if it is already on with the correct prescaler
+        let lsion: bool = r.lsion().is_on() && r.lsipre().variant() == pre;
+
+        w.lsipre().variant(pre).lsion().bit(lsion)
+    });
     enable_lsi(rcc)
 }
 

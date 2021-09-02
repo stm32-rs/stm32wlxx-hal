@@ -129,7 +129,7 @@ mod tests {
     #[test]
     fn test_set_date_time_lsi(ta: &mut TestArgs) {
         unsafe { pulse_reset_backup_domain(&mut ta.rcc, &mut ta.pwr) };
-        setup_lsi(&mut ta.rcc, LsiPre::DIV1);
+        unsafe { setup_lsi(&mut ta.rcc, LsiPre::DIV1) };
         test_set_date_time_with_clk(rtc::Clk::Lsi)
     }
 

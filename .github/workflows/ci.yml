@@ -36,14 +36,16 @@ jobs:
         with:
           toolchain: stable
           target: ${{ matrix.target }}
-      - run: |
+      - name: Build off-target
+        run: |
           cargo build \
           --target x86_64-unknown-linux-gnu \
-          --features ${{ matrix.mcu }},${{ matrix.aio }}
-      - run: |
+          --features ${{ matrix.mcu }}
+      - name: Build on-target
+        run: |
           cargo build \
           --target ${{ matrix.target }} \
-          --features ${{ matrix.mcu }},${{ matrix.aio }}
+          --features ${{ matrix.mcu }}
 
   build_testsuite:
     name: Testsuite Compile
@@ -94,15 +96,13 @@ jobs:
           toolchain: stable
           target: thumbv7em-none-eabi
       - name: "Build"
-        run: |
-          cargo build -p lora-e5-bsp --target thumbv7em-none-eabi
+        run: cargo build -p lora-e5-bsp --target thumbv7em-none-eabi
       - uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
           target: x86_64-unknown-linux-gnu
       - name: "Test"
-        run: |
-          cargo test -p lora-e5-bsp --target x86_64-unknown-linux-gnu
+        run: cargo test -p lora-e5-bsp --target x86_64-unknown-linux-gnu
 
   build_examples:
     name: Examples Compile
@@ -184,7 +184,9 @@ jobs:
           toolchain: nightly
       - run: |
           cd hal
-          cargo +nightly rustdoc --features rt,stm32wl5x_cm4 -- -Z unstable-options --enable-index-page
+          cargo +nightly rustdoc \
+          --features rt,stm32wl5x_cm4 \
+          -- -Z unstable-options --enable-index-page
       - name: deploy
         if: ${{ github.ref == 'refs/heads/main' }}
         uses: peaceiris/actions-gh-pages@v3

@@ -33,8 +33,6 @@ impl Default for Prescaler {
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum TrgSel {
-    /// GPIO pin.
-    Pin = 0b000,
     /// RTC alarm A.
     RtcAlarmA = 0b001,
     /// RTC alarm B.
@@ -62,8 +60,6 @@ impl From<TrgSel> for u32 {
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum TrgSel3 {
-    /// GPIO pin.
-    Pin = 0b000,
     /// LPTIM1_OUT.
     LpTim1 = 0b001,
     /// LPTIM2_OUT.

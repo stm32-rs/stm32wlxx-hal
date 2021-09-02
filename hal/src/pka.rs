@@ -64,7 +64,7 @@
 //! openssl ecparam -list_curves
 //! ```
 //!
-//! [p256-cortex-m4]: (https://crates.io/crates/p256-cortex-m4)
+//! [p256-cortex-m4]: https://crates.io/crates/p256-cortex-m4
 
 use crate::pac::{self, pka::cr::MODE_A};
 use core::{
@@ -678,7 +678,7 @@ impl Pka {
 
 /// Sign bit for ECDSA coefficient signing and verification.
 #[repr(u32)]
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Sign {
     /// Positive.

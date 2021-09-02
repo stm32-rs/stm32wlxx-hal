@@ -1,5 +1,4 @@
 //! Device eletronic signature
-#![forbid(missing_docs)]
 
 use core::{
     convert::{TryFrom, TryInto},
@@ -105,6 +104,7 @@ impl Uid {
 ///
 /// let uid: Uid = uid();
 /// ```
+#[inline]
 pub fn uid() -> Uid {
     unsafe {
         [
@@ -126,6 +126,7 @@ pub fn uid() -> Uid {
 /// // valid for the NUCLEO-WL55JC2 dev board
 /// assert_eq!(flash_size_kibibyte(), 256);
 /// ```
+#[inline]
 pub fn flash_size_kibibyte() -> u16 {
     unsafe { read(0x1FFF_75E0 as *const u16) }
 }
@@ -140,6 +141,7 @@ pub fn flash_size_kibibyte() -> u16 {
 /// // valid for the NUCLEO-WL55JC2 dev board
 /// assert_eq!(flash_size(), 256 * 1024);
 /// ```
+#[inline]
 pub fn flash_size() -> u32 {
     u32::from(flash_size_kibibyte()) << 10
 }
@@ -192,6 +194,7 @@ impl From<Package> for u8 {
 /// // valid for the NUCLEO-WL55JC2 dev board
 /// assert_eq!(package, Ok(info::Package::UFBGA73));
 /// ```
+#[inline]
 pub fn package() -> Result<Package, u8> {
     let raw: u16 = unsafe { read(0x1FFF_7500 as *const u16) } & 0xF;
     (raw as u8).try_into()
@@ -218,9 +221,9 @@ impl Uid64 {
     /// ```no_run
     /// use stm32wl_hal::info::uid64;
     ///
-    /// let dev_num: u32 = uid64().dev_num();
+    /// let devnum: u32 = uid64().devnum();
     /// ```
-    pub const fn dev_num(&self) -> u32 {
+    pub const fn devnum(&self) -> u32 {
         (self.uid >> 32) as u32
     }
 
@@ -272,7 +275,7 @@ impl From<Uid64> for u64 {
 impl Display for Uid64 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("Uid64")
-            .field("dev_num", &self.dev_num())
+            .field("devnum", &self.devnum())
             .field("company_id", &self.company_id())
             .field("dev_id", &self.dev_id())
             .finish()
@@ -292,10 +295,25 @@ pub const UID64: *const u8 = 0x1FFF_7580 as *const u8;
 /// let uid64: info::Uid64 = info::uid64();
 /// assert_eq!(uid64.dev_id(), 0x15);
 /// assert_eq!(uid64.company_id(), 0x0080E1);
-/// // uid64.dev_num() is unique
+/// // uid64.devnum() is unique
 /// ```
+#[inline]
 pub fn uid64() -> Uid64 {
     let hi: u32 = unsafe { read(0x1FFF_7580 as *const u32) };
     let lo: u32 = unsafe { read(0x1FFF_7584 as *const u32) };
     (((hi as u64) << 32) | (lo as u64)).into()
+}
+
+/// Get the 32-bit device number from the IEEE 64-bit unique device ID (UID64)
+///
+/// # Example
+///
+/// ```no_run
+/// use stm32wl_hal::info;
+///
+/// let devnum: u32 = info::uid64_devnum();
+/// ```
+#[inline]
+pub fn uid64_devnum() -> u32 {
+    unsafe { read(UID64 as *const u32) }
 }

@@ -3,7 +3,7 @@
 /// Used by [`set_rx_timeout_stop`].
 ///
 /// [`set_rx_timeout_stop`]: crate::subghz::SubGhz::set_rx_timeout_stop
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum RxTimeoutStop {

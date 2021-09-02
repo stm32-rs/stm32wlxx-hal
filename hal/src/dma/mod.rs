@@ -1,5 +1,4 @@
-//! Direct memory access controller
-#![deny(missing_docs)]
+//! Direct memory access
 
 // developers notes:
 //
@@ -25,31 +24,16 @@ use super::pac;
 
 pub use cr::{Cr, Dir, Priority, Size};
 
-/// IRQ flags
+/// IRQ flags.
 pub mod flags {
     /// Global interrupt, combination of all other interrupts.
     pub const GLOBAL: u8 = 1 << 0;
-    /// Transfer complete
+    /// Transfer complete.
     pub const XFER_CPL: u8 = 1 << 1;
-    /// Transfer hald complete
+    /// Transfer hald complete.
     pub const XFER_HLF: u8 = 1 << 2;
-    /// Transfer error
+    /// Transfer error.
     pub const XFER_ERR: u8 = 1 << 3;
-}
-
-/// [Typestate] to for no DMA channel on a generic structure.
-///
-/// [Typestate]: https://docs.rust-embedded.org/book/static-guarantees/typestate-programming.html
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct NoDmaCh {
-    _priv: (),
-}
-
-impl NoDmaCh {
-    pub(crate) const fn new() -> Self {
-        NoDmaCh { _priv: () }
-    }
 }
 
 const DMA1_BASE: usize = 0x4002_0000;
@@ -61,11 +45,11 @@ const MUX_CCFR_ADDR: usize = MUX_BASE + 0x84;
 // const MUX_RGSR_ADDR: usize = MUX_BASE + 0x140;
 // const MUX_RGCFR_ADDR: usize = MUX_BASE + 0x144;
 
-/// DMA errors
+/// DMA errors.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error {
-    /// Transfer error
+    /// Transfer error.
     Xfer,
 }
 
@@ -159,8 +143,8 @@ pub(crate) mod sealed {
     }
 }
 
-/// DMA channel trait
-pub trait DmaCh {
+/// DMA channel trait.
+pub trait DmaCh: sealed::DmaOps {
     /// DMA IRQ number.
     const IRQ: pac::Interrupt;
 
@@ -175,7 +159,7 @@ pub trait DmaCh {
     /// ```no_run
     /// use stm32wl_hal::dma::{flags, DmaCh};
     ///
-    /// # let dma = unsafe { stm32wl_hal::dma::AllDma::steal().d1c1 };
+    /// # let dma = unsafe { stm32wl_hal::dma::AllDma::steal().d1.c1 };
     /// let xfer_cpl: bool = dma.flags() & flags::XFER_CPL != 0;
     /// ```
     fn flags(&self) -> u8;
@@ -191,7 +175,7 @@ pub trait DmaCh {
     /// ```no_run
     /// use stm32wl_hal::dma::{flags, DmaCh};
     ///
-    /// # let mut dma = unsafe { stm32wl_hal::dma::AllDma::steal().d1c1 };
+    /// # let mut dma = unsafe { stm32wl_hal::dma::AllDma::steal().d1.c1 };
     /// let flags: u8 = dma.flags();
     /// dma.clear_flags(flags);
     /// ```
@@ -232,62 +216,64 @@ pub trait DmaCh {
 }
 
 macro_rules! dma_ch {
-    ($name:ident, $base:expr, $ch:expr, $irq:ident) => {
-        /// DMA channel
-        #[derive(Debug)]
-        #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-        pub struct $name {
-            pub(crate) dma: Dma<$base, $ch>,
-        }
-
-        impl $name {
-            const fn new() -> Self {
-                Self { dma: Dma::new() }
-            }
-        }
-
-        impl DmaCh for $name {
-            const IRQ: pac::Interrupt = irq_num::$irq;
-
-            #[inline]
-            fn flags(&self) -> u8 {
-                self.dma.flags()
+    ($ctrl:expr, $ch:expr, $irq:ident) => {
+        paste::paste! {
+            #[doc = "Controller " $ctrl " channel " $ch "."]
+            #[derive(Debug)]
+            #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+            pub struct [<Dma $ctrl Ch $ch>] {
+                pub(crate) dma: Dma<[<DMA $ctrl _BASE>], { $ch - 1 }>,
             }
 
-            #[inline]
-            fn clear_flags(&mut self, flags: u8) {
-                self.dma.clear_flags(flags)
+            impl [<Dma $ctrl Ch $ch>] {
+                const fn new() -> Self {
+                    Self { dma: Dma::new() }
+                }
             }
-        }
 
-        impl sealed::DmaOps for $name {
-            #[inline]
-            fn set_periph_addr(&mut self, pa: u32) {
-                self.dma.set_periph_addr(pa)
+            impl DmaCh for [<Dma $ctrl Ch $ch>] {
+                const IRQ: pac::Interrupt = irq_num::$irq;
+
+                #[inline]
+                fn flags(&self) -> u8 {
+                    self.dma.flags()
+                }
+
+                #[inline]
+                fn clear_flags(&mut self, flags: u8) {
+                    self.dma.clear_flags(flags)
+                }
             }
-            #[inline]
-            fn set_mem_addr(&mut self, ma: u32) {
-                self.dma.set_mem_addr(ma)
-            }
-            #[inline]
-            fn set_num_data_xfer(&mut self, ndt: u32) {
-                self.dma.set_num_data_xfer(ndt)
-            }
-            #[inline]
-            fn set_cr(&mut self, cr: Cr) {
-                self.dma.set_cr(cr)
-            }
-            #[inline]
-            fn set_mux_cr_reqid(&mut self, req_id: u8) {
-                self.dma.set_mux_cr_reqid(req_id)
-            }
-            #[inline]
-            fn sync_ovr(&self) -> bool {
-                self.dma.sync_ovr()
-            }
-            #[inline]
-            fn clr_sync_ovr(&mut self) {
-                self.dma.clr_sync_ovr()
+
+            impl sealed::DmaOps for [<Dma $ctrl Ch $ch>] {
+                #[inline]
+                fn set_periph_addr(&mut self, pa: u32) {
+                    self.dma.set_periph_addr(pa)
+                }
+                #[inline]
+                fn set_mem_addr(&mut self, ma: u32) {
+                    self.dma.set_mem_addr(ma)
+                }
+                #[inline]
+                fn set_num_data_xfer(&mut self, ndt: u32) {
+                    self.dma.set_num_data_xfer(ndt)
+                }
+                #[inline]
+                fn set_cr(&mut self, cr: Cr) {
+                    self.dma.set_cr(cr)
+                }
+                #[inline]
+                fn set_mux_cr_reqid(&mut self, req_id: u8) {
+                    self.dma.set_mux_cr_reqid(req_id)
+                }
+                #[inline]
+                fn sync_ovr(&self) -> bool {
+                    self.dma.sync_ovr()
+                }
+                #[inline]
+                fn clr_sync_ovr(&mut self) {
+                    self.dma.clr_sync_ovr()
+                }
             }
         }
     };
@@ -331,75 +317,97 @@ mod irq_num {
     pub const DMA2_CH7: Interrupt = Interrupt::DMA2_CH7_1_DMAMUX1_OVR;
 }
 
-dma_ch!(Dma1Ch1, DMA1_BASE, 0, DMA1_CH1);
-dma_ch!(Dma1Ch2, DMA1_BASE, 1, DMA1_CH2);
-dma_ch!(Dma1Ch3, DMA1_BASE, 2, DMA1_CH3);
-dma_ch!(Dma1Ch4, DMA1_BASE, 3, DMA1_CH4);
-dma_ch!(Dma1Ch5, DMA1_BASE, 4, DMA1_CH5);
-dma_ch!(Dma1Ch6, DMA1_BASE, 5, DMA1_CH6);
-dma_ch!(Dma1Ch7, DMA1_BASE, 6, DMA1_CH7);
-dma_ch!(Dma2Ch1, DMA2_BASE, 0, DMA2_CH1);
-dma_ch!(Dma2Ch2, DMA2_BASE, 1, DMA2_CH2);
-dma_ch!(Dma2Ch3, DMA2_BASE, 2, DMA2_CH3);
-dma_ch!(Dma2Ch4, DMA2_BASE, 3, DMA2_CH4);
-dma_ch!(Dma2Ch5, DMA2_BASE, 4, DMA2_CH5);
-dma_ch!(Dma2Ch6, DMA2_BASE, 5, DMA2_CH6);
-dma_ch!(Dma2Ch7, DMA2_BASE, 6, DMA2_CH7);
+dma_ch!(1, 1, DMA1_CH1);
+dma_ch!(1, 2, DMA1_CH2);
+dma_ch!(1, 3, DMA1_CH3);
+dma_ch!(1, 4, DMA1_CH4);
+dma_ch!(1, 5, DMA1_CH5);
+dma_ch!(1, 6, DMA1_CH6);
+dma_ch!(1, 7, DMA1_CH7);
+dma_ch!(2, 1, DMA2_CH1);
+dma_ch!(2, 2, DMA2_CH2);
+dma_ch!(2, 3, DMA2_CH3);
+dma_ch!(2, 4, DMA2_CH4);
+dma_ch!(2, 5, DMA2_CH5);
+dma_ch!(2, 6, DMA2_CH6);
+dma_ch!(2, 7, DMA2_CH7);
 
-/// All DMA channels
+/// All DMA channels.
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct AllDma {
-    /// DMA controller 1 channel 1
-    pub d1c1: Dma1Ch1,
-    /// DMA controller 1 channel 2
-    pub d1c2: Dma1Ch2,
-    /// DMA controller 1 channel 3
-    pub d1c3: Dma1Ch3,
-    /// DMA controller 1 channel 4
-    pub d1c4: Dma1Ch4,
-    /// DMA controller 1 channel 5
-    pub d1c5: Dma1Ch5,
-    /// DMA controller 1 channel 6
-    pub d1c6: Dma1Ch6,
-    /// DMA controller 1 channel 7
-    pub d1c7: Dma1Ch7,
-    /// DMA controller 2 channel 1
-    pub d2c1: Dma2Ch1,
-    /// DMA controller 2 channel 2
-    pub d2c2: Dma2Ch2,
-    /// DMA controller 2 channel 3
-    pub d2c3: Dma2Ch3,
-    /// DMA controller 2 channel 4
-    pub d2c4: Dma2Ch4,
-    /// DMA controller 2 channel 5
-    pub d2c5: Dma2Ch5,
-    /// DMA controller 2 channel 6
-    pub d2c6: Dma2Ch6,
-    /// DMA controller 2 channel 7
-    pub d2c7: Dma2Ch7,
+    /// DMA controller 1.
+    pub d1: Dma1,
+    /// DMA controller 2.
+    pub d2: Dma2,
 }
 
-const ALL_DMA: AllDma = AllDma {
-    d1c1: Dma1Ch1::new(),
-    d1c2: Dma1Ch2::new(),
-    d1c3: Dma1Ch3::new(),
-    d1c4: Dma1Ch4::new(),
-    d1c5: Dma1Ch5::new(),
-    d1c6: Dma1Ch6::new(),
-    d1c7: Dma1Ch7::new(),
-    d2c1: Dma2Ch1::new(),
-    d2c2: Dma2Ch2::new(),
-    d2c3: Dma2Ch3::new(),
-    d2c4: Dma2Ch4::new(),
-    d2c5: Dma2Ch5::new(),
-    d2c6: Dma2Ch6::new(),
-    d2c7: Dma2Ch7::new(),
+/// All DMA controller 1 channels.
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct Dma1 {
+    /// DMA controller 1 channel 1
+    pub c1: Dma1Ch1,
+    /// DMA controller 1 channel 2
+    pub c2: Dma1Ch2,
+    /// DMA controller 1 channel 3
+    pub c3: Dma1Ch3,
+    /// DMA controller 1 channel 4
+    pub c4: Dma1Ch4,
+    /// DMA controller 1 channel 5
+    pub c5: Dma1Ch5,
+    /// DMA controller 1 channel 6
+    pub c6: Dma1Ch6,
+    /// DMA controller 1 channel 7
+    pub c7: Dma1Ch7,
+}
+
+/// All DMA controller 2 channels.
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct Dma2 {
+    /// DMA controller 2 channel 1
+    pub c1: Dma2Ch1,
+    /// DMA controller 2 channel 2
+    pub c2: Dma2Ch2,
+    /// DMA controller 2 channel 3
+    pub c3: Dma2Ch3,
+    /// DMA controller 2 channel 4
+    pub c4: Dma2Ch4,
+    /// DMA controller 2 channel 5
+    pub c5: Dma2Ch5,
+    /// DMA controller 2 channel 6
+    pub c6: Dma2Ch6,
+    /// DMA controller 2 channel 7
+    pub c7: Dma2Ch7,
+}
+
+const DMA1: Dma1 = Dma1 {
+    c1: Dma1Ch1::new(),
+    c2: Dma1Ch2::new(),
+    c3: Dma1Ch3::new(),
+    c4: Dma1Ch4::new(),
+    c5: Dma1Ch5::new(),
+    c6: Dma1Ch6::new(),
+    c7: Dma1Ch7::new(),
 };
+
+const DMA2: Dma2 = Dma2 {
+    c1: Dma2Ch1::new(),
+    c2: Dma2Ch2::new(),
+    c3: Dma2Ch3::new(),
+    c4: Dma2Ch4::new(),
+    c5: Dma2Ch5::new(),
+    c6: Dma2Ch6::new(),
+    c7: Dma2Ch7::new(),
+};
+
+const ALL_DMA: AllDma = AllDma { d1: DMA1, d2: DMA2 };
 
 impl AllDma {
     /// Split the DMA registers into individual channels.
     ///
-    /// This will enable clocks and reset the DMAMUX and both DMA controllers.
+    /// This will enable clocks and reset the DMA1, DMA2, and DMAMUX peripherals.
     ///
     /// # Example
     ///
@@ -411,21 +419,32 @@ impl AllDma {
     /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
     /// ```
     #[allow(unused_variables)]
+    #[inline]
     pub fn split(
         dmamux: pac::DMAMUX,
         dma1: pac::DMA1,
         dma2: pac::DMA2,
         rcc: &mut pac::RCC,
-    ) -> AllDma {
-        #[rustfmt::skip]
-        rcc.ahb1enr.modify(|_, w| {
-            w
-                .dmamux1en().enabled()
-                .dma2en().enabled()
-                .dma1en().enabled()
-        });
-        rcc.ahb1enr.read(); // delay after an RCC peripheral clock enabling
+    ) -> Self {
+        Self::enable_clocks(rcc);
+        unsafe { Self::pulse_resets(rcc) };
+        ALL_DMA
+    }
 
+    /// Reset the DMA1, DMA2, and DMAMUX peripherals.
+    ///
+    /// [`split`](Self::split) will pulse reset for you.
+    ///
+    /// # Safety
+    ///
+    /// 1. Ensure nothing is using the DMA1, DMA2, and DMAMUX peripherals
+    ///    before calling this function.
+    ///
+    /// # Example
+    ///
+    /// See [`steal`](Self::steal).
+    #[inline]
+    pub unsafe fn pulse_resets(rcc: &mut pac::RCC) {
         #[rustfmt::skip]
         rcc.ahb1rstr.modify(|_, w| {
             w
@@ -440,33 +459,225 @@ impl AllDma {
                 .dma2rst().clear_bit()
                 .dma1rst().clear_bit()
         });
+    }
 
-        ALL_DMA
+    /// Enable clocks for the DMA1, DMA2, and DMAMUX peripherals.
+    ///
+    /// [`split`](Self::split) will enable clocks for you.
+    ///
+    /// # Example
+    ///
+    /// See [`steal`](Self::steal).
+    #[inline]
+    pub fn enable_clocks(rcc: &mut pac::RCC) {
+        #[rustfmt::skip]
+        rcc.ahb1enr.modify(|_, w| {
+            w
+                .dmamux1en().enabled()
+                .dma2en().enabled()
+                .dma1en().enabled()
+        });
+        rcc.ahb1enr.read(); // delay after an RCC peripheral clock enabling
+    }
+
+    /// Disable clocks for the DMA1, DMA2, and DMAMUX peripherals.
+    ///
+    /// # Safety
+    ///
+    /// 1. Ensure nothing is using the DMA1, DMA2, and DMAMUX peripherals before
+    ///    disabling the clock.
+    /// 2. You are responsible for re-enabling the clock before using the DMA1,
+    ///    DMA2, and DMAMUX peripherals.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{dma::AllDma, pac};
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
+    /// // ... use DMA channels
+    ///
+    /// // safety: DMA is not in use
+    /// unsafe { AllDma::disable_clocks(&mut dp.RCC) };
+    ///
+    /// // have a low power nap or something
+    ///
+    /// AllDma::enable_clocks(&mut dp.RCC);
+    /// // ... use DMA channels
+    /// ```
+    #[inline]
+    pub unsafe fn disable_clocks(rcc: &mut pac::RCC) {
+        #[rustfmt::skip]
+        rcc.ahb1enr.modify(|_, w| {
+            w
+                .dmamux1en().disabled()
+                .dma2en().disabled()
+                .dma1en().disabled()
+        });
     }
 
     /// Steal all DMA channels.
     ///
-    /// This will **not** initialize the DMA peripheral or the DMAMUX.
-    ///
     /// # Safety
     ///
-    /// This will create a steal all DMA channels, bypassing the singleton
-    /// checks that normally occur.
-    /// You are responsible for ensuring that the driver has exclusive access to
-    /// each DMA channel.
-    /// You are also responsible for ensuring the DMA channel has been setup
-    /// correctly.
+    /// 1. Ensure that the code stealing the DMA channels has exclusive access.
+    ///    Singleton checks are bypassed with this method.
+    /// 2. You are responsible for resetting and enabling clocks on the
+    ///    DMA1, DMA2, and DMAMUX peripherals.
     ///
     /// # Example
     ///
-    /// ```
-    /// use stm32wl_hal::dma::AllDma;
+    /// ```no_run
+    /// use stm32wl_hal::{dma::AllDma, pac};
     ///
-    /// // ... setup occurs here
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
-    /// let dma: AllDma = unsafe { AllDma::steal() };
+    /// // DMAs cannot be used via registers now
+    /// let _: pac::DMA1 = dp.DMA1;
+    /// let _: pac::DMA2 = dp.DMA2;
+    /// let _: pac::DMAMUX = dp.DMAMUX;
+    ///
+    /// // safety: nothing is using the peripherals
+    /// unsafe { AllDma::pulse_resets(&mut dp.RCC) };
+    ///
+    /// AllDma::enable_clocks(&mut dp.RCC);
+    ///
+    /// // safety
+    /// // 1. We have exclusive access
+    /// // 2. peripherals have been setup
+    /// let dmas: AllDma = unsafe { AllDma::steal() };
     /// ```
-    pub const unsafe fn steal() -> AllDma {
+    #[inline]
+    pub const unsafe fn steal() -> Self {
         ALL_DMA
+    }
+}
+
+impl Dma1 {
+    /// Split the DMA registers into individual channels.
+    ///
+    /// This will enable clocks and reset the DMA1 and DMAMUX peripherals.
+    ///
+    /// Most of the time you will want to use [`AllDma::split`].
+    /// This is provided for low-power usecases where you do not need
+    /// both DMA controllers.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{dma::Dma1, pac};
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let dma1: Dma1 = Dma1::split(dp.DMAMUX, dp.DMA1, &mut dp.RCC);
+    /// ```
+    #[allow(unused_variables)]
+    #[inline]
+    pub fn split(dmamux: pac::DMAMUX, dma1: pac::DMA1, rcc: &mut pac::RCC) -> Self {
+        Self::enable_clocks(rcc);
+        unsafe { Self::pulse_resets(rcc) };
+        DMA1
+    }
+
+    /// Reset the DMA1 and DMAMUX peripherals.
+    ///
+    /// [`split`](Self::split) will pulse reset for you.
+    ///
+    /// # Safety
+    ///
+    /// 1. Ensure nothing is using the DMA1, and DMAMUX peripherals
+    ///    before calling this function.
+    ///
+    /// # Example
+    ///
+    /// See [`steal`](Self::steal).
+    #[inline]
+    pub unsafe fn pulse_resets(rcc: &mut pac::RCC) {
+        rcc.ahb1rstr
+            .modify(|_, w| w.dmamux1rst().set_bit().dma1rst().set_bit());
+        rcc.ahb1rstr
+            .modify(|_, w| w.dmamux1rst().clear_bit().dma1rst().clear_bit());
+    }
+
+    /// Enable clocks for the DMA1 and DMAMUX peripherals.
+    ///
+    /// [`split`](Self::split) will enable clocks for you.
+    ///
+    /// # Example
+    ///
+    /// See [`steal`](Self::steal).
+    #[inline]
+    pub fn enable_clocks(rcc: &mut pac::RCC) {
+        rcc.ahb1enr
+            .modify(|_, w| w.dmamux1en().enabled().dma1en().enabled());
+        rcc.ahb1enr.read(); // delay after an RCC peripheral clock enabling
+    }
+
+    /// Disable clocks for the DMA1 and DMAMUX peripherals.
+    ///
+    /// # Safety
+    ///
+    /// 1. Ensure nothing is using the DMA1, and DMAMUX peripherals before
+    ///    disabling the clock.
+    /// 2. You are responsible for re-enabling the clock before using the DMA1,
+    ///    and DMAMUX peripherals.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{dma::Dma1, pac};
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let dma1: Dma1 = Dma1::split(dp.DMAMUX, dp.DMA1, &mut dp.RCC);
+    /// // ... use DMA channels
+    ///
+    /// // safety: DMA is not in use
+    /// unsafe { Dma1::disable_clocks(&mut dp.RCC) };
+    ///
+    /// // have a low power nap or something
+    ///
+    /// Dma1::enable_clocks(&mut dp.RCC);
+    /// // ... use DMA channels
+    /// ```
+    #[inline]
+    pub unsafe fn disable_clocks(rcc: &mut pac::RCC) {
+        rcc.ahb1enr
+            .modify(|_, w| w.dmamux1en().disabled().dma1en().disabled());
+    }
+
+    /// Steal the DMA1 channels.
+    ///
+    /// # Safety
+    ///
+    /// 1. Ensure that the code stealing the DMA channels has exclusive access.
+    ///    Singleton checks are bypassed with this method.
+    /// 2. You are responsible for resetting and enabling clocks on the
+    ///    DMA1, and DMAMUX peripherals.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{dma::Dma1, pac};
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // DMAs cannot be used via registers now
+    /// let _: pac::DMA1 = dp.DMA1;
+    /// let _: pac::DMAMUX = dp.DMAMUX;
+    ///
+    /// // safety: nothing is using the peripherals
+    /// unsafe { Dma1::pulse_resets(&mut dp.RCC) };
+    ///
+    /// Dma1::enable_clocks(&mut dp.RCC);
+    ///
+    /// // safety
+    /// // 1. We have exclusive access
+    /// // 2. peripherals have been setup
+    /// let dmas: Dma1 = unsafe { Dma1::steal() };
+    /// ```
+    #[inline]
+    pub const unsafe fn steal() -> Self {
+        DMA1
     }
 }

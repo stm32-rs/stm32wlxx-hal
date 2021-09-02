@@ -6,7 +6,7 @@ use crate::subghz::Timeout;
 /// least + 200 mV higher than the selected `TcxoTrim` voltage level.
 ///
 /// Used by [`TcxoMode`].
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum TcxoTrim {
@@ -76,7 +76,7 @@ impl TcxoTrim {
 
 /// TCXO trim and HSE32 ready timeout.
 ///
-/// This is an argument of [`set_tcxo_mode`].
+/// Argument of [`set_tcxo_mode`].
 ///
 /// [`set_tcxo_mode`]: crate::subghz::SubGhz::set_tcxo_mode
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -116,7 +116,7 @@ impl TcxoMode {
     /// const TCXO_MODE: TcxoMode = TcxoMode::new().set_txco_trim(TcxoTrim::Volts1pt6);
     /// # assert_eq!(TCXO_MODE.as_slice()[1], 0x00);
     /// ```
-    #[must_use = "set_txco_trim returns a new TcxoMode"]
+    #[must_use = "set_txco_trim returns a modified TcxoMode"]
     pub const fn set_txco_trim(mut self, tcxo_trim: TcxoTrim) -> TcxoMode {
         self.buf[1] = tcxo_trim as u8;
         self
@@ -137,7 +137,7 @@ impl TcxoMode {
     /// # assert_eq!(TCXO_MODE.as_slice()[3], 0x42);
     /// # assert_eq!(TCXO_MODE.as_slice()[4], 0x40);
     /// ```
-    #[must_use = "set_timeout returns a new TcxoMode"]
+    #[must_use = "set_timeout returns a modified TcxoMode"]
     pub const fn set_timeout(mut self, timeout: Timeout) -> TcxoMode {
         let timeout_bits: u32 = timeout.into_bits();
         self.buf[2] = ((timeout_bits >> 16) & 0xFF) as u8;

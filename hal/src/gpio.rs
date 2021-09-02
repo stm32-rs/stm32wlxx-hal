@@ -6,7 +6,7 @@ use cortex_m::interrupt::CriticalSection;
 
 /// EXTI triggers.
 ///
-/// This is an argument for [`Exti::setup_exti_c1`].
+/// Argument of [`Exti::setup_exti_c1`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum ExtiTrg {
@@ -203,10 +203,10 @@ pub(crate) mod sealed {
     af_trait!(Spi2Miso, set_spi2_miso_af);
     af_trait!(Spi2Sck, set_spi2_sck_af);
     af_trait!(Spi2Nss, set_spi2_nss_af);
-    af_trait!(SubGhzSpiMosi, set_subghz_spi_mosi_af);
-    af_trait!(SubGhzSpiMiso, set_subghz_spi_miso_af);
-    af_trait!(SubGhzSpiSck, set_subghz_spi_sck_af);
-    af_trait!(SubGhzSpiNss, set_subghz_spi_nss_af);
+    af_trait!(Spi3Mosi, set_spi3_mosi_af);
+    af_trait!(Spi3Miso, set_spi3_miso_af);
+    af_trait!(Spi3Sck, set_spi3_sck_af);
+    af_trait!(Spi3Nss, set_spi3_nss_af);
     af_trait!(I2c1Sda, set_i2c1_sda_af);
     af_trait!(I2c1Scl, set_i2c1_scl_af);
     af_trait!(I2c1Smba, set_i2c1_smba_af);
@@ -248,10 +248,19 @@ pub(crate) mod sealed {
     af_trait!(LpTim3Etr, set_lptim3_etr_af);
     af_trait!(LpTim3In1, set_lptim3_in1_af);
 
-    /// Indicate a GPIO pin can be sampled by the ADC
+    /// Indicate a GPIO pin can be sampled by the ADC.
     pub trait AdcCh {
         const ADC_CH: adc::Ch;
     }
+
+    /// Indicate a pin has any SPI NSS implementation.
+    pub trait SpiNss {}
+    /// Indicate a pin has any SPI SCK implementation.
+    pub trait SpiSck {}
+    /// Indicate a pin has any SPI MOSI implementation.
+    pub trait SpiMosi {}
+    /// Indicate a pin has any SPI MISO implementation.
+    pub trait SpiMiso {}
 }
 
 /// Input pin extended interrupts.
@@ -557,6 +566,10 @@ pub mod pins {
                 }
             }
         };
+        ($trt:ident, $gpio:ident, $method:ident, $num:expr, $common:ident) => {
+            impl_af!($trt, $gpio, $method, $num);
+            impl super::sealed::$common for $gpio {}
+        };
     }
 
     impl_af!(LpTim1Out, A4, set_lptim1_out_af, 1);
@@ -571,11 +584,11 @@ pub mod pins {
     impl_af!(LpTim1Etr, C3, set_lptim1_etr_af, 1);
 
     impl_af!(LpTim3Out, A1, set_lptim3_out_af, 3);
-    impl_af!(Spi2Miso, A5, set_spi2_miso_af, 3);
-    impl_af!(Spi2Nss, A9, set_spi2_nss_af, 3);
+    impl_af!(Spi2Miso, A5, set_spi2_miso_af, 3, SpiMiso);
+    impl_af!(Spi2Nss, A9, set_spi2_nss_af, 3, SpiNss);
     impl_af!(LpTim3Etr, A11, set_lptim3_etr_af, 3);
     impl_af!(LpTim3In1, A12, set_lptim3_in1_af, 3);
-    impl_af!(Spi2Mosi, C1, set_spi2_mosi_af, 3);
+    impl_af!(Spi2Mosi, C1, set_spi2_mosi_af, 3, SpiMosi);
 
     impl_af!(I2c3Smba, A0, set_i2c3_smba_af, 4);
     impl_af!(I2c1Smba, A1, set_i2c1_smba_af, 4);
@@ -604,29 +617,29 @@ pub mod pins {
     impl_af!(I2c3Scl, C0, set_i2c3_scl_af, 4);
     impl_af!(I2c3Sda, C1, set_i2c3_sda_af, 4);
 
-    impl_af!(Spi1Sck, A0, set_spi1_sck_af, 5);
-    impl_af!(Spi1Nss, A4, set_spi1_nss_af, 5);
-    impl_af!(Spi1Sck, A5, set_spi1_sck_af, 5);
-    impl_af!(Spi1Miso, A6, set_spi1_miso_af, 5);
-    impl_af!(Spi1Mosi, A7, set_spi1_mosi_af, 5);
-    impl_af!(Spi2Sck, A8, set_spi2_sck_af, 5);
-    impl_af!(Spi2Sck, A9, set_spi2_sck_af, 5);
-    impl_af!(Spi2Mosi, A10, set_spi2_mosi_af, 5);
-    impl_af!(Spi1Miso, A11, set_spi1_miso_af, 5);
-    impl_af!(Spi1Mosi, A12, set_spi1_mosi_af, 5);
-    impl_af!(Spi1Nss, A15, set_spi1_nss_af, 5);
-    impl_af!(Spi1Nss, B2, set_spi1_nss_af, 5);
-    impl_af!(Spi1Sck, B3, set_spi1_sck_af, 5);
-    impl_af!(Spi1Miso, B4, set_spi1_miso_af, 5);
-    impl_af!(Spi1Mosi, B5, set_spi1_mosi_af, 5);
-    impl_af!(Spi2Nss, B9, set_spi2_nss_af, 5);
-    impl_af!(Spi2Sck, B10, set_spi2_sck_af, 5);
-    impl_af!(Spi2Nss, B12, set_spi2_nss_af, 5);
-    impl_af!(Spi2Sck, B13, set_spi2_sck_af, 5);
-    impl_af!(Spi2Miso, B14, set_spi2_miso_af, 5);
-    impl_af!(Spi2Mosi, B15, set_spi2_mosi_af, 5);
-    impl_af!(Spi2Mosi, C3, set_spi2_mosi_af, 5);
-    impl_af!(Spi2Miso, C2, set_spi2_miso_af, 5);
+    impl_af!(Spi1Sck, A0, set_spi1_sck_af, 5, SpiSck);
+    impl_af!(Spi1Nss, A4, set_spi1_nss_af, 5, SpiNss);
+    impl_af!(Spi1Sck, A5, set_spi1_sck_af, 5, SpiSck);
+    impl_af!(Spi1Miso, A6, set_spi1_miso_af, 5, SpiMiso);
+    impl_af!(Spi1Mosi, A7, set_spi1_mosi_af, 5, SpiMosi);
+    impl_af!(Spi2Sck, A8, set_spi2_sck_af, 5, SpiSck);
+    impl_af!(Spi2Sck, A9, set_spi2_sck_af, 5, SpiSck);
+    impl_af!(Spi2Mosi, A10, set_spi2_mosi_af, 5, SpiMosi);
+    impl_af!(Spi1Miso, A11, set_spi1_miso_af, 5, SpiMiso);
+    impl_af!(Spi1Mosi, A12, set_spi1_mosi_af, 5, SpiMosi);
+    impl_af!(Spi1Nss, A15, set_spi1_nss_af, 5, SpiNss);
+    impl_af!(Spi1Nss, B2, set_spi1_nss_af, 5, SpiNss);
+    impl_af!(Spi1Sck, B3, set_spi1_sck_af, 5, SpiSck);
+    impl_af!(Spi1Miso, B4, set_spi1_miso_af, 5, SpiMiso);
+    impl_af!(Spi1Mosi, B5, set_spi1_mosi_af, 5, SpiMosi);
+    impl_af!(Spi2Nss, B9, set_spi2_nss_af, 5, SpiNss);
+    impl_af!(Spi2Sck, B10, set_spi2_sck_af, 5, SpiSck);
+    impl_af!(Spi2Nss, B12, set_spi2_nss_af, 5, SpiNss);
+    impl_af!(Spi2Sck, B13, set_spi2_sck_af, 5, SpiSck);
+    impl_af!(Spi2Miso, B14, set_spi2_miso_af, 5, SpiMiso);
+    impl_af!(Spi2Mosi, B15, set_spi2_mosi_af, 5, SpiMosi);
+    impl_af!(Spi2Mosi, C3, set_spi2_mosi_af, 5, SpiMosi);
+    impl_af!(Spi2Miso, C2, set_spi2_miso_af, 5, SpiMiso);
 
     impl_af!(RfBusy, A12, set_rfbusy_af, 6);
     impl_af!(RfIrq0, B3, set_rf_irq0_af, 6);
@@ -663,10 +676,10 @@ pub mod pins {
     impl_af!(LpUart1Rx, C0, set_lpuart1_rx_af, 8);
     impl_af!(LpUart1Tx, C1, set_lpuart1_tx_af, 8);
 
-    impl_af!(SubGhzSpiNss, A4, set_subghz_spi_nss_af, 13);
-    impl_af!(SubGhzSpiSck, A5, set_subghz_spi_sck_af, 13);
-    impl_af!(SubGhzSpiMiso, A6, set_subghz_spi_miso_af, 13);
-    impl_af!(SubGhzSpiMosi, A7, set_subghz_spi_mosi_af, 13);
+    impl_af!(Spi3Nss, A4, set_spi3_nss_af, 13);
+    impl_af!(Spi3Sck, A5, set_spi3_sck_af, 13);
+    impl_af!(Spi3Miso, A6, set_spi3_miso_af, 13);
+    impl_af!(Spi3Mosi, A7, set_spi3_mosi_af, 13);
 
     impl_af!(LpTim2Out, A4, set_lptim2_out_af, 14);
     impl_af!(LpTim2Etr, A5, set_lptim2_etr_af, 14);
@@ -853,6 +866,7 @@ impl PortA {
     /// let a0: pins::A0 = gpioa.a0;
     /// ```
     #[allow(unused_variables)]
+    #[inline]
     pub fn split(gpioa: pac::GPIOA, rcc: &mut pac::RCC) -> Self {
         Self::enable_clock(rcc);
         rcc.ahb2rstr.modify(|_, w| w.gpioarst().set_bit());
@@ -885,6 +899,7 @@ impl PortA {
     /// ```
     ///
     /// [`split`]: crate::gpio::PortA::split
+    #[inline]
     pub unsafe fn steal() -> Self {
         Self::GPIOS
     }
@@ -896,11 +911,13 @@ impl PortA {
     /// 1. You cannot use any port-A GPIO pin while the clock is disabled.
     /// 2. You are responsible for re-enabling the clock before resuming use
     ///    of any port A GPIO.
+    #[inline]
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpioaen().disabled());
     }
 
     /// Enable the GPIOA clock.
+    #[inline]
     pub fn enable_clock(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpioaen().enabled());
         rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
@@ -970,6 +987,7 @@ impl PortB {
     /// let b0: pins::B0 = gpiob.b0;
     /// ```
     #[allow(unused_variables)]
+    #[inline]
     pub fn split(gpiob: pac::GPIOB, rcc: &mut pac::RCC) -> Self {
         Self::enable_clock(rcc);
         rcc.ahb2rstr.modify(|_, w| w.gpiobrst().set_bit());
@@ -1002,6 +1020,7 @@ impl PortB {
     /// ```
     ///
     /// [`split`]: crate::gpio::PortB::split
+    #[inline]
     pub unsafe fn steal() -> Self {
         Self::GPIOS
     }
@@ -1013,11 +1032,13 @@ impl PortB {
     /// 1. You cannot use any port-B GPIO pin while the clock is disabled.
     /// 2. You are responsible for re-enabling the clock before resuming use
     ///    of any port B GPIO.
+    #[inline]
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpioben().disabled());
     }
 
     /// Enable the GPIOB clock.
+    #[inline]
     pub fn enable_clock(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpioben().enabled());
         rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
@@ -1075,6 +1096,7 @@ impl PortC {
     /// let c0: pins::C0 = gpioc.c0;
     /// ```
     #[allow(unused_variables)]
+    #[inline]
     pub fn split(gpioc: pac::GPIOC, rcc: &mut pac::RCC) -> Self {
         Self::enable_clock(rcc);
         rcc.ahb2rstr.modify(|_, w| w.gpiocrst().set_bit());
@@ -1107,6 +1129,7 @@ impl PortC {
     /// ```
     ///
     /// [`split`]: crate::gpio::PortC::split
+    #[inline]
     pub unsafe fn steal() -> Self {
         Self::GPIOS
     }
@@ -1118,11 +1141,13 @@ impl PortC {
     /// 1. You cannot use any port-C GPIO pin while the clock is disabled.
     /// 2. You are responsible for re-enabling the clock before resuming use
     ///    of any port C GPIO.
+    #[inline]
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpiocen().disabled());
     }
 
     /// Enable the GPIOC clock.
+    #[inline]
     pub fn enable_clock(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpiocen().enabled());
         rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
@@ -1130,7 +1155,7 @@ impl PortC {
 }
 
 /// Digital input or output level.
-#[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Clone, Copy, Hash)]
+#[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Level {
     /// GPIO logic low.
@@ -1150,6 +1175,7 @@ impl Level {
     /// assert_eq!(Level::High.toggle(), Level::Low);
     /// assert_eq!(Level::Low.toggle(), Level::High);
     /// ```
+    #[inline]
     pub const fn toggle(self) -> Level {
         match self {
             Level::Low => Level::High,
@@ -1167,6 +1193,7 @@ impl Level {
     /// assert_eq!(Level::Low.is_low(), true);
     /// assert_eq!(Level::High.is_low(), false);
     /// ```
+    #[inline]
     pub fn is_low(&self) -> bool {
         matches!(self, Self::Low)
     }
@@ -1181,6 +1208,7 @@ impl Level {
     /// assert_eq!(Level::High.is_high(), true);
     /// assert_eq!(Level::Low.is_high(), false);
     /// ```
+    #[inline]
     pub fn is_high(&self) -> bool {
         matches!(self, Self::High)
     }
@@ -1216,6 +1244,7 @@ impl OutputArgs {
     ///
     /// assert_eq!(OutputArgs::new(), OutputArgs::default());
     /// ```
+    #[inline]
     pub const fn new() -> Self {
         OutputArgs {
             speed: Speed::High,
@@ -1302,8 +1331,10 @@ where
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut c0: Output<pins::C0> = Output::default(gpioc.c0);
     /// ```
+    #[inline]
     pub fn default(pin: P) -> Self {
-        Self::new(pin, &OutputArgs::new())
+        const OA: OutputArgs = OutputArgs::new();
+        Self::new(pin, &OA)
     }
 
     /// Steal the output GPIO from whatever is currently using it.
@@ -1324,6 +1355,7 @@ where
     ///
     /// let b11: Output<pins::B11> = unsafe { Output::steal() };
     /// ```
+    #[inline]
     pub unsafe fn steal() -> Self {
         Output { pin: P::steal() }
     }
@@ -1346,6 +1378,7 @@ where
     /// let c0: Output<pins::C0> = Output::default(gpioc.c0);
     /// let c0: pins::C0 = c0.free();
     /// ```
+    #[inline]
     pub fn free(self) -> P {
         self.pin
     }
@@ -1372,6 +1405,7 @@ where
     /// c0.set_level(Level::High);
     /// c0.set_level(Level::Low);
     /// ```
+    #[inline]
     pub fn set_level(&mut self, level: Level) {
         self.pin.set_output_level(level)
     }
@@ -1397,6 +1431,7 @@ where
     /// let mut c0: Output<pins::C0> = Output::default(gpioc.c0);
     /// c0.set_level_high();
     /// ```
+    #[inline]
     pub fn set_level_high(&mut self) {
         self.set_level(Level::High)
     }
@@ -1422,6 +1457,7 @@ where
     /// let mut c0: Output<pins::C0> = Output::default(gpioc.c0);
     /// c0.set_level_low();
     /// ```
+    #[inline]
     pub fn set_level_low(&mut self) {
         self.set_level(Level::Low)
     }
@@ -1444,6 +1480,7 @@ where
     /// let mut c0: Output<pins::C0> = Output::default(gpioc.c0);
     /// c0.set_level(c0.level().toggle());
     /// ```
+    #[inline]
     pub fn level(&self) -> Level {
         self.pin.output_level()
     }
@@ -1455,11 +1492,13 @@ where
 {
     type Error = core::convert::Infallible;
 
+    #[inline]
     fn set_low(&mut self) -> Result<(), Self::Error> {
         self.pin.set_output_level(Level::Low);
         Ok(())
     }
 
+    #[inline]
     fn set_high(&mut self) -> Result<(), Self::Error> {
         self.pin.set_output_level(Level::High);
         Ok(())
@@ -1470,10 +1509,12 @@ impl<P> embedded_hal::digital::v2::StatefulOutputPin for Output<P>
 where
     P: sealed::PinOps,
 {
+    #[inline]
     fn is_set_high(&self) -> Result<bool, Self::Error> {
         Ok(self.pin.output_level().is_high())
     }
 
+    #[inline]
     fn is_set_low(&self) -> Result<bool, Self::Error> {
         Ok(self.pin.output_level().is_low())
     }
@@ -1536,6 +1577,7 @@ where
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut c0: Input<pins::C0> = Input::default(gpioc.c0);
     /// ```
+    #[inline]
     pub fn default(pin: P) -> Self {
         Self::new(pin, Pull::None)
     }
@@ -1558,6 +1600,7 @@ where
     ///
     /// let c6: Input<pins::C6> = unsafe { Input::steal() };
     /// ```
+    #[inline]
     pub unsafe fn steal() -> Self {
         Input { pin: P::steal() }
     }
@@ -1580,6 +1623,7 @@ where
     /// let c0_input: Input<pins::C0> = Input::default(gpioc.c0);
     /// let c0: pins::C0 = c0_input.free();
     /// ```
+    #[inline]
     pub fn free(self) -> P {
         self.pin
     }
@@ -1604,6 +1648,7 @@ where
     ///
     /// let button_3_is_pressed: bool = c6.level() == Level::High;
     /// ```
+    #[inline]
     pub fn level(&self) -> Level {
         self.pin.input_level()
     }
@@ -1641,9 +1686,7 @@ where
     /// let mut b14: Analog<pins::B14> = Analog::new(gpiob.b14);
     /// ```
     pub fn new(mut pin: P) -> Self {
-        cortex_m::interrupt::free(|cs| unsafe {
-            pin.set_mode(cs, sealed::Mode::Analog);
-        });
+        cortex_m::interrupt::free(|cs| unsafe { pin.set_mode(cs, sealed::Mode::Analog) });
         Analog { pin }
     }
 
@@ -1687,7 +1730,7 @@ pub struct RfBusy {
 }
 
 impl RfBusy {
-    /// Create a new RF Busy pin from a pin A12.
+    /// Create a new RF Busy pin from pin A12.
     ///
     /// # Example
     ///
@@ -1724,6 +1767,7 @@ impl RfBusy {
     /// let a12: RfBusy = RfBusy::new(gpioa.a12);
     /// let a12: pins::A12 = a12.free();
     /// ```
+    #[inline]
     pub fn free(self) -> pins::A12 {
         self.pin
     }
@@ -1737,7 +1781,7 @@ pub struct RfIrq0 {
 }
 
 impl RfIrq0 {
-    /// Create a new RF IRQ 0 pin from a pin B3.
+    /// Create a new RF IRQ 0 pin from pin B3.
     ///
     /// # Example
     ///
@@ -1787,7 +1831,7 @@ pub struct RfIrq1 {
 }
 
 impl RfIrq1 {
-    /// Create a new RF IRQ 1 pin from a pin B5.
+    /// Create a new RF IRQ 1 pin from pin B5.
     ///
     /// # Example
     ///
@@ -1837,7 +1881,7 @@ pub struct RfIrq2 {
 }
 
 impl RfIrq2 {
-    /// Create a new RF IRQ 2 pin from a pin B8.
+    /// Create a new RF IRQ 2 pin from pin B8.
     ///
     /// # Example
     ///
@@ -1879,31 +1923,32 @@ impl RfIrq2 {
     }
 }
 
-/// Low-power timer 1 trigger pin.
+/// RF NSS debug pin.
 #[derive(Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct LpTim1Trg<P> {
-    pin: P,
+pub struct RfNssDbg {
+    pin: pins::A4,
 }
 
-impl<P: sealed::LpTim1Etr> LpTim1Trg<P> {
-    /// Create a new low-power timer 3 trigger from a pin.
+impl RfNssDbg {
+    /// Create a new NSS debug pin from pin A4.
     ///
     /// # Example
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{pins, LpTim1Trg, PortB},
+    ///     gpio::{pins, PortA, RfNssDbg},
     ///     pac,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
-    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let b6: LpTim1Trg<pins::B6> = LpTim1Trg::new(gpiob.b6);
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let a4: RfNssDbg = RfNssDbg::new(gpioa.a4);
     /// ```
-    pub fn new(mut pin: P) -> Self {
-        cortex_m::interrupt::free(|cs| pin.set_lptim1_etr_af(cs));
+    pub fn new(mut pin: pins::A4) -> Self {
+        use sealed::Spi3Nss;
+        cortex_m::interrupt::free(|cs| pin.set_spi3_nss_af(cs));
         Self { pin }
     }
 
@@ -1913,46 +1958,47 @@ impl<P: sealed::LpTim1Etr> LpTim1Trg<P> {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{pins, LpTim1Trg, PortB},
+    ///     gpio::{pins, PortA, RfNssDbg},
     ///     pac,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
-    /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let b6: LpTim1Trg<pins::B6> = LpTim1Trg::new(gpiob.b6);
-    /// let b6: pins::B6 = b6.free();
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let a4: RfNssDbg = RfNssDbg::new(gpioa.a4);
+    /// let a4: pins::A4 = a4.free();
     /// ```
-    pub fn free(self) -> P {
+    pub fn free(self) -> pins::A4 {
         self.pin
     }
 }
 
-/// Low-power timer 2 trigger pin.
+/// RF SCK debug pin.
 #[derive(Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct LpTim2Trg<P> {
-    pin: P,
+pub struct SgSckDbg {
+    pin: pins::A5,
 }
 
-impl<P: sealed::LpTim2Etr> LpTim2Trg<P> {
-    /// Create a new low-power timer 3 trigger from a pin.
+impl SgSckDbg {
+    /// Create a new SCK debug pin from pin A5.
     ///
     /// # Example
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{pins, LpTim2Trg, PortA},
+    ///     gpio::{pins, PortA, SgSckDbg},
     ///     pac,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let a5: LpTim2Trg<pins::A5> = LpTim2Trg::new(gpioa.a5);
+    /// let a5: SgSckDbg = SgSckDbg::new(gpioa.a5);
     /// ```
-    pub fn new(mut pin: P) -> Self {
-        cortex_m::interrupt::free(|cs| pin.set_lptim2_etr_af(cs));
+    pub fn new(mut pin: pins::A5) -> Self {
+        use sealed::Spi3Sck;
+        cortex_m::interrupt::free(|cs| pin.set_spi3_sck_af(cs));
         Self { pin }
     }
 
@@ -1962,47 +2008,47 @@ impl<P: sealed::LpTim2Etr> LpTim2Trg<P> {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{pins, LpTim2Trg, PortA},
+    ///     gpio::{pins, PortA, SgSckDbg},
     ///     pac,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let a5: LpTim2Trg<pins::A5> = LpTim2Trg::new(gpioa.a5);
+    /// let a5: SgSckDbg = SgSckDbg::new(gpioa.a5);
     /// let a5: pins::A5 = a5.free();
     /// ```
-    pub fn free(self) -> P {
+    pub fn free(self) -> pins::A5 {
         self.pin
     }
 }
 
-/// Low-power timer 3 trigger pin.
+/// RF MISO debug pin.
 #[derive(Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct LpTim3Trg {
-    pin: pins::A11,
+pub struct SgMisoDbg {
+    pin: pins::A6,
 }
 
-impl LpTim3Trg {
-    /// Create a new low-power timer 3 trigger from pin A11.
+impl SgMisoDbg {
+    /// Create a new MISO debug pin from pin A6.
     ///
     /// # Example
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{pins, LpTim3Trg, PortA},
+    ///     gpio::{pins, PortA, SgMisoDbg},
     ///     pac,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let a11: LpTim3Trg = LpTim3Trg::new(gpioa.a11);
+    /// let a6: SgMisoDbg = SgMisoDbg::new(gpioa.a6);
     /// ```
-    pub fn new(mut pin: pins::A11) -> Self {
-        use sealed::LpTim3Etr;
-        cortex_m::interrupt::free(|cs| pin.set_lptim3_etr_af(cs));
+    pub fn new(mut pin: pins::A6) -> Self {
+        use sealed::Spi3Miso;
+        cortex_m::interrupt::free(|cs| pin.set_spi3_miso_af(cs));
         Self { pin }
     }
 
@@ -2012,17 +2058,67 @@ impl LpTim3Trg {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{pins, LpTim3Trg, PortA},
+    ///     gpio::{pins, PortA, SgMisoDbg},
     ///     pac,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let a11: LpTim3Trg = LpTim3Trg::new(gpioa.a11);
-    /// let a11: pins::A11 = a11.free();
+    /// let a6: SgMisoDbg = SgMisoDbg::new(gpioa.a6);
+    /// let a6: pins::A6 = a6.free();
     /// ```
-    pub fn free(self) -> pins::A11 {
+    pub fn free(self) -> pins::A6 {
+        self.pin
+    }
+}
+
+/// RF MOSI debug pin.
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct SgMosiDbg {
+    pin: pins::A7,
+}
+
+impl SgMosiDbg {
+    /// Create a new MISO debug pin from pin A7.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, PortA, SgMosiDbg},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let a7: SgMosiDbg = SgMosiDbg::new(gpioa.a7);
+    /// ```
+    pub fn new(mut pin: pins::A7) -> Self {
+        use sealed::Spi3Mosi;
+        cortex_m::interrupt::free(|cs| pin.set_spi3_mosi_af(cs));
+        Self { pin }
+    }
+
+    /// Free the GPIO pin.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     gpio::{pins, PortA, SgMosiDbg},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let a7: SgMosiDbg = SgMosiDbg::new(gpioa.a7);
+    /// let a7: pins::A7 = a7.free();
+    /// ```
+    pub fn free(self) -> pins::A7 {
         self.pin
     }
 }

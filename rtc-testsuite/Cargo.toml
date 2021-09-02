@@ -1,0 +1,29 @@
+[package]
+authors = ["Alex Martens <alexmgit@protonmail.com>"]
+name = "rtc-testsuite"
+publish = false
+edition = "2018"
+version = "0.1.0"
+
+[[test]]
+name = "test"
+harness = false
+
+[dependencies]
+defmt = "0.2"
+defmt-rtt = "0.2"
+defmt-test = "0.2"
+nb = "1"
+panic-probe = { version = "0.2", features = ["print-defmt" ] }
+stm32wl-hal = { path = "../hal", features = ["stm32wl5x_cm4", "defmt"] }
+
+[features]
+default = ["defmt-trace", "stm32wl-hal/defmt-trace"]
+
+# do NOT modify these features
+defmt-default = []
+defmt-trace = []
+defmt-debug = []
+defmt-info = []
+defmt-warn = []
+defmt-error = []

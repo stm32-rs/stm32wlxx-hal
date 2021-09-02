@@ -12,7 +12,7 @@ use pac::dac::mcr::MODE1_A;
 /// A10 output pin.
 ///
 /// The output buffer can be anble to allow a high drive capability.
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[repr(u8)]
 pub enum ModePin {
     /// Normal mode with the buffer enabled
@@ -48,7 +48,7 @@ impl From<ModePin> for MODE1_A {
 ///
 /// The DAC is connected to the chip peripherals in these modes, and has
 /// no output buffer.
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[repr(u8)]
 pub enum ModeChip {
     /// Sample and hold

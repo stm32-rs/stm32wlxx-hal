@@ -25,7 +25,7 @@ mod tests {
     #[init]
     fn init() -> TestArgs {
         let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
-        rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC);
+        unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
 
         dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
         while dp.RCC.cr.read().hsirdy().is_not_ready() {}
@@ -36,12 +36,12 @@ mod tests {
 
         let lpuart: LpUart<(pins::C0, Dma2Ch6), pins::C1> =
             LpUart::new(dp.LPUART, 115200, uart::Clk::Hsi16, &mut dp.RCC)
-                .enable_rx_dma(gpioc.c0, dma.d2c6)
+                .enable_rx_dma(gpioc.c0, dma.d2.c6)
                 .enable_tx(gpioc.c1);
         let uart1: Uart1<pins::A10, (pins::A9, Dma1Ch3)> =
             Uart1::new(dp.USART1, 115200, uart::Clk::Hsi16, &mut dp.RCC)
                 .enable_rx(gpioa.a10)
-                .enable_tx_dma(gpioa.a9, dma.d1c3);
+                .enable_tx_dma(gpioa.a9, dma.d1.c3);
 
         defmt::warn!(
             "UART tests require C1 (LPUART TX) connected to A10 (UART1 RX) and \

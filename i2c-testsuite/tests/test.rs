@@ -27,7 +27,7 @@ mod tests {
     fn init() -> I2c1<(pins::B8, pins::B7)> {
         let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
 
-        rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC);
+        unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
         let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
         let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
 
@@ -78,7 +78,7 @@ mod tests {
 
     #[test]
     fn sht31_measurement(i2c: &mut I2c1<(pins::B8, pins::B7)>) {
-        defmt::warn!("A SHT31 sensor must be connected to the board on pins PB8 (SCL) & PB7 (SDA) for this test to work");
+        defmt::warn!("A SHT31 sensor must be connected to the board on pins B8 (SCL) & B7 (SDA) for this test to work");
         let cmd: [u8; 2] = [0x2C, 0x06];
         let mut response: [u8; 6] = [0; 6];
 

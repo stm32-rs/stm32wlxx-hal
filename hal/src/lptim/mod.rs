@@ -1,6 +1,6 @@
 //! Low-power timers
 //!
-//! Unlike other modules all functionality is exposed via a single trait shared
+//! Unlike other modules most functionality is exposed via a single trait shared
 //! for all timers, [`LpTim`].
 //!
 //! # Example
@@ -25,7 +25,6 @@
 //! lptim1.start(16_000_u16);
 //! nb::block!(lptim1.wait());
 //! ```
-#![warn(missing_docs)]
 
 mod cfgr;
 mod cr;
@@ -33,25 +32,47 @@ mod cr;
 pub use cfgr::{Cfgr, Filter, Prescaler, TrgPol, TrgSel, TrgSel3};
 pub use cr::Cr;
 
-use crate::{pac, Ratio};
+use crate::{
+    gpio::{
+        pins,
+        sealed::{LpTim1Etr, LpTim2Etr, LpTim3Etr},
+    },
+    pac, Ratio,
+};
 use paste::paste;
 use void::Void;
 
 /// Timer IRQs.
 pub mod irq {
     /// Repetition register update OK.
+    ///
+    /// Set by hardware when the APB bus write to the RCR register has been
+    /// successfully completed.
     pub const REPOK: u32 = 1 << 8;
-    /// LPTIM update event occured.
+    /// Update event occured.
     pub const UE: u32 = 1 << 7;
     /// Counter direction change up to down.
+    ///
+    /// Set by hardware when the counter direction changes from up to down.
     pub const DOWN: u32 = 1 << 6;
     /// Counter direction change down to up.
+    ///
+    /// Set by hardware when the counter direction changes from down to up.
     pub const UP: u32 = 1 << 5;
     /// Autoreload register update OK.
+    ///
+    /// Set by hardware when the APB bus write to the ARR register has been
+    /// successfully completed.
     pub const ARROK: u32 = 1 << 4;
     /// Compare register update OK.
+    ///
+    /// Set by hardware when the APB bus write to the CMP register has been
+    /// successfully completed.
     pub const CMPOK: u32 = 1 << 3;
-    /// Extern trigger edge event.
+    /// External trigger edge event.
+    ///
+    /// Set by hardware when a valid edge on the selected external trigger
+    /// input has occurred.
     pub const EXTTRIG: u32 = 1 << 2;
     /// Autoreload match.
     ///
@@ -322,7 +343,7 @@ pub trait LpTim: sealed::LpTim {
     ///
     /// # Safety
     ///
-    /// 1. Ensure nothing is using the timer before pulsing reset.
+    /// 1. Ensure nothing is using the timer before calling this function.
     /// 2. You are responsible for setting up the timer after a reset.
     unsafe fn pulse_reset(rcc: &mut pac::RCC);
 
@@ -398,6 +419,26 @@ pub trait LpTim: sealed::LpTim {
     }
 
     /// Enable and disable interrupts.
+    ///
+    /// # Example
+    ///
+    /// Enable all IRQs.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     lptim::{self, LpTim, LpTim1, Prescaler::Div1},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.write(|w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let mut lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
+    /// lptim1.set_ier(lptim::irq::ALL);
+    /// ```
     #[inline]
     fn set_ier(&mut self, ier: u32) {
         self.as_mut_tim().set_ier(ier)
@@ -451,46 +492,11 @@ pub trait LpTim: sealed::LpTim {
         self.as_tim().cr().enabled()
     }
 
-    /// Setup the trigger.
-    ///
-    /// This relies upon global state for GPIO triggers.
-    /// The design choice was a complex API that was impossible to misuse or a
-    /// simple API that could be misused without undefined behaviour; I picked
-    /// the latter.
+    /// Setup a non-pin trigger.
     ///
     /// # Panics
     ///
     /// * (debug) timer is enabled.
-    ///
-    /// # Example
-    ///
-    /// Setup a one-shot timer that starts after a transition on pin A11.
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     embedded_hal::timer::CountDown,
-    ///     gpio::{LpTim3Trg, PortA},
-    ///     lptim::{self, Filter, LpTim, LpTim3, Prescaler::Div1, TrgPol, TrgSel3},
-    ///     pac,
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.write(|w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// // A11 must be configured as a trigger pin
-    /// // otherwise the timer will never start
-    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let _: LpTim3Trg = LpTim3Trg::new(gpioa.a11);
-    ///
-    /// let mut lptim3: LpTim3 = LpTim3::new(dp.LPTIM3, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
-    /// lptim3.setup_trigger(Filter::Any, TrgPol::Both, TrgSel3::Pin);
-    /// lptim3.start(12_345_u16);
-    /// // timer will only start after any transition on pin A11
-    /// nb::block!(lptim3.wait());
-    /// ```
     fn setup_trigger(&mut self, filter: Filter, pol: TrgPol, sel: Self::TrgSel) {
         debug_assert!(!self.is_enabled());
         self.as_mut_tim().modify_cfgr(|w| {
@@ -689,3 +695,228 @@ macro_rules! impl_eh_for {
 impl_eh_for!(LpTim1);
 impl_eh_for!(LpTim2);
 impl_eh_for!(LpTim3);
+
+/// Low-power timer 1 trigger pin.
+///
+/// Constructed with [`new_trigger_pin`](LpTim1::new_trigger_pin).
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct LpTim1Trg<P> {
+    pin: P,
+}
+
+impl<P> LpTim1Trg<P> {
+    fn free(self) -> P {
+        self.pin
+    }
+}
+
+// TODO: move to LpTim trait when GATs are stablized
+impl LpTim1 {
+    /// Setup a new pin trigger.
+    ///
+    /// # Panics
+    ///
+    /// * (debug) timer is enabled.
+    ///
+    /// # Example
+    ///
+    /// See [`LpTim3::new_trigger_pin`].
+    pub fn new_trigger_pin<P: LpTim1Etr>(
+        &mut self,
+        filter: Filter,
+        pol: TrgPol,
+        mut pin: P,
+    ) -> LpTim1Trg<P> {
+        debug_assert!(!self.is_enabled());
+        cortex_m::interrupt::free(|cs| pin.set_lptim1_etr_af(cs));
+        self.as_mut_tim()
+            .modify_cfgr(|w| w.set_trg_sel(0).set_trg_pol(pol).set_trg_filter(filter));
+        LpTim1Trg { pin }
+    }
+
+    /// Free the trigger pin previously created with
+    /// [`new_trigger_pin`](Self::new_trigger_pin).
+    ///
+    /// This is will the trigger source to a software trigger.
+    ///
+    /// # Panics
+    ///
+    /// * (debug) timer is enabled.
+    ///
+    /// # Example
+    ///
+    /// See [`LpTim3::free_trigger_pin`].
+    pub fn free_trigger_pin<P: LpTim1Etr>(&mut self, pin: LpTim1Trg<P>) -> P {
+        debug_assert!(!self.is_enabled());
+        self.as_mut_tim()
+            .modify_cfgr(|w| w.set_trg_pol(TrgPol::Soft));
+        pin.free()
+    }
+}
+
+/// Low-power timer 2 trigger pin.
+///
+/// Constructed with [`new_trigger_pin`](LpTim2::new_trigger_pin).
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct LpTim2Trg<P> {
+    pin: P,
+}
+
+impl<P> LpTim2Trg<P> {
+    fn free(self) -> P {
+        self.pin
+    }
+}
+
+// TODO: move to LpTim trait when GATs are stablized
+impl LpTim2 {
+    /// Setup a new pin trigger.
+    ///
+    /// # Panics
+    ///
+    /// * (debug) timer is enabled.
+    ///
+    /// # Example
+    ///
+    /// See [`LpTim3::new_trigger_pin`].
+    pub fn new_trigger_pin<P: LpTim2Etr>(
+        &mut self,
+        filter: Filter,
+        pol: TrgPol,
+        mut pin: P,
+    ) -> LpTim2Trg<P> {
+        debug_assert!(!self.is_enabled());
+        cortex_m::interrupt::free(|cs| pin.set_lptim2_etr_af(cs));
+        self.as_mut_tim()
+            .modify_cfgr(|w| w.set_trg_sel(0).set_trg_pol(pol).set_trg_filter(filter));
+        LpTim2Trg { pin }
+    }
+
+    /// Free the trigger pin previously created with
+    /// [`new_trigger_pin`](Self::new_trigger_pin).
+    ///
+    /// This is will the trigger source to a software trigger.
+    ///
+    /// # Panics
+    ///
+    /// * (debug) timer is enabled.
+    ///
+    /// # Example
+    ///
+    /// See [`LpTim3::free_trigger_pin`].
+    pub fn free_trigger_pin<P: LpTim2Etr>(&mut self, pin: LpTim2Trg<P>) -> P {
+        debug_assert!(!self.is_enabled());
+        self.as_mut_tim()
+            .modify_cfgr(|w| w.set_trg_pol(TrgPol::Soft));
+        pin.free()
+    }
+}
+
+/// Low-power timer 3 trigger pin.
+///
+/// Constructed with [`new_trigger_pin`](LpTim3::new_trigger_pin).
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct LpTim3Trg {
+    pin: pins::A11,
+}
+
+impl LpTim3Trg {
+    fn free(self) -> pins::A11 {
+        self.pin
+    }
+}
+
+// TODO: move to LpTim trait when GATs are stablized
+impl LpTim3 {
+    /// Setup a new pin trigger.
+    ///
+    /// # Panics
+    ///
+    /// * (debug) timer is enabled.
+    ///
+    /// # Example
+    ///
+    /// Setup a one-shot timer that starts after a transition on pin
+    /// [`A11`](crate::gpio::pins::A11).
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     embedded_hal::timer::CountDown,
+    ///     gpio::PortA,
+    ///     lptim::{self, Filter, LpTim, LpTim3, LpTim3Trg, Prescaler::Div1, TrgPol},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.write(|w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let mut lptim3: LpTim3 = LpTim3::new(dp.LPTIM3, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
+    /// let lptim3trg: LpTim3Trg = lptim3.new_trigger_pin(pa.a11, Filter::Any, TrgPol::Both);
+    /// lptim3.start(12_345_u16);
+    /// // timer will only start after any transition on pin A11
+    /// nb::block!(lptim3.wait());
+    /// ```
+    pub fn new_trigger_pin(
+        &mut self,
+        mut pin: pins::A11,
+        filter: Filter,
+        pol: TrgPol,
+    ) -> LpTim3Trg {
+        debug_assert!(!self.is_enabled());
+        cortex_m::interrupt::free(|cs| pin.set_lptim3_etr_af(cs));
+        self.as_mut_tim()
+            .modify_cfgr(|w| w.set_trg_sel(0).set_trg_pol(pol).set_trg_filter(filter));
+        LpTim3Trg { pin }
+    }
+
+    /// Free the trigger pin previously created with
+    /// [`new_trigger_pin`](Self::new_trigger_pin).
+    ///
+    /// This is will the trigger source to a software trigger.
+    ///
+    /// # Panics
+    ///
+    /// * (debug) timer is enabled.
+    ///
+    /// # Example
+    ///
+    /// Setup a one-shot timer that starts after a transition on pin A11.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     embedded_hal::timer::CountDown,
+    ///     gpio::PortA,
+    ///     lptim::{self, Filter, LpTim, LpTim3, LpTim3Trg, Prescaler::Div1, TrgPol},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.write(|w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let mut lptim3: LpTim3 = LpTim3::new(dp.LPTIM3, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
+    /// let lptim3trg: LpTim3Trg = lptim3.new_trigger_pin(pa.a11, Filter::Any, TrgPol::Both);
+    /// lptim3.start(12_345_u16);
+    /// // timer will only start after any transition on pin A11
+    /// nb::block!(lptim3.wait());
+    ///
+    /// // free the pin
+    /// let a11 = lptim3.free_trigger_pin(lptim3trg);
+    /// ```
+    pub fn free_trigger_pin(&mut self, pin: LpTim3Trg) -> pins::A11 {
+        debug_assert!(!self.is_enabled());
+        self.as_mut_tim()
+            .modify_cfgr(|w| w.set_trg_pol(TrgPol::Soft));
+        pin.free()
+    }
+}

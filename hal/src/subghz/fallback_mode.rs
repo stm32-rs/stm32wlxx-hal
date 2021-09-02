@@ -3,14 +3,14 @@
 /// Argument of [`set_tx_rx_fallback_mode`].
 ///
 /// [`set_tx_rx_fallback_mode`]: crate::subghz::SubGhz::set_tx_rx_fallback_mode.
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum FallbackMode {
     /// Standby mode entry.
     Standby = 0x20,
     /// Standby with HSE32 enabled.
-    StandbyHse32 = 0x30,
+    StandbyHse = 0x30,
     /// Frequency synthesizer entry.
     Fs = 0x40,
 }

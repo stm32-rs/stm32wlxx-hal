@@ -57,6 +57,10 @@ optional = true
 version = "0.2"
 optional = true
 
+[dependencies.chrono]
+version = "0.4"
+default-features = false
+
 [dev-dependencies]
 static_assertions = "1"
 

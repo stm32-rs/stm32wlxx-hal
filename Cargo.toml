@@ -1,19 +1,10 @@
 [workspace]
 resolver = "2"
 members = [
-    "adc-testsuite",
-    "aes-testsuite",
-    "dac-testsuite",
+    "*-bsp",
+    "*-testsuite",
     "examples",
     "hal",
-    "i2c-testsuite",
-    "lora-e5-bsp",
-    "lptim-testsuite",
-    "nucleo-wl55jc-bsp",
-    "pka-testsuite",
-    "rng-testsuite",
-    "subghz-testsuite",
-    "uart-testsuite",
 ]
 default-members = ["hal"]
 

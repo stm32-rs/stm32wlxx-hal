@@ -1770,4 +1770,124 @@ mod tests {
             total_elapsed / NUM_ECB_256
         );
     }
+
+    #[test]
+    fn decrypt_gcm_inplace_128(aes: &mut Aes) {
+        let mut total_elapsed: u32 = 0;
+
+        for gcm in GCM_128.iter() {
+            let mut tag: [u32; 4] = [0; 4];
+            let mut buf: [u8; 16] = [0; 16];
+            defmt::assert!(buf.len() >= gcm.pt.len());
+            gcm.ct
+                .iter()
+                .enumerate()
+                .for_each(|(idx, &byte)| buf[idx] = byte);
+
+            total_elapsed += stopwatch(|| {
+                unwrap!(aes.decrypt_gcm_inplace(
+                    &gcm.key,
+                    &gcm.iv,
+                    &gcm.aad,
+                    &mut buf[..gcm.pt.len()],
+                    &mut tag
+                ))
+            });
+
+            defmt::assert_eq!(tag, gcm.tag);
+            defmt::assert_eq!(&buf[..gcm.pt.len()], gcm.pt);
+        }
+
+        defmt::info!(
+            "Approximate cycles per 128-bit decrypt: {}",
+            total_elapsed / NUM_GCM_128
+        );
+    }
+
+    #[test]
+    fn decrypt_gcm_inplace_256(aes: &mut Aes) {
+        let mut total_elapsed: u32 = 0;
+
+        for gcm in GCM_256.iter() {
+            let mut tag: [u32; 4] = [0; 4];
+            let mut buf: [u8; 16] = [0; 16];
+            defmt::assert!(buf.len() >= gcm.pt.len());
+            gcm.ct
+                .iter()
+                .enumerate()
+                .for_each(|(idx, &byte)| buf[idx] = byte);
+
+            total_elapsed += stopwatch(|| {
+                unwrap!(aes.decrypt_gcm_inplace(
+                    &gcm.key,
+                    &gcm.iv,
+                    &gcm.aad,
+                    &mut buf[..gcm.pt.len()],
+                    &mut tag
+                ))
+            });
+
+            defmt::assert_eq!(tag, gcm.tag);
+            defmt::assert_eq!(&buf[..gcm.pt.len()], gcm.pt);
+        }
+
+        defmt::info!(
+            "Approximate cycles per 256-bit decrypt: {}",
+            total_elapsed / NUM_GCM_256
+        );
+    }
+
+    #[test]
+    fn gcm_inplace_non_native_size(aes: &mut Aes) {
+        const ASSOCIATED_DATA: &[u8; 13] = b"Hello, World!";
+        const PLAINTEXT: &[u8; 445] = b"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+
+        // purpose of this test is to check encryption on data that does not
+        // match the native hardware size
+        defmt::assert_ne!(ASSOCIATED_DATA.len() % 16, 0);
+        defmt::assert_ne!(PLAINTEXT.len() % 16, 0);
+
+        const IV: [u32; 3] = [0; 3];
+
+        // static to prevent the stack from going crazy
+        static mut BUF: [u8; 445] = *PLAINTEXT;
+        let mut encrypt_tag: [u32; 4] = [0; 4];
+        let encrypt_elapsed: u32 = stopwatch(|| {
+            unwrap!(aes.encrypt_gcm_inplace(
+                &ZERO_16B,
+                &IV,
+                ASSOCIATED_DATA,
+                unsafe { &mut BUF },
+                &mut encrypt_tag
+            ))
+        });
+        defmt::info!(
+            "Encrypting {} bytes: {} cycles",
+            PLAINTEXT.len(),
+            encrypt_elapsed
+        );
+
+        assert_ne!(unsafe { &BUF }, PLAINTEXT);
+        defmt::assert_ne!(encrypt_tag, ZERO_16B);
+
+        let mut decrypt_tag: [u32; 4] = [0; 4];
+        let decrypt_elapsed: u32 = stopwatch(|| {
+            unwrap!(aes.decrypt_gcm_inplace(
+                &ZERO_16B,
+                &IV,
+                ASSOCIATED_DATA,
+                unsafe { &mut BUF },
+                &mut decrypt_tag
+            ))
+        });
+
+        assert_eq!(unsafe { &BUF }, PLAINTEXT);
+        defmt::assert_eq!(decrypt_tag, encrypt_tag);
+
+        defmt::info!(
+            "Decrypting {} bytes: {} cycles",
+            PLAINTEXT.len(),
+            decrypt_elapsed
+        );
+    }
 }

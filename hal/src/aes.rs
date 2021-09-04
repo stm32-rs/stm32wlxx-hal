@@ -335,23 +335,23 @@ impl Aes {
         self.aes.ivr2.write(|w| w.ivi().bits(iv[1]));
         self.aes.ivr3.write(|w| w.ivi().bits(iv[0]));
         #[rustfmt::skip]
-            self.aes.cr.write(|w|
-                w
-                    .en().enabled()
-                    .datatype().none()
-                    .mode().bits(mode)
-                    .chmod2().bit(CHMOD2)
-                    .chmod().bits(CHMOD10)
-                    .ccfc().clear()
-                    .errc().clear()
-                    .ccfie().disabled()
-                    .errie().disabled()
-                    .dmainen().disabled()
-                    .dmaouten().disabled()
-                    .gcmph().init()
-                    .keysize().variant(keysize)
-                    .npblb().bits(0)
-            );
+        self.aes.cr.write(|w|
+            w
+                .en().enabled()
+                .datatype().none()
+                .mode().bits(mode)
+                .chmod2().bit(CHMOD2)
+                .chmod().bits(CHMOD10)
+                .ccfc().clear()
+                .errc().clear()
+                .ccfie().disabled()
+                .errie().disabled()
+                .dmainen().disabled()
+                .dmaouten().disabled()
+                .gcmph().init()
+                .keysize().variant(keysize)
+                .npblb().bits(0)
+        );
         self.poll_completion()?;
 
         // header phase
@@ -405,23 +405,23 @@ impl Aes {
 
         // final phase
         #[rustfmt::skip]
-            self.aes.cr.write(|w|
-                w
-                    .en().enabled()
-                    .datatype().none()
-                    .mode().bits(mode)
-                    .chmod2().bit(CHMOD2)
-                    .chmod().bits(CHMOD10)
-                    .ccfc().clear()
-                    .errc().clear()
-                    .ccfie().disabled()
-                    .errie().disabled()
-                    .dmainen().disabled()
-                    .dmaouten().disabled()
-                    .gcmph().final_()
-                    .keysize().variant(keysize)
-                    .npblb().bits(0)
-            );
+        self.aes.cr.write(|w|
+            w
+                .en().enabled()
+                .datatype().none()
+                .mode().bits(mode)
+                .chmod2().bit(CHMOD2)
+                .chmod().bits(CHMOD10)
+                .ccfc().clear()
+                .errc().clear()
+                .ccfie().disabled()
+                .errie().disabled()
+                .dmainen().disabled()
+                .dmaouten().disabled()
+                .gcmph().final_()
+                .keysize().variant(keysize)
+                .npblb().bits(0)
+        );
 
         // byte length to bit lengths
         // impossible to overflow, not enough RAM for [u8; (u32::MAX >> 3) + 1]

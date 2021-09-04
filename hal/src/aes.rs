@@ -727,7 +727,6 @@ impl Aes {
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
-    /// let mut rng = Rng::new(dp.RNG, rng::Clk::MSI, &mut dp.RCC);
     ///
     /// const KEY: [u32; 4] = [0; 4];
     /// const IV: [u32; 3] = [0; 3];

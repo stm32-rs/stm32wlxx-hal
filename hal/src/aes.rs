@@ -442,7 +442,7 @@ impl Aes {
     ///
     /// # Panics
     ///
-    /// * Key is not 128-bits long (`[u32; 4]`) or 256-bits long (`[u32; 8]`).
+    /// * Key is not 128-bits long `[u32; 4]` or 256-bits long `[u32; 8]`.
     ///
     /// # Example
     ///
@@ -501,7 +501,7 @@ impl Aes {
     ///
     /// # Panics
     ///
-    /// * Key is not 128-bits long (`[u32; 4]`) or 256-bits long (`[u32; 8]`).
+    /// * Key is not 128-bits long `[u32; 4]` or 256-bits long `[u32; 8]`.
     ///
     /// # Example
     ///
@@ -558,7 +558,7 @@ impl Aes {
     ///
     /// # Panics
     ///
-    /// * Key is not 128-bits long (`[u32; 4]`) or 256-bits long (`[u32; 8]`).
+    /// * Key is not 128-bits long `[u32; 4]` or 256-bits long `[u32; 8]`.
     ///
     /// # Example
     ///
@@ -600,7 +600,7 @@ impl Aes {
     ///
     /// # Panics
     ///
-    /// * Key is not 128-bits long (`[u32; 4]`) or 256-bits long (`[u32; 8]`).
+    /// * Key is not 128-bits long `[u32; 4]` or 256-bits long `[u32; 8]`.
     ///
     /// # Example
     ///
@@ -659,7 +659,7 @@ impl Aes {
     ///
     /// # Panics
     ///
-    /// * Key is not 128-bits long (`[u32; 4]`) or 256-bits long (`[u32; 8]`).
+    /// * Key is not 128-bits long `[u32; 4]` or 256-bits long `[u32; 8]`.
     ///
     /// # Example
     ///
@@ -718,16 +718,12 @@ impl Aes {
     ///
     /// # Panics
     ///
-    /// * Key is not 128-bits long (`[u32; 4]`) or 256-bits long (`[u32; 8]`).
+    /// * Key is not 128-bits long `[u32; 4]` or 256-bits long `[u32; 8]`.
     ///
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
-    ///     aes::Aes,
-    ///     pac,
-    ///     rng::{self, Rng},
-    /// };
+    /// use stm32wl_hal::{aes::Aes, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);

@@ -304,10 +304,18 @@ impl Aes {
     fn dout_block(&mut self, block: &mut [u8]) {
         for chunk in block.chunks_mut(4) {
             let dout: u32 = self.aes.doutr.read().bits();
-            chunk.get_mut(0).map(|byte| *byte = (dout >> 24) as u8);
-            chunk.get_mut(1).map(|byte| *byte = (dout >> 16) as u8);
-            chunk.get_mut(2).map(|byte| *byte = (dout >> 8) as u8);
-            chunk.get_mut(3).map(|byte| *byte = dout as u8);
+            if let Some(byte) = chunk.get_mut(0) {
+                *byte = (dout >> 24) as u8
+            }
+            if let Some(byte) = chunk.get_mut(1) {
+                *byte = (dout >> 16) as u8
+            }
+            if let Some(byte) = chunk.get_mut(2) {
+                *byte = (dout >> 8) as u8
+            }
+            if let Some(byte) = chunk.get_mut(3) {
+                *byte = dout as u8
+            }
         }
 
         let remain_dw: usize = 4 - (block.len() / 4);

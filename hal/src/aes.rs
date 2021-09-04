@@ -580,9 +580,9 @@ impl Aes {
     ///     .expect("failed to generate entropy");
     ///
     /// let mut associated_data: [u8; 0] = [];
-    /// let mut text: [u8; 5] = [0xf3, 0x44, 0x81, 0xec, 0x3c];
+    /// let mut plaintext: [u8; 13] = b"Hello, World!".clone();
     /// let mut tag: [u32; 4] = [0; 4];
-    /// aes.encrypt_gcm_inplace(&KEY, &iv, &associated_data, &mut text, &mut tag)?;
+    /// aes.encrypt_gcm_inplace(&KEY, &iv, &associated_data, &mut plaintext, &mut tag)?;
     /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
     pub fn encrypt_gcm_inplace(
@@ -719,6 +719,29 @@ impl Aes {
     /// # Panics
     ///
     /// * Key is not 128-bits long (`[u32; 4]`) or 256-bits long (`[u32; 8]`).
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     aes::Aes,
+    ///     pac,
+    ///     rng::{self, Rng},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
+    /// let mut rng = Rng::new(dp.RNG, rng::Clk::MSI, &mut dp.RCC);
+    ///
+    /// const KEY: [u32; 4] = [0; 4];
+    /// const IV: [u32; 3] = [0; 3];
+    ///
+    /// let mut associated_data: [u8; 0] = [];
+    /// let mut ciphertext: [u8; 5] = [0xf3, 0x44, 0x81, 0xec, 0x3c];
+    /// let mut tag: [u32; 4] = [0; 4];
+    /// aes.decrypt_gcm_inplace(&KEY, &IV, &associated_data, &mut ciphertext, &mut tag)?;
+    /// # Ok::<(), stm32wl_hal::aes::Error>(())
+    /// ```
     pub fn decrypt_gcm_inplace(
         &mut self,
         key: &[u32],

@@ -72,14 +72,6 @@ pub enum Error {
     Write,
 }
 
-fn keysize(key: &[u32]) -> KeySize {
-    match key.len() {
-        4 => KeySize::BITS128,
-        8 => KeySize::BITS256,
-        _ => panic!("Key must be 128-bit or 256-bit not {}-bit", key.len() * 32),
-    }
-}
-
 /// AES driver.
 #[derive(Debug)]
 pub struct Aes {
@@ -240,16 +232,29 @@ impl Aes {
         pac::NVIC::unmask(pac::Interrupt::AES)
     }
 
-    fn set_key(&mut self, key: &[u32]) {
-        self.aes.keyr0.write(|w| w.key().bits(key[0]));
-        self.aes.keyr1.write(|w| w.key().bits(key[1]));
-        self.aes.keyr2.write(|w| w.key().bits(key[2]));
-        self.aes.keyr3.write(|w| w.key().bits(key[3]));
-        if key.len() > 4 {
-            self.aes.keyr4.write(|w| w.key().bits(key[4]));
-            self.aes.keyr5.write(|w| w.key().bits(key[5]));
-            self.aes.keyr6.write(|w| w.key().bits(key[6]));
-            self.aes.keyr7.write(|w| w.key().bits(key[7]));
+    fn set_key(&mut self, key: &[u32]) -> KeySize {
+        match key.len() {
+            4 => {
+                self.aes.cr.write(|w| w.en().disabled().keysize().bits128());
+                self.aes.keyr3.write(|w| w.key().bits(key[0]));
+                self.aes.keyr2.write(|w| w.key().bits(key[1]));
+                self.aes.keyr1.write(|w| w.key().bits(key[2]));
+                self.aes.keyr0.write(|w| w.key().bits(key[3]));
+                KeySize::BITS128
+            }
+            8 => {
+                self.aes.cr.write(|w| w.en().disabled().keysize().bits256());
+                self.aes.keyr7.write(|w| w.key().bits(key[0]));
+                self.aes.keyr6.write(|w| w.key().bits(key[1]));
+                self.aes.keyr5.write(|w| w.key().bits(key[2]));
+                self.aes.keyr4.write(|w| w.key().bits(key[3]));
+                self.aes.keyr3.write(|w| w.key().bits(key[4]));
+                self.aes.keyr2.write(|w| w.key().bits(key[5]));
+                self.aes.keyr1.write(|w| w.key().bits(key[6]));
+                self.aes.keyr0.write(|w| w.key().bits(key[7]));
+                KeySize::BITS256
+            }
+            _ => panic!("Key must be 128-bit or 256-bit not {}-bit", key.len() * 32),
         }
     }
 
@@ -268,13 +273,11 @@ impl Aes {
         }
     }
 
-    #[inline]
     fn set_din(&mut self, din: &[u32; 4]) {
         din.iter()
             .for_each(|dw| self.aes.dinr.write(|w| w.din().bits(*dw)))
     }
 
-    #[inline]
     fn dout(&mut self, buf: &mut [u32; 4]) {
         buf.iter_mut()
             .for_each(|dw| *dw = self.aes.doutr.read().bits());
@@ -313,6 +316,8 @@ impl Aes {
         const CHMOD10: u8 = ALGO.chmod10();
         const MODE: u8 = Mode::Encryption.bits();
 
+        let keysize: KeySize = self.set_key(key);
+
         #[rustfmt::skip]
         self.aes.cr.write(|w|
             w
@@ -328,11 +333,10 @@ impl Aes {
                 .dmainen().disabled()
                 .dmaouten().disabled()
                 .gcmph().bits(0) // do not care for ECB
-                .keysize().variant(keysize(key))
+                .keysize().variant(keysize)
                 .npblb().bits(0) // no padding
         );
 
-        self.set_key(key);
         self.set_din(plaintext);
         let ret: Result<(), Error> = self.poll_completion().map(|_| self.dout(ciphertext));
 
@@ -367,6 +371,8 @@ impl Aes {
         const CHMOD10: u8 = ALGO.chmod10();
         const MODE: u8 = Mode::Encryption.bits();
 
+        let keysize: KeySize = self.set_key(key);
+
         #[rustfmt::skip]
         self.aes.cr.write(|w|
             w
@@ -382,11 +388,10 @@ impl Aes {
                 .dmainen().disabled()
                 .dmaouten().disabled()
                 .gcmph().bits(0) // do not care for ECB
-                .keysize().variant(keysize(key))
+                .keysize().variant(keysize)
                 .npblb().bits(0) // no padding
         );
 
-        self.set_key(key);
         self.set_din(buf);
         let ret: Result<(), Error> = self.poll_completion().map(|_| self.dout(buf));
 
@@ -427,6 +432,8 @@ impl Aes {
         const CHMOD10: u8 = ALGO.chmod10();
         const MODE: u8 = Mode::KeyDerivationDecryption.bits();
 
+        let keysize: KeySize = self.set_key(key);
+
         #[rustfmt::skip]
         self.aes.cr.write(|w|
             w
@@ -442,11 +449,10 @@ impl Aes {
                 .dmainen().disabled()
                 .dmaouten().disabled()
                 .gcmph().bits(0) // do not care for ECB
-                .keysize().variant(keysize(key))
+                .keysize().variant(keysize)
                 .npblb().bits(0) // no padding
         );
 
-        self.set_key(key);
         self.set_din(ciphertext);
         let ret: Result<(), Error> = self.poll_completion().map(|_| self.dout(plaintext));
 
@@ -480,6 +486,7 @@ impl Aes {
         const CHMOD2: bool = ALGO.chmod2();
         const CHMOD10: u8 = ALGO.chmod10();
         const MODE: u8 = Mode::KeyDerivationDecryption.bits();
+        let keysize: KeySize = self.set_key(key);
 
         #[rustfmt::skip]
         self.aes.cr.write(|w|
@@ -496,11 +503,10 @@ impl Aes {
                 .dmainen().disabled()
                 .dmaouten().disabled()
                 .gcmph().bits(0) // do not care for ECB
-                .keysize().variant(keysize(key))
+                .keysize().variant(keysize)
                 .npblb().bits(0) // no padding
         );
 
-        self.set_key(key);
         self.set_din(buf);
         let ret: Result<(), Error> = self.poll_completion().map(|_| self.dout(buf));
 

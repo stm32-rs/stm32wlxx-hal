@@ -357,23 +357,23 @@ impl Aes {
         // header phase
         for block in aad.chunks(16) {
             #[rustfmt::skip]
-                self.aes.cr.write(|w|
-                    w
-                        .en().enabled()
-                        .datatype().none()
-                        .mode().bits(mode)
-                        .chmod2().bit(CHMOD2)
-                        .chmod().bits(CHMOD10)
-                        .ccfc().clear()
-                        .errc().clear()
-                        .ccfie().disabled()
-                        .errie().disabled()
-                        .dmainen().disabled()
-                        .dmaouten().disabled()
-                        .gcmph().header()
-                        .keysize().variant(keysize)
-                        .npblb().bits(16 - (block.len() as u8))
-                );
+            self.aes.cr.write(|w|
+                w
+                    .en().enabled()
+                    .datatype().none()
+                    .mode().bits(mode)
+                    .chmod2().bit(CHMOD2)
+                    .chmod().bits(CHMOD10)
+                    .ccfc().clear()
+                    .errc().clear()
+                    .ccfie().disabled()
+                    .errie().disabled()
+                    .dmainen().disabled()
+                    .dmaouten().disabled()
+                    .gcmph().header()
+                    .keysize().variant(keysize)
+                    .npblb().bits(16 - (block.len() as u8))
+            );
             self.set_din_block(block);
             self.poll_completion()?;
         }
@@ -381,23 +381,23 @@ impl Aes {
         // payload phase
         for block in buf.chunks_mut(16) {
             #[rustfmt::skip]
-                self.aes.cr.write(|w|
-                    w
-                        .en().enabled()
-                        .datatype().none()
-                        .mode().bits(mode)
-                        .chmod2().bit(CHMOD2)
-                        .chmod().bits(CHMOD10)
-                        .ccfc().clear()
-                        .errc().clear()
-                        .ccfie().disabled()
-                        .errie().disabled()
-                        .dmainen().disabled()
-                        .dmaouten().disabled()
-                        .gcmph().payload()
-                        .keysize().variant(keysize)
-                        .npblb().bits(16 - (block.len() as u8))
-                );
+            self.aes.cr.write(|w|
+                w
+                    .en().enabled()
+                    .datatype().none()
+                    .mode().bits(mode)
+                    .chmod2().bit(CHMOD2)
+                    .chmod().bits(CHMOD10)
+                    .ccfc().clear()
+                    .errc().clear()
+                    .ccfie().disabled()
+                    .errie().disabled()
+                    .dmainen().disabled()
+                    .dmaouten().disabled()
+                    .gcmph().payload()
+                    .keysize().variant(keysize)
+                    .npblb().bits(16 - (block.len() as u8))
+            );
             self.set_din_block(block);
             self.poll_completion()?;
             self.dout_block(block);

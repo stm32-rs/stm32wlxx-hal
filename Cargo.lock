@@ -20,6 +20,7 @@ dependencies = [
  "defmt",
  "defmt-rtt",
  "defmt-test",
+ "hex-literal",
  "panic-probe",
  "stm32wl-hal",
 ]
@@ -270,6 +271,12 @@ dependencies = [
  "typenum",
  "version_check",
 ]
+
+[[package]]
+name = "hex-literal"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "21e4590e13640f19f249fe3e4eca5113bc4289f2497710378190e7f4bd96f45b"
 
 [[package]]
 name = "i2c-testsuite"

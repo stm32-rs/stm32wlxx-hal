@@ -293,11 +293,6 @@ impl Aes {
 
             self.aes.dinr.write(|w| w.din().bits(din));
         }
-
-        let remain_dw: usize = 4 - (block.len() / 4);
-        for _ in 0..remain_dw {
-            self.aes.dinr.write(|w| w.din().bits(0));
-        }
     }
 
     // expensive copy for the sake of allowing unaligned u8 data
@@ -317,11 +312,130 @@ impl Aes {
                 *byte = dout as u8
             }
         }
+    }
 
-        let remain_dw: usize = 4 - (block.len() / 4);
-        for _ in 0..remain_dw {
-            let _: u32 = self.aes.doutr.read().bits();
+    fn gcm_inplace(
+        &mut self,
+        mode: Mode,
+        key: &[u32],
+        iv: &[u32; 3],
+        aad: &[u8],
+        buf: &mut [u8],
+        tag: &mut [u32; 4],
+    ) -> Result<(), Error> {
+        const ALGO: Algorithm = Algorithm::Gcm;
+        const CHMOD2: bool = ALGO.chmod2();
+        const CHMOD10: u8 = ALGO.chmod10();
+        let mode: u8 = mode.bits();
+
+        // init phase
+        let keysize: KeySize = self.set_key(key);
+        self.aes.ivr0.write(|w| w.ivi().bits(2));
+        self.aes.ivr1.write(|w| w.ivi().bits(iv[2]));
+        self.aes.ivr2.write(|w| w.ivi().bits(iv[1]));
+        self.aes.ivr3.write(|w| w.ivi().bits(iv[0]));
+        #[rustfmt::skip]
+            self.aes.cr.write(|w|
+                w
+                    .en().enabled()
+                    .datatype().none()
+                    .mode().bits(mode)
+                    .chmod2().bit(CHMOD2)
+                    .chmod().bits(CHMOD10)
+                    .ccfc().clear()
+                    .errc().clear()
+                    .ccfie().disabled()
+                    .errie().disabled()
+                    .dmainen().disabled()
+                    .dmaouten().disabled()
+                    .gcmph().init()
+                    .keysize().variant(keysize)
+                    .npblb().bits(0)
+            );
+        self.poll_completion()?;
+
+        // header phase
+        for block in aad.chunks(16) {
+            #[rustfmt::skip]
+                self.aes.cr.write(|w|
+                    w
+                        .en().enabled()
+                        .datatype().none()
+                        .mode().bits(mode)
+                        .chmod2().bit(CHMOD2)
+                        .chmod().bits(CHMOD10)
+                        .ccfc().clear()
+                        .errc().clear()
+                        .ccfie().disabled()
+                        .errie().disabled()
+                        .dmainen().disabled()
+                        .dmaouten().disabled()
+                        .gcmph().header()
+                        .keysize().variant(keysize)
+                        .npblb().bits(16 - (block.len() as u8))
+                );
+            self.set_din_block(block);
+            self.poll_completion()?;
         }
+
+        // payload phase
+        for block in buf.chunks_mut(16) {
+            #[rustfmt::skip]
+                self.aes.cr.write(|w|
+                    w
+                        .en().enabled()
+                        .datatype().none()
+                        .mode().bits(mode)
+                        .chmod2().bit(CHMOD2)
+                        .chmod().bits(CHMOD10)
+                        .ccfc().clear()
+                        .errc().clear()
+                        .ccfie().disabled()
+                        .errie().disabled()
+                        .dmainen().disabled()
+                        .dmaouten().disabled()
+                        .gcmph().payload()
+                        .keysize().variant(keysize)
+                        .npblb().bits(16 - (block.len() as u8))
+                );
+            self.set_din_block(block);
+            self.poll_completion()?;
+            self.dout_block(block);
+        }
+
+        // final phase
+        #[rustfmt::skip]
+            self.aes.cr.write(|w|
+                w
+                    .en().enabled()
+                    .datatype().none()
+                    .mode().bits(mode)
+                    .chmod2().bit(CHMOD2)
+                    .chmod().bits(CHMOD10)
+                    .ccfc().clear()
+                    .errc().clear()
+                    .ccfie().disabled()
+                    .errie().disabled()
+                    .dmainen().disabled()
+                    .dmaouten().disabled()
+                    .gcmph().final_()
+                    .keysize().variant(keysize)
+                    .npblb().bits(0)
+            );
+
+        // byte length to bit lengths
+        // impossible to overflow, not enough RAM for [u8; (u32::MAX >> 3) + 1]
+        let aad_len: u32 = (aad.len() as u32) << 3;
+        let buf_len: u32 = (buf.len() as u32) << 3;
+
+        self.aes.dinr.write(|w| w.din().bits(0));
+        self.aes.dinr.write(|w| w.din().bits(aad_len));
+        self.aes.dinr.write(|w| w.din().bits(0));
+        self.aes.dinr.write(|w| w.din().bits(buf_len));
+
+        self.poll_completion()?;
+        self.dout(tag);
+        Ok(())
     }
 
     /// Encrypt using the electronic codebook chaining (ECB) algorithm.
@@ -403,7 +517,11 @@ impl Aes {
     /// aes.encrypt_ecb_inplace(&KEY, &mut text)?;
     /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
-    pub fn encrypt_ecb_inplace(&mut self, key: &[u32], buf: &mut [u32; 4]) -> Result<(), Error> {
+    pub fn encrypt_ecb_inplace(
+        &mut self,
+        key: &[u32],
+        plaintext: &mut [u32; 4],
+    ) -> Result<(), Error> {
         const ALGO: Algorithm = Algorithm::Ecb;
         const CHMOD2: bool = ALGO.chmod2();
         const CHMOD10: u8 = ALGO.chmod10();
@@ -430,9 +548,9 @@ impl Aes {
                 .npblb().bits(0) // no padding
         );
 
-        self.set_din(buf);
+        self.set_din(plaintext);
         self.poll_completion()?;
-        self.dout(buf);
+        self.dout(plaintext);
         Ok(())
     }
 
@@ -472,122 +590,10 @@ impl Aes {
         key: &[u32],
         iv: &[u32; 3],
         aad: &[u8],
-        buf: &mut [u8],
+        plaintext: &mut [u8],
         tag: &mut [u32; 4],
     ) -> Result<(), Error> {
-        const ALGO: Algorithm = Algorithm::Gcm;
-        const CHMOD2: bool = ALGO.chmod2();
-        const CHMOD10: u8 = ALGO.chmod10();
-        const MODE: u8 = Mode::Encryption.bits();
-
-        // init phase
-        let keysize: KeySize = self.set_key(key);
-        self.aes.ivr0.write(|w| w.ivi().bits(2));
-        self.aes.ivr1.write(|w| w.ivi().bits(iv[2]));
-        self.aes.ivr2.write(|w| w.ivi().bits(iv[1]));
-        self.aes.ivr3.write(|w| w.ivi().bits(iv[0]));
-        #[rustfmt::skip]
-        self.aes.cr.write(|w|
-            w
-                .en().enabled()
-                .datatype().none()
-                .mode().bits(MODE)
-                .chmod2().bit(CHMOD2)
-                .chmod().bits(CHMOD10)
-                .ccfc().clear()
-                .errc().clear()
-                .ccfie().disabled()
-                .errie().disabled()
-                .dmainen().disabled()
-                .dmaouten().disabled()
-                .gcmph().init()
-                .keysize().variant(keysize)
-                .npblb().bits(0)
-        );
-        self.poll_completion()?;
-
-        // header phase
-        for block in aad.chunks(16) {
-            #[rustfmt::skip]
-            self.aes.cr.write(|w|
-                w
-                    .en().enabled()
-                    .datatype().none()
-                    .mode().bits(MODE)
-                    .chmod2().bit(CHMOD2)
-                    .chmod().bits(CHMOD10)
-                    .ccfc().clear()
-                    .errc().clear()
-                    .ccfie().disabled()
-                    .errie().disabled()
-                    .dmainen().disabled()
-                    .dmaouten().disabled()
-                    .gcmph().header()
-                    .keysize().variant(keysize)
-                    .npblb().bits(16 - (block.len() as u8))
-            );
-            self.set_din_block(block);
-            self.poll_completion()?;
-        }
-
-        // payload phase
-        for block in buf.chunks_mut(16) {
-            #[rustfmt::skip]
-            self.aes.cr.write(|w|
-                w
-                    .en().enabled()
-                    .datatype().none()
-                    .mode().bits(MODE)
-                    .chmod2().bit(CHMOD2)
-                    .chmod().bits(CHMOD10)
-                    .ccfc().clear()
-                    .errc().clear()
-                    .ccfie().disabled()
-                    .errie().disabled()
-                    .dmainen().disabled()
-                    .dmaouten().disabled()
-                    .gcmph().payload()
-                    .keysize().variant(keysize)
-                    .npblb().bits(16 - (block.len() as u8))
-            );
-            self.set_din_block(block);
-            self.poll_completion()?;
-            self.dout_block(block);
-        }
-
-        // final phase
-        #[rustfmt::skip]
-        self.aes.cr.write(|w|
-            w
-                .en().enabled()
-                .datatype().none()
-                .mode().bits(MODE)
-                .chmod2().bit(CHMOD2)
-                .chmod().bits(CHMOD10)
-                .ccfc().clear()
-                .errc().clear()
-                .ccfie().disabled()
-                .errie().disabled()
-                .dmainen().disabled()
-                .dmaouten().disabled()
-                .gcmph().final_()
-                .keysize().variant(keysize)
-                .npblb().bits(0)
-        );
-
-        // byte length to bit lengths
-        // impossible to overflow, not enough RAM for [u8; (u32::MAX >> 3) + 1]
-        let aad_len: u32 = (aad.len() as u32) << 3;
-        let buf_len: u32 = (buf.len() as u32) << 3;
-
-        self.aes.dinr.write(|w| w.din().bits(0));
-        self.aes.dinr.write(|w| w.din().bits(aad_len));
-        self.aes.dinr.write(|w| w.din().bits(0));
-        self.aes.dinr.write(|w| w.din().bits(buf_len));
-
-        self.poll_completion()?;
-        self.dout(tag);
-        Ok(())
+        self.gcm_inplace(Mode::Encryption, key, iv, aad, plaintext, tag)
     }
 
     /// Decrypt using the electronic codebook chaining (ECB) algorithm.
@@ -669,7 +675,11 @@ impl Aes {
     /// aes.decrypt_ecb_inplace(&KEY, &mut text)?;
     /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
-    pub fn decrypt_ecb_inplace(&mut self, key: &[u32], buf: &mut [u32; 4]) -> Result<(), Error> {
+    pub fn decrypt_ecb_inplace(
+        &mut self,
+        key: &[u32],
+        ciphertext: &mut [u32; 4],
+    ) -> Result<(), Error> {
         const ALGO: Algorithm = Algorithm::Ecb;
         const CHMOD2: bool = ALGO.chmod2();
         const CHMOD10: u8 = ALGO.chmod10();
@@ -695,9 +705,28 @@ impl Aes {
                 .npblb().bits(0) // no padding
         );
 
-        self.set_din(buf);
+        self.set_din(ciphertext);
         self.poll_completion()?;
-        self.dout(buf);
+        self.dout(ciphertext);
         Ok(())
+    }
+
+    /// Decrypt using the Galois counter mode (GCM) algorithm in-place.
+    ///
+    /// The resulting tag should be compared to the tag sent from the peer
+    /// to verify the authenticity of the message.
+    ///
+    /// # Panics
+    ///
+    /// * Key is not 128-bits long (`[u32; 4]`) or 256-bits long (`[u32; 8]`).
+    pub fn decrypt_gcm_inplace(
+        &mut self,
+        key: &[u32],
+        iv: &[u32; 3],
+        aad: &[u8],
+        ciphertext: &mut [u8],
+        tag: &mut [u32; 4],
+    ) -> Result<(), Error> {
+        self.gcm_inplace(Mode::Decryption, key, iv, aad, ciphertext, tag)
     }
 }

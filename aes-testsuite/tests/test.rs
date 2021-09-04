@@ -1838,7 +1838,7 @@ mod tests {
     }
 
     #[test]
-    fn gcm_non_native_size(aes: &mut Aes) {
+    fn gcm_inplace_non_native_size(aes: &mut Aes) {
         const ASSOCIATED_DATA: &[u8; 13] = b"Hello, World!";
         const PLAINTEXT: &[u8; 445] = b"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
@@ -1852,27 +1852,42 @@ mod tests {
         // static to prevent the stack from going crazy
         static mut BUF: [u8; 445] = *PLAINTEXT;
         let mut encrypt_tag: [u32; 4] = [0; 4];
-        unwrap!(aes.encrypt_gcm_inplace(
-            &ZERO_16B,
-            &IV,
-            ASSOCIATED_DATA,
-            unsafe { &mut BUF },
-            &mut encrypt_tag
-        ));
+        let encrypt_elapsed: u32 = stopwatch(|| {
+            unwrap!(aes.encrypt_gcm_inplace(
+                &ZERO_16B,
+                &IV,
+                ASSOCIATED_DATA,
+                unsafe { &mut BUF },
+                &mut encrypt_tag
+            ))
+        });
+        defmt::info!(
+            "Encrypting {} bytes: {} cycles",
+            PLAINTEXT.len(),
+            encrypt_elapsed
+        );
 
         assert_ne!(unsafe { &BUF }, PLAINTEXT);
         defmt::assert_ne!(encrypt_tag, ZERO_16B);
 
         let mut decrypt_tag: [u32; 4] = [0; 4];
-        unwrap!(aes.encrypt_gcm_inplace(
-            &ZERO_16B,
-            &IV,
-            ASSOCIATED_DATA,
-            unsafe { &mut BUF },
-            &mut decrypt_tag
-        ));
+        let decrypt_elapsed: u32 = stopwatch(|| {
+            unwrap!(aes.decrypt_gcm_inplace(
+                &ZERO_16B,
+                &IV,
+                ASSOCIATED_DATA,
+                unsafe { &mut BUF },
+                &mut decrypt_tag
+            ))
+        });
 
         assert_eq!(unsafe { &BUF }, PLAINTEXT);
-        defmt::assert_ne!(decrypt_tag, encrypt_tag);
+        defmt::assert_eq!(decrypt_tag, encrypt_tag);
+
+        defmt::info!(
+            "Decrypting {} bytes: {} cycles",
+            PLAINTEXT.len(),
+            decrypt_elapsed
+        );
     }
 }

@@ -293,6 +293,11 @@ impl Aes {
 
             self.aes.dinr.write(|w| w.din().bits(din));
         }
+
+        let remain_dw: usize = 4 - ((block.len() + 3) / 4);
+        for _ in 0..remain_dw {
+            self.aes.dinr.write(|w| w.din().bits(0));
+        }
     }
 
     // expensive copy for the sake of allowing unaligned u8 data
@@ -311,6 +316,11 @@ impl Aes {
             if let Some(byte) = chunk.get_mut(3) {
                 *byte = dout as u8
             }
+        }
+
+        let remain_dw: usize = 4 - ((block.len() + 3) / 4);
+        for _ in 0..remain_dw {
+            let _: u32 = self.aes.doutr.read().bits();
         }
     }
 
@@ -372,7 +382,7 @@ impl Aes {
                     .dmaouten().disabled()
                     .gcmph().header()
                     .keysize().variant(keysize)
-                    .npblb().bits(16 - (block.len() as u8))
+                    .npblb().bits(0) // not used in header phase
             );
             self.set_din_block(block);
             self.poll_completion()?;

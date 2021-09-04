@@ -1838,7 +1838,7 @@ mod tests {
     }
 
     #[test]
-    fn gcm_inplace_non_native_size(aes: &mut Aes) {
+    fn gcm_inplace_normal_use(aes: &mut Aes) {
         const ASSOCIATED_DATA: &[u8; 13] = b"Hello, World!";
         const PLAINTEXT: &[u8; 445] = b"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
@@ -1889,5 +1889,36 @@ mod tests {
             PLAINTEXT.len(),
             decrypt_elapsed
         );
+    }
+
+    #[test]
+    fn gcm_inplace_all_sizes(aes: &mut Aes) {
+        const DATA: [u8; 16] = [0x55; 16];
+        const IV: [u32; 3] = [0; 3];
+
+        for x in 0..DATA.len() {
+            defmt::debug!("{}-length buffer", x);
+            let mut buf: [u8; 16] = DATA;
+            let mut encrypt_tag: [u32; 4] = [0; 4];
+            unwrap!(aes.encrypt_gcm_inplace(&ZERO_16B, &IV, &[], &mut buf[..x], &mut encrypt_tag));
+            if x != 0 {
+                defmt::assert_ne!(DATA[..x], buf[..x]);
+            }
+            let mut decrypt_tag: [u32; 4] = [0; 4];
+            unwrap!(aes.decrypt_gcm_inplace(&ZERO_16B, &IV, &[], &mut buf[..x], &mut decrypt_tag));
+
+            defmt::assert_eq!(encrypt_tag, decrypt_tag);
+            defmt::assert_eq!(DATA[..x], buf[..x]);
+        }
+
+        for x in 0..DATA.len() {
+            defmt::debug!("{}-length AAD", x);
+            let mut encrypt_tag: [u32; 4] = [0; 4];
+            unwrap!(aes.encrypt_gcm_inplace(&ZERO_16B, &IV, &DATA[..x], &mut [], &mut encrypt_tag));
+            let mut decrypt_tag: [u32; 4] = [0; 4];
+            unwrap!(aes.decrypt_gcm_inplace(&ZERO_16B, &IV, &DATA[..x], &mut [], &mut decrypt_tag));
+
+            defmt::assert_eq!(encrypt_tag, decrypt_tag);
+        }
     }
 }

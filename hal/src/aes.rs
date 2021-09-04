@@ -283,6 +283,39 @@ impl Aes {
             .for_each(|dw| *dw = self.aes.doutr.read().bits());
     }
 
+    // expensive copy for the sake of allowing unaligned u8 data
+    fn set_din_block(&mut self, block: &[u8]) {
+        for chunk in block.chunks(4) {
+            let din: u32 = (chunk.get(0).copied().unwrap_or(0) as u32) << 24
+                | (chunk.get(1).copied().unwrap_or(0) as u32) << 16
+                | (chunk.get(2).copied().unwrap_or(0) as u32) << 8
+                | (chunk.get(3).copied().unwrap_or(0) as u32);
+
+            self.aes.dinr.write(|w| w.din().bits(din));
+        }
+
+        let remain_dw: usize = 4 - (block.len() / 4);
+        for _ in 0..remain_dw {
+            self.aes.dinr.write(|w| w.din().bits(0));
+        }
+    }
+
+    // expensive copy for the sake of allowing unaligned u8 data
+    fn dout_block(&mut self, block: &mut [u8]) {
+        for chunk in block.chunks_mut(4) {
+            let dout: u32 = self.aes.doutr.read().bits();
+            chunk.get_mut(0).map(|byte| *byte = (dout >> 24) as u8);
+            chunk.get_mut(1).map(|byte| *byte = (dout >> 16) as u8);
+            chunk.get_mut(2).map(|byte| *byte = (dout >> 8) as u8);
+            chunk.get_mut(3).map(|byte| *byte = dout as u8);
+        }
+
+        let remain_dw: usize = 4 - (block.len() / 4);
+        for _ in 0..remain_dw {
+            let _: u32 = self.aes.doutr.read().bits();
+        }
+    }
+
     /// Encrypt using the electronic codebook chaining (ECB) algorithm.
     ///
     /// # Panics
@@ -297,7 +330,6 @@ impl Aes {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
     ///
-    /// // this is a bad key, I am just using values from the NIST testsuite
     /// const KEY: [u32; 4] = [0; 4];
     ///
     /// let plaintext: [u32; 4] = [0xf34481ec, 0x3cc627ba, 0xcd5dc3fb, 0x08f273e6];
@@ -338,10 +370,9 @@ impl Aes {
         );
 
         self.set_din(plaintext);
-        let ret: Result<(), Error> = self.poll_completion().map(|_| self.dout(ciphertext));
-
-        self.aes.cr.write(|w| w.en().clear_bit());
-        ret
+        self.poll_completion()?;
+        self.dout(ciphertext);
+        Ok(())
     }
 
     /// Encrypt using the electronic codebook chaining (ECB) algorithm in-place.
@@ -358,7 +389,6 @@ impl Aes {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
     ///
-    /// // this is a bad key, I am just using values from the NIST testsuite
     /// const KEY: [u32; 4] = [0; 4];
     ///
     /// let mut text: [u32; 4] = [0xf34481ec, 0x3cc627ba, 0xcd5dc3fb, 0x08f273e6];
@@ -393,10 +423,163 @@ impl Aes {
         );
 
         self.set_din(buf);
-        let ret: Result<(), Error> = self.poll_completion().map(|_| self.dout(buf));
+        self.poll_completion()?;
+        self.dout(buf);
+        Ok(())
+    }
 
-        self.aes.cr.write(|w| w.en().clear_bit());
-        ret
+    /// Encrypt using the Galois counter mode (GCM) algorithm in-place.
+    ///
+    /// # Panics
+    ///
+    /// * Key is not 128-bits long (`[u32; 4]`) or 256-bits long (`[u32; 8]`).
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     aes::Aes,
+    ///     pac,
+    ///     rng::{self, Rng},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
+    /// let mut rng = Rng::new(dp.RNG, rng::Clk::MSI, &mut dp.RCC);
+    ///
+    /// const KEY: [u32; 4] = [0; 4];
+    ///
+    /// let mut iv: [u32; 3] = [0; 3];
+    /// rng.try_fill_u32(&mut iv)
+    ///     .expect("failed to generate entropy");
+    ///
+    /// let mut associated_data: [u8; 0] = [];
+    /// let mut text: [u8; 5] = [0xf3, 0x44, 0x81, 0xec, 0x3c];
+    /// let mut tag: [u32; 4] = [0; 4];
+    /// aes.encrypt_gcm_inplace(&KEY, &iv, &associated_data, &mut text, &mut tag)?;
+    /// # Ok::<(), stm32wl_hal::aes::Error>(())
+    /// ```
+    pub fn encrypt_gcm_inplace(
+        &mut self,
+        key: &[u32],
+        iv: &[u32; 3],
+        aad: &[u8],
+        buf: &mut [u8],
+        tag: &mut [u32; 4],
+    ) -> Result<(), Error> {
+        const ALGO: Algorithm = Algorithm::Gcm;
+        const CHMOD2: bool = ALGO.chmod2();
+        const CHMOD10: u8 = ALGO.chmod10();
+        const MODE: u8 = Mode::Encryption.bits();
+
+        // init phase
+        let keysize: KeySize = self.set_key(key);
+        self.aes.ivr0.write(|w| w.ivi().bits(2));
+        self.aes.ivr1.write(|w| w.ivi().bits(iv[2]));
+        self.aes.ivr2.write(|w| w.ivi().bits(iv[1]));
+        self.aes.ivr3.write(|w| w.ivi().bits(iv[0]));
+        #[rustfmt::skip]
+        self.aes.cr.write(|w|
+            w
+                .en().enabled()
+                .datatype().none()
+                .mode().bits(MODE)
+                .chmod2().bit(CHMOD2)
+                .chmod().bits(CHMOD10)
+                .ccfc().clear()
+                .errc().clear()
+                .ccfie().disabled()
+                .errie().disabled()
+                .dmainen().disabled()
+                .dmaouten().disabled()
+                .gcmph().init()
+                .keysize().variant(keysize)
+                .npblb().bits(0)
+        );
+        self.poll_completion()?;
+
+        // header phase
+        for block in aad.chunks(16) {
+            #[rustfmt::skip]
+            self.aes.cr.write(|w|
+                w
+                    .en().enabled()
+                    .datatype().none()
+                    .mode().bits(MODE)
+                    .chmod2().bit(CHMOD2)
+                    .chmod().bits(CHMOD10)
+                    .ccfc().clear()
+                    .errc().clear()
+                    .ccfie().disabled()
+                    .errie().disabled()
+                    .dmainen().disabled()
+                    .dmaouten().disabled()
+                    .gcmph().header()
+                    .keysize().variant(keysize)
+                    .npblb().bits(16 - (block.len() as u8))
+            );
+            self.set_din_block(block);
+            self.poll_completion()?;
+        }
+
+        // payload phase
+        for block in buf.chunks_mut(16) {
+            #[rustfmt::skip]
+            self.aes.cr.write(|w|
+                w
+                    .en().enabled()
+                    .datatype().none()
+                    .mode().bits(MODE)
+                    .chmod2().bit(CHMOD2)
+                    .chmod().bits(CHMOD10)
+                    .ccfc().clear()
+                    .errc().clear()
+                    .ccfie().disabled()
+                    .errie().disabled()
+                    .dmainen().disabled()
+                    .dmaouten().disabled()
+                    .gcmph().payload()
+                    .keysize().variant(keysize)
+                    .npblb().bits(16 - (block.len() as u8))
+            );
+            self.set_din_block(block);
+            self.poll_completion()?;
+            self.dout_block(block);
+        }
+
+        // final phase
+        #[rustfmt::skip]
+        self.aes.cr.write(|w|
+            w
+                .en().enabled()
+                .datatype().none()
+                .mode().bits(MODE)
+                .chmod2().bit(CHMOD2)
+                .chmod().bits(CHMOD10)
+                .ccfc().clear()
+                .errc().clear()
+                .ccfie().disabled()
+                .errie().disabled()
+                .dmainen().disabled()
+                .dmaouten().disabled()
+                .gcmph().final_()
+                .keysize().variant(keysize)
+                .npblb().bits(0)
+        );
+
+        // byte length to bit lengths
+        // impossible to overflow, not enough RAM for [u8; (u32::MAX >> 3) + 1]
+        let aad_len: u32 = (aad.len() as u32) << 3;
+        let buf_len: u32 = (buf.len() as u32) << 3;
+
+        self.aes.dinr.write(|w| w.din().bits(0));
+        self.aes.dinr.write(|w| w.din().bits(aad_len));
+        self.aes.dinr.write(|w| w.din().bits(0));
+        self.aes.dinr.write(|w| w.din().bits(buf_len));
+
+        self.poll_completion()?;
+        self.dout(tag);
+        Ok(())
     }
 
     /// Decrypt using the electronic codebook chaining (ECB) algorithm.
@@ -413,7 +596,6 @@ impl Aes {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
     ///
-    /// // this is a bad key, I am just using values from the NIST testsuite
     /// const KEY: [u32; 4] = [0; 4];
     ///
     /// let ciphertext: [u32; 4] = [0x0336763e, 0x966d9259, 0x5a567cc9, 0xce537f5e];
@@ -454,10 +636,9 @@ impl Aes {
         );
 
         self.set_din(ciphertext);
-        let ret: Result<(), Error> = self.poll_completion().map(|_| self.dout(plaintext));
-
-        self.aes.cr.write(|w| w.en().clear_bit());
-        ret
+        self.poll_completion()?;
+        self.dout(plaintext);
+        Ok(())
     }
 
     /// Decrypt using the electronic codebook chaining (ECB) algorithm in-place.
@@ -474,7 +655,6 @@ impl Aes {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
     ///
-    /// // this is a bad key, I am just using values from the NIST testsuite
     /// const KEY: [u32; 4] = [0; 4];
     ///
     /// let mut text: [u32; 4] = [0x0336763e, 0x966d9259, 0x5a567cc9, 0xce537f5e];
@@ -508,9 +688,8 @@ impl Aes {
         );
 
         self.set_din(buf);
-        let ret: Result<(), Error> = self.poll_completion().map(|_| self.dout(buf));
-
-        self.aes.cr.write(|w| w.en().clear_bit());
-        ret
+        self.poll_completion()?;
+        self.dout(buf);
+        Ok(())
     }
 }

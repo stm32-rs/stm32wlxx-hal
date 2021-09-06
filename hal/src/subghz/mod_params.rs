@@ -561,6 +561,16 @@ impl FskModParams {
         bw > br + 2 * fdev + freq_err
     }
 
+    /// Returns `true` if the modulation parameters are valid for a worst-case
+    /// crystal tolerance.
+    ///
+    /// This is equivalent to [`is_valid`](Self::is_valid) with a `ppm` argument
+    /// of 30.
+    #[must_use = "the return value indicates if the modulation parameters are valid"]
+    pub const fn is_valid_worst_case(&self) -> bool {
+        self.is_valid(30)
+    }
+
     /// Extracts a slice containing the packet.
     ///
     /// # Example

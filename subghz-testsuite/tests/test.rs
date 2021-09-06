@@ -79,7 +79,7 @@ const FSK_MOD_PARAMS: FskModParams = FskModParams::new()
     .set_bandwidth(FskBandwidth::Bw58)
     .set_fdev(FskFdev::from_hertz(10_000));
 
-sa::const_assert!(FSK_MOD_PARAMS.is_valid(30));
+sa::const_assert!(FSK_MOD_PARAMS.is_valid_worst_case());
 
 const LORA_MOD_PARAMS: LoRaModParams = LoRaModParams::new()
     .set_bw(LoRaBandwidth::Bw125)

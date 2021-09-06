@@ -87,20 +87,12 @@ const LORA_MOD_PARAMS: LoRaModParams = LoRaModParams::new()
     .set_ldro_en(true)
     .set_sf(SpreadingFactor::Sf7);
 
-// configuration for +10 dBm output power
-// see table 35 "PA optimal setting and operating modes"
-const PA_CONFIG: PaConfig = PaConfig::new()
-    .set_pa_duty_cycle(0x1)
-    .set_hp_max(0x0)
-    .set_pa(PaSel::Lp);
+const PA_CONFIG: PaConfig = PaConfig::LP_10;
+const TX_PARAMS: TxParams = TxParams::LP_10.set_ramp_time(RampTime::Micros40);
 
 const TCXO_MODE: TcxoMode = TcxoMode::new()
     .set_txco_trim(TcxoTrim::Volts1pt7)
     .set_timeout(Timeout::from_duration_sat(Duration::from_millis(10)));
-
-const TX_PARAMS: TxParams = TxParams::new()
-    .set_power(0x0D)
-    .set_ramp_time(RampTime::Micros40);
 
 // WARNING will wrap-around eventually, use this for relative timing only
 defmt::timestamp!("{=u32:µs}", DWT::get_cycle_count() / CYC_PER_US);

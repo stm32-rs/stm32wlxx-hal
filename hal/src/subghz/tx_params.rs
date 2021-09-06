@@ -68,6 +68,31 @@ pub struct TxParams {
 }
 
 impl TxParams {
+    /// Optimal power setting for +15dBm output power with the low-power PA.
+    ///
+    /// This must be used with [`PaConfig::LP_15`](crate::subghz::PaConfig::LP_15).
+    pub const LP_15: TxParams = TxParams::new().set_power(0x0E);
+
+    /// Optimal power setting for +14dBm output power with the low-power PA.
+    ///
+    /// This must be used with [`PaConfig::LP_14`](crate::subghz::PaConfig::LP_14).
+    pub const LP_14: TxParams = TxParams::new().set_power(0x0E);
+
+    /// Optimal power setting for +10dBm output power with the low-power PA.
+    ///
+    /// This must be used with [`PaConfig::LP_10`](crate::subghz::PaConfig::LP_10).
+    pub const LP_10: TxParams = TxParams::new().set_power(0x0D);
+
+    /// Optimal power setting for the high-power PA.
+    ///
+    /// This must be used with one of:
+    ///
+    /// * [`PaConfig::HP_22`](crate::subghz::PaConfig::HP_22)
+    /// * [`PaConfig::HP_20`](crate::subghz::PaConfig::HP_20)
+    /// * [`PaConfig::HP_17`](crate::subghz::PaConfig::HP_17)
+    /// * [`PaConfig::HP_14`](crate::subghz::PaConfig::HP_14)
+    pub const HP: TxParams = TxParams::new().set_power(0x16);
+
     /// Create a new `TxParams` struct.
     ///
     /// This is the same as `default`, but in a `const` function.

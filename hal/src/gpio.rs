@@ -922,6 +922,20 @@ impl PortA {
         rcc.ahb2enr.modify(|_, w| w.gpioaen().enabled());
         rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
     }
+
+    /// Get the input level of all pins on this port.
+    #[inline]
+    pub fn input_level() -> u16 {
+        // safety: atomic read with no side effects
+        unsafe { (*pac::GPIOA::PTR).idr.read().bits() as u16 }
+    }
+
+    /// Get the output level of all pins on this port.
+    #[inline]
+    pub fn output_level() -> u16 {
+        // safety: atomic read with no side effects
+        unsafe { (*pac::GPIOA::PTR).odr.read().bits() as u16 }
+    }
 }
 
 /// Port B GPIOs
@@ -1043,6 +1057,20 @@ impl PortB {
         rcc.ahb2enr.modify(|_, w| w.gpioben().enabled());
         rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
     }
+
+    /// Get the input level of all pins on this port.
+    #[inline]
+    pub fn input_level() -> u16 {
+        // safety: atomic read with no side effects
+        unsafe { (*pac::GPIOB::PTR).idr.read().bits() as u16 }
+    }
+
+    /// Get the output level of all pins on this port.
+    #[inline]
+    pub fn output_level() -> u16 {
+        // safety: atomic read with no side effects
+        unsafe { (*pac::GPIOB::PTR).odr.read().bits() as u16 }
+    }
 }
 
 /// Port C GPIOs
@@ -1151,6 +1179,20 @@ impl PortC {
     pub fn enable_clock(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpiocen().enabled());
         rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+    }
+
+    /// Get the input level of all pins on this port.
+    #[inline]
+    pub fn input_level() -> u16 {
+        // safety: atomic read with no side effects
+        unsafe { (*pac::GPIOC::PTR).idr.read().bits() as u16 }
+    }
+
+    /// Get the output level of all pins on this port.
+    #[inline]
+    pub fn output_level() -> u16 {
+        // safety: atomic read with no side effects
+        unsafe { (*pac::GPIOC::PTR).odr.read().bits() as u16 }
     }
 }
 

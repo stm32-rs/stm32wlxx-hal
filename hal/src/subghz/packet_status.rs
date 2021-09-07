@@ -1,12 +1,12 @@
 use crate::Ratio;
 
-use crate::subghz::Status;
+use super::Status;
 
 /// (G)FSK packet status.
 ///
 /// Returned by [`fsk_packet_status`].
 ///
-/// [`fsk_packet_status`]: crate::subghz::SubGhz::fsk_packet_status
+/// [`fsk_packet_status`]: super::SubGhz::fsk_packet_status
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FskPacketStatus {
     buf: [u8; 4],
@@ -171,7 +171,7 @@ impl core::fmt::Display for FskPacketStatus {
 ///
 /// Returned by [`lora_packet_status`].
 ///
-/// [`lora_packet_status`]: crate::subghz::SubGhz::lora_packet_status
+/// [`lora_packet_status`]: super::SubGhz::lora_packet_status
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LoRaPacketStatus {
     buf: [u8; 4],

@@ -1,6 +1,6 @@
 use core::time::Duration;
 
-use crate::subghz::ValueError;
+use super::ValueError;
 
 const fn abs_diff(a: u64, b: u64) -> u64 {
     if a > b {
@@ -20,9 +20,9 @@ const fn abs_diff(a: u64, b: u64) -> u64 {
 /// Each timeout has 3 bytes, with a resolution of 15.625µs per bit, giving a
 /// range of 0s to 262.143984375s.
 ///
-/// [`set_rx`]: crate::subghz::SubGhz::set_rx
-/// [`set_tx`]: crate::subghz::SubGhz::set_tx
-/// [`TcxoMode`]: crate::subghz::TcxoMode
+/// [`set_rx`]: super::SubGhz::set_rx
+/// [`set_tx`]: super::SubGhz::set_tx
+/// [`TcxoMode`]: super::TcxoMode
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Timeout {

@@ -1,4 +1,4 @@
-use crate::subghz::ValueError;
+use super::ValueError;
 
 /// HSE32 load capacitor trimming.
 ///

@@ -1,4 +1,4 @@
-use crate::subghz::Status;
+use super::Status;
 
 typestate!(LoRaStats, "LoRa stats");
 typestate!(FskStats, "FSK stats");
@@ -7,8 +7,8 @@ typestate!(FskStats, "FSK stats");
 ///
 /// Returned by [`fsk_stats`] and [`lora_stats`].
 ///
-/// [`fsk_stats`]: crate::subghz::SubGhz::fsk_stats
-/// [`lora_stats`]: crate::subghz::SubGhz::lora_stats
+/// [`fsk_stats`]: super::SubGhz::fsk_stats
+/// [`lora_stats`]: super::SubGhz::lora_stats
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Stats<ModType> {
@@ -152,7 +152,7 @@ impl core::fmt::Display for Stats<FskStats> {
 
 #[cfg(test)]
 mod test {
-    use crate::subghz::{CmdStatus, LoRaStats, Stats, StatusMode};
+    use super::super::{CmdStatus, LoRaStats, Stats, StatusMode};
 
     #[test]
     fn mixed() {

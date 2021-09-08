@@ -152,7 +152,7 @@ impl core::fmt::Display for Stats<FskStats> {
 
 #[cfg(test)]
 mod test {
-    use super::{CmdStatus, LoRaStats, Stats, StatusMode};
+    use super::super::{CmdStatus, LoRaStats, Stats, StatusMode};
 
     #[test]
     fn mixed() {

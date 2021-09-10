@@ -1,4 +1,4 @@
-/// DMA transfer size
+/// Transfer size.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum Size {
@@ -21,7 +21,7 @@ impl Size {
     }
 }
 
-/// DMA priority levels
+/// Priority levels.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(u32)]
 pub enum Priority {
@@ -35,7 +35,7 @@ pub enum Priority {
     VeryHigh = 0b11,
 }
 
-/// DMA transfer directions
+/// Transfer directions.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Dir {
     /// Read from peripheral
@@ -44,7 +44,7 @@ pub enum Dir {
     FromMem,
 }
 
-/// Channel configuration register
+/// Channel configuration register.
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Cr {
     val: u32,

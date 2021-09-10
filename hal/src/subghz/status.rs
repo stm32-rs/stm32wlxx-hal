@@ -5,7 +5,7 @@
 ///
 /// This is returned by [`Status::mode`].
 #[repr(u8)]
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum StatusMode {
     /// Standby mode with RC 13MHz.
@@ -55,7 +55,7 @@ impl StatusMode {
 ///
 /// This is returned by [`Status::cmd`].
 #[repr(u8)]
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum CmdStatus {
     /// Data available to host.
@@ -115,7 +115,7 @@ impl CmdStatus {
 ///
 /// This is returned by [`status`].
 ///
-/// [`status`]: crate::subghz::SubGhz::status
+/// [`status`]: super::SubGhz::status
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Status(u8);
 

@@ -1,10 +1,10 @@
 /// Packet type definition.
 ///
-/// An argument of [`set_packet_type`]
+/// Argument of [`set_packet_type`]
 ///
-/// [`set_packet_type`]: crate::subghz::SubGhz::set_packet_type
+/// [`set_packet_type`]: super::SubGhz::set_packet_type
 #[repr(u8)]
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum PacketType {
     /// FSK (frequency shift keying) generic packet type.

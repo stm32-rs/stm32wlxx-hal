@@ -5,35 +5,57 @@
 
 Embedded rust HAL (hardware abstraction layer) for the STM32WL.
 
-This is a **work in progress**, it is unstable, incomplete, and (mostly) untested.
+⚠️ This is a **work in progress**, it is unstable (lots of API changes) and
+incomplete.
 
-**Use at your own risk.**
+The code that exists today covers basic usage of:
 
-There should be enough code for very basic:
-
-* LoRa TX + RX
-* (G)FSK TX + RX
+* SubGHz LoRa TX + RX
+* SubGHz (G)FSK TX + RX
 * SPI
 * GPIO
 * UART
-* ADC sampling
-* DAC output
-* ECDSA signing
-* ECDSA verification
-* Cryptographically secure random number generation
-* AES encryption
-* AES decryption
-
-## Why upload incomplete code?
-
-This is better than nothing for other people developing on these new chips.
-
-I am also hoping to find other people using these chips with rust who want to
-collaborate on creating a HAL :)
+* I2C
+* Low-power timers
+* ADC
+* DAC
+* PKA ECDSA signing + verification
+* Secure random number generation
+* AES ECB encryption + decryption
+* RTC date and time
 
 ## Usage
 
 See [hal/README.md](hal/README.md).
+
+## Examples
+
+All examples run on the NUCLEO-WL55JC2.
+Examples are located in the `examples` crate.
+The arguments got long for this, so a `run-ex` cargo alias is provided.
+
+```bash
+cargo run-ex gpio-blink
+```
+
+The testsuites are also excellent reference material, they are automatically
+tested for every commit and are guaranteed to work.
+
+The testsuites and examples are a good starting point, but they demonstrate
+features independent of each-other.
+A system-level example using multiple features simultaneously is provided in a
+separate repo:
+[stm32wl-lightswitch-demo](https://github.com/newAM/stm32wl-lightswitch-demo)
+
+## Unit Tests
+
+Off-target unit tests use the built-in cargo framework.
+The only abnormal part of this is that you must specify the target device as a
+feature.
+
+```bash
+cargo test --features stm32wl5x_cm4
+```
 
 ## On-Target Tests
 
@@ -56,7 +78,7 @@ The on-target tests use [defmt-test].
 * `cargo test -p pka-testsuite --target thumbv7em-none-eabi`
 
 Sample output:
-```text
+```console
 $ cargo test -p pka-testsuite --target thumbv7em-none-eabi
 (HOST) INFO  flashing program (43.04 KiB)
 (HOST) INFO  success!
@@ -73,38 +95,19 @@ $ cargo test -p pka-testsuite --target thumbv7em-none-eabi
 
 #### SubGhz Tests
 
-These tests require two nucleo boards, one for transmitting, and one for
-receiving.  Run the `subghz-testsuite` twice on two different boards.
+The subghz on-target tests require two nucleo boards, one for transmitting,
+and one for receiving.  Run the `subghz-testsuite` twice on two different boards.
 
 Assuming both boards are connected to the same system you will have to pass a
 specific probe to each.
 
-```text
+```console
 $ probe-run --list-probes
 The following devices were found:
 [0]: STLink V3 (VID: 0483, PID: 374e, Serial: 001D00145553500A20393256, STLink)
 [1]: STLink V3 (VID: 0483, PID: 374e, Serial: 001600345553500A20393256, STLink)
 $ cargo test -p subghz-testsuite --target thumbv7em-none-eabi -- --probe 001D00145553500A20393256
 $ cargo test -p subghz-testsuite --target thumbv7em-none-eabi -- --probe 001600345553500A20393256
-```
-
-## Unit Tests
-
-Off-target unit tests use the built-in cargo framework.
-The only difference is you must specify the MCU as a feature.
-
-```bash
-cargo test --features stm32wl5x_cm4
-```
-
-## Examples
-
-All examples run on the NUCLEO-WL55JC2.
-Examples are located in the `examples` crate.
-The arguments got long for this, so a `run-ex` cargo alias is provided.
-
-```bash
-cargo run-ex gpio-blink
 ```
 
 ## Reference Documentation

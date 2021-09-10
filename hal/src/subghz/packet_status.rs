@@ -1,14 +1,13 @@
 use crate::Ratio;
 
-use crate::subghz::Status;
+use super::Status;
 
 /// (G)FSK packet status.
 ///
 /// Returned by [`fsk_packet_status`].
 ///
-/// [`fsk_packet_status`]: crate::subghz::SubGhz::fsk_packet_status
+/// [`fsk_packet_status`]: super::SubGhz::fsk_packet_status
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct FskPacketStatus {
     buf: [u8; 4],
 }
@@ -38,7 +37,7 @@ impl FskPacketStatus {
     }
 
     /// Returns `true` if a preabmle error occured.
-    pub const fn preamble_error(&self) -> bool {
+    pub const fn preamble_err(&self) -> bool {
         (self.buf[1] & (1 << 7)) != 0
     }
 
@@ -48,7 +47,7 @@ impl FskPacketStatus {
     }
 
     /// Returns `true` if an address error occured.
-    pub const fn adrs_err(&self) -> bool {
+    pub const fn addr_err(&self) -> bool {
         (self.buf[1] & (1 << 5)) != 0
     }
 
@@ -75,6 +74,11 @@ impl FskPacketStatus {
     /// Returns `true` when a packet has been sent.
     pub const fn pkt_sent(&self) -> bool {
         (self.buf[1] & 1) != 0
+    }
+
+    /// Returns `true` if any error occured.
+    pub const fn any_err(&self) -> bool {
+        (self.buf[1] & 0xFC) != 0
     }
 
     /// RSSI level when the synchronization address is detected.
@@ -112,13 +116,63 @@ impl FskPacketStatus {
     }
 }
 
+#[cfg(feature = "defmt")]
+impl defmt::Format for FskPacketStatus {
+    fn format(&self, fmt: defmt::Formatter) {
+        defmt::write!(
+            fmt,
+            r#"FskPacketStatus {{
+    status: {},
+    preamble_err: {},
+    sync_err: {},
+    addr_err: {},
+    crc_err: {},
+    length_err: {},
+    abort_err: {},
+    pkt_received: {},
+    pkt_sent: {},
+    rssi_sync: {},
+    rssi_avg: {},
+}}"#,
+            self.status(),
+            self.preamble_err(),
+            self.sync_err(),
+            self.addr_err(),
+            self.crc_err(),
+            self.length_err(),
+            self.abort_err(),
+            self.pkt_received(),
+            self.pkt_sent(),
+            self.rssi_sync().to_integer(),
+            self.rssi_avg().to_integer()
+        )
+    }
+}
+
+impl core::fmt::Display for FskPacketStatus {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("FskPacketStatus")
+            .field("status", &self.status())
+            .field("preamble_err", &self.preamble_err())
+            .field("sync_err", &self.sync_err())
+            .field("addr_err", &self.addr_err())
+            .field("crc_err", &self.crc_err())
+            .field("length_err", &self.length_err())
+            .field("abort_err", &self.abort_err())
+            .field("pkt_received", &self.pkt_received())
+            .field("pkt_sent", &self.pkt_sent())
+            .field("rssi_sync", &self.rssi_sync().to_integer())
+            .field("rssi_avg", &self.rssi_avg().to_integer())
+            .finish()
+    }
+}
+
 /// (G)FSK packet status.
 ///
 /// Returned by [`lora_packet_status`].
 ///
-/// [`lora_packet_status`]: crate::subghz::SubGhz::lora_packet_status
+/// [`lora_packet_status`]: super::SubGhz::lora_packet_status
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct LoRaPacketStatus {
     buf: [u8; 4],
 }
@@ -196,5 +250,35 @@ impl LoRaPacketStatus {
     /// ```
     pub fn signal_rssi_pkt(&self) -> Ratio<i16> {
         Ratio::new_raw(i16::from(self.buf[3]), -2)
+    }
+}
+
+#[cfg(feature = "defmt")]
+impl defmt::Format for LoRaPacketStatus {
+    fn format(&self, fmt: defmt::Formatter) {
+        defmt::write!(
+            fmt,
+            r#"LoRaPacketStatus {{
+    status: {},
+    rssi_pkt: {},
+    snr_pkt: {},
+    signal_rssi_pkt: {},
+}}"#,
+            self.status(),
+            self.rssi_pkt().to_integer(),
+            self.snr_pkt().to_integer(),
+            self.signal_rssi_pkt().to_integer(),
+        )
+    }
+}
+
+impl core::fmt::Display for LoRaPacketStatus {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("LoRaPacketStatus")
+            .field("status", &self.status())
+            .field("rssi_pkt", &self.rssi_pkt().to_integer())
+            .field("snr_pkt", &self.snr_pkt().to_integer())
+            .field("signal_rssi_pkt", &self.signal_rssi_pkt().to_integer())
+            .finish()
     }
 }

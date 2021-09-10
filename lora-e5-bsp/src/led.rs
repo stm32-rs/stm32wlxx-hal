@@ -34,7 +34,7 @@ impl D5 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let mut d5 = led::D5::new(gpiob.pb5);
+    /// let mut d5 = led::D5::new(gpiob.b5);
     /// d5.set_on();
     /// ```
     pub fn new(b5: pins::B5) -> Self {
@@ -56,9 +56,9 @@ impl D5 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let mut d5 = led::D5::new(gpiob.pb5);
+    /// let mut d5 = led::D5::new(gpiob.b5);
     /// // ... use LED
-    /// let pb5 = d5.free();
+    /// let b5 = d5.free();
     /// ```
     pub fn free(self) -> pins::B5 {
         self.gpio.free()
@@ -91,13 +91,18 @@ impl D5 {
         }
     }
 
-    /// Set the LED on
+    /// Set the LED on.
     pub fn set_on(&mut self) {
         self.gpio.set_low().unwrap()
     }
 
-    /// Set the LED off
+    /// Set the LED off.
     pub fn set_off(&mut self) {
         self.gpio.set_high().unwrap()
+    }
+
+    /// Toggle the LED state.
+    pub fn toggle(&mut self) {
+        self.gpio.set_level(self.gpio.level().toggle())
     }
 }

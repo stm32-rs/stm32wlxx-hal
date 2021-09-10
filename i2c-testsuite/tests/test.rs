@@ -27,14 +27,14 @@ mod tests {
     fn init() -> I2c1<(pins::B8, pins::B7)> {
         let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
 
-        rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC);
+        unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
         let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
         let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
 
         // initialize I2C2 clocks and pins
         let i2c2 = I2c2::new(
             dp.I2C2,
-            (gpioa.pa12, gpioa.pa11),
+            (gpioa.a12, gpioa.a11),
             Hertz(I2C_FREQUENCY),
             &mut dp.RCC,
             true,
@@ -69,7 +69,7 @@ mod tests {
 
         I2c1::new(
             dp.I2C1,
-            (gpiob.pb8, gpiob.pb7),
+            (gpiob.b8, gpiob.b7),
             Hertz(I2C_FREQUENCY),
             &mut dp.RCC,
             false,
@@ -78,7 +78,7 @@ mod tests {
 
     #[test]
     fn sht31_measurement(i2c: &mut I2c1<(pins::B8, pins::B7)>) {
-        defmt::warn!("A SHT31 sensor must be connected to the board on pins PB8 (SCL) & PB7 (SDA) for this test to work");
+        defmt::warn!("A SHT31 sensor must be connected to the board on pins B8 (SCL) & B7 (SDA) for this test to work");
         let cmd: [u8; 2] = [0x2C, 0x06];
         let mut response: [u8; 6] = [0; 6];
 
@@ -91,7 +91,7 @@ mod tests {
 
     #[test]
     fn loopback(i2c: &mut I2c1<(pins::B8, pins::B7)>) {
-        defmt::warn!("I2C1 pins PB8 (SCL) and PB7 (SDA) must be connected to I2C pins PA12 (SCL) and PA11 (SDA) for this test to pass");
+        defmt::warn!("I2C1 pins B8 (SCL) and B7 (SDA) must be connected to I2C pins A12 (SCL) and A11 (SDA) for this test to pass");
 
         let cmd: [u8; 1] = [LOOPBACK_DATA_IN];
         let mut response: [u8; 1] = [0; 1];
@@ -111,7 +111,7 @@ mod tests {
 fn I2C2_EV() {
     let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
     let isr = dp.I2C2.isr.read();
-    defmt::debug!("I2C2 ISR {:#08X}", isr.bits());
+    defmt::debug!("I2C2 ISR={:#08X}", isr.bits());
 
     if isr.rxne().is_not_empty() {
         let rxdr: u8 = dp.I2C2.rxdr.read().rxdata().bits();

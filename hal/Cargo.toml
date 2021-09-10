@@ -29,10 +29,17 @@ defmt-error = []
 cfg-if = "1"
 rand_core = "0.6"
 cortex-m = "0.7"
-embedded-hal = "0.2"
 embedded-time = "0.12"
 nb = "1"
 paste = "1"
+
+[dependencies.void]
+version = "1"
+default-features = false
+
+[dependencies.embedded-hal]
+version = "0.2"
+features = ["unproven"]
 
 [dependencies.num-traits]
 version = "0.2"
@@ -40,7 +47,7 @@ default-features = false
 
 [dependencies.stm32wl]
 git = "https://github.com/newAM/stm32wl-rs.git"
-rev = "239ceea719f2e26b70e8680f87a31b4a309b5ff8"
+rev = "a1aa8eaf9a3d771ccc1752ffff0fa69bf063f009"
 
 [dependencies.cortex-m-rt]
 version = "0.6"
@@ -49,6 +56,10 @@ optional = true
 [dependencies.defmt]
 version = "0.2"
 optional = true
+
+[dependencies.chrono]
+version = "0.4"
+default-features = false
 
 [dev-dependencies]
 static_assertions = "1"

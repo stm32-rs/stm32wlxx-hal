@@ -27,7 +27,7 @@ mod tests {
         let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
         let cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
 
-        rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC);
+        unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
 
         let delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
 
@@ -41,7 +41,7 @@ mod tests {
         let mut dac: Dac = Dac::new(dp.DAC, &mut dp.RCC);
         let adc: Adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
 
-        dac.set_mode_pin(gpioa.pa10.into(), ModePin::NormChipBuf);
+        dac.set_mode_pin(gpioa.a10.into(), ModePin::NormChipBuf);
 
         TestArgs { adc, dac, delay }
     }

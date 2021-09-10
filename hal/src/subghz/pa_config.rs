@@ -2,7 +2,7 @@
 ///
 /// Argument of [`set_pa_config`].
 ///
-/// [`set_pa_config`]: crate::subghz::SubGhz::set_pa_config
+/// [`set_pa_config`]: super::SubGhz::set_pa_config
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct PaConfig {
@@ -10,6 +10,62 @@ pub struct PaConfig {
 }
 
 impl PaConfig {
+    /// Optimal settings for +15dBm output power with the low-power PA.
+    ///
+    /// This must be used with [`TxParams::LP_15`](super::TxParams::LP_15).
+    pub const LP_15: PaConfig = PaConfig::new()
+        .set_pa_duty_cycle(0x6)
+        .set_hp_max(0x0)
+        .set_pa(PaSel::Lp);
+
+    /// Optimal settings for +14dBm output power with the low-power PA.
+    ///
+    /// This must be used with [`TxParams::LP_14`](super::TxParams::LP_14).
+    pub const LP_14: PaConfig = PaConfig::new()
+        .set_pa_duty_cycle(0x4)
+        .set_hp_max(0x0)
+        .set_pa(PaSel::Lp);
+
+    /// Optimal settings for +10dBm output power with the low-power PA.
+    ///
+    /// This must be used with [`TxParams::LP_10`](super::TxParams::LP_10).
+    pub const LP_10: PaConfig = PaConfig::new()
+        .set_pa_duty_cycle(0x1)
+        .set_hp_max(0x0)
+        .set_pa(PaSel::Lp);
+
+    /// Optimal settings for +22dBm output power with the high-power PA.
+    ///
+    /// This must be used with [`TxParams::HP`](super::TxParams::HP).
+    pub const HP_22: PaConfig = PaConfig::new()
+        .set_pa_duty_cycle(0x4)
+        .set_hp_max(0x7)
+        .set_pa(PaSel::Hp);
+
+    /// Optimal settings for +20dBm output power with the high-power PA.
+    ///
+    /// This must be used with [`TxParams::HP`](super::TxParams::HP).
+    pub const HP_20: PaConfig = PaConfig::new()
+        .set_pa_duty_cycle(0x3)
+        .set_hp_max(0x5)
+        .set_pa(PaSel::Hp);
+
+    /// Optimal settings for +17dBm output power with the high-power PA.
+    ///
+    /// This must be used with [`TxParams::HP`](super::TxParams::HP).
+    pub const HP_17: PaConfig = PaConfig::new()
+        .set_pa_duty_cycle(0x2)
+        .set_hp_max(0x3)
+        .set_pa(PaSel::Hp);
+
+    /// Optimal settings for +14dBm output power with the high-power PA.
+    ///
+    /// This must be used with [`TxParams::HP`](super::TxParams::HP).
+    pub const HP_14: PaConfig = PaConfig::new()
+        .set_pa_duty_cycle(0x2)
+        .set_hp_max(0x2)
+        .set_pa(PaSel::Hp);
+
     /// Create a new `PaConfig` struct.
     ///
     /// This is the same as `default`, but in a `const` function.
@@ -48,7 +104,7 @@ impl PaConfig {
     /// const PA_CONFIG: PaConfig = PaConfig::new().set_pa(PaSel::Lp).set_pa_duty_cycle(0x4);
     /// # assert_eq!(PA_CONFIG.as_slice()[1], 0x04);
     /// ```
-    #[must_use = "set_pa_duty_cycle returns a new PaConfig"]
+    #[must_use = "set_pa_duty_cycle returns a modified PaConfig"]
     pub const fn set_pa_duty_cycle(mut self, pa_duty_cycle: u8) -> PaConfig {
         self.buf[1] = pa_duty_cycle & 0b111;
         self
@@ -66,7 +122,7 @@ impl PaConfig {
     /// const PA_CONFIG: PaConfig = PaConfig::new().set_pa(PaSel::Hp).set_hp_max(0x2);
     /// # assert_eq!(PA_CONFIG.as_slice()[2], 0x02);
     /// ```
-    #[must_use = "set_hp_max returns a new PaConfig"]
+    #[must_use = "set_hp_max returns a modified PaConfig"]
     pub const fn set_hp_max(mut self, hp_max: u8) -> PaConfig {
         self.buf[2] = hp_max & 0b111;
         self
@@ -84,7 +140,7 @@ impl PaConfig {
     /// # assert_eq!(PA_CONFIG_HP.as_slice()[3], 0x00);
     /// # assert_eq!(PA_CONFIG_LP.as_slice()[3], 0x01);
     /// ```
-    #[must_use = "set_pa returns a new PaConfig"]
+    #[must_use = "set_pa returns a modified PaConfig"]
     pub const fn set_pa(mut self, pa: PaSel) -> PaConfig {
         self.buf[3] = pa as u8;
         self
@@ -117,9 +173,9 @@ impl Default for PaConfig {
 
 /// Power amplifier selection.
 ///
-/// This is an argument of [`PaConfig::set_pa`].
+/// Argument of [`PaConfig::set_pa`].
 #[repr(u8)]
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum PaSel {
     /// High power amplifier.
     Hp = 0b0,

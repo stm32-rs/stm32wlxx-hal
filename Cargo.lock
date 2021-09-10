@@ -20,6 +20,7 @@ dependencies = [
  "defmt",
  "defmt-rtt",
  "defmt-test",
+ "hex-literal",
  "panic-probe",
  "stm32wl-hal",
 ]
@@ -77,6 +78,16 @@ name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
+
+[[package]]
+name = "chrono"
+version = "0.4.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "670ad68c9088c2a963aaa298cb369688cf3f9465ce5e2d4ca10e6e0098a1ce73"
+dependencies = [
+ "num-integer",
+ "num-traits",
+]
 
 [[package]]
 name = "cortex-m"
@@ -197,6 +208,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "either"
+version = "1.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
+
+[[package]]
 name = "embedded-hal"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -207,9 +224,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "embedded-time"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "86fbafcea0dea120d8ed8af67ddbf82afc031f1d3b064920645db8d061781e2c"
+dependencies = [
+ "num",
+]
+
+[[package]]
 name = "examples"
 version = "0.1.0"
 dependencies = [
+ "cortex-m-rt",
  "defmt",
  "defmt-rtt",
  "nucleo-wl55jc-bsp",
@@ -246,9 +273,49 @@ dependencies = [
 ]
 
 [[package]]
+name = "hex-literal"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "21e4590e13640f19f249fe3e4eca5113bc4289f2497710378190e7f4bd96f45b"
+
+[[package]]
+name = "i2c-testsuite"
+version = "0.1.0"
+dependencies = [
+ "cortex-m-rt",
+ "defmt",
+ "defmt-rtt",
+ "defmt-test",
+ "embedded-time",
+ "panic-probe",
+ "stm32wl-hal",
+]
+
+[[package]]
+name = "itertools"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "69ddb889f9d0d08a67338271fa9b62996bc788c7796a5c18cf057420aaed5eaf"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "lora-e5-bsp"
 version = "0.1.0-alpha.0"
 dependencies = [
+ "stm32wl-hal",
+]
+
+[[package]]
+name = "lptim-testsuite"
+version = "0.1.0"
+dependencies = [
+ "defmt",
+ "defmt-rtt",
+ "defmt-test",
+ "nb 1.0.0",
+ "panic-probe",
  "stm32wl-hal",
 ]
 
@@ -275,6 +342,60 @@ dependencies = [
 ]
 
 [[package]]
+name = "num"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b7a8e9be5e039e2ff869df49155f1c06bd01ade2117ec783e56ab0932b67a8f"
+dependencies = [
+ "num-complex",
+ "num-integer",
+ "num-iter",
+ "num-rational",
+ "num-traits",
+]
+
+[[package]]
+name = "num-complex"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "747d632c0c558b87dbabbe6a82f3b4ae03720d0646ac5b7b4dae89394be5f2c5"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
+name = "num-integer"
+version = "0.1.44"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2cc698a63b549a70bc047073d2949cce27cd1c7b0a4a862d08a8031bc2801db"
+dependencies = [
+ "autocfg",
+ "num-traits",
+]
+
+[[package]]
+name = "num-iter"
+version = "0.1.42"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b2021c8337a54d21aca0d59a92577a029af9431cb59b909b03252b9c164fad59"
+dependencies = [
+ "autocfg",
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
+name = "num-rational"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "12ac428b1cb17fce6f731001d307d351ec70a6d202fc2e60f7d4c5e42d8f4f07"
+dependencies = [
+ "autocfg",
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
 name = "num-traits"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -293,6 +414,12 @@ dependencies = [
  "cortex-m-rt",
  "defmt",
 ]
+
+[[package]]
+name = "paste"
+version = "1.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "acbf547ad0c65e31259204bd90935776d1c693cec2f4ff7abb7a1bbbd40dfe58"
 
 [[package]]
 name = "pka-testsuite"
@@ -314,9 +441,9 @@ checksum = "ac74c624d6b2d21f425f752262f42188365d7b8ff1aff74c82e45136510a4857"
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.28"
+version = "1.0.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c7ed8b8c7b886ea3ed7dde405212185f423ab44682667c8c6dd14aa1d9f6612"
+checksum = "b9f5105d4fdaab20335ca9565e106a5d9b82b6219b5ba735731124ac6711d23d"
 dependencies = [
  "unicode-xid",
 ]
@@ -353,6 +480,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d34f1408f55294453790c48b2f1ebbb1c5b4b7563eb1f418bcfcfdbb06ebb4e7"
 
 [[package]]
+name = "rcc-testsuite"
+version = "0.1.0"
+dependencies = [
+ "cortex-m-rt",
+ "defmt",
+ "defmt-rtt",
+ "defmt-test",
+ "itertools",
+ "nb 1.0.0",
+ "panic-probe",
+ "stm32wl-hal",
+]
+
+[[package]]
 name = "rng-testsuite"
 version = "0.1.0"
 dependencies = [
@@ -361,6 +502,18 @@ dependencies = [
  "defmt-test",
  "panic-probe",
  "rand_chacha",
+ "stm32wl-hal",
+]
+
+[[package]]
+name = "rtc-testsuite"
+version = "0.1.0"
+dependencies = [
+ "defmt",
+ "defmt-rtt",
+ "defmt-test",
+ "nb 1.0.0",
+ "panic-probe",
  "stm32wl-hal",
 ]
 
@@ -395,6 +548,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 
 [[package]]
+name = "spi-testsuite"
+version = "0.1.0"
+dependencies = [
+ "defmt",
+ "defmt-rtt",
+ "defmt-test",
+ "itertools",
+ "nb 1.0.0",
+ "panic-probe",
+ "stm32wl-hal",
+]
+
+[[package]]
 name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -409,7 +575,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 [[package]]
 name = "stm32wl"
 version = "0.13.0"
-source = "git+https://github.com/newAM/stm32wl-rs.git?rev=239ceea719f2e26b70e8680f87a31b4a309b5ff8#239ceea719f2e26b70e8680f87a31b4a309b5ff8"
+source = "git+https://github.com/newAM/stm32wl-rs.git?rev=a1aa8eaf9a3d771ccc1752ffff0fa69bf063f009#a1aa8eaf9a3d771ccc1752ffff0fa69bf063f009"
 dependencies = [
  "bare-metal 1.0.0",
  "cortex-m 0.7.3",
@@ -422,15 +588,19 @@ name = "stm32wl-hal"
 version = "0.1.0-alpha.0"
 dependencies = [
  "cfg-if",
+ "chrono",
  "cortex-m 0.7.3",
  "cortex-m-rt",
  "defmt",
  "embedded-hal",
+ "embedded-time",
  "nb 1.0.0",
  "num-traits",
+ "paste",
  "rand_core",
  "static_assertions",
  "stm32wl",
+ "void",
 ]
 
 [[package]]
@@ -447,9 +617,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "1.0.74"
+version = "1.0.76"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1873d832550d4588c3dbc20f01361ab00bfe741048f71e3fecf145a7cc18b29c"
+checksum = "c6f107db402c2c2055242dbf4d2af0e69197202e9faacbef9571bbe47f5a1b84"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -458,9 +628,9 @@ dependencies = [
 
 [[package]]
 name = "typenum"
-version = "1.13.0"
+version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "879f6906492a7cd215bfa4cf595b600146ccfac0c79bcbd1f3000162af5e8b06"
+checksum = "b63708a265f51345575b27fe43f9500ad611579e764c79edbc2037b1121959ec"
 
 [[package]]
 name = "uart-testsuite"
@@ -500,9 +670,9 @@ checksum = "6a02e4885ed3bc0f2de90ea6dd45ebcbb66dacffe03547fadbb0eeae2770887d"
 
 [[package]]
 name = "volatile-register"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d67cb4616d99b940db1d6bd28844ff97108b498a6ca850e5b6191a532063286"
+checksum = "9ee8f19f9d74293faf70901bc20ad067dc1ad390d2cbf1e3f75f721ffee908b6"
 dependencies = [
  "vcell",
 ]

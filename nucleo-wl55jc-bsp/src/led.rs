@@ -3,7 +3,7 @@
 use stm32wl_hal as hal;
 
 use hal::{
-    embedded_hal::digital::v2::OutputPin,
+    embedded_hal::digital::v2::{OutputPin, ToggleableOutputPin},
     gpio::{self, pins, Output, OutputArgs},
 };
 
@@ -17,19 +17,25 @@ const LED_ARGS: OutputArgs = OutputArgs {
 /// Simple trait for an LED
 pub trait Led<OutPin>
 where
-    OutPin: OutputPin<Error = core::convert::Infallible>,
+    OutPin: ToggleableOutputPin<Error = core::convert::Infallible>
+        + OutputPin<Error = core::convert::Infallible>,
 {
-    /// Output pin driving the LED
+    /// Output pin driving the LED.
     fn output(&mut self) -> &mut OutPin;
 
-    /// Set the LED on
+    /// Set the LED on.
     fn set_on(&mut self) {
         self.output().set_high().unwrap()
     }
 
-    /// Set the LED off
+    /// Set the LED off.
     fn set_off(&mut self) {
         self.output().set_low().unwrap()
+    }
+
+    /// Toggle the LED state.
+    fn toggle(&mut self) {
+        self.output().toggle().unwrap()
     }
 }
 
@@ -55,7 +61,7 @@ impl Red {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let mut red = led::Red::new(gpiob.pb11);
+    /// let mut red = led::Red::new(gpiob.b11);
     /// red.set_on();
     /// ```
     pub fn new(b11: pins::B11) -> Self {
@@ -77,9 +83,9 @@ impl Red {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let mut red = led::Red::new(gpiob.pb11);
+    /// let mut red = led::Red::new(gpiob.b11);
     /// // ... use LED
-    /// let pb11 = red.free();
+    /// let b11 = red.free();
     /// ```
     pub fn free(self) -> pins::B11 {
         self.gpio.free()
@@ -141,7 +147,7 @@ impl Green {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let mut green = led::Green::new(gpiob.pb9);
+    /// let mut green = led::Green::new(gpiob.b9);
     /// green.set_on();
     /// ```
     pub fn new(b9: pins::B9) -> Self {
@@ -163,9 +169,9 @@ impl Green {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let mut green = led::Green::new(gpiob.pb9);
+    /// let mut green = led::Green::new(gpiob.b9);
     /// // ... use LED
-    /// let pb9 = green.free();
+    /// let b9 = green.free();
     /// ```
     pub fn free(self) -> pins::B9 {
         self.gpio.free()
@@ -227,7 +233,7 @@ impl Blue {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let mut blue = led::Blue::new(gpiob.pb15);
+    /// let mut blue = led::Blue::new(gpiob.b15);
     /// blue.set_on();
     /// ```
     pub fn new(b15: pins::B15) -> Self {
@@ -249,9 +255,9 @@ impl Blue {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let mut blue = led::Blue::new(gpiob.pb15);
+    /// let mut blue = led::Blue::new(gpiob.b15);
     /// // ... use LED
-    /// let pb15 = blue.free();
+    /// let b15 = blue.free();
     /// ```
     pub fn free(self) -> pins::B15 {
         self.gpio.free()

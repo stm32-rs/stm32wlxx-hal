@@ -1,6 +1,6 @@
 /// Preamble detection length for [`GenericPacketParams`].
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum PreambleDetection {
     /// Preamble detection disabled.
@@ -17,7 +17,7 @@ pub enum PreambleDetection {
 
 /// Address comparison/filtering for [`GenericPacketParams`].
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum AddrComp {
     /// Address comparison/filtering disabled.
@@ -32,7 +32,7 @@ pub enum AddrComp {
 ///
 /// Argument of [`GenericPacketParams::set_header_type`] and
 /// [`LoRaPacketParams::set_header_type`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum HeaderType {
     /// Fixed; payload length and header field not added to packet.
@@ -59,7 +59,7 @@ impl HeaderType {
 
 /// CRC type definition for [`GenericPacketParams`].
 #[repr(u8)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum CrcType {
     /// 1-byte CRC.
@@ -76,7 +76,7 @@ pub enum CrcType {
 
 /// Packet parameters for [`set_packet_params`].
 ///
-/// [`set_packet_params`]: crate::subghz::SubGhz::set_packet_params
+/// [`set_packet_params`]: super::SubGhz::set_packet_params
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct GenericPacketParams {
@@ -311,7 +311,7 @@ impl Default for GenericPacketParams {
 
 /// Packet parameters for [`set_lora_packet_params`].
 ///
-/// [`set_lora_packet_params`]: crate::subghz::SubGhz::set_lora_packet_params
+/// [`set_lora_packet_params`]: super::SubGhz::set_lora_packet_params
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LoRaPacketParams {
     buf: [u8; 7],
@@ -470,7 +470,7 @@ impl Default for LoRaPacketParams {
 
 /// Packet parameters for [`set_lora_packet_params`].
 ///
-/// [`set_lora_packet_params`]: crate::subghz::SubGhz::set_lora_packet_params
+/// [`set_lora_packet_params`]: super::SubGhz::set_lora_packet_params
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct BpskPacketParams {

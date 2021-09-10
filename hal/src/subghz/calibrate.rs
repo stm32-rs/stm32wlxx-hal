@@ -1,6 +1,6 @@
 /// Image calibration.
 ///
-/// An argument of [`calibrate_image`].
+/// Argument of [`calibrate_image`].
 ///
 /// [`calibrate_image`]: crate::subghz::SubGhz::calibrate_image
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -46,7 +46,7 @@ impl CalibrateImage {
     /// # Panics
     ///
     /// * Panics if `freq1` is less than `freq2`.
-    /// * Panics if `freq1` or `freq1` is not a multiple of 4MHz.
+    /// * Panics if `freq1` or `freq2` is not a multiple of 4MHz.
     /// * Panics if `freq1` or `freq2` is greater than `1020`.
     ///
     /// # Example
@@ -77,10 +77,10 @@ impl Default for CalibrateImage {
 
 /// Block calibration.
 ///
-/// An argument of [`calibrate`].
+/// Argument of [`calibrate`].
 ///
 /// [`calibrate`]: crate::subghz::SubGhz::calibrate
-#[derive(PartialEq, Eq, Debug, Clone, Copy, Hash)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum Calibrate {

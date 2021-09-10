@@ -9,14 +9,14 @@ use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use panic_probe as _;
 use stm32wl_hal::{
-    adc::{self, Adc},
+    adc::{self, Adc, Clk},
     cortex_m::delay::Delay,
     pac::{self, DWT},
     rcc,
     util::{new_delay, reset_cycle_count},
 };
 
-const ADC_FREQ: u32 = 16_000_000;
+const ADC_FREQ: u32 = 12_000_000;
 const FREQ: u32 = 48_000_000;
 const FREQ_RATIO: u32 = FREQ / ADC_FREQ;
 const CYC_PER_US: u32 = FREQ / 1000 / 1000;
@@ -39,6 +39,7 @@ mod tests {
     struct TestArgs {
         adc: Adc,
         delay: Delay,
+        rcc: pac::RCC,
     }
 
     #[init]
@@ -46,22 +47,23 @@ mod tests {
         let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
         let mut cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
 
-        rcc::set_sysclk_to_msi_48megahertz(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC);
+        unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
+        defmt::assert_eq!(rcc::sysclk_hz(&dp.RCC), FREQ);
 
         let delay = new_delay(cp.SYST, &dp.RCC);
 
-        dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-        while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-        let adc: Adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
-
-        assert_eq!(adc.clock_hz(&dp.RCC), ADC_FREQ);
-        assert_eq!(rcc::sysclk_hz(&dp.RCC), FREQ);
+        let adc: Adc = Adc::new(dp.ADC, Clk::PClkDiv4, &mut dp.RCC);
+        defmt::assert_eq!(adc.clock_hz(&dp.RCC), ADC_FREQ);
 
         cp.DCB.enable_trace();
         cp.DWT.enable_cycle_counter();
         reset_cycle_count(&mut cp.DWT);
 
-        TestArgs { adc, delay }
+        TestArgs {
+            adc,
+            delay,
+            rcc: dp.RCC,
+        }
     }
 
     #[test]
@@ -191,7 +193,40 @@ mod tests {
     }
 
     #[test]
+    fn test_hsi16(ta: &mut TestArgs) {
+        let original: Clk = unwrap!(ta.adc.clock_source(&ta.rcc));
+
+        // enable HSI16
+        ta.rcc.cr.modify(|_, w| w.hsion().set_bit());
+        while ta.rcc.cr.read().hsirdy().is_not_ready() {}
+
+        ta.adc.disable();
+        ta.adc.set_clock_source(Clk::RccHsi, &mut ta.rcc);
+        defmt::assert_eq!(ta.adc.clock_source(&ta.rcc), Some(Clk::RccHsi));
+        defmt::assert_eq!(ta.adc.clock_hz(&ta.rcc), 16_000_000);
+        ta.adc.calibrate(&mut ta.delay);
+        ta.adc.enable();
+        ta.adc.enable_vref();
+        ta.adc.set_max_sample_time();
+
+        let vref_cal: u16 = adc::vref_cal();
+        let vref: u16 = ta.adc.vref();
+
+        let delta: i16 = ((vref_cal as i16) - (vref as i16)).abs();
+        defmt::info!("vref: {} Δ {}", vref, delta);
+        defmt::assert!(delta < 25);
+
+        ta.adc.disable();
+        ta.adc.set_clock_source(original, &mut ta.rcc);
+        ta.rcc.cr.modify(|_, w| w.hsion().clear_bit());
+    }
+
+    #[test]
     fn temperature(ta: &mut TestArgs) {
+        ta.adc.disable();
+        ta.adc.calibrate(&mut ta.delay);
+        ta.adc.enable();
+
         ta.adc.enable_tsen();
         ta.delay.delay_us(adc::TS_START_MAX.as_micros() as u32);
         ta.adc.set_max_sample_time();

@@ -1,5 +1,5 @@
 /// Bandwidth options for [`FskModParams`].
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum FskBandwidth {
     /// 4.8 kHz double-sideband
@@ -175,7 +175,7 @@ impl PartialOrd for FskBandwidth {
 }
 
 /// Pulse shaping options for [`FskModParams`].
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum FskPulseShape {
     /// No filtering applied.
@@ -192,7 +192,7 @@ pub enum FskPulseShape {
 
 /// Bitrate argument for [`FskModParams::set_bitrate`] and
 /// [`BpskModParams::set_bitrate`].
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct FskBitrate {
     bits: u32,
 }
@@ -283,7 +283,7 @@ impl PartialOrd for FskBitrate {
 }
 
 /// Frequency deviation argument for [`FskModParams::set_fdev`]
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct FskFdev {
     bits: u32,
@@ -420,7 +420,7 @@ impl FskModParams {
     /// # assert_eq!(MOD_PARAMS.as_slice()[2], 0x7D);
     /// # assert_eq!(MOD_PARAMS.as_slice()[3], 0x00);
     /// ```
-    #[must_use = "set_bitrate returns a new FskModParams"]
+    #[must_use = "set_bitrate returns a modified FskModParams"]
     pub const fn set_bitrate(mut self, bitrate: FskBitrate) -> FskModParams {
         let bits: u32 = bitrate.into_bits();
         self.buf[1] = ((bits >> 16) & 0xFF) as u8;
@@ -439,7 +439,7 @@ impl FskModParams {
     /// const MOD_PARAMS: FskModParams = FskModParams::new().set_pulse_shape(FskPulseShape::Bt03);
     /// # assert_eq!(MOD_PARAMS.as_slice()[4], 0x08);
     /// ```
-    #[must_use = "set_pulse_shape returns a new FskModParams"]
+    #[must_use = "set_pulse_shape returns a modified FskModParams"]
     pub const fn set_pulse_shape(mut self, shape: FskPulseShape) -> FskModParams {
         self.buf[4] = shape as u8;
         self
@@ -472,7 +472,7 @@ impl FskModParams {
     /// const MOD_PARAMS: FskModParams = FskModParams::new().set_bandwidth(FskBandwidth::Bw9);
     /// # assert_eq!(MOD_PARAMS.as_slice()[5], 0x1E);
     /// ```
-    #[must_use = "set_pulse_shape returns a new FskModParams"]
+    #[must_use = "set_pulse_shape returns a modified FskModParams"]
     pub const fn set_bandwidth(mut self, bw: FskBandwidth) -> FskModParams {
         self.buf[5] = bw as u8;
         self
@@ -507,7 +507,7 @@ impl FskModParams {
     /// # assert_eq!(MOD_PARAMS.as_slice()[7], 0x80);
     /// # assert_eq!(MOD_PARAMS.as_slice()[8], 0x00);
     /// ```
-    #[must_use = "set_fdev returns a new FskModParams"]
+    #[must_use = "set_fdev returns a modified FskModParams"]
     pub const fn set_fdev(mut self, fdev: FskFdev) -> FskModParams {
         let bits: u32 = fdev.into_bits();
         self.buf[6] = ((bits >> 16) & 0xFF) as u8;
@@ -555,10 +555,20 @@ impl FskModParams {
         };
         let br: u32 = self.bitrate().as_bps();
         let fdev: u32 = self.fdev().as_hertz();
-        let hse32_err: u32 = 32 * (ppm as u32);
-        let freq_err: u32 = 2 * hse32_err;
+        let hse_err: u32 = 32 * (ppm as u32);
+        let freq_err: u32 = 2 * hse_err;
 
         bw > br + 2 * fdev + freq_err
+    }
+
+    /// Returns `true` if the modulation parameters are valid for a worst-case
+    /// crystal tolerance.
+    ///
+    /// This is equivalent to [`is_valid`](Self::is_valid) with a `ppm` argument
+    /// of 30.
+    #[must_use = "the return value indicates if the modulation parameters are valid"]
+    pub const fn is_valid_worst_case(&self) -> bool {
+        self.is_valid(30)
     }
 
     /// Extracts a slice containing the packet.
@@ -598,7 +608,7 @@ impl Default for FskModParams {
 /// LoRa spreading factor.
 ///
 /// Argument of [`LoRaModParams::set_sf`].
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum SpreadingFactor {
@@ -613,11 +623,11 @@ pub enum SpreadingFactor {
     /// Spreading factor 9.
     Sf9 = 0x09,
     /// Spreading factor 10.
-    Sf10 = 0xA0,
+    Sf10 = 0x0A,
     /// Spreading factor 11.
-    Sf11 = 0xB0,
+    Sf11 = 0x0B,
     /// Spreading factor 12.
-    Sf12 = 0xC0,
+    Sf12 = 0x0C,
 }
 
 impl From<SpreadingFactor> for u8 {
@@ -629,7 +639,7 @@ impl From<SpreadingFactor> for u8 {
 /// LoRa bandwidth.
 ///
 /// Argument of [`LoRaModParams::set_bw`].
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum LoRaBandwidth {
@@ -705,7 +715,7 @@ impl PartialOrd for LoRaBandwidth {
 /// LoRa forward error correction coding rate.
 ///
 /// Argument of [`LoRaModParams::set_cr`].
-#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum CodingRate {
@@ -889,7 +899,7 @@ impl BpskModParams {
     /// # assert_eq!(MOD_PARAMS.as_slice()[2], 0x0A);
     /// # assert_eq!(MOD_PARAMS.as_slice()[3], 0xAA);
     /// ```
-    #[must_use = "set_bitrate returns a new BpskModParams"]
+    #[must_use = "set_bitrate returns a modified BpskModParams"]
     pub const fn set_bitrate(mut self, bitrate: FskBitrate) -> BpskModParams {
         let bits: u32 = bitrate.into_bits();
         self.buf[1] = ((bits >> 16) & 0xFF) as u8;

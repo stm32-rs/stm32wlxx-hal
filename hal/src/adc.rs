@@ -123,6 +123,7 @@ pub fn vref_cal() -> u16 {
 /// In all synchronous clock modes, there is no jitter in the delay from a
 /// timer trigger to the start of a conversion.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Clk {
     /// Asynchronous clock mode HSI16
     RccHsi,
@@ -407,13 +408,25 @@ impl Adc {
     ///
     /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// ```
-    pub fn new(adc: pac::ADC, clk: Clk, rcc: &mut pac::RCC) -> Adc {
+    ///
+    /// Initialize the ADC with PCLK/4.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::PClkDiv4, &mut dp.RCC);
+    /// ```
+    #[inline]
+    pub fn new(adc: pac::ADC, clk: Clk, rcc: &mut pac::RCC) -> Self {
         unsafe { Self::pulse_reset(rcc) };
         Self::enable_clock(rcc);
-        adc.cfgr2.write(|w| w.ckmode().variant(clk.ckmode()));
-        rcc.ccipr.modify(|_, w| w.adcsel().variant(clk.adcsel()));
-
-        Adc { adc }
+        let mut adc: Self = Self { adc };
+        adc.set_clock_source(clk, rcc);
+        adc
     }
 
     /// Free the ADC peripheral from the driver.
@@ -427,15 +440,9 @@ impl Adc {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let adc: pac::ADC = dp.ADC;
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut adc_driver: Adc = Adc::new(adc, adc::Clk::RccHsi, &mut dp.RCC);
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::PClkDiv4, &mut dp.RCC);
     /// // ... use ADC
-    /// let adc: pac::ADC = adc_driver.free();
+    /// let adc: pac::ADC = adc.free();
     /// ```
     #[inline]
     pub fn free(self) -> pac::ADC {
@@ -470,12 +477,76 @@ impl Adc {
         }
     }
 
+    /// Set the ADC clock source.
+    ///
+    /// # Panics
+    ///
+    /// * (debug) ADC is enabled
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut adc: Adc = Adc::new(dp.ADC, adc::Clk::PClkDiv4, &mut dp.RCC);
+    ///
+    /// // change the clock source
+    /// adc.disable();
+    /// adc.set_clock_source(adc::Clk::PClkDiv4, &mut dp.RCC);
+    /// ```
+    #[inline]
+    pub fn set_clock_source(&mut self, clk: Clk, rcc: &mut pac::RCC) {
+        debug_assert!(!self.is_enabled());
+        self.adc
+            .cfgr2
+            .modify(|_, w| w.ckmode().variant(clk.ckmode()));
+        rcc.ccipr.modify(|_, w| w.adcsel().variant(clk.adcsel()));
+    }
+
+    /// Get the ADC clock source.
+    ///
+    /// Returns `None` if the ADC is configured for an asynchronous clock,
+    /// but no asynchronous clock is selected.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut adc: Adc = Adc::new(dp.ADC, adc::Clk::PClkDiv4, &mut dp.RCC);
+    ///
+    /// assert_eq!(adc.clock_source(&dp.RCC), Some(adc::Clk::PClkDiv4));
+    /// ```
+    pub fn clock_source(&self, rcc: &pac::RCC) -> Option<Clk> {
+        use pac::{adc::cfgr2::CKMODE_A, rcc::ccipr::ADCSEL_A};
+
+        match self.adc.cfgr2.read().ckmode().variant() {
+            CKMODE_A::ADCLK => match rcc.ccipr.read().adcsel().variant() {
+                ADCSEL_A::NOCLOCK => None,
+                ADCSEL_A::HSI16 => Some(Clk::RccHsi),
+                ADCSEL_A::PLLP => Some(Clk::RccPllP),
+                ADCSEL_A::SYSCLK => Some(Clk::RccSysClk),
+            },
+            CKMODE_A::PCLK_DIV2 => Some(Clk::PClkDiv2),
+            CKMODE_A::PCLK_DIV4 => Some(Clk::PClkDiv4),
+            CKMODE_A::PCLK => Some(Clk::PClk),
+        }
+    }
+
     /// Disable the ADC clock.
     ///
     /// # Safety
     ///
     /// 1. Ensure nothing is using the ADC before disabling the clock.
-    /// 2. You are responsible for en-enabling the clock before using the ADC.
+    /// 2. You are responsible for re-enabling the clock before using the ADC.
     #[inline]
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.apb2enr.modify(|_, w| w.adcen().disabled());
@@ -496,7 +567,7 @@ impl Adc {
     ///
     /// # Safety
     ///
-    /// 1. Ensure nothing is using the ADC before pulsing reset.
+    /// 1. Ensure nothing is using the ADC before calling this function.
     /// 2. You are responsible for setting up the ADC after a reset.
     #[inline]
     pub unsafe fn pulse_reset(rcc: &mut pac::RCC) {
@@ -520,13 +591,12 @@ impl Adc {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let adc: pac::ADC = dp.ADC;
     ///
     /// // enable the HSI16 source clock
     /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
     /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
     ///
-    /// let adc: Adc = Adc::new(adc, adc::Clk::RccHsi, &mut dp.RCC);
+    /// let adc: Adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
     /// assert_eq!(adc.clock_hz(&dp.RCC), 16_000_000);
     /// ```
     pub fn clock_hz(&self, rcc: &pac::RCC) -> u32 {
@@ -569,9 +639,9 @@ impl Adc {
 
                 src / prescaler
             }
-            CKMODE_A::PCLK_DIV2 => crate::rcc::pllpclk(rcc, &rcc.pllcfgr.read()) / 2,
-            CKMODE_A::PCLK_DIV4 => crate::rcc::pllpclk(rcc, &rcc.pllcfgr.read()) / 4,
-            CKMODE_A::PCLK => crate::rcc::pllpclk(rcc, &rcc.pllcfgr.read()),
+            CKMODE_A::PCLK_DIV2 => crate::rcc::pclk2(rcc, &rcc.cfgr.read()) / 2,
+            CKMODE_A::PCLK_DIV4 => crate::rcc::pclk2(rcc, &rcc.cfgr.read()) / 4,
+            CKMODE_A::PCLK => crate::rcc::pclk2(rcc, &rcc.cfgr.read()),
         };
 
         source_freq.to_integer()
@@ -638,12 +708,7 @@ impl Adc {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::PClkDiv4, &mut dp.RCC);
     /// adc.set_sample_times(
     ///     B14::ADC_CH.mask() | B13::ADC_CH.mask() | adc::Ch::Vbat.mask(),
     ///     Ts::Cyc160,
@@ -686,12 +751,7 @@ impl Adc {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::PClkDiv4, &mut dp.RCC);
     /// adc.set_max_sample_time();
     /// ```
     #[inline]
@@ -712,12 +772,7 @@ impl Adc {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::PClkDiv4, &mut dp.RCC);
     /// adc.set_isr(adc::irq::ALL);
     /// ```
     #[inline]
@@ -739,12 +794,7 @@ impl Adc {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::PClkDiv4, &mut dp.RCC);
     /// // this will be false because the ADC is not enabled
     /// let ready: bool = Adc::isr().adrdy().is_ready();
     /// ```
@@ -767,12 +817,7 @@ impl Adc {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::PClkDiv4, &mut dp.RCC);
     /// adc.set_ier(adc::irq::ALL);
     /// ```
     #[inline]
@@ -808,12 +853,7 @@ impl Adc {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::PClkDiv4, &mut dp.RCC);
     /// adc.start_chsel(adc::Ch::Vbat.mask());
     /// while Adc::isr().ccrdy().is_not_complete() {}
     /// ```
@@ -855,8 +895,8 @@ impl Adc {
     /// See [`data`](Self::data).
     #[inline]
     pub fn start_conversion(&mut self) {
-        assert!(self.is_enabled());
-        assert!(self.adc.cr.read().addis().is_not_disabling());
+        debug_assert!(self.is_enabled());
+        debug_assert!(self.adc.cr.read().addis().is_not_disabling());
         self.adc.cr.write(|w| w.adstart().start_conversion());
     }
 
@@ -1189,7 +1229,7 @@ impl Adc {
     /// adc.enable();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let b4: Analog<B4> = Analog::new(gpiob.pb4);
+    /// let b4: Analog<B4> = Analog::new(gpiob.b4);
     ///
     /// let sample: u16 = adc.pin(&b4);
     /// ```
@@ -1357,12 +1397,7 @@ impl Adc {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::PClkDiv4, &mut dp.RCC);
     /// if adc.start_enable() {
     ///     while Adc::isr().adrdy().is_not_ready() {}
     /// }
@@ -1390,12 +1425,7 @@ impl Adc {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::PClkDiv4, &mut dp.RCC);
     /// adc.enable();
     /// ```
     #[inline]
@@ -1427,12 +1457,7 @@ impl Adc {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::PClkDiv4, &mut dp.RCC);
     /// adc.enable();
     /// // ... use ADC
     /// adc.start_disable();
@@ -1470,12 +1495,7 @@ impl Adc {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // enable the HSI16 source clock
-    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
-    ///
-    /// let mut adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+    /// let mut adc = Adc::new(dp.ADC, adc::Clk::PClkDiv4, &mut dp.RCC);
     /// adc.enable();
     /// // ... use ADC
     /// adc.disable();

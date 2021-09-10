@@ -1,20 +1,14 @@
-use crate::subghz::Status;
+use super::Status;
 
-/// [Typestate] for LoRa stats.
-///
-/// [Typestate]: https://docs.rust-embedded.org/book/static-guarantees/typestate-programming.html
-pub struct LoRaStats;
-/// [Typestate] for FSK stats.
-///
-/// [Typestate]: https://docs.rust-embedded.org/book/static-guarantees/typestate-programming.html
-pub struct FskStats;
+typestate!(LoRaStats, "LoRa stats");
+typestate!(FskStats, "FSK stats");
 
 /// Packet statistics.
 ///
 /// Returned by [`fsk_stats`] and [`lora_stats`].
 ///
-/// [`fsk_stats`]: crate::subghz::SubGhz::fsk_stats
-/// [`lora_stats`]: crate::subghz::SubGhz::lora_stats
+/// [`fsk_stats`]: super::SubGhz::fsk_stats
+/// [`lora_stats`]: super::SubGhz::lora_stats
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Stats<ModType> {
@@ -95,7 +89,7 @@ impl Stats<FskStats> {
     /// let stats: Stats<FskStats> = Stats::from_raw_fsk(example_data_from_radio);
     /// ```
     pub const fn from_raw_fsk(buf: [u8; 7]) -> Stats<FskStats> {
-        Self::from_buf(buf, FskStats)
+        Self::from_buf(buf, FskStats::new())
     }
 
     /// Number of packets received with a payload length error.
@@ -126,7 +120,7 @@ impl Stats<LoRaStats> {
     /// let stats: Stats<LoRaStats> = Stats::from_raw_lora(example_data_from_radio);
     /// ```
     pub const fn from_raw_lora(buf: [u8; 7]) -> Stats<LoRaStats> {
-        Self::from_buf(buf, LoRaStats)
+        Self::from_buf(buf, LoRaStats::new())
     }
 
     /// Number of packets received with a header CRC error.
@@ -158,7 +152,7 @@ impl core::fmt::Display for Stats<FskStats> {
 
 #[cfg(test)]
 mod test {
-    use crate::subghz::{CmdStatus, LoRaStats, Stats, StatusMode};
+    use super::super::{CmdStatus, LoRaStats, Stats, StatusMode};
 
     #[test]
     fn mixed() {

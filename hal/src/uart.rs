@@ -1,40 +1,13 @@
 //! Universal synchronous/asynchronous receiver transmitter
 use crate::{
-    dma::{self, sealed::DmaOps, DmaCh},
+    dma::{self, DmaCh},
     gpio::{self},
     pac, rcc, Ratio,
 };
 use embedded_hal::prelude::*;
 
-/// [Typestate] to for no RX on generic UART structure.
-///
-/// [Typestate]: https://docs.rust-embedded.org/book/static-guarantees/typestate-programming.html
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct NoRx {
-    _priv: (),
-}
-
-impl NoRx {
-    pub(crate) const fn new() -> Self {
-        NoRx { _priv: () }
-    }
-}
-
-/// [Typestate] to for no TX on generic UART structure.
-///
-/// [Typestate]: https://docs.rust-embedded.org/book/static-guarantees/typestate-programming.html
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct NoTx {
-    _priv: (),
-}
-
-impl NoTx {
-    pub(crate) const fn new() -> Self {
-        NoTx { _priv: () }
-    }
-}
+typestate!(NoRx, "no RX on a generic UART structure");
+typestate!(NoTx, "no TX on a generic UART structure");
 
 /// UART clock selection.
 #[derive(Debug)]
@@ -136,7 +109,7 @@ impl LpUart<NoRx, NoTx> {
         };
 
         let baud: u64 = baud.into();
-        let freq: u64 = ret.clock_hz(&rcc).into();
+        let freq: u64 = ret.clock_hz(rcc).into();
         assert!(freq >= baud.saturating_mul(3) && freq <= baud.saturating_mul(4096));
 
         let br: u32 = ((freq * 256) / baud) as u32;
@@ -181,7 +154,7 @@ impl Uart1<NoRx, NoTx> {
             tx: NoTx::new(),
         };
 
-        let freq: u32 = ret.clock_hz(&rcc);
+        let freq: u32 = ret.clock_hz(rcc);
 
         // only for oversampling of 16 (default), change for oversampling of 8
         let br: u16 = (freq / baud) as u16;
@@ -225,7 +198,7 @@ impl Uart2<NoRx, NoTx> {
             tx: NoTx::new(),
         };
 
-        let freq: u32 = ret.clock_hz(&rcc);
+        let freq: u32 = ret.clock_hz(rcc);
 
         // only for oversampling of 16 (default), change for oversampling of 8
         let br: u16 = (freq / baud) as u16;
@@ -467,8 +440,7 @@ macro_rules! impl_tx_en_dis {
             ///
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
             /// let uart: LpUart<NoRx, pins::B11> =
-            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
-            ///         .enable_tx(gpiob.pb11);
+            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC).enable_tx(gpiob.b11);
             /// ```
             pub fn enable_tx<TX: gpio::sealed::$trt>(self, mut tx: TX) -> $uart<RX, TX> {
                 cortex_m::interrupt::free(|cs| tx.$method(cs));
@@ -504,9 +476,9 @@ macro_rules! impl_tx_en_dis {
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
             /// let uart: LpUart<NoRx, (pins::B11, Dma2Ch7)> =
             ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
-            ///         .enable_tx_dma(gpiob.pb11, dma.d2c7);
+            ///         .enable_tx_dma(gpiob.b11, dma.d2.c7);
             /// ```
-            pub fn enable_tx_dma<TxPin: gpio::sealed::$trt, TxDma: DmaCh + DmaOps>(
+            pub fn enable_tx_dma<TxPin: gpio::sealed::$trt, TxDma: DmaCh>(
                 self,
                 mut tx: TxPin,
                 mut tx_dma: TxDma,
@@ -548,10 +520,9 @@ macro_rules! impl_tx_en_dis {
             ///
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
             /// let uart: LpUart<NoRx, pins::B11> =
-            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
-            ///         .enable_tx(gpiob.pb11);
+            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC).enable_tx(gpiob.b11);
             ///
-            /// let (uart, pb11): (LpUart<NoRx, NoTx>, pins::B11) = uart.disable_tx();
+            /// let (uart, b11): (LpUart<NoRx, NoTx>, pins::B11) = uart.disable_tx();
             /// ```
             pub fn disable_tx(self) -> ($uart<RX, NoTx>, TX) {
                 self.uart.cr1.modify(|_, w| w.te().disabled());
@@ -595,8 +566,7 @@ macro_rules! impl_rx_en_dis {
             ///
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
             /// let uart: LpUart<pins::B10, NoTx> =
-            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
-            ///         .enable_rx(gpiob.pb10);
+            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC).enable_rx(gpiob.b10);
             /// ```
             pub fn enable_rx<RX: gpio::sealed::$trt>(self, mut rx: RX) -> $uart<RX, TX> {
                 cortex_m::interrupt::free(|cs| rx.$method(cs));
@@ -632,9 +602,9 @@ macro_rules! impl_rx_en_dis {
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
             /// let uart: LpUart<(pins::B10, Dma2Ch2), NoTx> =
             ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
-            ///         .enable_rx_dma(gpiob.pb10, dma.d2c2);
+            ///         .enable_rx_dma(gpiob.b10, dma.d2.c2);
             /// ```
-            pub fn enable_rx_dma<RxPin: gpio::sealed::$trt, RxDma: DmaCh + DmaOps>(
+            pub fn enable_rx_dma<RxPin: gpio::sealed::$trt, RxDma: DmaCh>(
                 self,
                 mut rx: RxPin,
                 mut rx_dma: RxDma,
@@ -676,10 +646,9 @@ macro_rules! impl_rx_en_dis {
             ///
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
             /// let uart: LpUart<pins::B10, NoTx> =
-            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
-            ///         .enable_rx(gpiob.pb10);
+            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC).enable_rx(gpiob.b10);
             ///
-            /// let (uart, pb10): (LpUart<NoRx, NoTx>, pins::B10) = uart.disable_rx();
+            /// let (uart, b10): (LpUart<NoRx, NoTx>, pins::B10) = uart.disable_rx();
             /// ```
             pub fn disable_rx(self) -> ($uart<NoRx, TX>, RX) {
                 self.uart.cr1.modify(|_, w| w.re().disabled());
@@ -759,7 +728,7 @@ macro_rules! impl_eh_traits {
             for $uart<RX, (TxPin, TxDma)>
         where
             TxPin: gpio::sealed::$tx_trait,
-            TxDma: DmaCh + DmaOps,
+            TxDma: DmaCh,
         {
             type Error = Error;
 
@@ -822,7 +791,7 @@ macro_rules! impl_eh_traits {
         impl<RxPin, RxDma, TX> $uart<(RxPin, RxDma), TX>
         where
             RxPin: gpio::sealed::$rx_trait,
-            RxDma: DmaCh + DmaOps,
+            RxDma: DmaCh,
         {
             /// This is not an embedded-hal trait, it is added simply for
             /// parity with what exists on the TX side.

@@ -21,7 +21,7 @@ defmt::timestamp!("{=u32:µs}", DWT::get_cycle_count() / CYC_PER_MICRO);
 
 fn test_set_date_time_with_clk(clk: rtc::Clk) {
     let mut dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
-    let mut rtc: Rtc = unsafe { Rtc::new(dp.RTC, clk, &mut dp.PWR, &mut dp.RCC) };
+    let mut rtc: Rtc = Rtc::new(dp.RTC, clk, &mut dp.PWR, &mut dp.RCC);
 
     dp.PWR.cr1.modify(|_, w| w.dbp().enabled());
     let rtc_src_freq: u32 = Rtc::hz(&dp.RCC);
@@ -87,7 +87,7 @@ fn test_set_date_time_with_clk(clk: rtc::Clk) {
         after,
         after - before
     );
-    // defmt::assert!(after > before);
+    defmt::assert!(after > before);
 }
 
 #[defmt_test::tests]

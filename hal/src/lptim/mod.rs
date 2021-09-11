@@ -17,7 +17,7 @@
 //! let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 //!
 //! // enable the HSI16 source clock
-//! dp.RCC.cr.write(|w| w.hsion().set_bit());
+//! dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
 //! while dp.RCC.cr.read().hsirdy().is_not_ready() {}
 //!
 //! let mut lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
@@ -89,7 +89,7 @@ pub mod irq {
 
 use sealed::{LpTim as SealedLpTim, LpTimBase};
 pub(crate) mod sealed {
-    use super::{Cfgr, Cr};
+    use super::{Cfgr, Cr, Ratio};
 
     pub trait LpTimBase {
         fn isr() -> u32;
@@ -111,6 +111,7 @@ pub(crate) mod sealed {
         type Pac: LpTimBase;
         fn as_tim(&self) -> &Self::Pac;
         fn as_mut_tim(&mut self) -> &mut Self::Pac;
+        fn _hz(&self) -> &Ratio<u32>;
     }
 }
 
@@ -238,7 +239,8 @@ macro_rules! paste_lptim {
             #[doc = "Low-power timer " $n " driver."]
             #[derive(Debug)]
             pub struct [<LpTim $n>] {
-                tim: pac::[<LPTIM $n>]
+                tim: pac::[<LPTIM $n>],
+                hz: Ratio<u32>,
             }
 
             impl sealed::LpTim for [<LpTim $n>] {
@@ -252,6 +254,11 @@ macro_rules! paste_lptim {
                 #[inline(always)]
                 fn as_mut_tim(&mut self) -> &mut Self::Pac {
                     &mut self.tim
+                }
+
+                #[inline(always)]
+                fn _hz(&self) -> &Ratio<u32> {
+                    &self.hz
                 }
             }
         }
@@ -285,12 +292,12 @@ pub trait LpTim: sealed::LpTim {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// // enable the HSI16 source clock
-    /// dp.RCC.cr.write(|w| w.hsion().set_bit());
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
     /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
     ///
     /// let lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
     /// ```
-    fn new(tim: Self::Pac, clk: Clk, div: Prescaler, rcc: &mut pac::RCC) -> Self;
+    fn new(tim: Self::Pac, clk: Clk, pre: Prescaler, rcc: &mut pac::RCC) -> Self;
 
     /// Free the LPTIM registers from the driver.
     ///
@@ -305,7 +312,7 @@ pub trait LpTim: sealed::LpTim {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// // enable the HSI16 source clock
-    /// dp.RCC.cr.write(|w| w.hsion().set_bit());
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
     /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
     ///
     /// let lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
@@ -313,29 +320,6 @@ pub trait LpTim: sealed::LpTim {
     /// let lptim1: pac::LPTIM1 = lptim1.free();
     /// ```
     fn free(self) -> Self::Pac;
-
-    /// Steal the timer peripheral from whatever is currently using it.
-    ///
-    /// This will **not** initialize the timer peripheral (unlike [`new`]).
-    ///
-    /// # Safety
-    ///
-    /// 1. Ensure that the code stealing the timer has exclusive access to the
-    ///    peripheral. Singleton checks are bypassed with this method.
-    /// 2. You are responsible for setting up the timer correctly.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use stm32wl_hal::lptim::{LpTim, LpTim1};
-    ///
-    /// // ... setup happens here
-    ///
-    /// let lptim1 = unsafe { LpTim1::steal() };
-    /// ```
-    ///
-    /// [`new`]: Self::new
-    unsafe fn steal() -> Self;
 
     /// Reset the LPTIM peripheral.
     ///
@@ -389,20 +373,14 @@ pub trait LpTim: sealed::LpTim {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// // enable the HSI16 source clock
-    /// dp.RCC.cr.write(|w| w.hsion().set_bit());
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
     /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
     ///
     /// let lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
     /// assert_eq!(lptim1.hz(&dp.RCC).to_integer(), 16_000_000);
     /// ```
-    fn hz(&self, rcc: &pac::RCC) -> Ratio<u32> {
-        let src: Ratio<u32> = match Self::clk(rcc) {
-            Clk::Pclk => crate::rcc::apb1timx(rcc),
-            Clk::Lsi => Ratio::new_raw(crate::rcc::lsi_hz(rcc).into(), 1),
-            Clk::Hsi16 => Ratio::new_raw(16_000_000, 1),
-            Clk::Lse => Ratio::new_raw(32_768, 1),
-        };
-        src / self.as_tim().cfgr().prescaler().div().into()
+    fn hz(&self) -> &Ratio<u32> {
+        self._hz()
     }
 
     /// Get the timer count.
@@ -420,6 +398,10 @@ pub trait LpTim: sealed::LpTim {
 
     /// Enable and disable interrupts.
     ///
+    /// # Panics
+    ///
+    /// * (debug) timer is enabled.
+    ///
     /// # Example
     ///
     /// Enable all IRQs.
@@ -433,7 +415,7 @@ pub trait LpTim: sealed::LpTim {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// // enable the HSI16 source clock
-    /// dp.RCC.cr.write(|w| w.hsion().set_bit());
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
     /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
     ///
     /// let mut lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
@@ -441,6 +423,7 @@ pub trait LpTim: sealed::LpTim {
     /// ```
     #[inline]
     fn set_ier(&mut self, ier: u32) {
+        debug_assert!(!self.is_enabled());
         self.as_mut_tim().set_ier(ier)
     }
 
@@ -510,20 +493,21 @@ pub trait LpTim: sealed::LpTim {
 impl LpTim for LpTim1 {
     type TrgSel = TrgSel;
 
-    #[inline]
-    fn new(mut tim: Self::Pac, clk: Clk, div: Prescaler, rcc: &mut pac::RCC) -> Self {
+    fn new(mut tim: Self::Pac, clk: Clk, pre: Prescaler, rcc: &mut pac::RCC) -> Self {
         rcc.ccipr.modify(|_, w| w.lptim1sel().bits(clk as u8));
         unsafe { Self::pulse_reset(rcc) }
         Self::enable_clock(rcc);
-        tim.set_cfgr(Cfgr::RESET.set_prescaler(div));
-        Self { tim }
-    }
+        tim.set_cfgr(Cfgr::RESET.set_prescaler(pre));
 
-    #[inline]
-    unsafe fn steal() -> Self {
-        Self {
-            tim: pac::Peripherals::steal().LPTIM1,
-        }
+        let src: Ratio<u32> = match clk {
+            Clk::Pclk => crate::rcc::apb1timx(rcc),
+            Clk::Lsi => Ratio::new_raw(crate::rcc::lsi_hz(rcc).into(), 1),
+            Clk::Hsi16 => Ratio::new_raw(16_000_000, 1),
+            Clk::Lse => Ratio::new_raw(32_768, 1),
+        };
+        let hz: Ratio<u32> = src / pre.div().into();
+
+        Self { tim, hz }
     }
 
     #[inline]
@@ -557,20 +541,21 @@ impl LpTim for LpTim1 {
 impl LpTim for LpTim2 {
     type TrgSel = TrgSel;
 
-    #[inline]
-    fn new(mut tim: Self::Pac, clk: Clk, div: Prescaler, rcc: &mut pac::RCC) -> Self {
+    fn new(mut tim: Self::Pac, clk: Clk, pre: Prescaler, rcc: &mut pac::RCC) -> Self {
         rcc.ccipr.modify(|_, w| w.lptim2sel().bits(clk as u8));
         unsafe { Self::pulse_reset(rcc) }
         Self::enable_clock(rcc);
-        tim.set_cfgr(Cfgr::RESET.set_prescaler(div));
-        Self { tim }
-    }
+        tim.set_cfgr(Cfgr::RESET.set_prescaler(pre));
 
-    #[inline]
-    unsafe fn steal() -> Self {
-        Self {
-            tim: pac::Peripherals::steal().LPTIM2,
-        }
+        let src: Ratio<u32> = match clk {
+            Clk::Pclk => crate::rcc::apb1timx(rcc),
+            Clk::Lsi => Ratio::new_raw(crate::rcc::lsi_hz(rcc).into(), 1),
+            Clk::Hsi16 => Ratio::new_raw(16_000_000, 1),
+            Clk::Lse => Ratio::new_raw(32_768, 1),
+        };
+        let hz: Ratio<u32> = src / pre.div().into();
+
+        Self { tim, hz }
     }
 
     #[inline]
@@ -604,20 +589,21 @@ impl LpTim for LpTim2 {
 impl LpTim for LpTim3 {
     type TrgSel = TrgSel3;
 
-    #[inline]
-    fn new(mut tim: Self::Pac, clk: Clk, div: Prescaler, rcc: &mut pac::RCC) -> Self {
+    fn new(mut tim: Self::Pac, clk: Clk, pre: Prescaler, rcc: &mut pac::RCC) -> Self {
         rcc.ccipr.modify(|_, w| w.lptim3sel().bits(clk as u8));
         unsafe { Self::pulse_reset(rcc) }
         Self::enable_clock(rcc);
-        tim.set_cfgr(Cfgr::RESET.set_prescaler(div));
-        Self { tim }
-    }
+        tim.set_cfgr(Cfgr::RESET.set_prescaler(pre));
 
-    #[inline]
-    unsafe fn steal() -> Self {
-        Self {
-            tim: pac::Peripherals::steal().LPTIM3,
-        }
+        let src: Ratio<u32> = match clk {
+            Clk::Pclk => crate::rcc::apb1timx(rcc),
+            Clk::Lsi => Ratio::new_raw(crate::rcc::lsi_hz(rcc).into(), 1),
+            Clk::Hsi16 => Ratio::new_raw(16_000_000, 1),
+            Clk::Lse => Ratio::new_raw(32_768, 1),
+        };
+        let hz: Ratio<u32> = src / pre.div().into();
+
+        Self { tim, hz }
     }
 
     #[inline]
@@ -657,23 +643,24 @@ macro_rules! impl_eh_for {
             where
                 T: Into<Self::Time>,
             {
-                // disable TIM
-                self.as_mut_tim().set_cr(Cr::DISABLE);
-                // COUNTRST must never be set to `1` by software before it is already
-                // cleared to `0` by hardware.
-                // Software should consequently check that COUNTRST bit is already
-                // cleared to `0` before attempting to set it to `1`.
-                while self.as_tim().cr().cnt_rst() {}
-
-                // reset counter
+                // enable timer
                 {
-                    const CR: Cr = Cr::RESET.enable().set_cnt_rst();
+                    const CR: Cr = Cr::RESET.enable();
                     self.as_mut_tim().set_cr(CR);
+
+                    // RM0461 Rev 4 "Timer enable":
+                    // After setting the ENABLE bit, a delay of two counter
+                    // clock is needed before the LPTIM is actually enabled.
+                    const MAX_SYS_FREQ: u32 = 48_000_000;
+                    let delay: u32 = (MAX_SYS_FREQ * 2) / self.hz().to_integer();
+                    cortex_m::asm::delay(delay);
                 }
 
                 // can only be modified when enabled
-                self.as_mut_tim().set_cmp(count.into());
-                self.as_mut_tim().set_autoreload(0);
+                let count: u16 = count.into();
+                self.as_mut_tim().set_autoreload(count);
+                while Self::isr() & irq::ARROK == 0 {}
+                unsafe { self.set_icr(irq::ARROK) };
 
                 {
                     const CR: Cr = Cr::RESET.enable().set_single();
@@ -682,9 +669,10 @@ macro_rules! impl_eh_for {
             }
 
             fn wait(&mut self) -> nb::Result<(), Void> {
-                if Self::isr() & irq::CMPM == 0 {
+                if Self::isr() & irq::UE == 0 {
                     Err(nb::Error::WouldBlock)
                 } else {
+                    unsafe { self.set_icr(irq::UE) };
                     Ok(())
                 }
             }
@@ -853,7 +841,7 @@ impl LpTim3 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// // enable the HSI16 source clock
-    /// dp.RCC.cr.write(|w| w.hsion().set_bit());
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
     /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
     ///
     /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
@@ -900,7 +888,7 @@ impl LpTim3 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// // enable the HSI16 source clock
-    /// dp.RCC.cr.write(|w| w.hsion().set_bit());
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
     /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
     ///
     /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);

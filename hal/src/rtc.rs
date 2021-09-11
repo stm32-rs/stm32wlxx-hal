@@ -31,13 +31,14 @@ pub struct Rtc {
 impl Rtc {
     /// Create a new real-time clock driver.
     ///
+    /// This will **not** setup the source clock.
+    ///
     /// # Safety
     ///
-    /// 1. The RTC is in the backup domain, system resets will not reset the RTC.
-    ///    You are responsible for resetting the backup domain if required.
-    ///    This function does not perform the reset because resetting the backup
-    ///    domain also resets the LSE clock.
-    /// 2. You are responsible for setting up the source clock.
+    /// This function _could_ be considered unsafe because it is not a
+    /// pure function.
+    /// The RTC is in the backup domain; system resets will not reset the RTC.
+    /// You are responsible for resetting the backup domain if required.
     ///
     /// # Panics
     ///
@@ -61,7 +62,7 @@ impl Rtc {
     /// dp.RCC.bdcr.modify(|_, w| w.lseon().on());
     /// while dp.RCC.bdcr.read().lserdy().is_not_ready() {}
     ///
-    /// let rtc: Rtc = unsafe { Rtc::new(dp.RTC, Clk::Lse, &mut dp.PWR, &mut dp.RCC) };
+    /// let rtc: Rtc = Rtc::new(dp.RTC, Clk::Lse, &mut dp.PWR, &mut dp.RCC);
     /// ```
     ///
     /// LSI clock source:
@@ -78,7 +79,7 @@ impl Rtc {
     /// unsafe { pulse_reset_backup_domain(&mut dp.RCC, &mut dp.PWR) };
     /// enable_lsi(&mut dp.RCC);
     ///
-    /// let rtc: Rtc = unsafe { Rtc::new(dp.RTC, Clk::Lsi, &mut dp.PWR, &mut dp.RCC) };
+    /// let rtc: Rtc = Rtc::new(dp.RTC, Clk::Lsi, &mut dp.PWR, &mut dp.RCC);
     /// ```
     ///
     /// HSE clock source (this depends on HW, example valid for NUCLEO board):
@@ -98,9 +99,9 @@ impl Rtc {
     ///     .modify(|_, w| w.hseon().enabled().hsebyppwr().vddtcxo());
     /// while dp.RCC.cr.read().hserdy().is_not_ready() {}
     ///
-    /// let rtc: Rtc = unsafe { Rtc::new(dp.RTC, Clk::Hse, &mut dp.PWR, &mut dp.RCC) };
+    /// let rtc: Rtc = Rtc::new(dp.RTC, Clk::Hse, &mut dp.PWR, &mut dp.RCC);
     /// ```
-    pub unsafe fn new(rtc: pac::RTC, clk: Clk, pwr: &mut pac::PWR, rcc: &mut pac::RCC) -> Rtc {
+    pub fn new(rtc: pac::RTC, clk: Clk, pwr: &mut pac::PWR, rcc: &mut pac::RCC) -> Rtc {
         pwr.cr1.modify(|_, w| w.dbp().enabled());
 
         match clk {

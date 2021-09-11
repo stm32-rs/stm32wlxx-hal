@@ -15,7 +15,6 @@ use stm32wl_hal::{
     util::reset_cycle_count,
 };
 
-const LPTIM3_FREQ: u32 = 16_000_000;
 const FREQ: u32 = 48_000_000;
 const CYC_PER_US: u32 = FREQ / 1000 / 1000;
 
@@ -106,9 +105,6 @@ mod tests {
         let lptim3: LpTim3 =
             LpTim3::new(dp.LPTIM3, lptim::Clk::Hsi16, Prescaler::Div1, &mut dp.RCC);
 
-        defmt::assert_eq!(lptim3.hz().to_integer(), LPTIM3_FREQ);
-        defmt::assert_eq!(FREQ % LPTIM3_FREQ, 0);
-
         TestArgs {
             lptim3,
             rcc: dp.RCC,
@@ -119,6 +115,8 @@ mod tests {
     #[test]
     fn oneshot_external_trigger(ta: &mut TestArgs) {
         defmt::warn!("Pin B7 must be connected to A11 for this test to pass");
+        let lptim3_freq: u32 = ta.lptim3.hz().to_integer();
+        defmt::assert_eq!(FREQ % lptim3_freq, 0);
 
         let a11 = unsafe { PortA::steal() }.a11;
 
@@ -129,7 +127,7 @@ mod tests {
         let start: u32 = DWT::get_cycle_count();
         loop {
             let elapsed: u32 = DWT::get_cycle_count() - start;
-            if elapsed > (FREQ / LPTIM3_FREQ) * 10 {
+            if elapsed > (FREQ / lptim3_freq) * 10 {
                 break;
             }
         }
@@ -144,7 +142,7 @@ mod tests {
         let start: u32 = DWT::get_cycle_count();
         loop {
             let elapsed: u32 = DWT::get_cycle_count() - start;
-            if elapsed > (FREQ / LPTIM3_FREQ) * 10 {
+            if elapsed > (FREQ / lptim3_freq) * 10 {
                 break;
             }
         }

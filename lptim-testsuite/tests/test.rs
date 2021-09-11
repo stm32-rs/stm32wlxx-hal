@@ -9,7 +9,7 @@ use stm32wl_hal::{
     embedded_hal::digital::v2::ToggleableOutputPin,
     embedded_hal::timer::CountDown,
     gpio::{pins, Output, PortA, PortB},
-    lptim::{self, Filter, LpTim, LpTim1, LpTim3, Prescaler, TrgPol},
+    lptim::{self, Filter, LpTim, LpTim1, LpTim2, LpTim3, Prescaler, TrgPol},
     pac::{self, DWT},
     rcc,
     util::reset_cycle_count,
@@ -21,6 +21,47 @@ const CYC_PER_US: u32 = FREQ / 1000 / 1000;
 
 // WARNING will wrap-around eventually, use this for relative timing only
 defmt::timestamp!("{=u32:µs}", DWT::get_cycle_count() / CYC_PER_US);
+
+fn test_clk_src<LPTIM>(lptim: &mut LPTIM, src: lptim::Clk, rcc: &pac::RCC)
+where
+    LPTIM: LpTim + CountDown,
+    <LPTIM as CountDown>::Time: From<u16>,
+{
+    defmt::assert_eq!(LPTIM::clk(rcc), src);
+    let lptim_freq: u32 = lptim.hz().to_integer();
+
+    let cycles: u16 = u16::try_from(lptim_freq / 32).unwrap_or(u16::MAX);
+    let start: u32 = DWT::get_cycle_count();
+    lptim.start(cycles);
+    unwrap!(nb::block!(lptim.wait()).ok());
+    let end: u32 = DWT::get_cycle_count();
+
+    // compare elapsed lptim cycles to elapsed CPU cycles
+    let elapsed: u32 = end.wrapping_sub(start);
+    let expected_elapsed: u32 = u32::from(cycles) * (FREQ / lptim_freq);
+
+    let elapsed_upper: u32 = if lptim_freq > 10_000 {
+        // 6.25% tolerance
+        expected_elapsed + expected_elapsed / 16
+    } else {
+        // upper limit gets massively skewed at low frequencies due to
+        // delays when enabling the timer
+        expected_elapsed.saturating_mul(3)
+    };
+
+    // the embedded-hal trait guarantees **at least** n cycles
+    // this _should_ just be `expected_elapsed`, but there is some
+    // measurement error with independent clock sources
+    let elapsed_lower: u32 = expected_elapsed - expected_elapsed / 128;
+
+    defmt::assert!(
+        elapsed_lower <= elapsed && elapsed <= elapsed_upper,
+        "Timer is incorrect: {} <= {} <= {}",
+        elapsed_lower,
+        elapsed,
+        elapsed_upper
+    );
+}
 
 #[defmt_test::tests]
 mod tests {
@@ -112,8 +153,8 @@ mod tests {
     }
 
     #[test]
-    fn clk_srcs(ta: &mut TestArgs) {
-        const CLKS: [lptim::Clk; 4] = [
+    fn oneshot(ta: &mut TestArgs) {
+        const SRCS: [lptim::Clk; 4] = [
             lptim::Clk::Hsi16,
             lptim::Clk::Lse,
             lptim::Clk::Lsi,
@@ -130,46 +171,28 @@ mod tests {
             lptim::Prescaler::Div128,
         ];
 
-        for (clk, pre) in itertools::iproduct!(CLKS, PRESCALERS) {
+        for (src, pre) in itertools::iproduct!(SRCS, PRESCALERS) {
             let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
-            let mut lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, clk, pre, &mut ta.rcc);
-            let lptim1_freq: u32 = lptim1.hz().to_integer();
+            let mut lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, src, pre, &mut ta.rcc);
+            let freq: u32 = lptim1.hz().to_integer();
+            defmt::info!("LPTIM1 {} / {} = {} Hz", src, pre.div(), freq);
+            test_clk_src(&mut lptim1, src, &dp.RCC);
+        }
 
-            defmt::info!("{} / {} = {} Hz", clk, pre.div(), lptim1_freq);
+        for (src, pre) in itertools::iproduct!(SRCS, PRESCALERS) {
+            let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
+            let mut lptim2: LpTim2 = LpTim2::new(dp.LPTIM2, src, pre, &mut ta.rcc);
+            let freq: u32 = lptim2.hz().to_integer();
+            defmt::info!("LPTIM2 {} / {} = {} Hz", src, pre.div(), freq);
+            test_clk_src(&mut lptim2, src, &dp.RCC);
+        }
 
-            defmt::assert_eq!(LpTim1::clk(&dp.RCC), clk);
-
-            let cycles: u16 = u16::try_from(lptim1_freq / 32).unwrap_or(u16::MAX);
-            let start: u32 = DWT::get_cycle_count();
-            lptim1.start(cycles);
-            unwrap!(nb::block!(lptim1.wait()).ok());
-            let end: u32 = DWT::get_cycle_count();
-
-            // compare elapsed lptim cycles to elapsed CPU cycles
-            let elapsed: u32 = end.wrapping_sub(start);
-            let expected_elapsed: u32 = u32::from(cycles) * (FREQ / lptim1_freq);
-
-            let elapsed_upper: u32 = if lptim1_freq > 10_000 {
-                // 6.25% tolerance
-                expected_elapsed + expected_elapsed / 16
-            } else {
-                // upper limit gets massively skewed at low frequencies due to
-                // delays when enabling the timer
-                expected_elapsed.saturating_mul(3)
-            };
-
-            // the embedded-hal trait guarantees **at least** n cycles
-            // this _should_ just be `expected_elapsed`, but there is some
-            // measurement error with independent clock sources
-            let elapsed_lower: u32 = expected_elapsed - expected_elapsed / 128;
-
-            defmt::assert!(
-                elapsed_lower <= elapsed && elapsed <= elapsed_upper,
-                "Timer is incorrect: {} <= {} <= {}",
-                elapsed_lower,
-                elapsed,
-                elapsed_upper
-            );
+        for (src, pre) in itertools::iproduct!(SRCS, PRESCALERS) {
+            let dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
+            let mut lptim3: LpTim3 = LpTim3::new(dp.LPTIM3, src, pre, &mut ta.rcc);
+            let freq: u32 = lptim3.hz().to_integer();
+            defmt::info!("LPTIM3 {} / {} = {} Hz", src, pre.div(), freq);
+            test_clk_src(&mut lptim3, src, &dp.RCC);
         }
     }
 }

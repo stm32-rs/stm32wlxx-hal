@@ -377,7 +377,7 @@ pub trait LpTim: sealed::LpTim {
     /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
     ///
     /// let lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
-    /// assert_eq!(lptim1.hz(&dp.RCC).to_integer(), 16_000_000);
+    /// assert_eq!(lptim1.hz().to_integer(), 16_000_000);
     /// ```
     fn hz(&self) -> &Ratio<u32> {
         self._hz()

@@ -342,11 +342,7 @@ impl Aes {
         }
     }
 
-    fn gcm_init_phase<const MODE: u8>(
-        &self,
-        key: &[u32],
-        iv: &[u32; 3],
-    ) -> Result<KeySize, Error> {
+    fn gcm_init_phase<const MODE: u8>(&self, key: &[u32], iv: &[u32; 3]) -> Result<KeySize, Error> {
         const ALGO: Algorithm = Algorithm::Gcm;
         const CHMOD2: bool = ALGO.chmod2();
         const CHMOD10: u8 = ALGO.chmod10();
@@ -642,11 +638,7 @@ impl Aes {
     /// aes.encrypt_ecb_inplace(&KEY, &mut text)?;
     /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
-    pub fn encrypt_ecb_inplace(
-        &self,
-        key: &[u32],
-        plaintext: &mut [u32; 4],
-    ) -> Result<(), Error> {
+    pub fn encrypt_ecb_inplace(&self, key: &[u32], plaintext: &mut [u32; 4]) -> Result<(), Error> {
         const ALGO: Algorithm = Algorithm::Ecb;
         const CHMOD2: bool = ALGO.chmod2();
         const CHMOD10: u8 = ALGO.chmod10();
@@ -848,11 +840,7 @@ impl Aes {
     /// aes.decrypt_ecb_inplace(&KEY, &mut text)?;
     /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
-    pub fn decrypt_ecb_inplace(
-        &self,
-        key: &[u32],
-        ciphertext: &mut [u32; 4],
-    ) -> Result<(), Error> {
+    pub fn decrypt_ecb_inplace(&self, key: &[u32], ciphertext: &mut [u32; 4]) -> Result<(), Error> {
         const ALGO: Algorithm = Algorithm::Ecb;
         const CHMOD2: bool = ALGO.chmod2();
         const CHMOD10: u8 = ALGO.chmod10();

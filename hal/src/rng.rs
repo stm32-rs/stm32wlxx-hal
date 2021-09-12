@@ -266,11 +266,7 @@ impl Rng {
     /// ```
     pub fn try_fill_u32(&mut self, dest: &mut [u32]) -> Result<(), Error> {
         for dw in dest {
-            // reference manual recommends verifying DR is non-zero for
-            // **each** read to DR incase there is a seed error between
-            // polling SR and reading DR
-            self.poll_data_valid()?;
-            *dw = self.rng.dr.read().bits();
+            *dw = self.try_u32()?;
         }
         Ok(())
     }
@@ -382,9 +378,11 @@ impl Rng {
     /// # Ok::<(), stm32wl_hal::rng::Error>(())
     /// ```
     pub fn try_u32(&mut self) -> Result<u32, Error> {
-        let mut buf: [u32; 1] = [0; 1];
-        self.try_fill_u32(&mut buf)?;
-        Ok(buf[0])
+        // reference manual recommends verifying DR is non-zero for
+        // **each** read to DR incase there is a seed error between
+        // polling SR and reading DR
+        self.poll_data_valid()?;
+        Ok(self.rng.dr.read().bits())
     }
 
     /// Try to generate a random `u64`.

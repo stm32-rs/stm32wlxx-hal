@@ -92,6 +92,7 @@ struct Nss {
 }
 
 impl Nss {
+    #[inline(always)]
     pub fn new() -> Nss {
         Self::clear();
         Nss { _priv: () }
@@ -205,7 +206,141 @@ pub fn rfbusyms() -> bool {
     unsafe { (*pac::PWR::ptr()).sr2.read().rfbusyms().is_busy() }
 }
 
-/// Sub-GHz radio peripheral
+/// Sub-GHz radio peripheral.
+///
+/// # Example
+///
+/// GFSK setup
+///
+/// ```no_run
+/// use static_assertions as sa;
+/// use stm32wl_hal::{
+///     dma::{AllDma, Dma1Ch1, Dma1Ch2},
+///     pac,
+///     subghz::{
+///         AddrComp, CalibrateImage, CfgIrq, CrcType, FallbackMode, FskBandwidth, FskBitrate,
+///         FskFdev, FskModParams, FskPulseShape, GenericPacketParams, HeaderType, Irq, Ocp,
+///         PaConfig, PacketType, PreambleDetection, RampTime, RegMode, RfFreq, StandbyClk, SubGhz,
+///         TcxoMode, TcxoTrim, Timeout, TxParams,
+///     },
+/// };
+///
+/// const IRQ_CFG: CfgIrq = CfgIrq::new()
+///     .irq_enable_all(Irq::RxDone)
+///     .irq_enable_all(Irq::Timeout)
+///     .irq_enable_all(Irq::TxDone)
+///     .irq_enable_all(Irq::Err);
+///
+/// const PREAMBLE_LEN: u16 = 5 * 8;
+/// const RF_FREQ: RfFreq = RfFreq::from_frequency(434_000_000);
+/// const SYNC_WORD: [u8; 8] = [0x79, 0x80, 0x0C, 0xC0, 0x29, 0x95, 0xF8, 0x4A];
+/// const SYNC_WORD_LEN: u8 = SYNC_WORD.len() as u8;
+/// const SYNC_WORD_LEN_BITS: u8 = SYNC_WORD_LEN * 8;
+/// const TX_BUF_OFFSET: u8 = 0;
+/// const RX_BUF_OFFSET: u8 = 128;
+///
+/// const FSK_PACKET_PARAMS: GenericPacketParams = GenericPacketParams::new()
+///     .set_preamble_len(PREAMBLE_LEN)
+///     .set_preamble_detection(PreambleDetection::Bit8)
+///     .set_sync_word_len(SYNC_WORD_LEN_BITS)
+///     .set_addr_comp(AddrComp::Disabled)
+///     .set_header_type(HeaderType::Variable)
+///     .set_payload_len(128)
+///     .set_crc_type(CrcType::Byte2)
+///     .set_whitening_enable(true);
+///
+/// const FSK_MOD_PARAMS: FskModParams = FskModParams::new()
+///     .set_bitrate(FskBitrate::from_bps(20_000))
+///     .set_pulse_shape(FskPulseShape::Bt03)
+///     .set_bandwidth(FskBandwidth::Bw58)
+///     .set_fdev(FskFdev::from_hertz(10_000));
+///
+/// sa::const_assert!(FSK_MOD_PARAMS.is_valid_worst_case());
+///
+/// const PA_CONFIG: PaConfig = PaConfig::LP_10;
+/// const TX_PARAMS: TxParams = TxParams::LP_10.set_ramp_time(RampTime::Micros40);
+///
+/// const TCXO_MODE: TcxoMode = TcxoMode::new()
+///     .set_txco_trim(TcxoTrim::Volts1pt7)
+///     .set_timeout(Timeout::from_millis_sat(10));
+///
+/// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+///
+/// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
+/// let mut sg: SubGhz<Dma1Ch1, Dma1Ch2> =
+///     SubGhz::new_with_dma(dp.SPI3, dma.d1.c1, dma.d1.c2, &mut dp.RCC);
+///
+/// sg.set_standby(StandbyClk::Rc)?;
+/// sg.set_tcxo_mode(&TCXO_MODE)?;
+/// sg.set_tx_rx_fallback_mode(FallbackMode::Standby)?;
+/// sg.set_regulator_mode(RegMode::Ldo)?;
+/// sg.set_buffer_base_address(TX_BUF_OFFSET, RX_BUF_OFFSET)?;
+/// sg.set_pa_config(&PA_CONFIG)?;
+/// sg.set_pa_ocp(Ocp::Max60m)?;
+/// sg.set_tx_params(&TX_PARAMS)?;
+/// sg.set_packet_type(PacketType::Fsk)?;
+/// sg.set_sync_word(&SYNC_WORD)?;
+/// sg.set_fsk_mod_params(&FSK_MOD_PARAMS)?;
+/// sg.set_packet_params(&FSK_PACKET_PARAMS)?;
+/// sg.calibrate_image(CalibrateImage::ISM_430_440)?;
+/// sg.set_rf_frequency(&RF_FREQ)?;
+/// sg.set_irq_cfg(&IRQ_CFG)?;
+/// # Ok::<(), stm32wl_hal::subghz::Error>(())
+/// ```
+///
+/// Basic RX, requires setup.
+///
+/// ```no_run
+/// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
+/// use stm32wl_hal::subghz::{Irq, Timeout};
+///
+/// // if you have an RF switch put it into RX mode on this line
+/// sg.set_rx(Timeout::DISABLED)?;
+///
+/// loop {
+///     let (status, irq_status) = sg.irq_status()?;
+///     sg.clear_irq_status(irq_status)?;
+///
+///     if irq_status & Irq::RxDone.mask() != 0 {
+///         let (status, len, ptr) = sg.rx_buffer_status()?;
+///         // this is a little large for the stack
+///         let mut buf: [u8; 128] = [0; 128];
+///         let data: &mut [u8] = &mut buf[..usize::from(len)];
+///         sg.read_buffer(ptr, data)?;
+///         // ... do things with the data
+///         break;
+///     } else {
+///         // ... handle other IRQs
+///     }
+/// }
+/// # Ok::<(), stm32wl_hal::subghz::Error>(())
+/// ```
+///
+/// Basic TX, requires setup.
+///
+/// ```no_run
+/// # const TX_BUF_OFFSET: u8 = 0;
+/// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
+/// use stm32wl_hal::subghz::{Irq, Timeout};
+///
+/// sg.write_buffer(TX_BUF_OFFSET, b"Hello, World!")?;
+/// // if you have an RF switch put it into TX mode on this line
+/// sg.set_tx(Timeout::from_millis_sat(100))?;
+///
+/// loop {
+///     let (status, irq_status) = sg.irq_status()?;
+///     sg.clear_irq_status(irq_status)?;
+///
+///     if irq_status & Irq::TxDone.mask() != 0 {
+///         // nothing is required upon TX done
+///         // you may want to put the radio into RX mode after TX completion
+///         break;
+///     } else {
+///         // ... handle other IRQs
+///     }
+/// }
+/// # Ok::<(), stm32wl_hal::subghz::Error>(())
+/// ```
 #[derive(Debug)]
 pub struct SubGhz<MISO, MOSI> {
     spi: Spi3<MISO, MOSI>,
@@ -527,137 +662,44 @@ where
     }
 
     /// Set the initial value for generic packet CRC polynomial.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// sg.set_crc_polynomial(0x1D0F)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_crc_polynomial(&mut self, polynomial: u16) -> Result<(), Error> {
         let bytes: [u8; 2] = polynomial.to_be_bytes();
         self.write(wr_reg![GCRCINIRH, bytes[0], bytes[1]])
     }
 
     /// Set the generic packet CRC polynomial.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// sg.set_initial_crc_polynomial(0x1021)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_initial_crc_polynomial(&mut self, polynomial: u16) -> Result<(), Error> {
         let bytes: [u8; 2] = polynomial.to_be_bytes();
         self.write(wr_reg![GCRCPOLRH, bytes[0], bytes[1]])
     }
 
     /// Set the synchronization word registers.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// const SYNC_WORD: [u8; 8] = [0x79, 0x80, 0x0C, 0xC0, 0x29, 0x95, 0xF8, 0x4A];
-    ///
-    /// sg.set_sync_word(&SYNC_WORD)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_sync_word(&mut self, sync_word: &[u8; 8]) -> Result<(), Error> {
         self.write_register(Register::GSYNC7, sync_word)
     }
 
     /// Set the LoRa synchronization word registers.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{LoRaSyncWord, PacketType};
-    ///
-    /// sg.set_packet_type(PacketType::LoRa)?;
-    /// sg.set_lora_sync_word(LoRaSyncWord::Public)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_lora_sync_word(&mut self, sync_word: LoRaSyncWord) -> Result<(), Error> {
         let bytes: [u8; 2] = sync_word.bytes();
         self.write(wr_reg![LSYNCH, bytes[0], bytes[1]])
     }
 
     /// Set the RX gain control.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::PMode;
-    ///
-    /// sg.set_rx_gain(PMode::Boost)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_rx_gain(&mut self, pmode: PMode) -> Result<(), Error> {
         self.write(wr_reg![RXGAINC, pmode as u8])
     }
 
     /// Set the power amplifier over current protection.
-    ///
-    /// # Example
-    ///
-    /// Maximum 60mA for LP PA mode.
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::Ocp;
-    ///
-    /// sg.set_pa_ocp(Ocp::Max60m)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
-    ///
-    /// Maximum 60mA for HP PA mode.
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::Ocp;
-    ///
-    /// sg.set_pa_ocp(Ocp::Max140m)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_pa_ocp(&mut self, ocp: Ocp) -> Result<(), Error> {
         self.write(wr_reg![PAOCP, ocp as u8])
     }
 
     /// Set the HSE32 crystal OSC_IN load capaitor trimming.
-    ///
-    /// # Example
-    ///
-    /// Set the trim to the lowest value.
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::HseTrim;
-    ///
-    /// sg.set_hse_in_trim(HseTrim::MIN)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_hse_in_trim(&mut self, trim: HseTrim) -> Result<(), Error> {
         self.write(wr_reg![HSEINTRIM, trim.into()])
     }
 
     /// Set the HSE32 crystal OSC_OUT load capaitor trimming.
-    ///
-    /// # Example
-    ///
-    /// Set the trim to the lowest value.
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::HseTrim;
-    ///
-    /// sg.set_hse_out_trim(HseTrim::MIN)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_hse_out_trim(&mut self, trim: HseTrim) -> Result<(), Error> {
         self.write(wr_reg![HSEOUTTRIM, trim.into()])
     }
@@ -754,34 +796,6 @@ where
     }
 
     /// Put the radio into standby mode.
-    ///
-    /// # Examples
-    ///
-    /// Put the radio into standby mode using the RC 13MHz clock.
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::StandbyClk;
-    ///
-    /// sg.set_standby(StandbyClk::Rc)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
-    ///
-    /// Put the radio into standby mode using the HSE32 clock.
-    ///
-    /// ```no_run
-    /// # let mut dp = unsafe { stm32wl_hal::pac::Peripherals::steal() };
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::StandbyClk;
-    ///
-    /// dp.RCC
-    ///     .cr
-    ///     .modify(|_, w| w.hseon().enabled().hsebyppwr().vddtcxo());
-    /// while dp.RCC.cr.read().hserdy().is_not_ready() {}
-    ///
-    /// sg.set_standby(StandbyClk::Hse)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_standby(&mut self, standby_clk: StandbyClk) -> Result<(), Error> {
         self.write(&[OpCode::SetStandby as u8, u8::from(standby_clk)])
     }
@@ -795,35 +809,12 @@ where
     /// I honestly do not see any use for it.  Please update this description
     /// if you know more than I do.
     ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::RfFreq;
-    ///
-    /// sg.set_rf_frequency(&RfFreq::from_frequency(915_000_000))?;
-    /// sg.set_fs()?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
-    ///
     /// [`set_rf_frequency`]: crate::subghz::SubGhz::set_rf_frequency
     pub fn set_fs(&mut self) -> Result<(), Error> {
         self.write(&[OpCode::SetFs.into()])
     }
 
-    /// Set the sub-GHz radio in TX mode.
-    ///
-    /// # Example
-    ///
-    /// Transmit with no timeout.
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::Timeout;
-    ///
-    /// sg.set_tx(Timeout::DISABLED)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
+    /// Setup the sub-GHz radio for TX.
     pub fn set_tx(&mut self, timeout: Timeout) -> Result<(), Error> {
         let tobits: u32 = timeout.into_bits();
         self.write(&[
@@ -834,20 +825,7 @@ where
         ])
     }
 
-    /// Set the sub-GHz radio in RX mode.
-    ///
-    /// # Example
-    ///
-    /// Receive with a 1 second timeout.
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use core::time::Duration;
-    /// use stm32wl_hal::subghz::Timeout;
-    ///
-    /// sg.set_rx(Timeout::from_duration_sat(Duration::from_secs(1)))?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
+    /// Setup the sub-GHz radio for RX.
     pub fn set_rx(&mut self, timeout: Timeout) -> Result<(), Error> {
         let tobits: u32 = timeout.into_bits();
         self.write(&[
@@ -859,18 +837,6 @@ where
     }
 
     /// Allows selection of the receiver event which stops the RX timeout timer.
-    ///
-    /// # Example
-    ///
-    /// Set the RX timeout timer to stop on preamble detection.
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::RxTimeoutStop;
-    ///
-    /// sg.set_rx_timeout_stop(RxTimeoutStop::Preamble)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_rx_timeout_stop(&mut self, rx_timeout_stop: RxTimeoutStop) -> Result<(), Error> {
         self.write(&[
             OpCode::SetStopRxTimerOnPreamble.into(),
@@ -906,21 +872,6 @@ where
     /// * if [`set_standby`] is sent during the listening period or after the
     ///   sub-GHz has been requested to exit sleep mode by sub-GHz radio SPI NSS
     ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use core::time::Duration;
-    /// use stm32wl_hal::subghz::{StandbyClk, Timeout};
-    ///
-    /// const RX_PERIOD: Timeout = Timeout::from_duration_sat(Duration::from_millis(100));
-    /// const SLEEP_PERIOD: Timeout = Timeout::from_duration_sat(Duration::from_secs(1));
-    ///
-    /// sg.set_standby(StandbyClk::Rc)?;
-    /// sg.set_rx_duty_cycle(RX_PERIOD, SLEEP_PERIOD)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
-    ///
     /// [`RxDone`]: crate::subghz::Irq::RxDone
     /// [`set_rf_frequency`]: crate::subghz::SubGhz::set_rf_frequency
     /// [`set_standby`]: crate::subghz::SubGhz::set_standby
@@ -954,27 +905,6 @@ where
     /// The length of the search must be configured with [`set_cad_params`]
     /// prior to calling `set_cad`.
     ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use core::time::Duration;
-    /// use stm32wl_hal::subghz::{CadParams, ExitMode, NbCadSymbol, StandbyClk, Timeout};
-    ///
-    /// const RX_PERIOD: Timeout = Timeout::from_duration_sat(Duration::from_millis(100));
-    /// const SLEEP_PERIOD: Timeout = Timeout::from_duration_sat(Duration::from_secs(1));
-    /// const CAD_PARAMS: CadParams = CadParams::new()
-    ///     .set_num_symbol(NbCadSymbol::S4)
-    ///     .set_det_peak(0x18)
-    ///     .set_det_min(0x10)
-    ///     .set_exit_mode(ExitMode::Standby);
-    ///
-    /// sg.set_standby(StandbyClk::Rc)?;
-    /// sg.set_cad_params(&CAD_PARAMS)?;
-    /// sg.set_cad()?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
-    ///
     /// [`set_cad_params`]: crate::subghz::SubGhz::set_cad_params
     pub fn set_cad(&mut self) -> Result<(), Error> {
         self.write(&[OpCode::SetCad.into()])
@@ -984,14 +914,6 @@ where
     ///
     /// The sub-GHz radio remains in continuous transmit tone mode until a mode
     /// configuration command is received.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// sg.set_tx_continuous_wave()?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_tx_continuous_wave(&mut self) -> Result<(), Error> {
         self.write(&[OpCode::SetTxContinuousWave as u8])
     }
@@ -1003,14 +925,6 @@ where
     /// The preamble is symbol 0 in LoRa modulation.
     /// The sub-GHz radio remains in infinite preamble mode until a mode
     /// configuration command is received.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// sg.set_tx_continuous_preamble()?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_tx_continuous_preamble(&mut self) -> Result<(), Error> {
         self.write(&[OpCode::SetTxContinuousPreamble as u8])
     }
@@ -1024,109 +938,22 @@ where
         + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     /// Set the packet type (modulation scheme).
-    ///
-    /// # Examples
-    ///
-    /// FSK (frequency shift keying):
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::PacketType;
-    ///
-    /// sg.set_packet_type(PacketType::Fsk)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
-    ///
-    /// LoRa (long range):
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::PacketType;
-    ///
-    /// sg.set_packet_type(PacketType::LoRa)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
-    ///
-    /// BPSK (binary phase shift keying):
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::PacketType;
-    ///
-    /// sg.set_packet_type(PacketType::Bpsk)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
-    ///
-    /// MSK (minimum shift keying):
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::PacketType;
-    ///
-    /// sg.set_packet_type(PacketType::Msk)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_packet_type(&mut self, packet_type: PacketType) -> Result<(), Error> {
         self.write(&[OpCode::SetPacketType as u8, packet_type as u8])
     }
 
     /// Get the packet type.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::PacketType;
-    ///
-    /// sg.set_packet_type(PacketType::LoRa)?;
-    /// assert_eq!(sg.packet_type()?, Ok(PacketType::LoRa));
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn packet_type(&mut self) -> Result<Result<PacketType, u8>, Error> {
         let pkt_type: [u8; 2] = self.read_n(OpCode::GetPacketType)?;
         Ok(PacketType::from_raw(pkt_type[1]))
     }
 
     /// Set the radio carrier frequency.
-    ///
-    /// # Example
-    ///
-    /// Set the frequency to 915MHz (Australia and North America).
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::RfFreq;
-    ///
-    /// sg.set_rf_frequency(&RfFreq::F915)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_rf_frequency(&mut self, freq: &RfFreq) -> Result<(), Error> {
         self.write(freq.as_slice())
     }
 
     /// Set the transmit output power and the PA ramp-up time.
-    ///
-    /// # Example
-    ///
-    /// Set the output power to +10 dBm (low power mode) and a ramp up time of
-    /// 40 microseconds.
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{PaConfig, PaSel, RampTime, TxParams};
-    ///
-    /// const TX_PARAMS: TxParams = TxParams::new()
-    ///     .set_ramp_time(RampTime::Micros40)
-    ///     .set_power(0x0D);
-    /// const PA_CONFIG: PaConfig = PaConfig::new()
-    ///     .set_pa(PaSel::Lp)
-    ///     .set_pa_duty_cycle(0x1)
-    ///     .set_hp_max(0x0);
-    ///
-    /// sg.set_pa_config(&PA_CONFIG)?;
-    /// sg.set_tx_params(&TX_PARAMS)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_tx_params(&mut self, params: &TxParams) -> Result<(), Error> {
         self.write(params.as_slice())
     }
@@ -1134,232 +961,57 @@ where
     /// Power amplifier configuation.
     ///
     /// Used to customize the maximum output power and efficiency.
-    ///
-    /// # Example
-    ///
-    /// Set the output power to +22 dBm (high power mode) and a ramp up time of
-    /// 200 microseconds.
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{PaConfig, PaSel, RampTime, TxParams};
-    ///
-    /// const TX_PARAMS: TxParams = TxParams::new()
-    ///     .set_ramp_time(RampTime::Micros200)
-    ///     .set_power(0x16);
-    /// const PA_CONFIG: PaConfig = PaConfig::new()
-    ///     .set_pa(PaSel::Hp)
-    ///     .set_pa_duty_cycle(0x4)
-    ///     .set_hp_max(0x7);
-    ///
-    /// sg.set_pa_config(&PA_CONFIG)?;
-    /// sg.set_tx_params(&TX_PARAMS)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_pa_config(&mut self, pa_config: &PaConfig) -> Result<(), Error> {
         self.write(pa_config.as_slice())
     }
 
     /// Operating mode to enter after a successful packet transmission or
     /// packet reception.
-    ///
-    /// # Example
-    ///
-    /// Set the fallback mode to standby mode.
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::FallbackMode;
-    ///
-    /// sg.set_tx_rx_fallback_mode(FallbackMode::Standby)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_tx_rx_fallback_mode(&mut self, fm: FallbackMode) -> Result<(), Error> {
         self.write(&[OpCode::SetTxRxFallbackMode as u8, fm as u8])
     }
 
     /// Set channel activity detection (CAD) parameters.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use core::time::Duration;
-    /// use stm32wl_hal::subghz::{CadParams, ExitMode, NbCadSymbol, StandbyClk, Timeout};
-    ///
-    /// const RX_PERIOD: Timeout = Timeout::from_duration_sat(Duration::from_millis(100));
-    /// const SLEEP_PERIOD: Timeout = Timeout::from_duration_sat(Duration::from_secs(1));
-    /// const CAD_PARAMS: CadParams = CadParams::new()
-    ///     .set_num_symbol(NbCadSymbol::S4)
-    ///     .set_det_peak(0x18)
-    ///     .set_det_min(0x10)
-    ///     .set_exit_mode(ExitMode::Standby);
-    ///
-    /// sg.set_standby(StandbyClk::Rc)?;
-    /// sg.set_cad_params(&CAD_PARAMS)?;
-    /// sg.set_cad()?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_cad_params(&mut self, params: &CadParams) -> Result<(), Error> {
         self.write(params.as_slice())
     }
 
     /// Set the data buffer base address for the packet handling in TX and RX.
     ///
-    /// There is a 256B TX buffer and a 256B RX buffer.
-    /// These buffers are not memory mapped, they are accessed via the
-    /// [`read_buffer`] and [`write_buffer`] methods.
-    ///
-    /// # Example
-    ///
-    /// Set the TX and RX buffer base to the start.
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// sg.set_buffer_base_address(0, 0)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
-    ///
-    /// [`read_buffer`]: SubGhz::read_buffer
-    /// [`write_buffer`]: SubGhz::write_buffer
+    /// There is a single buffer for both TX and RX.
+    /// The buffer is not memory mapped, it is accessed via the
+    /// [`read_buffer`](SubGhz::read_buffer) and
+    /// [`write_buffer`](SubGhz::write_buffer) methods.
     pub fn set_buffer_base_address(&mut self, tx: u8, rx: u8) -> Result<(), Error> {
         self.write(&[OpCode::SetBufferBaseAddress as u8, tx, rx])
     }
 
     /// Set the (G)FSK modulation parameters.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{
-    ///     FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape, PacketType,
-    /// };
-    ///
-    /// const BITRATE: FskBitrate = FskBitrate::from_bps(32_000);
-    /// const PULSE_SHAPE: FskPulseShape = FskPulseShape::Bt03;
-    /// const BW: FskBandwidth = FskBandwidth::Bw9;
-    /// const FDEV: FskFdev = FskFdev::from_hertz(31_250);
-    ///
-    /// const MOD_PARAMS: FskModParams = FskModParams::new()
-    ///     .set_bitrate(BITRATE)
-    ///     .set_pulse_shape(PULSE_SHAPE)
-    ///     .set_bandwidth(BW)
-    ///     .set_fdev(FDEV);
-    ///
-    /// sg.set_packet_type(PacketType::Fsk)?;
-    /// sg.set_fsk_mod_params(&MOD_PARAMS)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_fsk_mod_params(&mut self, params: &FskModParams) -> Result<(), Error> {
         self.write(params.as_slice())
     }
 
     /// Set the LoRa modulation parameters.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{
-    ///     CodingRate, LoRaBandwidth, LoRaModParams, PacketType, SpreadingFactor,
-    /// };
-    ///
-    /// const MOD_PARAMS: LoRaModParams = LoRaModParams::new()
-    ///     .set_sf(SpreadingFactor::Sf7)
-    ///     .set_bw(LoRaBandwidth::Bw125)
-    ///     .set_cr(CodingRate::Cr45)
-    ///     .set_ldro_en(false);
-    ///
-    /// sg.set_packet_type(PacketType::LoRa)?;
-    /// sg.set_lora_mod_params(&MOD_PARAMS)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_lora_mod_params(&mut self, params: &LoRaModParams) -> Result<(), Error> {
         self.write(params.as_slice())
     }
 
     /// Set the BPSK modulation parameters.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{BpskModParams, FskBitrate, PacketType};
-    ///
-    /// const MOD_PARAMS: BpskModParams = BpskModParams::new().set_bitrate(FskBitrate::from_bps(600));
-    ///
-    /// sg.set_packet_type(PacketType::Bpsk)?;
-    /// sg.set_bpsk_mod_params(&MOD_PARAMS)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_bpsk_mod_params(&mut self, params: &BpskModParams) -> Result<(), Error> {
         self.write(params.as_slice())
     }
 
     /// Set the generic (FSK) packet parameters.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{
-    ///     AddrComp, CrcType, GenericPacketParams, HeaderType, PacketType, PreambleDetection,
-    /// };
-    ///
-    /// const PKT_PARAMS: GenericPacketParams = GenericPacketParams::new()
-    ///     .set_preamble_len(8)
-    ///     .set_preamble_detection(PreambleDetection::Disabled)
-    ///     .set_sync_word_len(2)
-    ///     .set_addr_comp(AddrComp::Disabled)
-    ///     .set_header_type(HeaderType::Fixed)
-    ///     .set_payload_len(128)
-    ///     .set_crc_type(CrcType::Byte2)
-    ///     .set_whitening_enable(true);
-    ///
-    /// sg.set_packet_type(PacketType::Fsk)?;
-    /// sg.set_packet_params(&PKT_PARAMS)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_packet_params(&mut self, params: &GenericPacketParams) -> Result<(), Error> {
         self.write(params.as_slice())
     }
 
     /// Set the BPSK packet parameters.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{BpskPacketParams, PacketType};
-    ///
-    /// sg.set_packet_type(PacketType::Bpsk)?;
-    /// sg.set_bpsk_packet_params(&BpskPacketParams::new().set_payload_len(64))?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_bpsk_packet_params(&mut self, params: &BpskPacketParams) -> Result<(), Error> {
         self.write(params.as_slice())
     }
 
     /// Set the LoRa packet parameters.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{HeaderType, LoRaPacketParams, PacketType};
-    ///
-    /// const PKT_PARAMS: LoRaPacketParams = LoRaPacketParams::new()
-    ///     .set_preamble_len(5 * 8)
-    ///     .set_header_type(HeaderType::Fixed)
-    ///     .set_payload_len(64)
-    ///     .set_crc_en(true)
-    ///     .set_invert_iq(true);
-    ///
-    /// sg.set_packet_type(PacketType::LoRa)?;
-    /// sg.set_lora_packet_params(&PKT_PARAMS)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_lora_packet_params(&mut self, params: &LoRaPacketParams) -> Result<(), Error> {
         self.write(params.as_slice())
     }
@@ -1368,19 +1020,6 @@ where
     /// reception of a LoRa packet.
     ///
     /// Packet reception is started after `n` + 1 symbols are detected.
-    ///
-    /// # Example
-    ///
-    /// Start reception after a single LoRa word is detected
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    ///
-    /// // ... setup the radio for LoRa RX
-    ///
-    /// sg.set_lora_symb_timeout(0)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_lora_symb_timeout(&mut self, n: u8) -> Result<(), Error> {
         self.write(&[OpCode::SetLoRaSymbTimeout.into(), n])
     }
@@ -1399,14 +1038,6 @@ where
     /// will return reserved values.
     /// See this thread in the ST community for details: [link]
     ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::Status;
-    ///
-    /// let status: Status = sg.status()?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
-    ///
     /// [link]: https://community.st.com/s/question/0D53W00000hR9GQSA0/stm32wl55-getstatus-command-returns-reserved-cmdstatus
     pub fn status(&mut self) -> Result<Status, Error> {
         Ok(self.read_1(OpCode::GetStatus)?.into())
@@ -1415,80 +1046,18 @@ where
     /// Get the RX buffer status.
     ///
     /// The return tuple is (status, payload_length, buffer_pointer).
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{CmdStatus, Timeout};
-    ///
-    /// sg.set_rx(Timeout::DISABLED)?;
-    /// loop {
-    ///     let (status, len, ptr) = sg.rx_buffer_status()?;
-    ///
-    ///     if status.cmd() == Ok(CmdStatus::Avaliable) {
-    ///         let mut buf: [u8; 256] = [0; 256];
-    ///         let data: &mut [u8] = &mut buf[..usize::from(len)];
-    ///         sg.read_buffer(ptr, data)?;
-    ///         // ... do things with the data
-    ///         break;
-    ///     }
-    /// }
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
+
     pub fn rx_buffer_status(&mut self) -> Result<(Status, u8, u8), Error> {
         let data: [u8; 3] = self.read_n(OpCode::GetRxBufferStatus)?;
         Ok((data[0].into(), data[1], data[2]))
     }
 
     /// Returns information on the last received (G)FSK packet.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # use std::fmt::Write;
-    /// # let mut uart = String::new();
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{CmdStatus, Timeout};
-    ///
-    /// sg.set_rx(Timeout::DISABLED)?;
-    /// loop {
-    ///     let pkt_status = sg.fsk_packet_status()?;
-    ///
-    ///     if pkt_status.status().cmd() == Ok(CmdStatus::Avaliable) {
-    ///         let rssi = pkt_status.rssi_avg();
-    ///         writeln!(&mut uart, "Avg RSSI: {} dBm", rssi);
-    ///         break;
-    ///     }
-    /// }
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn fsk_packet_status(&mut self) -> Result<FskPacketStatus, Error> {
         Ok(FskPacketStatus::from(self.read_n(OpCode::GetPacketStatus)?))
     }
 
     /// Returns information on the last received LoRa packet.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # use std::fmt::Write;
-    /// # let mut uart = String::new();
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{CmdStatus, Timeout};
-    ///
-    /// sg.set_rx(Timeout::DISABLED)?;
-    /// loop {
-    ///     let pkt_status = sg.lora_packet_status()?;
-    ///
-    ///     if pkt_status.status().cmd() == Ok(CmdStatus::Avaliable) {
-    ///         let snr = pkt_status.snr_pkt();
-    ///         writeln!(&mut uart, "SNR: {} dB", snr);
-    ///         break;
-    ///     }
-    /// }
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn lora_packet_status(&mut self) -> Result<LoRaPacketStatus, Error> {
         Ok(LoRaPacketStatus::from(
             self.read_n(OpCode::GetPacketStatus)?,
@@ -1498,22 +1067,6 @@ where
     /// Get the instantaneous signal strength during packet reception.
     ///
     /// The units are in dbm.
-    ///
-    /// # Example
-    ///
-    /// Log the instantaneous signal strength to UART.
-    ///
-    /// ```no_run
-    /// # use std::fmt::Write;
-    /// # let mut uart = String::new();
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{CmdStatus, Timeout};
-    ///
-    /// sg.set_rx(Timeout::DISABLED)?;
-    /// let (_, rssi) = sg.rssi_inst()?;
-    /// writeln!(&mut uart, "RSSI: {} dBm", rssi);
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn rssi_inst(&mut self) -> Result<(Status, Ratio<i16>), Error> {
         let data: [u8; 2] = self.read_n(OpCode::GetRssiInst)?;
         let status: Status = data[0].into();
@@ -1523,54 +1076,19 @@ where
     }
 
     /// (G)FSK packet stats.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{FskStats, Stats};
-    ///
-    /// let stats: Stats<FskStats> = sg.fsk_stats()?;
-    /// // ... use stats
-    /// sg.reset_stats()?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn fsk_stats(&mut self) -> Result<Stats<FskStats>, Error> {
         let data: [u8; 7] = self.read_n(OpCode::GetStats)?;
         Ok(Stats::from_raw_fsk(data))
     }
 
     /// LoRa packet stats.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{LoRaStats, Stats};
-    ///
-    /// let stats: Stats<LoRaStats> = sg.lora_stats()?;
-    /// // ... use stats
-    /// sg.reset_stats()?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn lora_stats(&mut self) -> Result<Stats<LoRaStats>, Error> {
         let data: [u8; 7] = self.read_n(OpCode::GetStats)?;
         Ok(Stats::from_raw_lora(data))
     }
 
-    /// Reset the stats as reported in [`lora_stats`] and [`fsk_stats`].
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    ///
-    /// sg.reset_stats()?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
-    ///
-    /// [`lora_stats`]: crate::subghz::SubGhz::lora_stats
-    /// [`fsk_stats`]: crate::subghz::SubGhz::fsk_stats
+    /// Reset the stats as reported in [`lora_stats`](SubGhz::lora_stats) and
+    /// [`fsk_stats`](SubGhz::fsk_stats).
     pub fn reset_stats(&mut self) -> Result<(), Error> {
         const RESET_STATS: [u8; 7] = [0x00; 7];
         self.write(&RESET_STATS)
@@ -1585,49 +1103,11 @@ where
         + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     /// Set the interrupt configuration.
-    ///
-    /// # Example
-    ///
-    /// Enable TX and timeout interrupts.
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{CfgIrq, Irq};
-    ///
-    /// const IRQ_CFG: CfgIrq = CfgIrq::new()
-    ///     .irq_enable_all(Irq::TxDone)
-    ///     .irq_enable_all(Irq::Timeout);
-    /// sg.set_irq_cfg(&IRQ_CFG)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_irq_cfg(&mut self, cfg: &CfgIrq) -> Result<(), Error> {
         self.write(cfg.as_slice())
     }
 
     /// Get the IRQ status.
-    ///
-    /// # Example
-    ///
-    /// Wait for TX to complete or timeout.
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::Irq;
-    ///
-    /// loop {
-    ///     let (_, irq_status) = sg.irq_status()?;
-    ///     sg.clear_irq_status(irq_status)?;
-    ///     if irq_status & Irq::TxDone.mask() != 0 {
-    ///         // handle TX done
-    ///         break;
-    ///     }
-    ///     if irq_status & Irq::Timeout.mask() != 0 {
-    ///         // handle timeout
-    ///         break;
-    ///     }
-    /// }
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn irq_status(&mut self) -> Result<(Status, u16), Error> {
         let data: [u8; 3] = self.read_n(OpCode::GetIrqStatus)?;
         let irq_status: u16 = u16::from_be_bytes([data[1], data[2]]);
@@ -1635,21 +1115,6 @@ where
     }
 
     /// Clear the IRQ status.
-    ///
-    /// # Example
-    ///
-    /// Clear the [`TxDone`] and [`RxDone`] interrupts.
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::Irq;
-    ///
-    /// sg.clear_irq_status(Irq::TxDone.mask() | Irq::RxDone.mask())?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
-    ///
-    /// [`TxDone`]: crate::subghz::Irq::TxDone
-    /// [`RxDone`]: crate::subghz::Irq::RxDone
     pub fn clear_irq_status(&mut self, mask: u16) -> Result<(), Error> {
         self.write(&[OpCode::ClrIrqStatus as u8, (mask >> 8) as u8, mask as u8])
     }
@@ -1663,25 +1128,6 @@ where
         + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     /// Calibrate one or several blocks at any time when in standby mode.
-    ///
-    /// The blocks to calibrate are defined by `cal` argument.
-    /// When the calibration is ongoing, BUSY is set.
-    /// A falling edge on BUSY indicates the end of all enabled calibrations.
-    ///
-    /// This function will not poll for BUSY.
-    ///
-    /// # Example
-    ///
-    /// Calibrate the RC 13 MHz and PLL.
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{Calibrate, StandbyClk, SubGhz};
-    ///
-    /// sg.set_standby(StandbyClk::Rc)?;
-    /// sg.calibrate(Calibrate::Rc13M.mask() | Calibrate::Pll.mask())?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn calibrate(&mut self, cal: u8) -> Result<(), Error> {
         // bit 7 is reserved and must be kept at reset value.
         self.write(&[OpCode::Calibrate as u8, cal & 0x7F])
@@ -1690,86 +1136,22 @@ where
     /// Calibrate the image at the given frequencies.
     ///
     /// Requires the radio to be in standby mode.
-    ///
-    /// # Example
-    ///
-    /// Calibrate the image for the 430 - 440 MHz ISM band.
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{CalibrateImage, StandbyClk};
-    ///
-    /// sg.set_standby(StandbyClk::Rc)?;
-    /// sg.calibrate_image(CalibrateImage::ISM_430_440)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn calibrate_image(&mut self, cal: CalibrateImage) -> Result<(), Error> {
         self.write(&[OpCode::CalibrateImage as u8, cal.0, cal.1])
     }
 
     /// Set the radio power supply.
-    ///
-    /// # Examples
-    ///
-    /// Use the linear dropout regulator (LDO):
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::RegMode;
-    ///
-    /// sg.set_regulator_mode(RegMode::Ldo)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
-    ///
-    /// Use the switch mode power supply (SPMS):
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::RegMode;
-    ///
-    /// sg.set_regulator_mode(RegMode::Smps)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_regulator_mode(&mut self, reg_mode: RegMode) -> Result<(), Error> {
         self.write(&[OpCode::SetRegulatorMode as u8, reg_mode as u8])
     }
 
     /// Get the radio operational errors.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::OpError;
-    ///
-    /// let (status, error_mask) = sg.op_error()?;
-    /// if error_mask & OpError::PllLockError.mask() != 0 {
-    ///     // ... handle PLL lock error
-    /// }
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn op_error(&mut self) -> Result<(Status, u16), Error> {
         let data: [u8; 3] = self.read_n(OpCode::GetError)?;
         Ok((data[0].into(), u16::from_le_bytes([data[1], data[2]])))
     }
 
-    /// Clear all errors as reported by [`op_error`].
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::OpError;
-    ///
-    /// let (status, error_mask) = sg.op_error()?;
-    /// // ignore all errors
-    /// if error_mask != 0 {
-    ///     sg.clear_error()?;
-    /// }
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
-    ///
-    /// [`op_error`]: crate::subghz::SubGhz::op_error
+    /// Clear all errors as reported by [`op_error`](SubGhz::op_error).
     pub fn clear_error(&mut self) -> Result<(), Error> {
         self.write(&[OpCode::ClrError as u8, 0x00])
     }
@@ -1783,21 +1165,6 @@ where
         + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     /// Set the TCXO trim and HSE32 ready timeout.
-    ///
-    /// # Example
-    ///
-    /// Setup the TCXO with 1.7V trim and a 10ms timeout.
-    ///
-    /// ```no_run
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-    /// use stm32wl_hal::subghz::{TcxoMode, TcxoTrim, Timeout};
-    ///
-    /// const TCXO_MODE: TcxoMode = TcxoMode::new()
-    ///     .set_txco_trim(TcxoTrim::Volts1pt7)
-    ///     .set_timeout(Timeout::from_millis_sat(10));
-    /// sg.set_tcxo_mode(&TCXO_MODE)?;
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
-    /// ```
     pub fn set_tcxo_mode(&mut self, tcxo_mode: &TcxoMode) -> Result<(), Error> {
         self.write(tcxo_mode.as_slice())
     }

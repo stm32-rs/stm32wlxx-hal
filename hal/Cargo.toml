@@ -46,7 +46,8 @@ version = "0.2"
 default-features = false
 
 [dependencies.stm32wl]
-git = "https://github.com/jorgeig-space/stm32wl.git"
+git = "https://github.com/newAM/stm32wl-rs.git"
+rev = "a1aa8eaf9a3d771ccc1752ffff0fa69bf063f009"
 
 [dependencies.cortex-m-rt]
 version = "0.6"

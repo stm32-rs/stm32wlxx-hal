@@ -50,7 +50,7 @@ impl SysClkSrc {
 
 const LPRUN_RANGES: [LprunRange; 4] = [
     // STLink drops the connection when switching to 100k
-    // works with a different probe
+    // with the default JTAG clock frequency set by probe-run
     // LprunRange::Range100k,
     LprunRange::Range200k,
     LprunRange::Range400k,
@@ -63,7 +63,7 @@ const CLKS: [SysClkSrc; 14] = [
     SysClkSrc::Hse(Vos::V1_0),
     SysClkSrc::Hse(Vos::V1_2),
     // STLink drops the connection when switching to 100k
-    // works with a different probe
+    // with the default JTAG clock frequency set by probe-run
     // SysClkSrc::Msi(MsiRange::Range100k),
     SysClkSrc::Msi(MsiRange::Range200k),
     SysClkSrc::Msi(MsiRange::Range400k),

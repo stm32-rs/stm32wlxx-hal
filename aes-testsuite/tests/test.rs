@@ -6,6 +6,7 @@
 #![no_std]
 #![no_main]
 
+use core::{convert::TryInto, mem::size_of};
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use hex_literal::hex;
@@ -1488,6 +1489,19 @@ where
     end.wrapping_sub(start)
 }
 
+fn align_bytes(bytes: &[u8], buf: &mut [u32]) -> usize {
+    const CHUNK_SIZE: usize = size_of::<u32>();
+    defmt::assert_eq!(bytes.len() % CHUNK_SIZE, 0);
+    defmt::assert!(buf.len() * CHUNK_SIZE >= bytes.len());
+
+    bytes
+        .chunks_exact(CHUNK_SIZE)
+        .enumerate()
+        .for_each(|(idx, chunk)| buf[idx] = u32::from_be_bytes(unwrap!(chunk.try_into().ok())));
+
+    bytes.len() / CHUNK_SIZE
+}
+
 #[defmt_test::tests]
 mod tests {
     use super::*;
@@ -1641,6 +1655,39 @@ mod tests {
     }
 
     #[test]
+    fn encrypt_gcm_inplace_u32_128(aes: &mut Aes) {
+        let mut total_elapsed: u32 = 0;
+
+        for gcm in GCM_128.iter() {
+            let mut tag: [u32; 4] = [0; 4];
+            let mut buf: [u32; 4] = [0; 4];
+            let mut aad: [u32; 4] = [0; 4];
+            let mut expected: [u32; 4] = [0; 4];
+            let pt_len: usize = align_bytes(gcm.pt, &mut buf);
+            let aad_len: usize = align_bytes(gcm.aad, &mut aad);
+            align_bytes(gcm.ct, &mut expected);
+
+            total_elapsed += stopwatch(|| {
+                unwrap!(aes.encrypt_gcm_inplace_u32(
+                    &gcm.key,
+                    &gcm.iv,
+                    &aad[..aad_len],
+                    &mut buf[..pt_len],
+                    &mut tag
+                ))
+            });
+
+            defmt::assert_eq!(tag, gcm.tag);
+            defmt::assert_eq!(buf, expected);
+        }
+
+        defmt::info!(
+            "Approximate cycles per 128-bit encrypt: {}",
+            total_elapsed / NUM_GCM_128
+        );
+    }
+
+    #[test]
     fn encrypt_gcm_inplace_256(aes: &mut Aes) {
         let mut total_elapsed: u32 = 0;
 
@@ -1665,6 +1712,38 @@ mod tests {
 
             defmt::assert_eq!(tag, gcm.tag);
             defmt::assert_eq!(&buf[..gcm.pt.len()], gcm.ct);
+        }
+
+        defmt::info!(
+            "Approximate cycles per 256-bit encrypt: {}",
+            total_elapsed / NUM_GCM_256
+        );
+    }
+    #[test]
+    fn encrypt_gcm_inplace_u32_256(aes: &mut Aes) {
+        let mut total_elapsed: u32 = 0;
+
+        for gcm in GCM_256.iter() {
+            let mut tag: [u32; 4] = [0; 4];
+            let mut buf: [u32; 4] = [0; 4];
+            let mut aad: [u32; 4] = [0; 4];
+            let mut expected: [u32; 4] = [0; 4];
+            let pt_len: usize = align_bytes(gcm.pt, &mut buf);
+            let aad_len: usize = align_bytes(gcm.aad, &mut aad);
+            align_bytes(gcm.ct, &mut expected);
+
+            total_elapsed += stopwatch(|| {
+                unwrap!(aes.encrypt_gcm_inplace_u32(
+                    &gcm.key,
+                    &gcm.iv,
+                    &aad[..aad_len],
+                    &mut buf[..pt_len],
+                    &mut tag
+                ))
+            });
+
+            defmt::assert_eq!(tag, gcm.tag);
+            defmt::assert_eq!(buf, expected);
         }
 
         defmt::info!(
@@ -1805,6 +1884,39 @@ mod tests {
     }
 
     #[test]
+    fn decrypt_gcm_inplace_128_u32(aes: &mut Aes) {
+        let mut total_elapsed: u32 = 0;
+
+        for gcm in GCM_128.iter() {
+            let mut tag: [u32; 4] = [0; 4];
+            let mut buf: [u32; 4] = [0; 4];
+            let mut aad: [u32; 4] = [0; 4];
+            let mut expected: [u32; 4] = [0; 4];
+            let ct_len: usize = align_bytes(gcm.ct, &mut buf);
+            let aad_len: usize = align_bytes(gcm.aad, &mut aad);
+            align_bytes(gcm.pt, &mut expected);
+
+            total_elapsed += stopwatch(|| {
+                unwrap!(aes.decrypt_gcm_inplace_u32(
+                    &gcm.key,
+                    &gcm.iv,
+                    &aad[..aad_len],
+                    &mut buf[..ct_len],
+                    &mut tag
+                ))
+            });
+
+            defmt::assert_eq!(tag, gcm.tag);
+            defmt::assert_eq!(buf, expected);
+        }
+
+        defmt::info!(
+            "Approximate cycles per 128-bit decrypt: {}",
+            total_elapsed / NUM_GCM_128
+        );
+    }
+
+    #[test]
     fn decrypt_gcm_inplace_256(aes: &mut Aes) {
         let mut total_elapsed: u32 = 0;
 
@@ -1829,6 +1941,39 @@ mod tests {
 
             defmt::assert_eq!(tag, gcm.tag);
             defmt::assert_eq!(&buf[..gcm.pt.len()], gcm.pt);
+        }
+
+        defmt::info!(
+            "Approximate cycles per 256-bit decrypt: {}",
+            total_elapsed / NUM_GCM_256
+        );
+    }
+
+    #[test]
+    fn decrypt_gcm_inplace_256_u32(aes: &mut Aes) {
+        let mut total_elapsed: u32 = 0;
+
+        for gcm in GCM_256.iter() {
+            let mut tag: [u32; 4] = [0; 4];
+            let mut buf: [u32; 4] = [0; 4];
+            let mut aad: [u32; 4] = [0; 4];
+            let mut expected: [u32; 4] = [0; 4];
+            let ct_len: usize = align_bytes(gcm.ct, &mut buf);
+            let aad_len: usize = align_bytes(gcm.aad, &mut aad);
+            align_bytes(gcm.pt, &mut expected);
+
+            total_elapsed += stopwatch(|| {
+                unwrap!(aes.decrypt_gcm_inplace_u32(
+                    &gcm.key,
+                    &gcm.iv,
+                    &aad[..aad_len],
+                    &mut buf[..ct_len],
+                    &mut tag
+                ))
+            });
+
+            defmt::assert_eq!(tag, gcm.tag);
+            defmt::assert_eq!(buf, expected);
         }
 
         defmt::info!(

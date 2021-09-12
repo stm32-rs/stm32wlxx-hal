@@ -314,6 +314,7 @@ dependencies = [
  "defmt",
  "defmt-rtt",
  "defmt-test",
+ "itertools",
  "nb 1.0.0",
  "panic-probe",
  "stm32wl-hal",

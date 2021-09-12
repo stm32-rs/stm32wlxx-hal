@@ -169,6 +169,9 @@ impl Rtc {
         self.rtc.icsr.modify(|_, w| w.init().init_mode());
         while self.rtc.icsr.read().initf().is_not_allowed() {}
 
+        // enable shadow register bypass
+        self.rtc.cr.modify(|_, w| w.bypshad().set_bit());
+
         self.rtc
             .prer
             .write(|w| w.prediv_s().bits(s_pre).prediv_a().bits(a_pre));
@@ -333,7 +336,7 @@ impl Rtc {
             let dr = self.rtc.dr.read();
             let tr = self.rtc.tr.read();
 
-            // If an RTCCLK edge occurs during read we may see inconsistent values
+            // If an RTCCLK edge occurs during a read we may see inconsistent values
             // so read ssr again and see if it has changed
             // see RM0453 Rev 2 32.3.10 page 1002 "Reading the calendar"
             let ss_after: u32 = self.rtc.ssr.read().ss().bits();

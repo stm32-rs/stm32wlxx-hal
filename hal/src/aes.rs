@@ -233,7 +233,7 @@ impl Aes {
         pac::NVIC::unmask(pac::Interrupt::AES)
     }
 
-    fn set_key(&mut self, key: &[u32]) -> KeySize {
+    fn set_key(&self, key: &[u32]) -> KeySize {
         match key.len() {
             4 => {
                 self.aes.cr.write(|w| w.en().disabled().keysize().bits128());
@@ -274,17 +274,17 @@ impl Aes {
         }
     }
 
-    fn set_din(&mut self, din: &[u32; 4]) {
+    fn set_din(&self, din: &[u32; 4]) {
         din.iter()
             .for_each(|dw| self.aes.dinr.write(|w| w.din().bits(*dw)))
     }
 
-    fn dout(&mut self, buf: &mut [u32; 4]) {
+    fn dout(&self, buf: &mut [u32; 4]) {
         buf.iter_mut()
             .for_each(|dw| *dw = self.aes.doutr.read().bits());
     }
 
-    fn set_din_slice(&mut self, din: &[u32]) {
+    fn set_din_slice(&self, din: &[u32]) {
         (0..4).for_each(|idx| {
             self.aes
                 .dinr
@@ -292,7 +292,7 @@ impl Aes {
         });
     }
 
-    fn dout_slice(&mut self, buf: &mut [u32]) {
+    fn dout_slice(&self, buf: &mut [u32]) {
         (0..4).for_each(|idx| {
             let dout: u32 = self.aes.doutr.read().bits();
             if let Some(dw) = buf.get_mut(idx) {
@@ -302,7 +302,7 @@ impl Aes {
     }
 
     // expensive copy for the sake of allowing unaligned u8 data
-    fn set_din_block(&mut self, block: &[u8]) {
+    fn set_din_block(&self, block: &[u8]) {
         for chunk in block.chunks(4) {
             let din: u32 = (chunk.get(0).copied().unwrap_or(0) as u32) << 24
                 | (chunk.get(1).copied().unwrap_or(0) as u32) << 16
@@ -319,7 +319,7 @@ impl Aes {
     }
 
     // expensive copy for the sake of allowing unaligned u8 data
-    fn dout_block(&mut self, block: &mut [u8]) {
+    fn dout_block(&self, block: &mut [u8]) {
         for chunk in block.chunks_mut(4) {
             let dout: u32 = self.aes.doutr.read().bits();
             if let Some(byte) = chunk.get_mut(0) {
@@ -343,7 +343,7 @@ impl Aes {
     }
 
     fn gcm_init_phase<const MODE: u8>(
-        &mut self,
+        &self,
         key: &[u32],
         iv: &[u32; 3],
     ) -> Result<KeySize, Error> {
@@ -379,7 +379,7 @@ impl Aes {
     }
 
     fn gcm_final_phase<const MODE: u8>(
-        &mut self,
+        &self,
         keysize: KeySize,
         aad_len: usize,
         buf_len: usize,
@@ -424,7 +424,7 @@ impl Aes {
     }
 
     fn gcm_inplace<const MODE: u8>(
-        &mut self,
+        &self,
         key: &[u32],
         iv: &[u32; 3],
         aad: &[u8],
@@ -491,7 +491,7 @@ impl Aes {
     }
 
     fn gcm_inplace_u32<const MODE: u8>(
-        &mut self,
+        &self,
         key: &[u32],
         iv: &[u32; 3],
         aad: &[u32],
@@ -585,7 +585,7 @@ impl Aes {
     /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
     pub fn encrypt_ecb(
-        &mut self,
+        &self,
         key: &[u32],
         plaintext: &[u32; 4],
         ciphertext: &mut [u32; 4],
@@ -643,7 +643,7 @@ impl Aes {
     /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
     pub fn encrypt_ecb_inplace(
-        &mut self,
+        &self,
         key: &[u32],
         plaintext: &mut [u32; 4],
     ) -> Result<(), Error> {
@@ -711,7 +711,7 @@ impl Aes {
     /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
     pub fn encrypt_gcm_inplace(
-        &mut self,
+        &self,
         key: &[u32],
         iv: &[u32; 3],
         aad: &[u8],
@@ -758,7 +758,7 @@ impl Aes {
     /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
     pub fn encrypt_gcm_inplace_u32(
-        &mut self,
+        &self,
         key: &[u32],
         iv: &[u32; 3],
         aad: &[u32],
@@ -791,7 +791,7 @@ impl Aes {
     /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
     pub fn decrypt_ecb(
-        &mut self,
+        &self,
         key: &[u32],
         ciphertext: &[u32; 4],
         plaintext: &mut [u32; 4],
@@ -849,7 +849,7 @@ impl Aes {
     /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
     pub fn decrypt_ecb_inplace(
-        &mut self,
+        &self,
         key: &[u32],
         ciphertext: &mut [u32; 4],
     ) -> Result<(), Error> {
@@ -911,7 +911,7 @@ impl Aes {
     /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
     pub fn decrypt_gcm_inplace(
-        &mut self,
+        &self,
         key: &[u32],
         iv: &[u32; 3],
         aad: &[u8],
@@ -953,7 +953,7 @@ impl Aes {
     /// # Ok::<(), stm32wl_hal::aes::Error>(())
     /// ```
     pub fn decrypt_gcm_inplace_u32(
-        &mut self,
+        &self,
         key: &[u32],
         iv: &[u32; 3],
         aad: &[u32],

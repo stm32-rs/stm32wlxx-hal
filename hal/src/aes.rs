@@ -61,6 +61,22 @@ impl From<Mode> for u8 {
     }
 }
 
+#[repr(u8)]
+#[allow(dead_code)]
+#[derive(Clone, Copy, Debug)]
+pub enum SwapMode {
+    NoSwap = 0b00,
+    HalfWordSwap = 0b01,
+    ByteSwap = 0b10,
+    BitSwap = 0b11,
+}
+
+impl SwapMode {
+    pub const fn bits(self) -> u8 {
+        self as u8
+    }
+}
+
 /// AES errors.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -77,6 +93,7 @@ pub enum Error {
 #[derive(Debug)]
 pub struct Aes {
     aes: pac::AES,
+    swap_mode: SwapMode,
 }
 
 impl Aes {
@@ -97,7 +114,10 @@ impl Aes {
         Self::enable_clock(rcc);
         unsafe { Self::pulse_reset(rcc) };
 
-        Aes { aes }
+        Aes { 
+            aes,
+            swap_mode: SwapMode::NoSwap,
+        }
     }
 
     /// Free the AES peripheral from the driver.
@@ -211,7 +231,10 @@ impl Aes {
     #[inline]
     pub unsafe fn steal() -> Aes {
         let dp: pac::Peripherals = pac::Peripherals::steal();
-        Aes { aes: dp.AES }
+        Aes { 
+            aes: dp.AES, 
+            swap_mode: SwapMode::NoSwap 
+        }
     }
 
     /// Unmask the AES IRQ in the NVIC.
@@ -352,6 +375,8 @@ impl Aes {
         const CHMOD10: u8 = ALGO.chmod10();
 
         let keysize: KeySize = self.set_key(key);
+        let swap = self.swap_mode.bits();
+
         self.aes.ivr0.write(|w| w.ivi().bits(2));
         self.aes.ivr1.write(|w| w.ivi().bits(iv[2]));
         self.aes.ivr2.write(|w| w.ivi().bits(iv[1]));
@@ -360,7 +385,7 @@ impl Aes {
         self.aes.cr.write(|w|
             w
                 .en().enabled()
-                .datatype().none()
+                .datatype().bits(swap)
                 .mode().bits(MODE)
                 .chmod2().bit(CHMOD2)
                 .chmod().bits(CHMOD10)
@@ -388,12 +413,13 @@ impl Aes {
         const ALGO: Algorithm = Algorithm::Gcm;
         const CHMOD2: bool = ALGO.chmod2();
         const CHMOD10: u8 = ALGO.chmod10();
+        let swap = self.swap_mode.bits();
 
         #[rustfmt::skip]
         self.aes.cr.write(|w|
             w
                 .en().enabled()
-                .datatype().none()
+                .datatype().bits(swap)
                 .mode().bits(MODE)
                 .chmod2().bit(CHMOD2)
                 .chmod().bits(CHMOD10)
@@ -434,6 +460,7 @@ impl Aes {
         const ALGO: Algorithm = Algorithm::Gcm;
         const CHMOD2: bool = ALGO.chmod2();
         const CHMOD10: u8 = ALGO.chmod10();
+        let swap = self.swap_mode.bits();
 
         // init phase
         let keysize: KeySize = self.gcm_init_phase::<MODE>(key, iv)?;
@@ -444,7 +471,7 @@ impl Aes {
             self.aes.cr.write(|w|
                 w
                     .en().enabled()
-                    .datatype().none()
+                    .datatype().bits(swap)
                     .mode().bits(MODE)
                     .chmod2().bit(CHMOD2)
                     .chmod().bits(CHMOD10)
@@ -468,7 +495,7 @@ impl Aes {
             self.aes.cr.write(|w|
                 w
                     .en().enabled()
-                    .datatype().none()
+                    .datatype().bits(swap)
                     .mode().bits(MODE)
                     .chmod2().bit(CHMOD2)
                     .chmod().bits(CHMOD10)
@@ -501,6 +528,7 @@ impl Aes {
         const ALGO: Algorithm = Algorithm::Gcm;
         const CHMOD2: bool = ALGO.chmod2();
         const CHMOD10: u8 = ALGO.chmod10();
+        let swap = self.swap_mode.bits();
 
         // init phase
         let keysize: KeySize = self.gcm_init_phase::<MODE>(key, iv)?;
@@ -511,7 +539,7 @@ impl Aes {
             self.aes.cr.write(|w|
                 w
                     .en().enabled()
-                    .datatype().none()
+                    .datatype().bits(swap)
                     .mode().bits(MODE)
                     .chmod2().bit(CHMOD2)
                     .chmod().bits(CHMOD10)
@@ -535,7 +563,7 @@ impl Aes {
             self.aes.cr.write(|w|
                 w
                     .en().enabled()
-                    .datatype().none()
+                    .datatype().bits(swap)
                     .mode().bits(MODE)
                     .chmod2().bit(CHMOD2)
                     .chmod().bits(CHMOD10)
@@ -562,6 +590,13 @@ impl Aes {
             tag,
         )
     }
+
+    /// Set the way data is read from input and output registers according to section
+    /// 23.4.13 (AES Data register and data swapping) of Reference Manual
+    pub fn set_dataswap(&mut self, mode: SwapMode) {
+        self.swap_mode = mode;
+    }
+    
 
     /// Encrypt using the electronic codebook chaining (ECB) algorithm.
     ///
@@ -596,12 +631,13 @@ impl Aes {
         const MODE: u8 = Mode::Encryption.bits();
 
         let keysize: KeySize = self.set_key(key);
+        let swap = self.swap_mode.bits();
 
         #[rustfmt::skip]
         self.aes.cr.write(|w|
             w
                 .en().enabled()
-                .datatype().none()
+                .datatype().bits(swap)
                 .mode().bits(MODE)
                 .chmod2().bit(CHMOD2)
                 .chmod().bits(CHMOD10)
@@ -651,14 +687,15 @@ impl Aes {
         const CHMOD2: bool = ALGO.chmod2();
         const CHMOD10: u8 = ALGO.chmod10();
         const MODE: u8 = Mode::Encryption.bits();
-
+        
         let keysize: KeySize = self.set_key(key);
+        let swap = self.swap_mode.bits();
 
         #[rustfmt::skip]
         self.aes.cr.write(|w|
             w
                 .en().enabled()
-                .datatype().none()
+                .datatype().bits(swap)
                 .mode().bits(MODE)
                 .chmod2().bit(CHMOD2)
                 .chmod().bits(CHMOD10)
@@ -802,12 +839,13 @@ impl Aes {
         const MODE: u8 = Mode::KeyDerivationDecryption.bits();
 
         let keysize: KeySize = self.set_key(key);
+        let swap = self.swap_mode.bits();
 
         #[rustfmt::skip]
         self.aes.cr.write(|w|
             w
                 .en().enabled()
-                .datatype().none()
+                .datatype().bits(swap)
                 .mode().bits(MODE)
                 .chmod2().bit(CHMOD2)
                 .chmod().bits(CHMOD10)
@@ -858,12 +896,13 @@ impl Aes {
         const CHMOD10: u8 = ALGO.chmod10();
         const MODE: u8 = Mode::KeyDerivationDecryption.bits();
         let keysize: KeySize = self.set_key(key);
+        let swap = self.swap_mode.bits();
 
         #[rustfmt::skip]
         self.aes.cr.write(|w|
             w
                 .en().enabled()
-                .datatype().none()
+                .datatype().bits(swap)
                 .mode().bits(MODE)
                 .chmod2().bit(CHMOD2)
                 .chmod().bits(CHMOD10)

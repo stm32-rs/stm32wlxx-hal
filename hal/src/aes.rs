@@ -61,17 +61,23 @@ impl From<Mode> for u8 {
     }
 }
 
+/// Data swapping mode
+#[derive(Clone, Copy, Debug)]
 #[repr(u8)]
 #[allow(dead_code)]
-#[derive(Clone, Copy, Debug)]
 pub enum SwapMode {
+    /// No swapping
     NoSwap = 0b00,
+    /// Swap half words on each 32-bit word
     HalfWordSwap = 0b01,
+    /// Swap bytes on each 32-bit word
     ByteSwap = 0b10,
+    /// Swap bits on each 32-bit word
     BitSwap = 0b11,
 }
 
 impl SwapMode {
+    /// Return the bit value for the DATATYPE field in the CR register
     pub const fn bits(self) -> u8 {
         self as u8
     }

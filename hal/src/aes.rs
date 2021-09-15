@@ -114,7 +114,7 @@ impl Aes {
         Self::enable_clock(rcc);
         unsafe { Self::pulse_reset(rcc) };
 
-        Aes { 
+        Aes {
             aes,
             swap_mode: SwapMode::NoSwap,
         }
@@ -231,9 +231,9 @@ impl Aes {
     #[inline]
     pub unsafe fn steal() -> Aes {
         let dp: pac::Peripherals = pac::Peripherals::steal();
-        Aes { 
-            aes: dp.AES, 
-            swap_mode: SwapMode::NoSwap 
+        Aes {
+            aes: dp.AES,
+            swap_mode: SwapMode::NoSwap,
         }
     }
 
@@ -596,7 +596,6 @@ impl Aes {
     pub fn set_dataswap(&mut self, mode: SwapMode) {
         self.swap_mode = mode;
     }
-    
 
     /// Encrypt using the electronic codebook chaining (ECB) algorithm.
     ///
@@ -687,7 +686,7 @@ impl Aes {
         const CHMOD2: bool = ALGO.chmod2();
         const CHMOD10: u8 = ALGO.chmod10();
         const MODE: u8 = Mode::Encryption.bits();
-        
+
         let keysize: KeySize = self.set_key(key);
         let swap = self.swap_mode.bits();
 

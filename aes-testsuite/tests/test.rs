@@ -11,7 +11,12 @@ use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use hex_literal::hex;
 use panic_probe as _;
-use stm32wl_hal::{aes::Aes, cortex_m::peripheral::DWT, pac, rcc, util::reset_cycle_count};
+use stm32wl_hal::{
+    aes::{Aes, SwapMode},
+    cortex_m::peripheral::DWT,
+    pac, rcc,
+    util::reset_cycle_count,
+};
 
 pub const ECB_PT_CT_128: [([u32; 4], [u32; 4]); 7] = [
     (
@@ -1502,6 +1507,45 @@ fn align_bytes(bytes: &[u8], buf: &mut [u32]) -> usize {
     bytes.len() / CHUNK_SIZE
 }
 
+fn half_word_swap<const N: usize>(input: [u32; N]) -> [u32; N] {
+    let mut buf: [u32; N] = [0; N];
+    for idx in 0..N {
+        buf[idx] = (input[idx] & 0x0000_FFFF) << 16 | (input[idx] & 0xFFFF_0000) >> 16;
+    }
+    buf
+}
+
+fn byte_swap<const N: usize>(input: [u32; N]) -> [u32; N] {
+    let mut buf: [u32; N] = [0; N];
+    for idx in 0..N {
+        buf[idx] = input[idx].swap_bytes();
+    }
+    buf
+}
+
+fn bit_swap<const N: usize>(input: [u32; N]) -> [u32; N] {
+    let mut buf: [u32; N] = [0; N];
+    for idx in 0..N {
+        buf[idx] = {
+            let mut v: u32 = input[idx];
+            let mut r: u32 = input[idx];
+
+            let mut s: usize = 8 * core::mem::size_of::<u32>() - 1;
+
+            v >>= 1;
+            while v != 0 {
+                r <<= 1;
+                r |= v & 1;
+                v >>= 1;
+                s -= 1;
+            }
+
+            r << s
+        };
+    }
+    buf
+}
+
 #[defmt_test::tests]
 mod tests {
     use super::*;
@@ -2065,5 +2109,44 @@ mod tests {
 
             defmt::assert_eq!(encrypt_tag, decrypt_tag);
         }
+    }
+
+    #[test]
+    fn ecb_half_word_swap(aes: &mut Aes) {
+        let pt: [u32; 4] = half_word_swap(ECB_PT_CT_128[0].0);
+        let ct: [u32; 4] = half_word_swap(ECB_PT_CT_128[0].1);
+
+        aes.set_dataswap(SwapMode::HALFWORD);
+
+        let mut output_ciphertext: [u32; 4] = [0; 4];
+        unwrap!(aes.encrypt_ecb(&ZERO_16B, &pt, &mut output_ciphertext));
+
+        defmt::assert_eq!(output_ciphertext, ct);
+    }
+
+    #[test]
+    fn ecb_byte_swap(aes: &mut Aes) {
+        let pt: [u32; 4] = byte_swap(ECB_PT_CT_128[0].0);
+        let ct: [u32; 4] = byte_swap(ECB_PT_CT_128[0].1);
+
+        aes.set_dataswap(SwapMode::BYTE);
+
+        let mut output_ciphertext: [u32; 4] = [0; 4];
+        unwrap!(aes.encrypt_ecb(&ZERO_16B, &pt, &mut output_ciphertext));
+
+        defmt::assert_eq!(output_ciphertext, ct);
+    }
+
+    #[test]
+    fn ecb_bit_swap(aes: &mut Aes) {
+        let pt: [u32; 4] = bit_swap(ECB_PT_CT_128[0].0);
+        let ct: [u32; 4] = bit_swap(ECB_PT_CT_128[0].1);
+
+        aes.set_dataswap(SwapMode::BIT);
+
+        let mut output_ciphertext: [u32; 4] = [0; 4];
+        unwrap!(aes.encrypt_ecb(&ZERO_16B, &pt, &mut output_ciphertext));
+
+        defmt::assert_eq!(output_ciphertext, ct);
     }
 }

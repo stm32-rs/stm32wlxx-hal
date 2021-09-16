@@ -125,4 +125,4 @@ $ cargo test -p subghz-testsuite --target thumbv7em-none-eabi -- --probe 0016003
 [newAM/probe-run]: https://github.com/newAM/probe-run
 [probe-run]: https://github.com/knurling-rs/probe-run
 [rustup]: https://rustup.rs/
-[#74]: https://github.com/newAM/stm32wl-hal
+[#74]: https://github.com/newAM/stm32wl-hal/issues/74

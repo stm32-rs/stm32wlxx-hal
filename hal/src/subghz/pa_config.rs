@@ -1,4 +1,4 @@
-/// Power amplifier configuration paramters.
+/// Power amplifier configuration parameters.
 ///
 /// Argument of [`set_pa_config`].
 ///

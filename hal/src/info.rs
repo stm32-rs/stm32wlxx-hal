@@ -1,4 +1,4 @@
-//! Device eletronic signature
+//! Device electronic signature
 
 use core::{
     convert::{TryFrom, TryInto},

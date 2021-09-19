@@ -18,7 +18,7 @@ impl Cr {
 
     /// Reset value + timer disabled.
     ///
-    /// This is eqivalent to the reset value, it is provided to make the code
+    /// This is equivalent to the reset value, it is provided to make the code
     /// more expressive.
     ///
     /// # Example

@@ -14,7 +14,7 @@ pub struct ValueError<T> {
 impl<T> ValueError<T> {
     /// Create a new `ValueError` for a value that exceeded an upper bound.
     ///
-    /// Unfortunately panic is not avaliable in `const fn`, so there are no
+    /// Unfortunately panic is not available in `const fn`, so there are no
     /// guarantees on the value being greater than the limit.
     ///
     /// # Example
@@ -36,7 +36,7 @@ impl<T> ValueError<T> {
 
     /// Create a new `ValueError` for a value that exceeded a lower bound.
     ///
-    /// Unfortunately panic is not avaliable in `const fn`, so there are no
+    /// Unfortunately panic is not available in `const fn`, so there are no
     /// guarantees on the value being less than the limit.
     ///
     /// # Example

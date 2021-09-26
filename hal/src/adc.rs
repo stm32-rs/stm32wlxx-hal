@@ -110,7 +110,7 @@ pub mod irq {
 
 /// Internal voltage reference ADC calibration
 ///
-/// This is raw ADC data aquired at 30 °C (± 5 °C).
+/// This is raw ADC data acquired at 30 °C (± 5 °C).
 ///
 /// V<sub>DDA</sub> = V<sub>REF+</sub> = 3.3 V (± 10mV)
 pub fn vref_cal() -> u16 {
@@ -350,7 +350,7 @@ pub enum Ch {
     /// Battery voltage divided by 3.
     Vbat = 14,
     // 15, 16 are reserved
-    /// Digital to analog coverter output.
+    /// Digital to analog converter output.
     ///
     /// The DAC outputs to this internal pin only when configured to output to
     /// chip peripherals.
@@ -829,7 +829,7 @@ impl Adc {
     /// Configure the channel sequencer.
     ///
     /// This is advanced ADC usage, most of the time you will want to use a
-    /// one of the avaliable sample methods that will configure this.
+    /// one of the available sample methods that will configure this.
     ///
     /// * [`pin`](Self::pin)
     /// * [`temperature`](Self::temperature)
@@ -876,7 +876,7 @@ impl Adc {
     /// Start an ADC conversion.
     ///
     /// This is advanced ADC usage, most of the time you will want to use a
-    /// one of the avaliable sample methods that will configure this.
+    /// one of the available sample methods that will configure this.
     ///
     /// * [`pin`](Self::pin)
     /// * [`temperature`](Self::temperature)
@@ -911,7 +911,7 @@ impl Adc {
     /// Read the ADC conversion data.
     ///
     /// This is advanced ADC usage, most of the time you will want to use a
-    /// one of the avaliable sample methods.
+    /// one of the available sample methods.
     ///
     /// * [`pin`](Self::pin)
     /// * [`temperature`](Self::temperature)
@@ -1016,7 +1016,7 @@ impl Adc {
         self.adc.ccr.read().tsen().is_enabled()
     }
 
-    /// Get the junction jemperature.
+    /// Get the junction temperature.
     ///
     /// # Panics
     ///
@@ -1574,7 +1574,7 @@ impl Adc {
     /// disabled.
     ///
     /// You **MUST** wait [`T_ADCVREG_SETUP`] before the voltage regulator
-    /// output is avaliable.  This delay is not performed for you.
+    /// output is available.  This delay is not performed for you.
     ///
     /// # Example
     ///

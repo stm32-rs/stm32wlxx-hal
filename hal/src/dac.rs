@@ -11,7 +11,7 @@ use pac::dac::mcr::MODE1_A;
 /// Some modes may also connect to the chip peripherals in addition to the
 /// A10 output pin.
 ///
-/// The output buffer can be anble to allow a high drive capability.
+/// The output buffer can be enabled to allow a high drive capability.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[repr(u8)]
 pub enum ModePin {
@@ -213,7 +213,7 @@ impl Dac {
     /// 2. You cannot use the DAC while the clock is disabled.
     /// 3. You are responsible for re-enabling the clock before resuming use
     ///    of the DAC.
-    /// 4. You are reponsible for setting up anything that may have lost state
+    /// 4. You are responsible for setting up anything that may have lost state
     ///    while the clock was disabled.
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.apb1enr1.modify(|_, w| w.dac1en().disabled());
@@ -224,7 +224,7 @@ impl Dac {
     /// # Safety
     ///
     /// 1. The DAC must not be in-use.
-    /// 2. You are reponsible for setting up the DAC after a reset.
+    /// 2. You are responsible for setting up the DAC after a reset.
     /// 3. After reset the DAC will be using pin A10, if you do not have
     ///    ownership of this pin switch the DAC to a non-pin mode with
     ///    [`set_mode_chip`](Dac::set_mode_chip).
@@ -297,7 +297,7 @@ impl Dac {
     /// Set the DAC mode to output to on-chip peripherals.
     ///
     /// If A10 is currently in-use by the DAC this method returns the A10 pin.
-    /// This method is the only way to retrieve A10 if the DAC has ownerhsip
+    /// This method is the only way to retrieve A10 if the DAC has ownership
     /// of the pin.
     ///
     /// # Panics

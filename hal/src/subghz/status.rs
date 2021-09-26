@@ -1,6 +1,6 @@
 /// sub-GHz radio operating mode.
 ///
-/// See `Get_Status` under section 5.8.5 "Communcation status information commands"
+/// See `Get_Status` under section 5.8.5 "Communication status information commands"
 /// in the reference manual.
 ///
 /// This is returned by [`Status::mode`].

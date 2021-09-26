@@ -2,6 +2,7 @@
 
 use crate::pac;
 use core::mem::size_of;
+pub use pac::aes::cr::DATATYPE_A as SwapMode;
 use pac::aes::cr::KEYSIZE_A as KeySize;
 
 /// Algorithm modes.
@@ -77,6 +78,7 @@ pub enum Error {
 #[derive(Debug)]
 pub struct Aes {
     aes: pac::AES,
+    swap_mode: SwapMode,
 }
 
 impl Aes {
@@ -97,7 +99,10 @@ impl Aes {
         Self::enable_clock(rcc);
         unsafe { Self::pulse_reset(rcc) };
 
-        Aes { aes }
+        Aes {
+            aes,
+            swap_mode: SwapMode::NONE,
+        }
     }
 
     /// Free the AES peripheral from the driver.
@@ -211,7 +216,10 @@ impl Aes {
     #[inline]
     pub unsafe fn steal() -> Aes {
         let dp: pac::Peripherals = pac::Peripherals::steal();
-        Aes { aes: dp.AES }
+        Aes {
+            aes: dp.AES,
+            swap_mode: SwapMode::NONE,
+        }
     }
 
     /// Unmask the AES IRQ in the NVIC.
@@ -352,6 +360,7 @@ impl Aes {
         const CHMOD10: u8 = ALGO.chmod10();
 
         let keysize: KeySize = self.set_key(key);
+
         self.aes.ivr0.write(|w| w.ivi().bits(2));
         self.aes.ivr1.write(|w| w.ivi().bits(iv[2]));
         self.aes.ivr2.write(|w| w.ivi().bits(iv[1]));
@@ -360,7 +369,7 @@ impl Aes {
         self.aes.cr.write(|w|
             w
                 .en().enabled()
-                .datatype().none()
+                .datatype().variant(self.swap_mode)
                 .mode().bits(MODE)
                 .chmod2().bit(CHMOD2)
                 .chmod().bits(CHMOD10)
@@ -393,7 +402,7 @@ impl Aes {
         self.aes.cr.write(|w|
             w
                 .en().enabled()
-                .datatype().none()
+                .datatype().variant(self.swap_mode)
                 .mode().bits(MODE)
                 .chmod2().bit(CHMOD2)
                 .chmod().bits(CHMOD10)
@@ -444,7 +453,7 @@ impl Aes {
             self.aes.cr.write(|w|
                 w
                     .en().enabled()
-                    .datatype().none()
+                    .datatype().variant(self.swap_mode)
                     .mode().bits(MODE)
                     .chmod2().bit(CHMOD2)
                     .chmod().bits(CHMOD10)
@@ -468,7 +477,7 @@ impl Aes {
             self.aes.cr.write(|w|
                 w
                     .en().enabled()
-                    .datatype().none()
+                    .datatype().variant(self.swap_mode)
                     .mode().bits(MODE)
                     .chmod2().bit(CHMOD2)
                     .chmod().bits(CHMOD10)
@@ -511,7 +520,7 @@ impl Aes {
             self.aes.cr.write(|w|
                 w
                     .en().enabled()
-                    .datatype().none()
+                    .datatype().variant(self.swap_mode)
                     .mode().bits(MODE)
                     .chmod2().bit(CHMOD2)
                     .chmod().bits(CHMOD10)
@@ -535,7 +544,7 @@ impl Aes {
             self.aes.cr.write(|w|
                 w
                     .en().enabled()
-                    .datatype().none()
+                    .datatype().variant(self.swap_mode)
                     .mode().bits(MODE)
                     .chmod2().bit(CHMOD2)
                     .chmod().bits(CHMOD10)
@@ -561,6 +570,12 @@ impl Aes {
             buf.len() * size_of::<u32>(),
             tag,
         )
+    }
+
+    /// Set the way data is read from input and output registers according to section
+    /// 23.4.13 (AES Data register and data swapping) of Reference Manual
+    pub fn set_dataswap(&mut self, mode: SwapMode) {
+        self.swap_mode = mode;
     }
 
     /// Encrypt using the electronic codebook chaining (ECB) algorithm.
@@ -601,7 +616,7 @@ impl Aes {
         self.aes.cr.write(|w|
             w
                 .en().enabled()
-                .datatype().none()
+                .datatype().variant(self.swap_mode)
                 .mode().bits(MODE)
                 .chmod2().bit(CHMOD2)
                 .chmod().bits(CHMOD10)
@@ -658,7 +673,7 @@ impl Aes {
         self.aes.cr.write(|w|
             w
                 .en().enabled()
-                .datatype().none()
+                .datatype().variant(self.swap_mode)
                 .mode().bits(MODE)
                 .chmod2().bit(CHMOD2)
                 .chmod().bits(CHMOD10)
@@ -807,7 +822,7 @@ impl Aes {
         self.aes.cr.write(|w|
             w
                 .en().enabled()
-                .datatype().none()
+                .datatype().variant(self.swap_mode)
                 .mode().bits(MODE)
                 .chmod2().bit(CHMOD2)
                 .chmod().bits(CHMOD10)
@@ -863,7 +878,7 @@ impl Aes {
         self.aes.cr.write(|w|
             w
                 .en().enabled()
-                .datatype().none()
+                .datatype().variant(self.swap_mode)
                 .mode().bits(MODE)
                 .chmod2().bit(CHMOD2)
                 .chmod().bits(CHMOD10)

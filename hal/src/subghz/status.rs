@@ -164,8 +164,8 @@ impl Status {
 
     /// Command status.
     ///
-    /// For some reason `Err(1)` is a pretty common return value for this,
-    /// despite being a reserved value.
+    /// This method frequently returns reserved values such as `Err(1)`.
+    /// ST support has confirmed that this is normal and should be ignored.
     ///
     /// # Example
     ///

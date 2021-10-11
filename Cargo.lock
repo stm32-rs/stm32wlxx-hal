@@ -3,29 +3,6 @@
 version = 3
 
 [[package]]
-name = "adc-testsuite"
-version = "0.1.0"
-dependencies = [
- "defmt",
- "defmt-rtt",
- "defmt-test",
- "panic-probe",
- "stm32wl-hal",
-]
-
-[[package]]
-name = "aes-testsuite"
-version = "0.1.0"
-dependencies = [
- "defmt",
- "defmt-rtt",
- "defmt-test",
- "hex-literal",
- "panic-probe",
- "stm32wl-hal",
-]
-
-[[package]]
 name = "aligned"
 version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -136,17 +113,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dac-testsuite"
-version = "0.1.0"
-dependencies = [
- "defmt",
- "defmt-rtt",
- "defmt-test",
- "panic-probe",
- "stm32wl-hal",
-]
-
-[[package]]
 name = "defmt"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -225,9 +191,9 @@ dependencies = [
 
 [[package]]
 name = "embedded-time"
-version = "0.12.0"
+version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86fbafcea0dea120d8ed8af67ddbf82afc031f1d3b064920645db8d061781e2c"
+checksum = "d7a4b4d10ac48d08bfe3db7688c402baadb244721f30a77ce360bd24c3dffe58"
 dependencies = [
  "num",
 ]
@@ -279,19 +245,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "21e4590e13640f19f249fe3e4eca5113bc4289f2497710378190e7f4bd96f45b"
 
 [[package]]
-name = "i2c-testsuite"
-version = "0.1.0"
-dependencies = [
- "cortex-m-rt",
- "defmt",
- "defmt-rtt",
- "defmt-test",
- "embedded-time",
- "panic-probe",
- "stm32wl-hal",
-]
-
-[[package]]
 name = "itertools"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -304,19 +257,6 @@ dependencies = [
 name = "lora-e5-bsp"
 version = "0.1.0-alpha.0"
 dependencies = [
- "stm32wl-hal",
-]
-
-[[package]]
-name = "lptim-testsuite"
-version = "0.1.0"
-dependencies = [
- "defmt",
- "defmt-rtt",
- "defmt-test",
- "itertools",
- "nb 1.0.0",
- "panic-probe",
  "stm32wl-hal",
 ]
 
@@ -407,12 +347,11 @@ dependencies = [
 
 [[package]]
 name = "panic-probe"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45b5c81d6b51f415b3ba40b30dc598dfffb29ad4cf4a8815989754850ce6c0dc"
+checksum = "6a0fa226f55c70d0d70ad373802f0d65a775478afec75c0f3eee1de5d39057c9"
 dependencies = [
- "cortex-m 0.6.7",
- "cortex-m-rt",
+ "cortex-m 0.7.3",
  "defmt",
 ]
 
@@ -421,18 +360,6 @@ name = "paste"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "acbf547ad0c65e31259204bd90935776d1c693cec2f4ff7abb7a1bbbd40dfe58"
-
-[[package]]
-name = "pka-testsuite"
-version = "0.1.0"
-dependencies = [
- "defmt",
- "defmt-rtt",
- "defmt-test",
- "nb 1.0.0",
- "panic-probe",
- "stm32wl-hal",
-]
 
 [[package]]
 name = "ppv-lite86"
@@ -451,9 +378,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.9"
+version = "1.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3d0b9745dc2debf507c8422de05d7226cc1f0644216dfdfead988f9b1ab32a7"
+checksum = "38bc8cc6a5f2e3655e0899c1b848643b2562f853f114bfec7be120678e3ace05"
 dependencies = [
  "proc-macro2",
 ]
@@ -479,44 +406,6 @@ name = "rand_core"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d34f1408f55294453790c48b2f1ebbb1c5b4b7563eb1f418bcfcfdbb06ebb4e7"
-
-[[package]]
-name = "rcc-testsuite"
-version = "0.1.0"
-dependencies = [
- "cortex-m-rt",
- "defmt",
- "defmt-rtt",
- "defmt-test",
- "itertools",
- "nb 1.0.0",
- "panic-probe",
- "stm32wl-hal",
-]
-
-[[package]]
-name = "rng-testsuite"
-version = "0.1.0"
-dependencies = [
- "defmt",
- "defmt-rtt",
- "defmt-test",
- "panic-probe",
- "rand_chacha",
- "stm32wl-hal",
-]
-
-[[package]]
-name = "rtc-testsuite"
-version = "0.1.0"
-dependencies = [
- "defmt",
- "defmt-rtt",
- "defmt-test",
- "nb 1.0.0",
- "panic-probe",
- "stm32wl-hal",
-]
 
 [[package]]
 name = "rustc_version"
@@ -547,19 +436,6 @@ name = "semver-parser"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
-
-[[package]]
-name = "spi-testsuite"
-version = "0.1.0"
-dependencies = [
- "defmt",
- "defmt-rtt",
- "defmt-test",
- "itertools",
- "nb 1.0.0",
- "panic-probe",
- "stm32wl-hal",
-]
 
 [[package]]
 name = "stable_deref_trait"
@@ -606,22 +482,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "subghz-testsuite"
-version = "0.1.0"
-dependencies = [
- "defmt",
- "defmt-rtt",
- "defmt-test",
- "nucleo-wl55jc-bsp",
- "panic-probe",
- "static_assertions",
-]
-
-[[package]]
 name = "syn"
-version = "1.0.76"
+version = "1.0.80"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6f107db402c2c2055242dbf4d2af0e69197202e9faacbef9571bbe47f5a1b84"
+checksum = "d010a1623fbd906d51d650a9916aaefc05ffa0e4053ff7fe601167f3e715d194"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -629,22 +493,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "testsuite"
+version = "0.1.0"
+dependencies = [
+ "cortex-m-rt",
+ "defmt",
+ "defmt-rtt",
+ "defmt-test",
+ "embedded-time",
+ "hex-literal",
+ "itertools",
+ "nb 1.0.0",
+ "nucleo-wl55jc-bsp",
+ "panic-probe",
+ "rand_chacha",
+ "static_assertions",
+ "stm32wl-hal",
+]
+
+[[package]]
 name = "typenum"
 version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b63708a265f51345575b27fe43f9500ad611579e764c79edbc2037b1121959ec"
-
-[[package]]
-name = "uart-testsuite"
-version = "0.1.0"
-dependencies = [
- "defmt",
- "defmt-rtt",
- "defmt-test",
- "nb 1.0.0",
- "panic-probe",
- "stm32wl-hal",
-]
 
 [[package]]
 name = "unicode-xid"

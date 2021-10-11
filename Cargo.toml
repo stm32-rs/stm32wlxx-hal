@@ -2,9 +2,9 @@
 resolver = "2"
 members = [
     "*-bsp",
-    "*-testsuite",
     "examples",
     "hal",
+    "testsuite",
 ]
 default-members = ["hal"]
 

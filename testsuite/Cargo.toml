@@ -1,0 +1,83 @@
+[package]
+authors = [
+    "Alex Martens <alexmgit@protonmail.com>",
+    "Jorge I. <jorge@jorgeig.com>"
+]
+name = "testsuite"
+publish = false
+edition = "2018"
+version = "0.1.0"
+
+[[bin]]
+name = "adc"
+path = "src/adc.rs"
+
+[[bin]]
+name = "aes"
+path = "src/aes.rs"
+
+[[bin]]
+name = "dac"
+path = "src/dac.rs"
+
+[[bin]]
+name = "i2c"
+path = "src/i2c.rs"
+
+[[bin]]
+name = "lptim"
+path = "src/lptim.rs"
+
+[[bin]]
+name = "pka"
+path = "src/pka.rs"
+
+[[bin]]
+name = "rcc"
+path = "src/rcc.rs"
+
+[[bin]]
+name = "rng"
+path = "src/rng.rs"
+
+[[bin]]
+name = "rtc"
+path = "src/rtc.rs"
+
+[[bin]]
+name = "spi"
+path = "src/spi.rs"
+
+[[bin]]
+name = "subghz"
+path = "src/subghz.rs"
+
+[[bin]]
+name = "uart"
+path = "src/uart.rs"
+
+[dependencies]
+cortex-m-rt = "0.6"
+defmt = "0.2"
+defmt-rtt = "0.2"
+defmt-test = "0.2"
+embedded-time = "0.12"
+hex-literal = "0.3"
+itertools = { version = "0.10", default-features = false }
+nb = "1"
+nucleo-wl55jc-bsp = { path = "../nucleo-wl55jc-bsp", features = ["stm32wl5x_cm4", "defmt", "rt"] }
+panic-probe = { version = "0.2", features = ["print-defmt" ] }
+rand_chacha = { version = "0.3", default-features = false }
+static_assertions = "1"
+stm32wl-hal = { path = "../hal", features = ["stm32wl5x_cm4", "defmt", "rt"] }
+
+[features]
+default = ["defmt-trace", "nucleo-wl55jc-bsp/defmt-trace"]
+
+# do NOT modify these features
+defmt-default = []
+defmt-trace = []
+defmt-debug = []
+defmt-info = []
+defmt-warn = []
+defmt-error = []

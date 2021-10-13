@@ -5,8 +5,7 @@
 
 Embedded rust HAL (hardware abstraction layer) for the STM32WL.
 
-⚠️ This is a **work in progress**, it is unstable (lots of API changes) and
-incomplete.
+⚠️ This is a **work in progress** ⚠️
 
 The code that exists today covers basic usage of:
 

@@ -170,7 +170,6 @@ impl Dac {
     /// unsafe { stm32wl_hal::dac::Dac::unmask_irq() };
     /// ```
     #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
-    #[cfg_attr(docsrs, doc(cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))))]
     pub unsafe fn unmask_irq() {
         pac::NVIC::unmask(pac::Interrupt::DAC)
     }
@@ -183,7 +182,6 @@ impl Dac {
     /// stm32wl_hal::dac::Dac::mask_irq();
     /// ```
     #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
-    #[cfg_attr(docsrs, doc(cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))))]
     pub fn mask_irq() {
         pac::NVIC::mask(pac::Interrupt::DAC)
     }

@@ -376,7 +376,6 @@ impl Ch {
 /// Analog to digital converter driver.
 #[derive(Debug)]
 #[cfg(not(feature = "stm32wl5x_cm0p"))]
-#[cfg_attr(docsrs, doc(cfg(not(feature = "stm32wl5x_cm0p"))))]
 pub struct Adc {
     adc: pac::ADC,
 }
@@ -660,7 +659,6 @@ impl Adc {
     /// unsafe { stm32wl_hal::adc::Adc::unmask_irq() };
     /// ```
     #[cfg(feature = "rt")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "rt")))]
     #[inline]
     pub unsafe fn unmask_irq() {
         pac::NVIC::unmask(pac::Interrupt::ADC)
@@ -675,7 +673,6 @@ impl Adc {
     /// unsafe { stm32wl_hal::adc::Adc::mask_irq() }
     /// ```
     #[cfg(feature = "rt")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "rt")))]
     #[inline]
     pub fn mask_irq() {
         pac::NVIC::mask(pac::Interrupt::ADC)

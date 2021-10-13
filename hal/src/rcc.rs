@@ -649,10 +649,6 @@ fn hclk2(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
 /// assert_eq!(hclk2_hz(&dp.RCC), 4_000_000);
 /// ```
 #[cfg(any(feature = "stm32wl5x_cm4", feature = "stm32wl5x_cm0p"))]
-#[cfg_attr(
-    docsrs,
-    doc(cfg(any(feature = "stm32wl5x_cm4", feature = "stm32wl5x_cm0p")))
-)]
 pub fn hclk2_hz(rcc: &pac::RCC) -> u32 {
     let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
     hclk2(rcc, &cfgr).to_integer()
@@ -816,10 +812,6 @@ fn cpu2_systick(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R, src: SystClkSource) -> 
 /// delay.delay_ms(100);
 /// ```
 #[cfg(any(feature = "stm32wl5x_cm4", feature = "stm32wl5x_cm0p"))]
-#[cfg_attr(
-    docsrs,
-    doc(cfg(any(feature = "stm32wl5x_cm4", feature = "stm32wl5x_cm0p")))
-)]
 pub fn cpu2_systick_hz(rcc: &pac::RCC, src: SystClkSource) -> u32 {
     let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
     cpu2_systick(rcc, cfgr, src).to_integer()

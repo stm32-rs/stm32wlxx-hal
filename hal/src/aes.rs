@@ -235,7 +235,6 @@ impl Aes {
     /// unsafe { stm32wl_hal::aes::Aes::unmask_irq() };
     /// ```
     #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
-    #[cfg_attr(docsrs, doc(cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))))]
     #[inline]
     pub unsafe fn unmask_irq() {
         pac::NVIC::unmask(pac::Interrupt::AES)

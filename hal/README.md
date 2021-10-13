@@ -2,11 +2,8 @@
 
 ## Usage
 
-This crate is not yet published to crates.io because it is incomplete, and
-relies upon other unpublished crates (which is not allowed on crates.io).
-
-There are near daily breaking changes because the crate is still under heavy
-development, please pin the version you use.
+This crate is not yet published to crates.io, see issue [#149] for details.
+Until then please pin the version you use.
 
 ```toml
 [dependencies.stm32wl-hal]
@@ -101,3 +98,4 @@ this is not consistent (see [#78])
 [stm32-rs]: https://github.com/stm32-rs/stm32-rs
 [svd2rust]: https://github.com/rust-embedded/svd2rust
 [#78]: https://github.com/newAM/stm32wl-hal/issues/78
+[#149]: https://github.com/newAM/stm32wl-hal/issues/149

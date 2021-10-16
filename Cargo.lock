@@ -508,7 +508,6 @@ dependencies = [
  "panic-probe",
  "rand_chacha",
  "static_assertions",
- "stm32wl-hal",
 ]
 
 [[package]]

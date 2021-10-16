@@ -3,14 +3,14 @@
 
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
-use panic_probe as _;
-use stm32wl_hal::{
+use nucleo_wl55jc_bsp::hal::{
     adc::{self, Adc},
     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
     dac::{Dac, ModeChip, ModePin},
     gpio::PortA,
     pac, rcc,
 };
+use panic_probe as _;
 
 #[defmt_test::tests]
 mod tests {

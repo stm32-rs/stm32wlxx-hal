@@ -3,13 +3,15 @@
 
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
-use panic_probe as _;
-use stm32wl_hal::{
+use nucleo_wl55jc_bsp::hal::{
     pac::{self, DWT},
-    pka::{curve::NIST_P256, EcdsaPublicKey, EcdsaSignature, Pka},
+    pka::{
+        curve::NIST_P256, EcdsaPublicKey, EcdsaSignError, EcdsaSignature, EcdsaVerifyError, Pka,
+    },
     rcc,
     util::reset_cycle_count,
 };
+use panic_probe as _;
 
 const FREQ: u32 = 48_000_000;
 const CYC_PER_MICRO: u32 = FREQ / 1000 / 1000;
@@ -59,8 +61,6 @@ const PUB_KEY: EcdsaPublicKey<8> = EcdsaPublicKey {
 
 #[defmt_test::tests]
 mod tests {
-    use stm32wl_hal::pka::{EcdsaSignError, EcdsaSignature, EcdsaVerifyError};
-
     use super::*;
 
     #[init]

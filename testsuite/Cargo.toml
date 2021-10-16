@@ -69,7 +69,6 @@ nucleo-wl55jc-bsp = { path = "../nucleo-wl55jc-bsp", features = ["stm32wl5x_cm4"
 panic-probe = { version = "0.2", features = ["print-defmt" ] }
 rand_chacha = { version = "0.3", default-features = false }
 static_assertions = "1"
-stm32wl-hal = { path = "../hal", features = ["stm32wl5x_cm4", "defmt", "rt"] }
 
 [features]
 default = ["defmt-trace", "nucleo-wl55jc-bsp/defmt-trace"]

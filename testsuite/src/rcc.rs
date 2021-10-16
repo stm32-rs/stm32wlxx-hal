@@ -6,13 +6,13 @@
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use itertools::iproduct;
-use panic_probe as _;
-use stm32wl_hal::{
+use nucleo_wl55jc_bsp::hal::{
     cortex_m::{self, interrupt::CriticalSection},
     pac,
     pwr::{enter_lprun_msi, exit_lprun, LprunRange},
     rcc::{self, lsi_hz, set_sysclk_msi_max, setup_lsi, LsiPre, MsiRange, Vos},
 };
+use panic_probe as _;
 
 #[derive(defmt::Format)]
 pub enum SysClkSrc {

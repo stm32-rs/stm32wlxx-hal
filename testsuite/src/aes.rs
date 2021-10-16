@@ -10,13 +10,13 @@ use core::{convert::TryInto, mem::size_of};
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use hex_literal::hex;
-use panic_probe as _;
-use stm32wl_hal::{
+use nucleo_wl55jc_bsp::hal::{
     aes::{Aes, SwapMode},
     cortex_m::peripheral::DWT,
     pac, rcc,
     util::reset_cycle_count,
 };
+use panic_probe as _;
 
 pub const ECB_PT_CT_128: [([u32; 4], [u32; 4]); 7] = [
     (

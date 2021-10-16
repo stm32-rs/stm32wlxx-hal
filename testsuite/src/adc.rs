@@ -7,14 +7,14 @@ use core::{
 };
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
-use panic_probe as _;
-use stm32wl_hal::{
+use nucleo_wl55jc_bsp::hal::{
     adc::{self, Adc, Clk},
     cortex_m::delay::Delay,
     pac::{self, DWT},
     rcc,
     util::{new_delay, reset_cycle_count},
 };
+use panic_probe as _;
 
 const ADC_FREQ: u32 = 12_000_000;
 const FREQ: u32 = 48_000_000;

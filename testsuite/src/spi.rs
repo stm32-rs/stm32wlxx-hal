@@ -6,8 +6,7 @@
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use itertools::iproduct;
-use panic_probe as _;
-use stm32wl_hal::{
+use nucleo_wl55jc_bsp::hal::{
     dma::AllDma,
     embedded_hal::blocking::spi::{Transfer, Write},
     gpio::{PortA, PortC},
@@ -16,6 +15,7 @@ use stm32wl_hal::{
     spi::{BaudRate, Mode, Read, Spi, MODE_0, MODE_1, MODE_2, MODE_3},
     util::reset_cycle_count,
 };
+use panic_probe as _;
 
 const FREQ: u32 = 48_000_000;
 const CYC_PER_MICRO: u32 = FREQ / 1000 / 1000;

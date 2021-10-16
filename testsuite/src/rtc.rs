@@ -3,14 +3,14 @@
 
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
-use panic_probe as _;
-use stm32wl_hal::{
+use nucleo_wl55jc_bsp::hal::{
     chrono::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Timelike},
     pac::{self, DWT},
     rcc::{self, pulse_reset_backup_domain, setup_lsi, LsiPre},
     rtc::{self, Rtc},
     util::reset_cycle_count,
 };
+use panic_probe as _;
 
 const FREQ: u32 = 48_000_000;
 const CYC_PER_MILLI: u32 = FREQ / 1000;

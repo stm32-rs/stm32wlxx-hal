@@ -4,8 +4,7 @@
 use core::convert::TryFrom;
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
-use panic_probe as _;
-use stm32wl_hal::{
+use nucleo_wl55jc_bsp::hal::{
     embedded_hal::digital::v2::ToggleableOutputPin,
     embedded_hal::timer::CountDown,
     gpio::{pins, Output, PortA, PortB},
@@ -14,6 +13,7 @@ use stm32wl_hal::{
     rcc,
     util::reset_cycle_count,
 };
+use panic_probe as _;
 
 const FREQ: u32 = 48_000_000;
 const CYC_PER_US: u32 = FREQ / 1000 / 1000;

@@ -3,11 +3,11 @@
 
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
-use panic_probe as _;
-use stm32wl_hal::{
+use nucleo_wl55jc_bsp::hal::{
     pac, rcc,
     rng::{rand_core::RngCore, Clk, Rng},
 };
+use panic_probe as _;
 
 /// This is not a cryptographically secure validation, this only ensures that
 /// the driver is operating nominally, is does not check for hardware

@@ -4,14 +4,14 @@
 use core::fmt::Write;
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
-use panic_probe as _;
-use stm32wl_hal::{
+use nucleo_wl55jc_bsp::hal::{
     dma::{AllDma, Dma1Ch3, Dma2Ch6},
     embedded_hal::prelude::*,
     gpio::{pins, PortA, PortC},
     pac, rcc,
     uart::{self, LpUart, Uart1},
 };
+use panic_probe as _;
 
 #[defmt_test::tests]
 mod tests {

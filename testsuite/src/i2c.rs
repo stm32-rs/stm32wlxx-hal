@@ -4,8 +4,7 @@
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use embedded_time::rate::Hertz;
-use panic_probe as _;
-use stm32wl_hal::{
+use nucleo_wl55jc_bsp::hal::{
     cortex_m,
     embedded_hal::blocking::i2c::WriteRead,
     gpio::{pins, PortA, PortB},
@@ -13,6 +12,7 @@ use stm32wl_hal::{
     pac::{self, interrupt},
     rcc,
 };
+use panic_probe as _;
 
 const LOOPBACK_ADDR: u8 = 0x77;
 const LOOPBACK_DATA_IN: u8 = 0xD0;

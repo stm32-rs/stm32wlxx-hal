@@ -10,7 +10,7 @@ Until then please pin the version you use.
 git = "https://github.com/newAM/stm32wl-hal.git"
 rev = "" # put a specific git commit hash here
 features = [
-    # use exactly one of the following dependeing on your target hardware
+    # use exactly one of the following depending on your target hardware
     "stm32wl5x_cm0p",
     "stm32wl5x_cm4",
     "stm32wle5",

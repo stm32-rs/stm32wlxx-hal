@@ -8,7 +8,7 @@ use panic_probe as _; // panic handler
 use stm32wl_hal::{
     self as hal,
     cortex_m::delay::Delay,
-    gpio::{Level, Output, PortB},
+    gpio::{Output, PinState, PortB},
     pac,
     util::new_delay,
 };
@@ -28,7 +28,7 @@ fn main() -> ! {
     defmt::info!("Starting blinky");
 
     loop {
-        for &level in &[Level::High, Level::Low] {
+        for &level in &[PinState::High, PinState::Low] {
             led1.set_level(level);
             delay.delay_ms(600);
             led2.set_level(level);

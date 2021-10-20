@@ -9,7 +9,7 @@ use hal::{
 
 const LED_ARGS: OutputArgs = OutputArgs {
     speed: gpio::Speed::Fast,
-    level: gpio::Level::Low,
+    level: gpio::PinState::Low,
     ot: gpio::OutputType::PushPull,
     pull: gpio::Pull::None,
 };

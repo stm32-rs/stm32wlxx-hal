@@ -46,7 +46,7 @@ version = "0.2"
 optional = true
 
 [dependencies.embedded-hal]
-version = "0.2"
+version = "0.2.6"
 features = ["unproven"]
 
 [dependencies.num-traits]

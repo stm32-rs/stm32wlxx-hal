@@ -4,6 +4,8 @@ use crate::{adc, pac};
 use core::ptr::{read_volatile, write_volatile};
 use cortex_m::interrupt::CriticalSection;
 
+pub use embedded_hal::digital::v2::PinState;
+
 /// EXTI triggers.
 ///
 /// Argument of [`Exti::setup_exti_c1`].
@@ -124,28 +126,28 @@ impl<const BASE: usize, const N: u8> Pin<BASE, N> {
     }
 
     #[inline(always)]
-    pub(crate) fn input_level(&self) -> Level {
+    pub(crate) fn input_level(&self) -> PinState {
         if unsafe { read_volatile(Self::IDR) } & (1 << N) == 0 {
-            Level::Low
+            PinState::Low
         } else {
-            Level::High
+            PinState::High
         }
     }
 
     #[inline(always)]
-    pub(crate) fn output_level(&self) -> Level {
+    pub(crate) fn output_level(&self) -> PinState {
         if unsafe { read_volatile(Self::ODR) } & (1 << N) == 0 {
-            Level::Low
+            PinState::Low
         } else {
-            Level::High
+            PinState::High
         }
     }
 
     #[inline(always)]
-    pub(crate) fn set_output_level(&mut self, level: Level) {
+    pub(crate) fn set_output_level(&mut self, level: PinState) {
         let val: u32 = match level {
-            Level::Low => 1 << (N + 16),
-            Level::High => 1 << N,
+            PinState::Low => 1 << (N + 16),
+            PinState::High => 1 << N,
         };
         unsafe { write_volatile(Self::BSRR, val) }
     }
@@ -161,7 +163,7 @@ impl<const BASE: usize, const N: u8> Pin<BASE, N> {
 }
 
 pub(crate) mod sealed {
-    use super::{adc, CriticalSection, Level, OutputType, Pull, Speed};
+    use super::{adc, CriticalSection, OutputType, PinState, Pull, Speed};
 
     /// GPIO modes.
     #[repr(u8)]
@@ -181,9 +183,9 @@ pub(crate) mod sealed {
         unsafe fn set_output_type(&mut self, cs: &CriticalSection, ot: OutputType);
         unsafe fn set_speed(&mut self, cs: &CriticalSection, speed: Speed);
         unsafe fn set_pull(&mut self, cs: &CriticalSection, pull: Pull);
-        fn input_level(&self) -> Level;
-        fn output_level(&self) -> Level;
-        fn set_output_level(&mut self, level: Level);
+        fn input_level(&self) -> PinState;
+        fn output_level(&self) -> PinState;
+        fn set_output_level(&mut self, level: PinState);
         unsafe fn set_alternate_function(&mut self, cs: &CriticalSection, af: u8);
     }
 
@@ -446,7 +448,7 @@ pub mod pins {
     const GPIOB_BASE: usize = 0x4800_0400;
     const GPIOC_BASE: usize = 0x4800_0800;
 
-    use super::{adc, pac, CriticalSection, Level, OutputType, Pin, Pull, Speed};
+    use super::{adc, pac, CriticalSection, OutputType, Pin, PinState, Pull, Speed};
 
     macro_rules! gpio_struct {
         ($name:ident, $base:expr, $n:expr, $doc:expr) => {
@@ -490,17 +492,17 @@ pub mod pins {
                 }
 
                 #[inline(always)]
-                fn input_level(&self) -> Level {
+                fn input_level(&self) -> PinState {
                     self.pin.input_level()
                 }
 
                 #[inline(always)]
-                fn output_level(&self) -> Level {
+                fn output_level(&self) -> PinState {
                     self.pin.output_level()
                 }
 
                 #[inline(always)]
-                fn set_output_level(&mut self, level: Level) {
+                fn set_output_level(&mut self, level: PinState) {
                     self.pin.set_output_level(level)
                 }
 
@@ -1196,76 +1198,15 @@ impl PortC {
     }
 }
 
-/// Digital input or output level.
-#[derive(Debug, Eq, PartialEq, PartialOrd, Ord, Clone, Copy)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub enum Level {
-    /// GPIO logic low.
-    Low,
-    /// GPIO logic high.
-    High,
-}
-
-impl Level {
-    /// Toggle the level.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use stm32wl_hal::gpio::Level;
-    ///
-    /// assert_eq!(Level::High.toggle(), Level::Low);
-    /// assert_eq!(Level::Low.toggle(), Level::High);
-    /// ```
-    #[inline]
-    pub const fn toggle(self) -> Level {
-        match self {
-            Level::Low => Level::High,
-            Level::High => Level::Low,
-        }
-    }
-
-    /// Returns `true` if the level is low.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use stm32wl_hal::gpio::Level;
-    ///
-    /// assert_eq!(Level::Low.is_low(), true);
-    /// assert_eq!(Level::High.is_low(), false);
-    /// ```
-    #[inline]
-    pub fn is_low(&self) -> bool {
-        matches!(self, Self::Low)
-    }
-
-    /// Returns `true` if the level is high.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use stm32wl_hal::gpio::Level;
-    ///
-    /// assert_eq!(Level::High.is_high(), true);
-    /// assert_eq!(Level::Low.is_high(), false);
-    /// ```
-    #[inline]
-    pub fn is_high(&self) -> bool {
-        matches!(self, Self::High)
-    }
-}
-
 /// Output pin arguments.
 ///
 /// Argument of [`Output::new`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct OutputArgs {
     /// Output speed.
     pub speed: Speed,
     /// Initial output level.
-    pub level: Level,
+    pub level: PinState,
     /// Output type.
     pub ot: OutputType,
     /// IO pull configuration.
@@ -1290,7 +1231,7 @@ impl OutputArgs {
     pub const fn new() -> Self {
         OutputArgs {
             speed: Speed::High,
-            level: Level::Low,
+            level: PinState::Low,
             ot: OutputType::PushPull,
             pull: Pull::None,
         }
@@ -1330,7 +1271,7 @@ where
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// const OUTPUT_ARGS: gpio::OutputArgs = gpio::OutputArgs {
-    ///     level: gpio::Level::Low,
+    ///     level: gpio::PinState::Low,
     ///     speed: gpio::Speed::High,
     ///     ot: gpio::OutputType::PushPull,
     ///     pull: gpio::Pull::None,
@@ -1436,7 +1377,7 @@ where
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{pins, Level, Output, PortC},
+    ///     gpio::{pins, Output, PinState, PortC},
     ///     pac,
     /// };
     ///
@@ -1444,11 +1385,11 @@ where
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut c0: Output<pins::C0> = Output::default(gpioc.c0);
-    /// c0.set_level(Level::High);
-    /// c0.set_level(Level::Low);
+    /// c0.set_level(PinState::High);
+    /// c0.set_level(PinState::Low);
     /// ```
     #[inline]
-    pub fn set_level(&mut self, level: Level) {
+    pub fn set_level(&mut self, level: PinState) {
         self.pin.set_output_level(level)
     }
 
@@ -1475,7 +1416,7 @@ where
     /// ```
     #[inline]
     pub fn set_level_high(&mut self) {
-        self.set_level(Level::High)
+        self.set_level(PinState::High)
     }
 
     /// Set the GPIO output level high.
@@ -1501,7 +1442,7 @@ where
     /// ```
     #[inline]
     pub fn set_level_low(&mut self) {
-        self.set_level(Level::Low)
+        self.set_level(PinState::Low)
     }
 
     /// Get the current GPIO output level.
@@ -1511,8 +1452,9 @@ where
     /// Toggle a GPIO pin.
     ///
     /// ```no_run
+    /// use core::ops::Not;
     /// use stm32wl_hal::{
-    ///     gpio::{pins, Level, Output, PortC},
+    ///     gpio::{pins, Output, PinState, PortC},
     ///     pac,
     /// };
     ///
@@ -1520,10 +1462,10 @@ where
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut c0: Output<pins::C0> = Output::default(gpioc.c0);
-    /// c0.set_level(c0.level().toggle());
+    /// c0.set_level(c0.level().not());
     /// ```
     #[inline]
-    pub fn level(&self) -> Level {
+    pub fn level(&self) -> PinState {
         self.pin.output_level()
     }
 }
@@ -1536,13 +1478,13 @@ where
 
     #[inline]
     fn set_low(&mut self) -> Result<(), Self::Error> {
-        self.pin.set_output_level(Level::Low);
+        self.pin.set_output_level(PinState::Low);
         Ok(())
     }
 
     #[inline]
     fn set_high(&mut self) -> Result<(), Self::Error> {
-        self.pin.set_output_level(Level::High);
+        self.pin.set_output_level(PinState::High);
         Ok(())
     }
 }
@@ -1553,12 +1495,12 @@ where
 {
     #[inline]
     fn is_set_high(&self) -> Result<bool, Self::Error> {
-        Ok(self.pin.output_level().is_high())
+        Ok(self.pin.output_level() == PinState::High)
     }
 
     #[inline]
     fn is_set_low(&self) -> Result<bool, Self::Error> {
-        Ok(self.pin.output_level().is_low())
+        Ok(self.pin.output_level() == PinState::Low)
     }
 }
 
@@ -1679,7 +1621,7 @@ where
     ///
     /// ```no_run
     /// use stm32wl_hal::{
-    ///     gpio::{pins, Input, Level, PortC, Pull},
+    ///     gpio::{pins, Input, PinState, PortC, Pull},
     ///     pac,
     /// };
     ///
@@ -1688,10 +1630,10 @@ where
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     /// let mut c6: Input<pins::C6> = Input::new(gpioc.c6, Pull::Up);
     ///
-    /// let button_3_is_pressed: bool = c6.level() == Level::High;
+    /// let button_3_is_pressed: bool = c6.level() == PinState::High;
     /// ```
     #[inline]
-    pub fn level(&self) -> Level {
+    pub fn level(&self) -> PinState {
         self.pin.input_level()
     }
 }

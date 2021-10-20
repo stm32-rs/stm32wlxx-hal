@@ -1,5 +1,5 @@
 //! Push-buttons
-use stm32wl_hal::gpio::{pins, Exti, Input, Pull};
+use stm32wl_hal::gpio::{pins, Exti, Input, PinState, Pull};
 
 const PULL: Pull = Pull::Up;
 
@@ -52,7 +52,7 @@ impl PushButton for D0 {
 
     #[inline]
     fn is_pushed(&self) -> bool {
-        self.gpio.level().is_low()
+        self.gpio.level() == PinState::Low
     }
 }
 
@@ -61,7 +61,7 @@ impl PushButton for Boot {
 
     #[inline]
     fn is_pushed(&self) -> bool {
-        self.gpio.level().is_low()
+        self.gpio.level() == PinState::Low
     }
 }
 

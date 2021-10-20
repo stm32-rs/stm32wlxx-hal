@@ -2,6 +2,7 @@
 
 use stm32wl_hal as hal;
 
+use core::ops::Not;
 use hal::{
     embedded_hal::digital::v2::OutputPin,
     gpio::{self, pins, Output, OutputArgs},
@@ -9,7 +10,7 @@ use hal::{
 
 const LED_ARGS: OutputArgs = OutputArgs {
     speed: gpio::Speed::Fast,
-    level: gpio::Level::High,
+    level: gpio::PinState::High,
     ot: gpio::OutputType::PushPull,
     pull: gpio::Pull::None,
 };
@@ -103,6 +104,6 @@ impl D5 {
 
     /// Toggle the LED state.
     pub fn toggle(&mut self) {
-        self.gpio.set_level(self.gpio.level().toggle())
+        self.gpio.set_level(self.gpio.level().not())
     }
 }

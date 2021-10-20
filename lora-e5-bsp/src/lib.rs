@@ -7,7 +7,7 @@ pub mod pb;
 
 pub use stm32wl_hal as hal;
 
-use hal::gpio::{self, pins, Level, Output, OutputArgs};
+use hal::gpio::{self, pins, Output, OutputArgs, PinState};
 
 /// RF switch
 #[derive(Debug)]
@@ -35,7 +35,7 @@ impl RfSwitch {
     pub fn new(a4: pins::A4, a5: pins::A5) -> RfSwitch {
         const ARGS: OutputArgs = OutputArgs {
             speed: gpio::Speed::Fast,
-            level: gpio::Level::High,
+            level: gpio::PinState::High,
             ot: gpio::OutputType::PushPull,
             pull: gpio::Pull::None,
         };
@@ -62,8 +62,8 @@ impl RfSwitch {
     /// rfs.set_rx();
     /// ```
     pub fn set_rx(&mut self) {
-        self.a5.set_level(Level::Low);
-        self.a4.set_level(Level::High);
+        self.a5.set_level(PinState::Low);
+        self.a4.set_level(PinState::High);
     }
 
     /// Set the RF switch to high power transmit.
@@ -83,7 +83,7 @@ impl RfSwitch {
     /// rfs.set_tx_hp();
     /// ```
     pub fn set_tx_hp(&mut self) {
-        self.a4.set_level(Level::Low);
-        self.a5.set_level(Level::High);
+        self.a4.set_level(PinState::Low);
+        self.a5.set_level(PinState::High);
     }
 }

@@ -8,7 +8,7 @@ pub mod pb;
 
 pub use stm32wl_hal as hal;
 
-use hal::gpio::{self, pins, Level, Output, OutputArgs};
+use hal::gpio::{self, pins, Output, OutputArgs, PinState};
 
 /// RF switch.
 #[derive(Debug)]
@@ -37,7 +37,7 @@ impl RfSwitch {
     pub fn new(c3: pins::C3, c4: pins::C4, c5: pins::C5) -> RfSwitch {
         const ARGS: OutputArgs = OutputArgs {
             speed: gpio::Speed::Fast,
-            level: gpio::Level::High,
+            level: gpio::PinState::High,
             ot: gpio::OutputType::PushPull,
             pull: gpio::Pull::None,
         };
@@ -65,9 +65,9 @@ impl RfSwitch {
     /// rfs.set_rx()
     /// ```
     pub fn set_rx(&mut self) {
-        self.fe_ctrl1.set_level(Level::High);
-        self.fe_ctrl2.set_level(Level::Low);
-        self.fe_ctrl3.set_level(Level::High);
+        self.fe_ctrl1.set_level(PinState::High);
+        self.fe_ctrl2.set_level(PinState::Low);
+        self.fe_ctrl3.set_level(PinState::High);
     }
 
     /// Set the RF switch to low power transmit.
@@ -87,9 +87,9 @@ impl RfSwitch {
     /// rfs.set_tx_lp()
     /// ```
     pub fn set_tx_lp(&mut self) {
-        self.fe_ctrl1.set_level(Level::High);
-        self.fe_ctrl2.set_level(Level::High);
-        self.fe_ctrl3.set_level(Level::High);
+        self.fe_ctrl1.set_level(PinState::High);
+        self.fe_ctrl2.set_level(PinState::High);
+        self.fe_ctrl3.set_level(PinState::High);
     }
 
     /// Set the RF switch to high power transmit.
@@ -109,8 +109,8 @@ impl RfSwitch {
     /// rfs.set_tx_hp()
     /// ```
     pub fn set_tx_hp(&mut self) {
-        self.fe_ctrl2.set_level(Level::High);
-        self.fe_ctrl1.set_level(Level::Low);
-        self.fe_ctrl3.set_level(Level::High);
+        self.fe_ctrl2.set_level(PinState::High);
+        self.fe_ctrl1.set_level(PinState::Low);
+        self.fe_ctrl3.set_level(PinState::High);
     }
 }

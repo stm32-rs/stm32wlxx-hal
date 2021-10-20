@@ -1638,6 +1638,23 @@ where
     }
 }
 
+impl<P> embedded_hal::digital::v2::InputPin for Input<P>
+where
+    P: sealed::PinOps,
+{
+    type Error = core::convert::Infallible;
+
+    #[inline]
+    fn is_high(&self) -> Result<bool, Self::Error> {
+        Ok(self.pin.input_level() == PinState::High)
+    }
+
+    #[inline]
+    fn is_low(&self) -> Result<bool, Self::Error> {
+        Ok(self.pin.input_level() == PinState::Low)
+    }
+}
+
 /// Analog pin
 #[derive(Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]

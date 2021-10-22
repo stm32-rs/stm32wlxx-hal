@@ -6,7 +6,7 @@
 #![no_std]
 #![no_main]
 
-use core::{convert::TryInto, mem::size_of};
+use core::mem::size_of;
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use hex_literal::hex;

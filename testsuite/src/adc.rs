@@ -1,10 +1,7 @@
 #![no_std]
 #![no_main]
 
-use core::{
-    convert::TryFrom,
-    sync::atomic::{compiler_fence, Ordering::SeqCst},
-};
+use core::sync::atomic::{compiler_fence, Ordering::SeqCst};
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use nucleo_wl55jc_bsp::hal::{

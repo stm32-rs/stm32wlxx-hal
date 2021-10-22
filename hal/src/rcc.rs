@@ -7,7 +7,6 @@
 //! Quickstart: [`set_sysclk_msi_max`]
 
 use crate::{pac, Ratio};
-use core::convert::{TryFrom, TryInto};
 use cortex_m::{interrupt::CriticalSection, peripheral::syst::SystClkSource};
 
 use pac::flash::acr::LATENCY_A;

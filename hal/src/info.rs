@@ -1,11 +1,6 @@
 //! Device electronic signature
 
-use core::{
-    convert::{TryFrom, TryInto},
-    fmt::Display,
-    mem::transmute,
-    ptr::read,
-};
+use core::{fmt::Display, mem::transmute, ptr::read};
 
 /// 96-bit unique device identifier
 ///

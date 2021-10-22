@@ -1,7 +1,6 @@
 #![no_std]
 #![no_main]
 
-use core::convert::TryFrom;
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use nucleo_wl55jc_bsp::hal::{

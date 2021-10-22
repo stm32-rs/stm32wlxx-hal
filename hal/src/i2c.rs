@@ -1,7 +1,5 @@
 //! Inter-Integrated Circuit (I2C) bus
 
-use core::convert::TryFrom;
-
 use crate::{
     embedded_hal::blocking::i2c::{Read, Write, WriteRead},
     gpio::{OutputType, Pull},

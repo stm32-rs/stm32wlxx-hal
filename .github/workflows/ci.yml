@@ -89,12 +89,21 @@ jobs:
           path: bins
       - name: Run on-target tests
         run: |
+          count=0
           for binpath in bins/*; do
-            if [[ "$binpath" != "bins/subghz" ]]; then
-              echo "Running $binpath"
-              probe-run --chip STM32WLE5JCIx --connect-under-reset "$binpath" --probe 0034001A5553500B20393256
+          if [[ "$binpath" != "bins/subghz" ]]; then
+              # alternate probes to wear out flash evenly
+              if (( count % 2 )); then
+                  probe="002900205553500A20393256"
+              else
+                  probe="0034001A5553500B20393256"
+              fi
+
+              echo "Running $binpath on $probe"
+              probe-run --chip STM32WLE5JCIx --connect-under-reset "$binpath" --probe "$probe"
               echo "Done $binpath"
-            fi
+              ((count=count+1))
+          fi
           done 
 
           echo "Running subghz"
@@ -226,7 +235,8 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
-      - run: |
+      - name: rustdoc
+        run: |
           cd hal
           cargo +nightly rustdoc \
           --features rt,stm32wl5x_cm4 \

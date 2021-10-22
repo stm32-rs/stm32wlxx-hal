@@ -323,9 +323,7 @@ impl Rng {
     /// # Ok::<(), stm32wl_hal::rng::Error>(())
     /// ```
     pub fn try_u8(&mut self) -> Result<u8, Error> {
-        let mut buf: [u8; 1] = [0];
-        self.try_fill_u8(&mut buf)?;
-        Ok(buf[0])
+        Ok(self.try_u32()? as u8)
     }
 
     /// Try to generate a random `u16`.
@@ -350,9 +348,7 @@ impl Rng {
     /// # Ok::<(), stm32wl_hal::rng::Error>(())
     /// ```
     pub fn try_u16(&mut self) -> Result<u16, Error> {
-        let mut buf: [u8; 2] = [0; 2];
-        self.try_fill_u8(&mut buf)?;
-        Ok(u16::from_le_bytes(buf))
+        Ok(self.try_u32()? as u16)
     }
 
     /// Try to generate a random `u32`.

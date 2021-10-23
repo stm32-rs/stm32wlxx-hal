@@ -81,11 +81,11 @@ const CLKS: [SysClkSrc; 14] = [
 // HardFault is a symptom of the MSI switching erratum
 #[cortex_m_rt::exception]
 #[allow(non_snake_case)]
-fn HardFault(_ef: &cortex_m_rt::ExceptionFrame) -> ! {
+fn HardFault(ef: &cortex_m_rt::ExceptionFrame) -> ! {
     cortex_m::interrupt::disable();
-    defmt::error!("HardFault");
+    defmt::error!("HardFault {:#}", defmt::Debug2Format(ef));
     loop {
-        cortex_m::asm::bkpt()
+        cortex_m::asm::udf()
     }
 }
 

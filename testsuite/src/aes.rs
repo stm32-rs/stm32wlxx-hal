@@ -1483,6 +1483,16 @@ defmt::timestamp!("{=u32:µs}", DWT::get_cycle_count() / CYC_PER_US);
 const ZERO_16B: [u32; 4] = [0; 4];
 const ZERO_32B: [u32; 8] = [0; 8];
 
+#[cortex_m_rt::exception]
+#[allow(non_snake_case)]
+fn HardFault(ef: &cortex_m_rt::ExceptionFrame) -> ! {
+    cortex_m::interrupt::disable();
+    defmt::error!("HardFault {:#}", defmt::Debug2Format(ef));
+    loop {
+        cortex_m::asm::udf()
+    }
+}
+
 #[inline(always)]
 fn stopwatch<F>(f: F) -> u32
 where

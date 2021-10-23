@@ -249,7 +249,7 @@ impl Aes {
 
     /// Create a new AES driver from an AES peripheral without initialization.
     ///
-    /// This is essentially a slightly safer version of [`steal`](Self::steal).
+    /// This is a slightly safer version of [`steal`](Self::steal).
     ///
     /// # Safety
     ///

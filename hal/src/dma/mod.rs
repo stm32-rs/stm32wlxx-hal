@@ -426,7 +426,7 @@ impl AllDma {
         dma2: pac::DMA2,
         rcc: &mut pac::RCC,
     ) -> Self {
-        Self::enable_clocks(rcc);
+        Self::c1_clk_ens(rcc);
         unsafe { Self::pulse_resets(rcc) };
         ALL_DMA
     }
@@ -469,7 +469,7 @@ impl AllDma {
     ///
     /// See [`steal`](Self::steal).
     #[inline]
-    pub fn enable_clocks(rcc: &mut pac::RCC) {
+    pub fn c1_clk_ens(rcc: &mut pac::RCC) {
         #[rustfmt::skip]
         rcc.ahb1enr.modify(|_, w| {
             w
@@ -499,15 +499,15 @@ impl AllDma {
     /// // ... use DMA channels
     ///
     /// // safety: DMA is not in use
-    /// unsafe { AllDma::disable_clocks(&mut dp.RCC) };
+    /// unsafe { AllDma::c1_clk_diss(&mut dp.RCC) };
     ///
     /// // have a low power nap or something
     ///
-    /// AllDma::enable_clocks(&mut dp.RCC);
+    /// AllDma::c1_clk_ens(&mut dp.RCC);
     /// // ... use DMA channels
     /// ```
     #[inline]
-    pub unsafe fn disable_clocks(rcc: &mut pac::RCC) {
+    pub unsafe fn c1_clk_diss(rcc: &mut pac::RCC) {
         #[rustfmt::skip]
         rcc.ahb1enr.modify(|_, w| {
             w
@@ -541,7 +541,7 @@ impl AllDma {
     /// // safety: nothing is using the peripherals
     /// unsafe { AllDma::pulse_resets(&mut dp.RCC) };
     ///
-    /// AllDma::enable_clocks(&mut dp.RCC);
+    /// AllDma::c1_clk_ens(&mut dp.RCC);
     ///
     /// // safety
     /// // 1. We have exclusive access
@@ -575,7 +575,7 @@ impl Dma1 {
     #[allow(unused_variables)]
     #[inline]
     pub fn split(dmamux: pac::DMAMUX, dma1: pac::DMA1, rcc: &mut pac::RCC) -> Self {
-        Self::enable_clocks(rcc);
+        Self::c1_clk_ens(rcc);
         unsafe { Self::pulse_resets(rcc) };
         DMA1
     }
@@ -608,7 +608,7 @@ impl Dma1 {
     ///
     /// See [`steal`](Self::steal).
     #[inline]
-    pub fn enable_clocks(rcc: &mut pac::RCC) {
+    pub fn c1_clk_ens(rcc: &mut pac::RCC) {
         rcc.ahb1enr
             .modify(|_, w| w.dmamux1en().enabled().dma1en().enabled());
         rcc.ahb1enr.read(); // delay after an RCC peripheral clock enabling
@@ -633,15 +633,15 @@ impl Dma1 {
     /// // ... use DMA channels
     ///
     /// // safety: DMA is not in use
-    /// unsafe { Dma1::disable_clocks(&mut dp.RCC) };
+    /// unsafe { Dma1::c1_clk_diss(&mut dp.RCC) };
     ///
     /// // have a low power nap or something
     ///
-    /// Dma1::enable_clocks(&mut dp.RCC);
+    /// Dma1::c1_clk_ens(&mut dp.RCC);
     /// // ... use DMA channels
     /// ```
     #[inline]
-    pub unsafe fn disable_clocks(rcc: &mut pac::RCC) {
+    pub unsafe fn c1_clk_diss(rcc: &mut pac::RCC) {
         rcc.ahb1enr
             .modify(|_, w| w.dmamux1en().disabled().dma1en().disabled());
     }
@@ -669,7 +669,7 @@ impl Dma1 {
     /// // safety: nothing is using the peripherals
     /// unsafe { Dma1::pulse_resets(&mut dp.RCC) };
     ///
-    /// Dma1::enable_clocks(&mut dp.RCC);
+    /// Dma1::c1_clk_ens(&mut dp.RCC);
     ///
     /// // safety
     /// // 1. We have exclusive access

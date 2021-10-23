@@ -359,12 +359,12 @@ impl<MISO, MOSI> SubGhz<MISO, MOSI> {
     /// 4. You are reponsible for setting up anything that may have lost state
     ///    while the clock was disabled.
     pub unsafe fn disable_spi_clock(rcc: &mut pac::RCC) {
-        Spi3::<SgMiso, SgMosi>::disable_clock(rcc)
+        Spi3::<SgMiso, SgMosi>::c1_clk_dis(rcc)
     }
 
     /// Enable the SPI3 (SubGHz SPI) clock.
     pub fn enable_spi_clock(rcc: &mut pac::RCC) {
-        Spi3::<SgMiso, SgMosi>::enable_clock(rcc)
+        Spi3::<SgMiso, SgMosi>::c1_clk_en(rcc)
     }
 
     fn pulse_radio_reset(rcc: &mut pac::RCC) {

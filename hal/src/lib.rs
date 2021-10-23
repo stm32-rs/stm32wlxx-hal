@@ -63,7 +63,9 @@ pub mod subghz;
 pub mod uart;
 pub mod util;
 
+mod periph_clk;
 mod ratio;
+pub use periph_clk::{PeriphClk, WrapClk};
 pub use ratio::Ratio;
 
 #[cfg(feature = "rt")]

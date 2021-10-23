@@ -99,7 +99,7 @@ impl LpUart<NoRx, NoTx> {
     /// ```
     pub fn new(uart: pac::LPUART, baud: u32, clk: Clk, rcc: &mut pac::RCC) -> LpUart<NoRx, NoTx> {
         unsafe { Self::pulse_reset(rcc) };
-        Self::enable_clock(rcc);
+        Self::c1_clk_en(rcc);
 
         rcc.ccipr.modify(|_, w| w.lpuart1sel().bits(clk as u8));
 
@@ -145,7 +145,7 @@ impl Uart1<NoRx, NoTx> {
     /// ```
     pub fn new(uart: pac::USART1, baud: u32, clk: Clk, rcc: &mut pac::RCC) -> Uart1<NoRx, NoTx> {
         unsafe { Self::pulse_reset(rcc) };
-        Self::enable_clock(rcc);
+        Self::c1_clk_en(rcc);
 
         rcc.ccipr.modify(|_, w| w.usart1sel().bits(clk as u8));
 
@@ -189,7 +189,7 @@ impl Uart2<NoRx, NoTx> {
     /// ```
     pub fn new(uart: pac::USART2, baud: u32, clk: Clk, rcc: &mut pac::RCC) -> Uart2<NoRx, NoTx> {
         unsafe { Self::pulse_reset(rcc) };
-        Self::enable_clock(rcc);
+        Self::c1_clk_en(rcc);
 
         rcc.ccipr.modify(|_, w| w.usart2sel().bits(clk as u8));
 
@@ -316,9 +316,9 @@ macro_rules! impl_clock_en_dis {
             /// use stm32wl_hal::{pac, uart::LpUart};
             ///
             /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-            /// LpUart::enable_clock(&mut dp.RCC);
+            /// LpUart::c1_clk_en(&mut dp.RCC);
             /// ```
-            pub fn enable_clock(rcc: &mut pac::RCC) {
+            pub fn c1_clk_en(rcc: &mut pac::RCC) {
                 rcc.$reg.modify(|_, w| w.$method().enabled())
             }
 
@@ -333,7 +333,7 @@ macro_rules! impl_clock_en_dis {
             ///    use of the UART.
             /// 4. You are reponsible for setting up anything that may have lost
             ///    state while the clock was disabled.
-            pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
+            pub unsafe fn c1_clk_dis(rcc: &mut pac::RCC) {
                 rcc.$reg.modify(|_, w| w.$method().disabled())
             }
         }
@@ -367,7 +367,7 @@ macro_rules! impl_free_steal {
             ///
             /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
             ///
-            /// LpUart::enable_clock(&mut dp.RCC);
+            /// LpUart::c1_clk_en(&mut dp.RCC);
             /// // safety:
             /// // 1. Nothing else is using the LPUART in this code.
             /// // 2. This code performs setup for the LPUART.

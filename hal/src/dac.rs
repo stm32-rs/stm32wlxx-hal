@@ -88,7 +88,7 @@ impl Dac {
     /// let mut dac = Dac::new(dp.DAC, &mut dp.RCC);
     /// ```
     pub fn new(dac: pac::DAC, rcc: &mut pac::RCC) -> Dac {
-        Self::enable_clock(rcc);
+        Self::c1_clk_en(rcc);
         unsafe { Self::pulse_reset(rcc) };
 
         let mut dac: Dac = Dac { dac, out: None };
@@ -117,7 +117,7 @@ impl Dac {
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
-    /// Dac::enable_clock(&mut dp.RCC);
+    /// Dac::c1_clk_en(&mut dp.RCC);
     /// // safety:
     /// // 1. Nothing else is using the DAC in this code.
     /// // 2. This code performs setup for the DAC.
@@ -196,9 +196,9 @@ impl Dac {
     /// use stm32wl_hal::{dac::Dac, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// Dac::enable_clock(&mut dp.RCC);
+    /// Dac::c1_clk_en(&mut dp.RCC);
     /// ```
-    pub fn enable_clock(rcc: &mut pac::RCC) {
+    pub fn c1_clk_en(rcc: &mut pac::RCC) {
         rcc.apb1enr1.modify(|_, w| w.dac1en().enabled());
     }
 
@@ -213,7 +213,7 @@ impl Dac {
     ///    of the DAC.
     /// 4. You are responsible for setting up anything that may have lost state
     ///    while the clock was disabled.
-    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
+    pub unsafe fn c1_clk_dis(rcc: &mut pac::RCC) {
         rcc.apb1enr1.modify(|_, w| w.dac1en().disabled());
     }
 

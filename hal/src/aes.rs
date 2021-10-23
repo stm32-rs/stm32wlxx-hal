@@ -1,6 +1,6 @@
 //! Advanced encryption standard
 
-use crate::pac;
+use crate::{pac, PeriphClk};
 use core::mem::size_of;
 pub use pac::aes::cr::DATATYPE_A as SwapMode;
 use pac::aes::cr::KEYSIZE_A as KeySize;
@@ -68,66 +68,6 @@ pub struct AesWrapClk {
     aes: Aes,
 }
 
-impl AesWrapClk {
-    /// Run a function that accepts the AES driver as an argument,
-    /// enabling the peripheral clock with [`enable_clock`] before calling the
-    /// function, and disabling the peripheral clock with [`disable_clock`]
-    /// after calling the function.
-    ///
-    /// This is useful for saving power in applications that need to access the
-    /// AES peripheral infrequently.
-    ///
-    /// # Power Savings
-    ///
-    /// From DS13105 Rev 9:
-    ///
-    /// * Range 1: 2.50 μA/MHz
-    /// * Range 2: 2.13 μA/MHz
-    /// * LPRun and LPSleep: 1.80 μA/MHz
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{
-    ///     aes::{Aes, AesWrapClk},
-    ///     pac,
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// // safety:
-    /// // * no need to reset because the AES memory-mapped IO has not been accessed since power-on
-    /// // * the wrapper will handle enabling clocks
-    /// let mut aeswrap: AesWrapClk = unsafe { Aes::new_no_init(dp.AES) }.into();
-    ///
-    /// const KEY: [u32; 4] = [0; 4];
-    ///
-    /// let mut text: [u32; 4] = [0xf34481ec, 0x3cc627ba, 0xcd5dc3fb, 0x08f273e6];
-    /// aeswrap.with_clk(&mut dp.RCC, |aes| aes.encrypt_ecb_inplace(&KEY, &mut text))?;
-    /// # Ok::<(), stm32wl_hal::aes::Error>(())
-    /// ```
-    ///
-    /// [`enable_clock`]: Aes::enable_clock
-    /// [`disable_clock`]: Aes::disable_clock
-    #[inline]
-    pub fn with_clk<F>(&mut self, rcc: &mut pac::RCC, f: F) -> Result<(), Error>
-    where
-        F: FnOnce(&mut Aes) -> Result<(), Error>,
-    {
-        Aes::enable_clock(rcc);
-        let ret: Result<(), Error> = f(&mut self.aes);
-        unsafe { Aes::disable_clock(rcc) };
-        ret
-    }
-}
-
-impl From<Aes> for AesWrapClk {
-    #[inline]
-    fn from(aes: Aes) -> Self {
-        Self { aes }
-    }
-}
-
 /// AES errors.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -147,6 +87,19 @@ pub struct Aes {
     swap_mode: SwapMode,
 }
 
+impl PeriphClk for Aes {
+    #[inline]
+    fn c1_clk_en(rcc: &mut pac::RCC) {
+        rcc.ahb3enr.modify(|_, w| w.aesen().enabled());
+        rcc.ahb3enr.read(); // delay after an RCC peripheral clock enabling
+    }
+
+    #[inline]
+    unsafe fn c1_clk_dis(rcc: &mut pac::RCC) {
+        rcc.ahb3enr.modify(|_, w| w.aesen().disabled());
+    }
+}
+
 impl Aes {
     /// Create a new AES driver from an AES peripheral.
     ///
@@ -162,7 +115,7 @@ impl Aes {
     /// ```
     #[inline]
     pub fn new(aes: pac::AES, rcc: &mut pac::RCC) -> Aes {
-        Self::enable_clock(rcc);
+        Self::c1_clk_en(rcc);
         unsafe { Self::pulse_reset(rcc) };
 
         Aes {
@@ -205,48 +158,6 @@ impl Aes {
         rcc.ahb3rstr.modify(|_, w| w.aesrst().clear_bit());
     }
 
-    /// Disable the AES peripheral clock.
-    ///
-    /// # Safety
-    ///
-    /// 1. Ensure nothing is using the AES peripheral before disabling the clock.
-    /// 2. You are responsible for re-enabling the clock before using the AES peripheral.
-    ///
-    /// # Example
-    ///
-    /// ```no_run
-    /// use stm32wl_hal::{aes::Aes, pac};
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
-    /// // ... use AES
-    ///
-    /// // safety: AES is not in use
-    /// unsafe { Aes::disable_clock(&mut dp.RCC) };
-    ///
-    /// // have a low power nap or something
-    ///
-    /// Aes::enable_clock(&mut dp.RCC);
-    /// // ... use AES
-    /// ```
-    #[inline]
-    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
-        rcc.ahb3enr.modify(|_, w| w.aesen().disabled());
-    }
-
-    /// Enable the AES peripheral clock.
-    ///
-    /// [`new`](Self::new) will enable clocks for you.
-    ///
-    /// # Example
-    ///
-    /// See [`steal`](Self::steal).
-    #[inline]
-    pub fn enable_clock(rcc: &mut pac::RCC) {
-        rcc.ahb3enr.modify(|_, w| w.aesen().enabled());
-        rcc.ahb3enr.read(); // delay after an RCC peripheral clock enabling
-    }
-
     /// Create a new AES driver from an AES peripheral without initialization.
     ///
     /// This is a slightly safer version of [`steal`](Self::steal).
@@ -259,14 +170,14 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{aes::Aes, pac};
+    /// use stm32wl_hal::{aes::Aes, pac, PeriphClk};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// // safety: nothing is using the peripheral
     /// unsafe { Aes::pulse_reset(&mut dp.RCC) };
     ///
-    /// Aes::enable_clock(&mut dp.RCC);
+    /// Aes::c1_clk_en(&mut dp.RCC);
     ///
     /// // safety: AES peripheral has been reset and clocks are enabled
     /// let aes: Aes = unsafe { Aes::new_no_init(dp.AES) };
@@ -293,7 +204,7 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{aes::Aes, pac};
+    /// use stm32wl_hal::{aes::Aes, pac, PeriphClk};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// // AES cannot be used via registers now
@@ -302,7 +213,7 @@ impl Aes {
     /// // safety: nothing is using the peripheral
     /// unsafe { Aes::pulse_reset(&mut dp.RCC) };
     ///
-    /// Aes::enable_clock(&mut dp.RCC);
+    /// Aes::c1_clk_en(&mut dp.RCC);
     ///
     /// // safety
     /// // 1. We have exclusive access

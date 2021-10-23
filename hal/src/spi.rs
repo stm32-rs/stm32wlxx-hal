@@ -573,10 +573,10 @@ impl<SCK, MISO, MOSI, MODE> Spi<pac::SPI1, SCK, MISO, MOSI, MODE> {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// unsafe { Spi::<pac::SPI1, NoSck, NoMiso, NoMosi, Master>::disable_clock(&mut dp.RCC) };
+    /// unsafe { Spi::<pac::SPI1, NoSck, NoMiso, NoMosi, Master>::c1_clk_dis(&mut dp.RCC) };
     /// ```
     #[inline]
-    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
+    pub unsafe fn c1_clk_dis(rcc: &mut pac::RCC) {
         rcc.apb2enr.modify(|_, w| w.spi1en().disabled());
     }
 
@@ -593,10 +593,10 @@ impl<SCK, MISO, MOSI, MODE> Spi<pac::SPI1, SCK, MISO, MOSI, MODE> {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// Spi::<pac::SPI1, NoSck, NoMiso, NoMosi, Master>::enable_clock(&mut dp.RCC);
+    /// Spi::<pac::SPI1, NoSck, NoMiso, NoMosi, Master>::c1_clk_en(&mut dp.RCC);
     /// ```
     #[inline]
-    pub fn enable_clock(rcc: &mut pac::RCC) {
+    pub fn c1_clk_en(rcc: &mut pac::RCC) {
         rcc.apb2enr.modify(|_, w| w.spi1en().enabled());
         rcc.apb2enr.read(); // delay after an RCC peripheral clock enabling
     }
@@ -648,10 +648,10 @@ impl<SCK, MISO, MOSI, MODE> Spi<pac::SPI2, SCK, MISO, MOSI, MODE> {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// unsafe { Spi::<pac::SPI2, NoSck, NoMiso, NoMosi, Master>::disable_clock(&mut dp.RCC) };
+    /// unsafe { Spi::<pac::SPI2, NoSck, NoMiso, NoMosi, Master>::c1_clk_dis(&mut dp.RCC) };
     /// ```
     #[inline]
-    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
+    pub unsafe fn c1_clk_dis(rcc: &mut pac::RCC) {
         rcc.apb1enr1.modify(|_, w| w.spi2s2en().disabled());
     }
 
@@ -668,10 +668,10 @@ impl<SCK, MISO, MOSI, MODE> Spi<pac::SPI2, SCK, MISO, MOSI, MODE> {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// Spi::<pac::SPI2, NoSck, NoMiso, NoMosi, Master>::enable_clock(&mut dp.RCC);
+    /// Spi::<pac::SPI2, NoSck, NoMiso, NoMosi, Master>::c1_clk_en(&mut dp.RCC);
     /// ```
     #[inline]
-    pub fn enable_clock(rcc: &mut pac::RCC) {
+    pub fn c1_clk_en(rcc: &mut pac::RCC) {
         rcc.apb1enr1.modify(|_, w| w.spi2s2en().enabled());
         rcc.apb1enr1.read(); // delay after an RCC peripheral clock enabling
     }
@@ -687,12 +687,12 @@ impl<MISO, MOSI> Spi3<MISO, MOSI> {
     }
 
     #[inline]
-    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
+    pub unsafe fn c1_clk_dis(rcc: &mut pac::RCC) {
         rcc.apb3enr.modify(|_, w| w.subghzspien().disabled());
     }
 
     #[inline]
-    pub fn enable_clock(rcc: &mut pac::RCC) {
+    pub fn c1_clk_en(rcc: &mut pac::RCC) {
         rcc.apb3enr.modify(|_, w| w.subghzspien().enabled());
         rcc.apb3enr.read(); // delay after an RCC peripheral clock enabling
     }
@@ -741,7 +741,7 @@ macro_rules! impl_new_full_duplex {
                     rcc: &mut pac::RCC,
                     cs: &CriticalSection,
                 ) -> Self {
-                    Self::enable_clock(rcc);
+                    Self::c1_clk_en(rcc);
                     unsafe { Self::pulse_reset(rcc) };
 
                     pins.0.[<set_spi $n _sck_af>](cs);
@@ -818,7 +818,7 @@ macro_rules! impl_new_full_duplex_slave {
                     rcc: &mut pac::RCC,
                     cs: &CriticalSection,
                 ) -> Self {
-                    Self::enable_clock(rcc);
+                    Self::c1_clk_en(rcc);
                     unsafe { Self::pulse_reset(rcc) };
 
                     pins.0.[<set_spi $n _sck_af>](cs);
@@ -901,7 +901,7 @@ macro_rules! impl_new_full_duplex_dma {
                     rcc: &mut pac::RCC,
                     cs: &CriticalSection,
                 ) -> Self {
-                    Self::enable_clock(rcc);
+                    Self::c1_clk_en(rcc);
                     unsafe { Self::pulse_reset(rcc) };
 
                     pins.0.[<set_spi $n _sck_af>](cs);
@@ -995,7 +995,7 @@ macro_rules! impl_new_full_duplex_slave_dma {
                     rcc: &mut pac::RCC,
                     cs: &CriticalSection,
                 ) -> Self {
-                    Self::enable_clock(rcc);
+                    Self::c1_clk_en(rcc);
                     unsafe { Self::pulse_reset(rcc) };
 
                     pins.0.[<set_spi $n _sck_af>](cs);
@@ -1082,7 +1082,7 @@ macro_rules! impl_new_mosi_simplex {
                     rcc: &mut pac::RCC,
                     cs: &CriticalSection,
                 ) -> Self {
-                    Self::enable_clock(rcc);
+                    Self::c1_clk_en(rcc);
                     unsafe { Self::pulse_reset(rcc) };
 
                     pins.0.[<set_spi $n _sck_af>](cs);
@@ -1159,7 +1159,7 @@ macro_rules! impl_new_mosi_simplex_slave {
                     rcc: &mut pac::RCC,
                     cs: &CriticalSection,
                 ) -> Self {
-                    Self::enable_clock(rcc);
+                    Self::c1_clk_en(rcc);
                     unsafe { Self::pulse_reset(rcc) };
 
                     pins.0.[<set_spi $n _sck_af>](cs);
@@ -1240,7 +1240,7 @@ macro_rules! impl_new_mosi_simplex_dma {
                     rcc: &mut pac::RCC,
                     cs: &CriticalSection,
                 ) -> Self {
-                    Self::enable_clock(rcc);
+                    Self::c1_clk_en(rcc);
                     unsafe { Self::pulse_reset(rcc) };
 
                     pins.0.[<set_spi $n _sck_af>](cs);
@@ -1327,7 +1327,7 @@ macro_rules! impl_new_mosi_simplex_slave_dma {
                     rcc: &mut pac::RCC,
                     cs: &CriticalSection,
                 ) -> Self {
-                    Self::enable_clock(rcc);
+                    Self::c1_clk_en(rcc);
                     unsafe { Self::pulse_reset(rcc) };
 
                     pins.0.[<set_spi $n _sck_af>](cs);
@@ -1406,7 +1406,7 @@ macro_rules! impl_new_miso_simplex {
                     rcc: &mut pac::RCC,
                     cs: &CriticalSection,
                 ) -> Self {
-                    Self::enable_clock(rcc);
+                    Self::c1_clk_en(rcc);
                     unsafe { Self::pulse_reset(rcc) };
 
                     pins.0.[<set_spi $n _sck_af>](cs);
@@ -1486,7 +1486,7 @@ macro_rules! impl_new_miso_simplex_dma {
                     rcc: &mut pac::RCC,
                     cs: &CriticalSection,
                 ) -> Self {
-                    Self::enable_clock(rcc);
+                    Self::c1_clk_en(rcc);
                     unsafe { Self::pulse_reset(rcc) };
 
                     pins.0.[<set_spi $n _sck_af>](cs);
@@ -1528,7 +1528,7 @@ impl_new_miso_simplex_dma!(2);
 
 impl Spi3<SgMiso, SgMosi> {
     pub(crate) fn new(spi: pac::SPI3, div: BaudRate, rcc: &mut pac::RCC) -> Self {
-        Self::enable_clock(rcc);
+        Self::c1_clk_en(rcc);
         unsafe { Self::pulse_reset(rcc) };
 
         #[rustfmt::skip]
@@ -1575,7 +1575,7 @@ impl<MISODMA: DmaCh, MOSIDMA: DmaCh> Spi3<MISODMA, MOSIDMA> {
         div: BaudRate,
         rcc: &mut pac::RCC,
     ) -> Self {
-        Self::enable_clock(rcc);
+        Self::c1_clk_en(rcc);
         unsafe { Self::pulse_reset(rcc) };
 
         #[rustfmt::skip]

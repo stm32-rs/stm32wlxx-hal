@@ -333,7 +333,7 @@ macro_rules! impl_clocks_reset {
         $(
             impl<SCL, SDA> $I2cX<(SCL, SDA)> {
                 /// Enables peripheral clock
-                fn enable_clock(rcc: &mut RCC) {
+                fn c1_clk_en(rcc: &mut RCC) {
                     rcc.apb1enr1.modify(|_, w| w.$i2cXen().enabled());
                 }
 
@@ -377,7 +377,7 @@ macro_rules! impl_new_free {
                     {
                         assert!(freq.integer() <= 1_000_000); // TODO Return Error instead of panic
 
-                        Self::enable_clock(rcc);
+                        Self::c1_clk_en(rcc);
                         Self::pulse_reset(rcc);
 
                         pins.0.set_output_type(cs, OutputType::OpenDrain);

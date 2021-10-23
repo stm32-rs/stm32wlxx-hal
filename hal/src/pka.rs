@@ -256,7 +256,7 @@ impl Pka {
     /// let mut pka = Pka::new(dp.PKA, &mut dp.RCC);
     /// ```
     pub fn new(pka: pac::PKA, rcc: &mut pac::RCC) -> Pka {
-        Self::enable_clock(rcc);
+        Self::c1_clk_en(rcc);
         unsafe { Self::pulse_reset(rcc) };
 
         // When the PKA peripheral reset signal is released PKA RAM is cleared
@@ -334,13 +334,13 @@ impl Pka {
     /// 4. You are reponsible for setting up anything that may have lost state
     ///    while the clock was disabled.
     #[inline]
-    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
+    pub unsafe fn c1_clk_dis(rcc: &mut pac::RCC) {
         rcc.ahb3enr.modify(|_, w| w.pkaen().disabled());
     }
 
     /// Enable the PKA clock.
     #[inline]
-    pub fn enable_clock(rcc: &mut pac::RCC) {
+    pub fn c1_clk_en(rcc: &mut pac::RCC) {
         rcc.ahb3enr.modify(|_, w| w.pkaen().enabled());
         rcc.ahb3enr.read(); // delay after an RCC peripheral clock enabling
     }

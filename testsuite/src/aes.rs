@@ -11,10 +11,11 @@ use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use hex_literal::hex;
 use nucleo_wl55jc_bsp::hal::{
-    aes::{Aes, AesWrapClk, SwapMode},
+    aes::{Aes, SwapMode},
     cortex_m::{self, peripheral::DWT},
     pac, rcc,
     util::reset_cycle_count,
+    PeriphClk, WrapClk,
 };
 use panic_probe as _;
 
@@ -1552,7 +1553,6 @@ mod tests {
 
     #[init]
     fn init() -> Aes {
-        defmt::info!("init");
         let mut cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
         let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
 
@@ -2154,12 +2154,12 @@ mod tests {
     }
 
     #[test]
-    fn aes_wrap_clk() {
+    fn wrap_clk() {
         let mut dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
         unsafe { Aes::pulse_reset(&mut dp.RCC) };
-        unsafe { Aes::disable_clock(&mut dp.RCC) };
+        unsafe { Aes::c1_clk_dis(&mut dp.RCC) };
 
-        let mut aeswrap: AesWrapClk = unsafe { Aes::new_no_init(dp.AES) }.into();
+        let mut aeswrap: WrapClk<Aes> = unsafe { Aes::new_no_init(dp.AES) }.into();
 
         for (plaintext, ciphertext) in ECB_PT_CT_128.iter() {
             let mut output_plaintext: [u32; 4] = [0; 4];

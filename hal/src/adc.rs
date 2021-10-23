@@ -422,7 +422,7 @@ impl Adc {
     #[inline]
     pub fn new(adc: pac::ADC, clk: Clk, rcc: &mut pac::RCC) -> Self {
         unsafe { Self::pulse_reset(rcc) };
-        Self::enable_clock(rcc);
+        Self::c1_clk_en(rcc);
         let mut adc: Self = Self { adc };
         adc.set_clock_source(clk, rcc);
         adc
@@ -547,7 +547,7 @@ impl Adc {
     /// 1. Ensure nothing is using the ADC before disabling the clock.
     /// 2. You are responsible for re-enabling the clock before using the ADC.
     #[inline]
-    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
+    pub unsafe fn c1_clk_dis(rcc: &mut pac::RCC) {
         rcc.apb2enr.modify(|_, w| w.adcen().disabled());
     }
 
@@ -555,7 +555,7 @@ impl Adc {
     ///
     /// [`new`](crate::adc::Adc::new) will enable clocks for you.
     #[inline]
-    pub fn enable_clock(rcc: &mut pac::RCC) {
+    pub fn c1_clk_en(rcc: &mut pac::RCC) {
         rcc.apb2enr.modify(|_, w| w.adcen().enabled());
         rcc.apb2enr.read(); // delay after an RCC peripheral clock enabling
     }

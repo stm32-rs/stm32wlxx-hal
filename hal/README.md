@@ -92,8 +92,8 @@ this is not consistent (see [#78])
 * `mask_irq` mask the peripheral
 * `unmask_irq` unmask the peripheral IRQ
 * `pulse_reset` reset the peripheral
-* `disable_clock` disable the peripheral clock (for power saving)
-* `enable_clock` enable the peripheral clock
+* `c1_clk_dis` disable the peripheral clock (for power saving)
+* `c1_clk_en` enable the peripheral clock
 
 [stm32-rs]: https://github.com/stm32-rs/stm32-rs
 [svd2rust]: https://github.com/rust-embedded/svd2rust

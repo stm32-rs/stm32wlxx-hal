@@ -870,7 +870,7 @@ impl PortA {
     #[allow(unused_variables)]
     #[inline]
     pub fn split(gpioa: pac::GPIOA, rcc: &mut pac::RCC) -> Self {
-        Self::enable_clock(rcc);
+        Self::c1_clk_en(rcc);
         rcc.ahb2rstr.modify(|_, w| w.gpioarst().set_bit());
         rcc.ahb2rstr.modify(|_, w| w.gpioarst().clear_bit());
 
@@ -914,13 +914,13 @@ impl PortA {
     /// 2. You are responsible for re-enabling the clock before resuming use
     ///    of any port A GPIO.
     #[inline]
-    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
+    pub unsafe fn c1_clk_dis(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpioaen().disabled());
     }
 
     /// Enable the GPIOA clock.
     #[inline]
-    pub fn enable_clock(rcc: &mut pac::RCC) {
+    pub fn c1_clk_en(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpioaen().enabled());
         rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
     }
@@ -1005,7 +1005,7 @@ impl PortB {
     #[allow(unused_variables)]
     #[inline]
     pub fn split(gpiob: pac::GPIOB, rcc: &mut pac::RCC) -> Self {
-        Self::enable_clock(rcc);
+        Self::c1_clk_en(rcc);
         rcc.ahb2rstr.modify(|_, w| w.gpiobrst().set_bit());
         rcc.ahb2rstr.modify(|_, w| w.gpiobrst().clear_bit());
 
@@ -1049,13 +1049,13 @@ impl PortB {
     /// 2. You are responsible for re-enabling the clock before resuming use
     ///    of any port B GPIO.
     #[inline]
-    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
+    pub unsafe fn c1_clk_dis(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpioben().disabled());
     }
 
     /// Enable the GPIOB clock.
     #[inline]
-    pub fn enable_clock(rcc: &mut pac::RCC) {
+    pub fn c1_clk_en(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpioben().enabled());
         rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
     }
@@ -1128,7 +1128,7 @@ impl PortC {
     #[allow(unused_variables)]
     #[inline]
     pub fn split(gpioc: pac::GPIOC, rcc: &mut pac::RCC) -> Self {
-        Self::enable_clock(rcc);
+        Self::c1_clk_en(rcc);
         rcc.ahb2rstr.modify(|_, w| w.gpiocrst().set_bit());
         rcc.ahb2rstr.modify(|_, w| w.gpiocrst().clear_bit());
 
@@ -1172,13 +1172,13 @@ impl PortC {
     /// 2. You are responsible for re-enabling the clock before resuming use
     ///    of any port C GPIO.
     #[inline]
-    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
+    pub unsafe fn c1_clk_dis(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpiocen().disabled());
     }
 
     /// Enable the GPIOC clock.
     #[inline]
-    pub fn enable_clock(rcc: &mut pac::RCC) {
+    pub fn c1_clk_en(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpiocen().enabled());
         rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
     }

@@ -81,7 +81,7 @@ impl Rng {
     /// ```
     pub fn new(rng: pac::RNG, clk: Clk, rcc: &mut pac::RCC) -> Rng {
         rcc.ccipr.modify(|_, w| w.rngsel().variant(clk));
-        Self::enable_clock(rcc);
+        Self::c1_clk_en(rcc);
         rcc.ahb3rstr.modify(|_, w| w.rngrst().set_bit());
         rcc.ahb3rstr.modify(|_, w| w.rngrst().clear_bit());
 
@@ -209,12 +209,12 @@ impl Rng {
     ///    of the RNG.
     /// 4. You are reponsible for setting up anything that may have lost state
     ///    while the clock was disabled.
-    pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
+    pub unsafe fn c1_clk_dis(rcc: &mut pac::RCC) {
         rcc.ahb3enr.modify(|_, w| w.rngen().disabled());
     }
 
     /// Enable the RNG clock.
-    pub fn enable_clock(rcc: &mut pac::RCC) {
+    pub fn c1_clk_en(rcc: &mut pac::RCC) {
         rcc.ahb3enr.modify(|_, w| w.rngen().enabled());
         rcc.ahb3enr.read(); // delay after an RCC peripheral clock enabling
     }

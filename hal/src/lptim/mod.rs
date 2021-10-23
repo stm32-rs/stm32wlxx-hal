@@ -335,7 +335,7 @@ pub trait LpTim: sealed::LpTim {
     /// Enable clocks for the LPTIM peripheral.
     ///
     /// [`new`](Self::new) will enable clocks for you.
-    fn enable_clock(rcc: &mut pac::RCC);
+    fn c1_clk_en(rcc: &mut pac::RCC);
 
     /// Disable the LPTIM peripheral clock.
     ///
@@ -343,7 +343,7 @@ pub trait LpTim: sealed::LpTim {
     ///
     /// 1. Ensure nothing is using the timer before disabling the clock.
     /// 2. You are responsible for re-enabling the clock before using the timer.
-    unsafe fn disable_clock(rcc: &mut pac::RCC);
+    unsafe fn c1_clk_dis(rcc: &mut pac::RCC);
 
     /// Get the clock source.
     ///
@@ -497,7 +497,7 @@ impl LpTim for LpTim1 {
     fn new(mut tim: Self::Pac, clk: Clk, pre: Prescaler, rcc: &mut pac::RCC) -> Self {
         rcc.ccipr.modify(|_, w| w.lptim1sel().bits(clk as u8));
         unsafe { Self::pulse_reset(rcc) }
-        Self::enable_clock(rcc);
+        Self::c1_clk_en(rcc);
         tim.set_cfgr(Cfgr::RESET.set_prescaler(pre));
 
         let src: Ratio<u32> = match clk {
@@ -523,13 +523,13 @@ impl LpTim for LpTim1 {
     }
 
     #[inline]
-    fn enable_clock(rcc: &mut pac::RCC) {
+    fn c1_clk_en(rcc: &mut pac::RCC) {
         rcc.apb1enr1.modify(|_, w| w.lptim1en().enabled());
         rcc.apb1enr1.read(); // delay after an RCC peripheral clock enabling
     }
 
     #[inline]
-    unsafe fn disable_clock(rcc: &mut pac::RCC) {
+    unsafe fn c1_clk_dis(rcc: &mut pac::RCC) {
         rcc.apb1enr1.modify(|_, w| w.lptim1en().disabled());
     }
 
@@ -545,7 +545,7 @@ impl LpTim for LpTim2 {
     fn new(mut tim: Self::Pac, clk: Clk, pre: Prescaler, rcc: &mut pac::RCC) -> Self {
         rcc.ccipr.modify(|_, w| w.lptim2sel().bits(clk as u8));
         unsafe { Self::pulse_reset(rcc) }
-        Self::enable_clock(rcc);
+        Self::c1_clk_en(rcc);
         tim.set_cfgr(Cfgr::RESET.set_prescaler(pre));
 
         let src: Ratio<u32> = match clk {
@@ -571,13 +571,13 @@ impl LpTim for LpTim2 {
     }
 
     #[inline]
-    fn enable_clock(rcc: &mut pac::RCC) {
+    fn c1_clk_en(rcc: &mut pac::RCC) {
         rcc.apb1enr2.modify(|_, w| w.lptim2en().enabled());
         rcc.apb1enr2.read(); // delay after an RCC peripheral clock enabling
     }
 
     #[inline]
-    unsafe fn disable_clock(rcc: &mut pac::RCC) {
+    unsafe fn c1_clk_dis(rcc: &mut pac::RCC) {
         rcc.apb1enr2.modify(|_, w| w.lptim2en().disabled());
     }
 
@@ -593,7 +593,7 @@ impl LpTim for LpTim3 {
     fn new(mut tim: Self::Pac, clk: Clk, pre: Prescaler, rcc: &mut pac::RCC) -> Self {
         rcc.ccipr.modify(|_, w| w.lptim3sel().bits(clk as u8));
         unsafe { Self::pulse_reset(rcc) }
-        Self::enable_clock(rcc);
+        Self::c1_clk_en(rcc);
         tim.set_cfgr(Cfgr::RESET.set_prescaler(pre));
 
         let src: Ratio<u32> = match clk {
@@ -619,13 +619,13 @@ impl LpTim for LpTim3 {
     }
 
     #[inline]
-    fn enable_clock(rcc: &mut pac::RCC) {
+    fn c1_clk_en(rcc: &mut pac::RCC) {
         rcc.apb1enr2.modify(|_, w| w.lptim3en().enabled());
         rcc.apb1enr2.read(); // delay after an RCC peripheral clock enabling
     }
 
     #[inline]
-    unsafe fn disable_clock(rcc: &mut pac::RCC) {
+    unsafe fn c1_clk_dis(rcc: &mut pac::RCC) {
         rcc.apb1enr2.modify(|_, w| w.lptim3en().disabled());
     }
 

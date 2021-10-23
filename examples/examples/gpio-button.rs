@@ -6,7 +6,7 @@
 use defmt_rtt as _; // global logger
 use panic_probe as _; // panic handler
 use stm32wl_hal::{
-    self as hal,
+    self as hal, cortex_m,
     gpio::{pins, Input, PinState, PortC, Pull},
     pac,
 };
@@ -23,7 +23,7 @@ fn main() -> ! {
     let mut dp: pac::Peripherals = defmt::unwrap!(pac::Peripherals::take());
 
     let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    let c6: Input<pins::C6> = Input::new(gpioc.c6, Pull::Up);
+    let c6: Input<pins::C6> = cortex_m::interrupt::free(|cs| Input::new(gpioc.c6, Pull::Up, cs));
 
     let mut prev_level: PinState = c6.level();
     defmt::info!("B3 initial level: {}", pinstate_str(prev_level));

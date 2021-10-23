@@ -25,55 +25,59 @@ mod tests {
 
     #[init]
     fn init() -> I2c1<(pins::B8, pins::B7)> {
-        let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
+        cortex_m::interrupt::free(|cs| {
+            let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
 
-        unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
-        let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-        let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+            unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC, cs) };
+            let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+            let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
 
-        // initialize I2C2 clocks and pins
-        let i2c2 = I2c2::new(
-            dp.I2C2,
-            (gpioa.a12, gpioa.a11),
-            Hertz(I2C_FREQUENCY),
-            &mut dp.RCC,
-            true,
-        );
-        let (i2c2, _) = i2c2.free();
+            // initialize I2C2 clocks and pins
+            let i2c2 = I2c2::new(
+                dp.I2C2,
+                (gpioa.a12, gpioa.a11),
+                Hertz(I2C_FREQUENCY),
+                &mut dp.RCC,
+                true,
+                cs,
+            );
+            let (i2c2, _) = i2c2.free();
 
-        // disable i2c2 to reconfigure for secondary mode
-        i2c2.cr1.modify(|_, w| w.pe().disabled());
+            // disable i2c2 to reconfigure for secondary mode
+            i2c2.cr1.modify(|_, w| w.pe().disabled());
 
-        // set the i2c2 secondary address to 0x77
-        i2c2.oar1.write(|w| {
-            w.oa1en()
-                .enabled()
-                .oa1mode()
-                .bit7()
-                .oa1()
-                .bits((LOOPBACK_ADDR << 1) as u16)
-        });
-        #[rustfmt::skip]
-        i2c2.cr1.modify(|_, w| {
-            w
-                .gcen().set_bit() // general call enable
-                .errie().enabled() // enable error IRQs
-                .addrie().enabled() // secondary address match IRQ
-                .pe().enabled() // re-enable peripheral
-        });
+            // set the i2c2 secondary address to 0x77
+            i2c2.oar1.write(|w| {
+                w.oa1en()
+                    .enabled()
+                    .oa1mode()
+                    .bit7()
+                    .oa1()
+                    .bits((LOOPBACK_ADDR << 1) as u16)
+            });
+            #[rustfmt::skip]
+            i2c2.cr1.modify(|_, w| {
+                w
+                    .gcen().set_bit() // general call enable
+                    .errie().enabled() // enable error IRQs
+                    .addrie().enabled() // secondary address match IRQ
+                    .pe().enabled() // re-enable peripheral
+            });
 
-        unsafe {
-            pac::NVIC::unmask(pac::Interrupt::I2C2_EV);
-            pac::NVIC::unmask(pac::Interrupt::I2C2_ER);
-        }
+            unsafe {
+                pac::NVIC::unmask(pac::Interrupt::I2C2_EV);
+                pac::NVIC::unmask(pac::Interrupt::I2C2_ER);
+            }
 
-        I2c1::new(
-            dp.I2C1,
-            (gpiob.b8, gpiob.b7),
-            Hertz(I2C_FREQUENCY),
-            &mut dp.RCC,
-            false,
-        )
+            I2c1::new(
+                dp.I2C1,
+                (gpiob.b8, gpiob.b7),
+                Hertz(I2C_FREQUENCY),
+                &mut dp.RCC,
+                false,
+                cs,
+            )
+        })
     }
 
     #[test]

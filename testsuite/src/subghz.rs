@@ -10,7 +10,7 @@ use static_assertions as sa;
 
 use bsp::{
     hal::{
-        cortex_m::delay::Delay,
+        cortex_m::{self, delay::Delay},
         dma::{AllDma, Dma1Ch1, Dma2Ch1},
         gpio::{PortA, PortC, RfNssDbg, SgMisoDbg, SgMosiDbg, SgSckDbg},
         pac::{self, DWT},
@@ -284,38 +284,40 @@ mod tests {
 
     #[init]
     fn init() -> TestArgs {
-        let mut cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
-        let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
+        cortex_m::interrupt::free(|cs| {
+            let mut cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
+            let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
 
-        unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
-        defmt::assert_eq!(rcc::sysclk_hz(&dp.RCC), FREQ);
+            unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC, cs) };
+            defmt::assert_eq!(rcc::sysclk_hz(&dp.RCC), FREQ);
 
-        let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-        let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-        let mut rfs: RfSwitch = RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5);
-        rfs.set_rx();
+            let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+            let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+            let mut rfs: RfSwitch = RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5, cs);
+            rfs.set_rx();
 
-        let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
+            let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
 
-        let rng: Rng = Rng::new(dp.RNG, rng::Clk::MSI, &mut dp.RCC);
-        let delay: Delay = new_delay(cp.SYST, &dp.RCC);
+            let rng: Rng = Rng::new(dp.RNG, rng::Clk::MSI, &mut dp.RCC);
+            let delay: Delay = new_delay(cp.SYST, &dp.RCC);
 
-        let sg: MySubghz = MySubghz::new_with_dma(dp.SPI3, dma.d1.c1, dma.d2.c1, &mut dp.RCC);
-        let _: RfNssDbg = RfNssDbg::new(gpioa.a4);
-        let _: SgSckDbg = SgSckDbg::new(gpioa.a5);
-        let _: SgMisoDbg = SgMisoDbg::new(gpioa.a6);
-        let _: SgMosiDbg = SgMosiDbg::new(gpioa.a7);
+            let sg: MySubghz = MySubghz::new_with_dma(dp.SPI3, dma.d1.c1, dma.d2.c1, &mut dp.RCC);
+            let _: RfNssDbg = RfNssDbg::new(gpioa.a4, cs);
+            let _: SgSckDbg = SgSckDbg::new(gpioa.a5, cs);
+            let _: SgMisoDbg = SgMisoDbg::new(gpioa.a6, cs);
+            let _: SgMosiDbg = SgMosiDbg::new(gpioa.a7, cs);
 
-        cp.DCB.enable_trace();
-        cp.DWT.enable_cycle_counter();
-        reset_cycle_count(&mut cp.DWT);
+            cp.DCB.enable_trace();
+            cp.DWT.enable_cycle_counter();
+            reset_cycle_count(&mut cp.DWT);
 
-        TestArgs {
-            sg,
-            rng,
-            delay,
-            rfs,
-        }
+            TestArgs {
+                sg,
+                rng,
+                delay,
+                rfs,
+            }
+        })
     }
 
     #[test]

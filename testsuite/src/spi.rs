@@ -7,6 +7,7 @@ use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use itertools::iproduct;
 use nucleo_wl55jc_bsp::hal::{
+    cortex_m,
     dma::AllDma,
     embedded_hal::blocking::spi::{Transfer, Write},
     gpio::{PortA, PortC},
@@ -81,7 +82,9 @@ mod tests {
         let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
         let mut cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
 
-        unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
+        cortex_m::interrupt::free(|cs| unsafe {
+            rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC, cs)
+        });
         cp.DCB.enable_trace();
         cp.DWT.enable_cycle_counter();
         reset_cycle_count(&mut cp.DWT);
@@ -98,20 +101,26 @@ mod tests {
             defmt::debug!("÷{} MODE_{}", br.div(), mode_num(mode));
             let mut ta: TestArgs = unsafe { setup() };
 
-            let mut s = Spi::new_spi2_full_duplex_slave(
-                ta.spi2,
-                (ta.pa.a9, ta.pc.c2, ta.pc.c3),
-                mode,
-                &mut ta.rcc,
-            );
+            let mut s = cortex_m::interrupt::free(|cs| {
+                Spi::new_spi2_full_duplex_slave(
+                    ta.spi2,
+                    (ta.pa.a9, ta.pc.c2, ta.pc.c3),
+                    mode,
+                    &mut ta.rcc,
+                    cs,
+                )
+            });
 
-            let mut m = Spi::new_spi1_full_duplex(
-                ta.spi1,
-                (ta.pa.a5, ta.pa.a6, ta.pa.a7),
-                mode,
-                br,
-                &mut ta.rcc,
-            );
+            let mut m = cortex_m::interrupt::free(|cs| {
+                Spi::new_spi1_full_duplex(
+                    ta.spi1,
+                    (ta.pa.a5, ta.pa.a6, ta.pa.a7),
+                    mode,
+                    br,
+                    &mut ta.rcc,
+                    cs,
+                )
+            });
 
             for _ in 0..8 {
                 s.set_ssi(false);
@@ -143,22 +152,28 @@ mod tests {
             defmt::debug!("÷{} MODE_{}", br.div(), mode_num(mode));
             let mut ta: TestArgs = unsafe { setup() };
 
-            let mut s = Spi::new_spi2_full_duplex_slave_dma(
-                ta.spi2,
-                (ta.pa.a9, ta.pc.c2, ta.pc.c3),
-                (ta.dma.d1.c1, ta.dma.d1.c2),
-                mode,
-                &mut ta.rcc,
-            );
+            let mut s = cortex_m::interrupt::free(|cs| {
+                Spi::new_spi2_full_duplex_slave_dma(
+                    ta.spi2,
+                    (ta.pa.a9, ta.pc.c2, ta.pc.c3),
+                    (ta.dma.d1.c1, ta.dma.d1.c2),
+                    mode,
+                    &mut ta.rcc,
+                    cs,
+                )
+            });
 
-            let mut m = Spi::new_spi1_full_duplex_dma(
-                ta.spi1,
-                (ta.pa.a5, ta.pa.a6, ta.pa.a7),
-                (ta.dma.d2.c1, ta.dma.d2.c2),
-                mode,
-                br,
-                &mut ta.rcc,
-            );
+            let mut m = cortex_m::interrupt::free(|cs| {
+                Spi::new_spi1_full_duplex_dma(
+                    ta.spi1,
+                    (ta.pa.a5, ta.pa.a6, ta.pa.a7),
+                    (ta.dma.d2.c1, ta.dma.d2.c2),
+                    mode,
+                    br,
+                    &mut ta.rcc,
+                    cs,
+                )
+            });
 
             for _ in 0..8 {
                 s.set_ssi(false);
@@ -190,11 +205,19 @@ mod tests {
             defmt::debug!("÷{} MODE_{}", br.div(), mode_num(mode));
             let mut ta: TestArgs = unsafe { setup() };
 
-            let mut s =
-                Spi::new_spi2_mosi_simplex_slave(ta.spi2, (ta.pa.a9, ta.pc.c3), mode, &mut ta.rcc);
+            let mut s = cortex_m::interrupt::free(|cs| {
+                Spi::new_spi2_mosi_simplex_slave(
+                    ta.spi2,
+                    (ta.pa.a9, ta.pc.c3),
+                    mode,
+                    &mut ta.rcc,
+                    cs,
+                )
+            });
 
-            let mut m =
-                Spi::new_spi1_mosi_simplex(ta.spi1, (ta.pa.a5, ta.pa.a7), mode, br, &mut ta.rcc);
+            let mut m = cortex_m::interrupt::free(|cs| {
+                Spi::new_spi1_mosi_simplex(ta.spi1, (ta.pa.a5, ta.pa.a7), mode, br, &mut ta.rcc, cs)
+            });
 
             for _ in 0..8 {
                 s.set_ssi(false);
@@ -213,22 +236,28 @@ mod tests {
             defmt::debug!("÷{} MODE_{}", br.div(), mode_num(mode));
             let mut ta: TestArgs = unsafe { setup() };
 
-            let mut s = Spi::new_spi2_mosi_simplex_slave_dma(
-                ta.spi2,
-                (ta.pa.a9, ta.pc.c3),
-                ta.dma.d1.c2,
-                mode,
-                &mut ta.rcc,
-            );
+            let mut s = cortex_m::interrupt::free(|cs| {
+                Spi::new_spi2_mosi_simplex_slave_dma(
+                    ta.spi2,
+                    (ta.pa.a9, ta.pc.c3),
+                    ta.dma.d1.c2,
+                    mode,
+                    &mut ta.rcc,
+                    cs,
+                )
+            });
 
-            let mut m = Spi::new_spi1_mosi_simplex_dma(
-                ta.spi1,
-                (ta.pa.a5, ta.pa.a7),
-                ta.dma.d1.c1,
-                mode,
-                br,
-                &mut ta.rcc,
-            );
+            let mut m = cortex_m::interrupt::free(|cs| {
+                Spi::new_spi1_mosi_simplex_dma(
+                    ta.spi1,
+                    (ta.pa.a5, ta.pa.a7),
+                    ta.dma.d1.c1,
+                    mode,
+                    br,
+                    &mut ta.rcc,
+                    cs,
+                )
+            });
 
             for _ in 0..8 {
                 s.set_ssi(false);
@@ -247,16 +276,26 @@ mod tests {
             defmt::debug!("÷{} MODE_{}", br.div(), mode_num(mode));
             let mut ta: TestArgs = unsafe { setup() };
 
-            let mut s =
-                Spi::new_spi2_miso_simplex_slave(ta.spi2, (ta.pa.a9, ta.pc.c2), mode, &mut ta.rcc);
+            let mut s = cortex_m::interrupt::free(|cs| {
+                Spi::new_spi2_miso_simplex_slave(
+                    ta.spi2,
+                    (ta.pa.a9, ta.pc.c2),
+                    mode,
+                    &mut ta.rcc,
+                    cs,
+                )
+            });
 
-            let mut m = Spi::new_spi1_full_duplex(
-                ta.spi1,
-                (ta.pa.a5, ta.pa.a6, ta.pa.a7),
-                mode,
-                br,
-                &mut ta.rcc,
-            );
+            let mut m = cortex_m::interrupt::free(|cs| {
+                Spi::new_spi1_full_duplex(
+                    ta.spi1,
+                    (ta.pa.a5, ta.pa.a6, ta.pa.a7),
+                    mode,
+                    br,
+                    &mut ta.rcc,
+                    cs,
+                )
+            });
 
             for _ in 0..8 {
                 s.set_ssi(false);
@@ -275,21 +314,27 @@ mod tests {
             defmt::debug!("÷{} MODE_{}", br.div(), mode_num(mode));
             let mut ta: TestArgs = unsafe { setup() };
 
-            let mut s = Spi::new_spi2_miso_simplex_slave_dma(
-                ta.spi2,
-                (ta.pa.a9, ta.pc.c2),
-                ta.dma.d1.c2,
-                mode,
-                &mut ta.rcc,
-            );
+            let mut s = cortex_m::interrupt::free(|cs| {
+                Spi::new_spi2_miso_simplex_slave_dma(
+                    ta.spi2,
+                    (ta.pa.a9, ta.pc.c2),
+                    ta.dma.d1.c2,
+                    mode,
+                    &mut ta.rcc,
+                    cs,
+                )
+            });
 
-            let mut m = Spi::new_spi1_full_duplex(
-                ta.spi1,
-                (ta.pa.a5, ta.pa.a6, ta.pa.a7),
-                mode,
-                br,
-                &mut ta.rcc,
-            );
+            let mut m = cortex_m::interrupt::free(|cs| {
+                Spi::new_spi1_full_duplex(
+                    ta.spi1,
+                    (ta.pa.a5, ta.pa.a6, ta.pa.a7),
+                    mode,
+                    br,
+                    &mut ta.rcc,
+                    cs,
+                )
+            });
 
             for _ in 0..8 {
                 s.set_ssi(false);

@@ -13,7 +13,7 @@ use hex_literal::hex;
 use nucleo_wl55jc_bsp::hal::{
     aes::{Aes, AesWrapClk, SwapMode},
     cortex_m::{self, peripheral::DWT},
-    cortex_m_rt, pac, rcc,
+    pac, rcc,
     util::reset_cycle_count,
 };
 use panic_probe as _;
@@ -1556,7 +1556,9 @@ mod tests {
         let mut cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
         let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
 
-        unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
+        cortex_m::interrupt::free(|cs| unsafe {
+            rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC, cs)
+        });
         defmt::assert_eq!(rcc::sysclk_hz(&dp.RCC), FREQ);
 
         cp.DCB.enable_trace();

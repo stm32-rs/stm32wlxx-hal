@@ -8,7 +8,10 @@ pub mod pb;
 
 pub use stm32wl_hal as hal;
 
-use hal::gpio::{self, pins, Output, OutputArgs, PinState};
+use hal::{
+    cortex_m::interrupt::CriticalSection,
+    gpio::{self, pins, Output, OutputArgs, PinState},
+};
 
 /// RF switch.
 #[derive(Debug)]
@@ -25,16 +28,17 @@ impl RfSwitch {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{gpio::PortC, pac},
+    ///     hal::{cortex_m, gpio::PortC, pac},
     ///     RfSwitch,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let rfs = RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5);
+    /// let rfs: RfSwitch =
+    ///     cortex_m::interrupt::free(|cs| RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5, cs));
     /// ```
-    pub fn new(c3: pins::C3, c4: pins::C4, c5: pins::C5) -> RfSwitch {
+    pub fn new(c3: pins::C3, c4: pins::C4, c5: pins::C5, cs: &CriticalSection) -> RfSwitch {
         const ARGS: OutputArgs = OutputArgs {
             speed: gpio::Speed::Fast,
             level: gpio::PinState::High,
@@ -42,9 +46,9 @@ impl RfSwitch {
             pull: gpio::Pull::None,
         };
         RfSwitch {
-            fe_ctrl1: Output::new(c4, &ARGS),
-            fe_ctrl2: Output::new(c5, &ARGS),
-            fe_ctrl3: Output::new(c3, &ARGS),
+            fe_ctrl1: Output::new(c4, &ARGS, cs),
+            fe_ctrl2: Output::new(c5, &ARGS, cs),
+            fe_ctrl3: Output::new(c3, &ARGS, cs),
         }
     }
 
@@ -54,14 +58,15 @@ impl RfSwitch {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{gpio::PortC, pac},
+    ///     hal::{cortex_m, gpio::PortC, pac},
     ///     RfSwitch,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let mut rfs = RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5);
+    /// let mut rfs: RfSwitch =
+    ///     cortex_m::interrupt::free(|cs| RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5, cs));
     /// rfs.set_rx()
     /// ```
     pub fn set_rx(&mut self) {
@@ -76,14 +81,15 @@ impl RfSwitch {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{gpio::PortC, pac},
+    ///     hal::{cortex_m, gpio::PortC, pac},
     ///     RfSwitch,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let mut rfs = RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5);
+    /// let mut rfs: RfSwitch =
+    ///     cortex_m::interrupt::free(|cs| RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5, cs));
     /// rfs.set_tx_lp()
     /// ```
     pub fn set_tx_lp(&mut self) {
@@ -98,14 +104,15 @@ impl RfSwitch {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{gpio::PortC, pac},
+    ///     hal::{cortex_m, gpio::PortC, pac},
     ///     RfSwitch,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let mut rfs = RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5);
+    /// let mut rfs: RfSwitch =
+    ///     cortex_m::interrupt::free(|cs| RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5, cs));
     /// rfs.set_tx_hp()
     /// ```
     pub fn set_tx_hp(&mut self) {

@@ -127,7 +127,9 @@ mod tests {
             defmt::assert_eq!(rcc::sysclk_hz(&ta.rcc), to.to_hz());
         }
 
-        unsafe { set_sysclk_msi_max(&mut ta.flash, &mut ta.pwr, &mut ta.rcc) };
+        cortex_m::interrupt::free(|cs| unsafe {
+            set_sysclk_msi_max(&mut ta.flash, &mut ta.pwr, &mut ta.rcc, cs)
+        });
     }
 
     #[test]
@@ -146,7 +148,9 @@ mod tests {
             exit_lprun(&mut ta.pwr);
         }
 
-        unsafe { set_sysclk_msi_max(&mut ta.flash, &mut ta.pwr, &mut ta.rcc) };
+        cortex_m::interrupt::free(|cs| unsafe {
+            set_sysclk_msi_max(&mut ta.flash, &mut ta.pwr, &mut ta.rcc, cs)
+        });
     }
 
     #[test]

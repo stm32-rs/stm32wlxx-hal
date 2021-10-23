@@ -5,6 +5,7 @@ use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use nucleo_wl55jc_bsp::hal::{
     chrono::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Timelike},
+    cortex_m,
     pac::{self, DWT},
     rcc::{self, pulse_reset_backup_domain, setup_lsi, LsiPre},
     rtc::{self, Rtc},
@@ -104,7 +105,9 @@ mod tests {
         let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
         let mut cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
 
-        unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
+        cortex_m::interrupt::free(|cs| unsafe {
+            rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC, cs)
+        });
         cp.DCB.enable_trace();
         cp.DWT.enable_cycle_counter();
         reset_cycle_count(&mut cp.DWT);

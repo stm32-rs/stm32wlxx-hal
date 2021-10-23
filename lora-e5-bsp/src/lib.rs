@@ -7,7 +7,10 @@ pub mod pb;
 
 pub use stm32wl_hal as hal;
 
-use hal::gpio::{self, pins, Output, OutputArgs, PinState};
+use hal::{
+    cortex_m::interrupt::CriticalSection,
+    gpio::{self, pins, Output, OutputArgs, PinState},
+};
 
 /// RF switch
 #[derive(Debug)]
@@ -23,16 +26,16 @@ impl RfSwitch {
     ///
     /// ```no_run
     /// use lora_e5_bsp::{
-    ///     hal::{gpio::PortA, pac},
+    ///     hal::{cortex_m, gpio::PortA, pac},
     ///     RfSwitch,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let rfs = RfSwitch::new(gpioa.a4, gpioa.a5);
+    /// let rfs: RfSwitch = cortex_m::interrupt::free(|cs| RfSwitch::new(gpioa.a4, gpioa.a5, cs));
     /// ```
-    pub fn new(a4: pins::A4, a5: pins::A5) -> RfSwitch {
+    pub fn new(a4: pins::A4, a5: pins::A5, cs: &CriticalSection) -> RfSwitch {
         const ARGS: OutputArgs = OutputArgs {
             speed: gpio::Speed::Fast,
             level: gpio::PinState::High,
@@ -40,8 +43,8 @@ impl RfSwitch {
             pull: gpio::Pull::None,
         };
         RfSwitch {
-            a4: Output::new(a4, &ARGS),
-            a5: Output::new(a5, &ARGS),
+            a4: Output::new(a4, &ARGS, cs),
+            a5: Output::new(a5, &ARGS, cs),
         }
     }
 
@@ -51,14 +54,14 @@ impl RfSwitch {
     ///
     /// ```no_run
     /// use lora_e5_bsp::{
-    ///     hal::{gpio::PortA, pac},
+    ///     hal::{cortex_m, gpio::PortA, pac},
     ///     RfSwitch,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let mut rfs = RfSwitch::new(gpioa.a4, gpioa.a5);
+    /// let mut rfs: RfSwitch = cortex_m::interrupt::free(|cs| RfSwitch::new(gpioa.a4, gpioa.a5, cs));
     /// rfs.set_rx();
     /// ```
     pub fn set_rx(&mut self) {
@@ -72,14 +75,14 @@ impl RfSwitch {
     ///
     /// ```no_run
     /// use lora_e5_bsp::{
-    ///     hal::{gpio::PortA, pac},
+    ///     hal::{cortex_m, gpio::PortA, pac},
     ///     RfSwitch,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let mut rfs = RfSwitch::new(gpioa.a4, gpioa.a5);
+    /// let mut rfs: RfSwitch = cortex_m::interrupt::free(|cs| RfSwitch::new(gpioa.a4, gpioa.a5, cs));
     /// rfs.set_tx_hp();
     /// ```
     pub fn set_tx_hp(&mut self) {

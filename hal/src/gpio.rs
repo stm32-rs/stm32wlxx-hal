@@ -92,37 +92,37 @@ impl<const BASE: usize, const N: u8> Pin<BASE, N> {
     }
 
     #[inline(always)]
-    pub(crate) unsafe fn set_mode(&mut self, _cs: &CriticalSection, mode: sealed::Mode) {
-        let mut val: u32 = read_volatile(Self::MODER_R);
+    pub(crate) fn set_mode(&mut self, _cs: &CriticalSection, mode: sealed::Mode) {
+        let mut val: u32 = unsafe { read_volatile(Self::MODER_R) };
         val &= !(0b11 << (N * 2));
         val |= (mode as u8 as u32) << (N * 2);
-        write_volatile(Self::MODER_W, val);
+        unsafe { write_volatile(Self::MODER_W, val) };
     }
 
     #[inline(always)]
-    pub(crate) unsafe fn set_output_type(&mut self, _cs: &CriticalSection, ot: OutputType) {
-        let mut val: u32 = read_volatile(Self::OTYPER_R);
+    pub(crate) fn set_output_type(&mut self, _cs: &CriticalSection, ot: OutputType) {
+        let mut val: u32 = unsafe { read_volatile(Self::OTYPER_R) };
         match ot {
             OutputType::PushPull => val &= !(1 << N),
             OutputType::OpenDrain => val |= 1 << N,
         }
-        write_volatile(Self::OTYPER_W, val);
+        unsafe { write_volatile(Self::OTYPER_W, val) };
     }
 
     #[inline(always)]
-    pub(crate) unsafe fn set_speed(&mut self, _cs: &CriticalSection, speed: Speed) {
-        let mut val: u32 = read_volatile(Self::OSPEEDR_R);
+    pub(crate) fn set_speed(&mut self, _cs: &CriticalSection, speed: Speed) {
+        let mut val: u32 = unsafe { read_volatile(Self::OSPEEDR_R) };
         val &= !(0b11 << (N * 2));
         val |= (speed as u8 as u32) << (N * 2);
-        write_volatile(Self::OSPEEDR_W, val);
+        unsafe { write_volatile(Self::OSPEEDR_W, val) };
     }
 
     #[inline(always)]
-    pub(crate) unsafe fn set_pull(&mut self, _cs: &CriticalSection, pull: Pull) {
-        let mut val: u32 = read_volatile(Self::PUPDR_R);
+    pub(crate) fn set_pull(&mut self, _cs: &CriticalSection, pull: Pull) {
+        let mut val: u32 = unsafe { read_volatile(Self::PUPDR_R) };
         val &= !(0b11 << (N * 2));
         val |= (pull as u8 as u32) << (N * 2);
-        write_volatile(Self::PUPDR_W, val);
+        unsafe { write_volatile(Self::PUPDR_W, val) };
     }
 
     #[inline(always)]
@@ -153,12 +153,12 @@ impl<const BASE: usize, const N: u8> Pin<BASE, N> {
     }
 
     #[inline(always)]
-    pub(crate) unsafe fn set_alternate_function(&mut self, cs: &CriticalSection, af: u8) {
+    pub(crate) fn set_alternate_function(&mut self, cs: &CriticalSection, af: u8) {
         self.set_mode(cs, sealed::Mode::Alternate);
-        let mut val: u32 = read_volatile(Self::AF_R);
+        let mut val: u32 = unsafe { read_volatile(Self::AF_R) };
         val &= !(0b1111 << Self::AF_SHIFT);
         val |= (af as u8 as u32) << Self::AF_SHIFT;
-        write_volatile(Self::AF_W, val);
+        unsafe { write_volatile(Self::AF_W, val) };
     }
 }
 
@@ -179,14 +179,14 @@ pub(crate) mod sealed {
     /// of code into the macro which will result in longer compile times.
     pub trait PinOps {
         unsafe fn steal() -> Self;
-        unsafe fn set_mode(&mut self, cs: &CriticalSection, mode: Mode);
-        unsafe fn set_output_type(&mut self, cs: &CriticalSection, ot: OutputType);
-        unsafe fn set_speed(&mut self, cs: &CriticalSection, speed: Speed);
-        unsafe fn set_pull(&mut self, cs: &CriticalSection, pull: Pull);
+        fn set_mode(&mut self, cs: &CriticalSection, mode: Mode);
+        fn set_output_type(&mut self, cs: &CriticalSection, ot: OutputType);
+        fn set_speed(&mut self, cs: &CriticalSection, speed: Speed);
+        fn set_pull(&mut self, cs: &CriticalSection, pull: Pull);
         fn input_level(&self) -> PinState;
         fn output_level(&self) -> PinState;
         fn set_output_level(&mut self, level: PinState);
-        unsafe fn set_alternate_function(&mut self, cs: &CriticalSection, af: u8);
+        fn set_alternate_function(&mut self, cs: &CriticalSection, af: u8);
     }
 
     macro_rules! af_trait {
@@ -472,22 +472,22 @@ pub mod pins {
                 }
 
                 #[inline(always)]
-                unsafe fn set_mode(&mut self, cs: &CriticalSection, mode: super::sealed::Mode) {
+                fn set_mode(&mut self, cs: &CriticalSection, mode: super::sealed::Mode) {
                     self.pin.set_mode(cs, mode)
                 }
 
                 #[inline(always)]
-                unsafe fn set_output_type(&mut self, cs: &CriticalSection, ot: OutputType) {
+                fn set_output_type(&mut self, cs: &CriticalSection, ot: OutputType) {
                     self.pin.set_output_type(cs, ot)
                 }
 
                 #[inline(always)]
-                unsafe fn set_speed(&mut self, cs: &CriticalSection, speed: Speed) {
+                fn set_speed(&mut self, cs: &CriticalSection, speed: Speed) {
                     self.pin.set_speed(cs, speed)
                 }
 
                 #[inline(always)]
-                unsafe fn set_pull(&mut self, cs: &CriticalSection, pull: Pull) {
+                fn set_pull(&mut self, cs: &CriticalSection, pull: Pull) {
                     self.pin.set_pull(cs, pull)
                 }
 
@@ -507,7 +507,7 @@ pub mod pins {
                 }
 
                 #[inline(always)]
-                unsafe fn set_alternate_function(&mut self, cs: &CriticalSection, af: u8) {
+                fn set_alternate_function(&mut self, cs: &CriticalSection, af: u8) {
                     self.pin.set_alternate_function(cs, af)
                 }
             }
@@ -564,7 +564,7 @@ pub mod pins {
             impl super::sealed::$trt for $gpio {
                 #[inline(always)]
                 fn $method(&mut self, cs: &CriticalSection) {
-                    unsafe { self.pin.set_alternate_function(cs, $num) }
+                    self.pin.set_alternate_function(cs, $num)
                 }
             }
         };
@@ -1278,22 +1278,25 @@ where
     /// };
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let mut c3: Output<pins::C3> = Output::new(gpioc.c3, &OUTPUT_ARGS);
-    /// let mut c4: Output<pins::C4> = Output::new(gpioc.c4, &OUTPUT_ARGS);
-    /// let mut c5: Output<pins::C5> = Output::new(gpioc.c5, &OUTPUT_ARGS);
+    /// let (c2, c4, c5): (Output<pins::C3>, Output<pins::C4>, Output<pins::C5>) =
+    ///     cortex_m::interrupt::free(|cs| {
+    ///         (
+    ///             Output::new(gpioc.c3, &OUTPUT_ARGS, cs),
+    ///             Output::new(gpioc.c4, &OUTPUT_ARGS, cs),
+    ///             Output::new(gpioc.c5, &OUTPUT_ARGS, cs),
+    ///         )
+    ///     });
     /// ```
-    pub fn new(mut pin: P, args: &OutputArgs) -> Self {
-        cortex_m::interrupt::free(|cs| unsafe {
-            pin.set_output_type(cs, args.ot);
-            if args.ot == OutputType::OpenDrain {
-                pin.set_pull(cs, args.pull)
-            } else {
-                pin.set_pull(cs, Pull::None)
-            }
-            pin.set_speed(cs, args.speed);
-            pin.set_output_level(args.level);
-            pin.set_mode(cs, sealed::Mode::Output);
-        });
+    pub fn new(mut pin: P, args: &OutputArgs, cs: &CriticalSection) -> Self {
+        pin.set_output_type(cs, args.ot);
+        if args.ot == OutputType::OpenDrain {
+            pin.set_pull(cs, args.pull)
+        } else {
+            pin.set_pull(cs, Pull::None)
+        }
+        pin.set_speed(cs, args.speed);
+        pin.set_output_level(args.level);
+        pin.set_mode(cs, sealed::Mode::Output);
         Output { pin }
     }
 
@@ -1312,12 +1315,12 @@ where
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let mut c0: Output<pins::C0> = Output::default(gpioc.c0);
+    /// let mut c0: Output<pins::C0> = cortex_m::interrupt::free(|cs| Output::default(gpioc.c0, cs));
     /// ```
     #[inline]
-    pub fn default(pin: P) -> Self {
+    pub fn default(pin: P, cs: &CriticalSection) -> Self {
         const OA: OutputArgs = OutputArgs::new();
-        Self::new(pin, &OA)
+        Self::new(pin, &OA, cs)
     }
 
     /// Steal the output GPIO from whatever is currently using it.
@@ -1358,7 +1361,7 @@ where
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let c0: Output<pins::C0> = Output::default(gpioc.c0);
+    /// let c0: Output<pins::C0> = cortex_m::interrupt::free(|cs| Output::default(gpioc.c0, cs));
     /// let c0: pins::C0 = c0.free();
     /// ```
     #[inline]
@@ -1384,7 +1387,7 @@ where
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let mut c0: Output<pins::C0> = Output::default(gpioc.c0);
+    /// let mut c0: Output<pins::C0> = cortex_m::interrupt::free(|cs| Output::default(gpioc.c0, cs));
     /// c0.set_level(PinState::High);
     /// c0.set_level(PinState::Low);
     /// ```
@@ -1411,7 +1414,7 @@ where
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let mut c0: Output<pins::C0> = Output::default(gpioc.c0);
+    /// let mut c0: Output<pins::C0> = cortex_m::interrupt::free(|cs| Output::default(gpioc.c0, cs));
     /// c0.set_level_high();
     /// ```
     #[inline]
@@ -1437,7 +1440,7 @@ where
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let mut c0: Output<pins::C0> = Output::default(gpioc.c0);
+    /// let mut c0: Output<pins::C0> = cortex_m::interrupt::free(|cs| Output::default(gpioc.c0, cs));
     /// c0.set_level_low();
     /// ```
     #[inline]
@@ -1461,7 +1464,7 @@ where
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let mut c0: Output<pins::C0> = Output::default(gpioc.c0);
+    /// let mut c0: Output<pins::C0> = cortex_m::interrupt::free(|cs| Output::default(gpioc.c0, cs));
     /// c0.set_level(c0.level().not());
     /// ```
     #[inline]
@@ -1533,14 +1536,13 @@ where
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let mut c6: Input<pins::C6> = Input::new(gpioc.c6, Pull::Up);
+    /// let mut c6: Input<pins::C6> =
+    ///     cortex_m::interrupt::free(|cs| Input::new(gpioc.c6, Pull::Up, cs));
     /// ```
-    pub fn new(mut pin: P, pull: Pull) -> Self {
-        cortex_m::interrupt::free(|cs| unsafe {
-            pin.set_pull(cs, pull);
-            pin.set_output_type(cs, OutputType::PushPull);
-            pin.set_mode(cs, sealed::Mode::Input);
-        });
+    pub fn new(mut pin: P, pull: Pull, cs: &CriticalSection) -> Self {
+        pin.set_pull(cs, pull);
+        pin.set_output_type(cs, OutputType::PushPull);
+        pin.set_mode(cs, sealed::Mode::Input);
         Input { pin }
     }
 
@@ -1559,11 +1561,11 @@ where
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let mut c0: Input<pins::C0> = Input::default(gpioc.c0);
+    /// let mut c0: Input<pins::C0> = cortex_m::interrupt::free(|cs| Input::default(gpioc.c0, cs));
     /// ```
     #[inline]
-    pub fn default(pin: P) -> Self {
-        Self::new(pin, Pull::None)
+    pub fn default(pin: P, cs: &CriticalSection) -> Self {
+        Self::new(pin, Pull::None, cs)
     }
 
     /// Steal the input GPIO from whatever is currently using it.
@@ -1604,7 +1606,7 @@ where
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let c0_input: Input<pins::C0> = Input::default(gpioc.c0);
+    /// let c0_input: Input<pins::C0> = cortex_m::interrupt::free(|cs| Input::default(gpioc.c0, cs));
     /// let c0: pins::C0 = c0_input.free();
     /// ```
     #[inline]
@@ -1628,7 +1630,8 @@ where
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let mut c6: Input<pins::C6> = Input::new(gpioc.c6, Pull::Up);
+    /// let mut c6: Input<pins::C6> =
+    ///     cortex_m::interrupt::free(|cs| Input::new(gpioc.c6, Pull::Up, cs));
     ///
     /// let button_3_is_pressed: bool = c6.level() == PinState::High;
     /// ```
@@ -1684,10 +1687,10 @@ where
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let mut b14: Analog<pins::B14> = Analog::new(gpiob.b14);
+    /// let mut b14: Analog<pins::B14> = cortex_m::interrupt::free(|cs| Analog::new(gpiob.b14, cs));
     /// ```
-    pub fn new(mut pin: P) -> Self {
-        cortex_m::interrupt::free(|cs| unsafe { pin.set_mode(cs, sealed::Mode::Analog) });
+    pub fn new(mut pin: P, cs: &CriticalSection) -> Self {
+        pin.set_mode(cs, sealed::Mode::Analog);
         Analog { pin }
     }
 
@@ -1706,20 +1709,11 @@ where
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let b14: Analog<pins::B14> = Analog::new(gpiob.b14);
+    /// let b14: Analog<pins::B14> = cortex_m::interrupt::free(|cs| Analog::new(gpiob.b14, cs));
     /// let b14: pins::B14 = b14.free();
     /// ```
     pub fn free(self) -> P {
         self.pin
-    }
-}
-
-impl<P> From<P> for Analog<P>
-where
-    P: sealed::PinOps + sealed::AdcCh,
-{
-    fn from(p: P) -> Self {
-        Analog::new(p)
     }
 }
 
@@ -1744,11 +1738,12 @@ impl RfBusy {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let a12: RfBusy = RfBusy::new(gpioa.a12);
+    /// let a12: RfBusy = cortex_m::interrupt::free(|cs| RfBusy::new(gpioa.a12, cs));
     /// ```
-    pub fn new(mut pin: pins::A12) -> Self {
+    #[inline]
+    pub fn new(mut pin: pins::A12, cs: &CriticalSection) -> Self {
         use sealed::RfBusy;
-        cortex_m::interrupt::free(|cs| pin.set_rfbusy_af(cs));
+        pin.set_rfbusy_af(cs);
         Self { pin }
     }
 
@@ -1765,7 +1760,7 @@ impl RfBusy {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let a12: RfBusy = RfBusy::new(gpioa.a12);
+    /// let a12: RfBusy = cortex_m::interrupt::free(|cs| RfBusy::new(gpioa.a12, cs));
     /// let a12: pins::A12 = a12.free();
     /// ```
     #[inline]
@@ -1795,11 +1790,12 @@ impl RfIrq0 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let b3: RfIrq0 = RfIrq0::new(gpiob.b3);
+    /// let b3: RfIrq0 = cortex_m::interrupt::free(|cs| RfIrq0::new(gpiob.b3, cs));
     /// ```
-    pub fn new(mut pin: pins::B3) -> Self {
+    #[inline]
+    pub fn new(mut pin: pins::B3, cs: &CriticalSection) -> Self {
         use sealed::RfIrq0;
-        cortex_m::interrupt::free(|cs| pin.set_rf_irq0_af(cs));
+        pin.set_rf_irq0_af(cs);
         Self { pin }
     }
 
@@ -1816,9 +1812,10 @@ impl RfIrq0 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let b3: RfIrq0 = RfIrq0::new(gpiob.b3);
+    /// let b3: RfIrq0 = cortex_m::interrupt::free(|cs| RfIrq0::new(gpiob.b3, cs));
     /// let b3: pins::B3 = b3.free();
     /// ```
+    #[inline]
     pub fn free(self) -> pins::B3 {
         self.pin
     }
@@ -1845,11 +1842,12 @@ impl RfIrq1 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let b5: RfIrq1 = RfIrq1::new(gpiob.b5);
+    /// let b5: RfIrq1 = cortex_m::interrupt::free(|cs| RfIrq1::new(gpiob.b5, cs));
     /// ```
-    pub fn new(mut pin: pins::B5) -> Self {
+    #[inline]
+    pub fn new(mut pin: pins::B5, cs: &CriticalSection) -> Self {
         use sealed::RfIrq1;
-        cortex_m::interrupt::free(|cs| pin.set_rf_irq1_af(cs));
+        pin.set_rf_irq1_af(cs);
         Self { pin }
     }
 
@@ -1866,9 +1864,10 @@ impl RfIrq1 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let b5: RfIrq1 = RfIrq1::new(gpiob.b5);
+    /// let b5: RfIrq1 = cortex_m::interrupt::free(|cs| RfIrq1::new(gpiob.b5, cs));
     /// let b5: pins::B5 = b5.free();
     /// ```
+    #[inline]
     pub fn free(self) -> pins::B5 {
         self.pin
     }
@@ -1895,11 +1894,12 @@ impl RfIrq2 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let b8: RfIrq2 = RfIrq2::new(gpiob.b8);
+    /// let b8: RfIrq2 = cortex_m::interrupt::free(|cs| RfIrq2::new(gpiob.b8, cs));
     /// ```
-    pub fn new(mut pin: pins::B8) -> Self {
+    #[inline]
+    pub fn new(mut pin: pins::B8, cs: &CriticalSection) -> Self {
         use sealed::RfIrq2;
-        cortex_m::interrupt::free(|cs| pin.set_rf_irq2_af(cs));
+        pin.set_rf_irq2_af(cs);
         Self { pin }
     }
 
@@ -1916,9 +1916,10 @@ impl RfIrq2 {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let b8: RfIrq2 = RfIrq2::new(gpiob.b8);
+    /// let b8: RfIrq2 = cortex_m::interrupt::free(|cs| RfIrq2::new(gpiob.b8, cs));
     /// let b8: pins::B8 = b8.free();
     /// ```
+    #[inline]
     pub fn free(self) -> pins::B8 {
         self.pin
     }
@@ -1945,11 +1946,12 @@ impl RfNssDbg {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let a4: RfNssDbg = RfNssDbg::new(gpioa.a4);
+    /// let a4: RfNssDbg = cortex_m::interrupt::free(|cs| RfNssDbg::new(gpioa.a4, cs));
     /// ```
-    pub fn new(mut pin: pins::A4) -> Self {
+    #[inline]
+    pub fn new(mut pin: pins::A4, cs: &CriticalSection) -> Self {
         use sealed::Spi3Nss;
-        cortex_m::interrupt::free(|cs| pin.set_spi3_nss_af(cs));
+        pin.set_spi3_nss_af(cs);
         Self { pin }
     }
 
@@ -1966,9 +1968,10 @@ impl RfNssDbg {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let a4: RfNssDbg = RfNssDbg::new(gpioa.a4);
+    /// let a4: RfNssDbg = cortex_m::interrupt::free(|cs| RfNssDbg::new(gpioa.a4, cs));
     /// let a4: pins::A4 = a4.free();
     /// ```
+    #[inline]
     pub fn free(self) -> pins::A4 {
         self.pin
     }
@@ -1995,11 +1998,12 @@ impl SgSckDbg {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let a5: SgSckDbg = SgSckDbg::new(gpioa.a5);
+    /// let a5: SgSckDbg = cortex_m::interrupt::free(|cs| SgSckDbg::new(gpioa.a5, cs));
     /// ```
-    pub fn new(mut pin: pins::A5) -> Self {
+    #[inline]
+    pub fn new(mut pin: pins::A5, cs: &CriticalSection) -> Self {
         use sealed::Spi3Sck;
-        cortex_m::interrupt::free(|cs| pin.set_spi3_sck_af(cs));
+        pin.set_spi3_sck_af(cs);
         Self { pin }
     }
 
@@ -2016,9 +2020,10 @@ impl SgSckDbg {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let a5: SgSckDbg = SgSckDbg::new(gpioa.a5);
+    /// let a5: SgSckDbg = cortex_m::interrupt::free(|cs| SgSckDbg::new(gpioa.a5, cs));
     /// let a5: pins::A5 = a5.free();
     /// ```
+    #[inline]
     pub fn free(self) -> pins::A5 {
         self.pin
     }
@@ -2045,11 +2050,12 @@ impl SgMisoDbg {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let a6: SgMisoDbg = SgMisoDbg::new(gpioa.a6);
+    /// let a6: SgMisoDbg = cortex_m::interrupt::free(|cs| SgMisoDbg::new(gpioa.a6, cs));
     /// ```
-    pub fn new(mut pin: pins::A6) -> Self {
+    #[inline]
+    pub fn new(mut pin: pins::A6, cs: &CriticalSection) -> Self {
         use sealed::Spi3Miso;
-        cortex_m::interrupt::free(|cs| pin.set_spi3_miso_af(cs));
+        pin.set_spi3_miso_af(cs);
         Self { pin }
     }
 
@@ -2066,9 +2072,10 @@ impl SgMisoDbg {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let a6: SgMisoDbg = SgMisoDbg::new(gpioa.a6);
+    /// let a6: SgMisoDbg = cortex_m::interrupt::free(|cs| SgMisoDbg::new(gpioa.a6, cs));
     /// let a6: pins::A6 = a6.free();
     /// ```
+    #[inline]
     pub fn free(self) -> pins::A6 {
         self.pin
     }
@@ -2088,6 +2095,7 @@ impl SgMosiDbg {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
+    ///     cortex_m,
     ///     gpio::{pins, PortA, SgMosiDbg},
     ///     pac,
     /// };
@@ -2095,11 +2103,12 @@ impl SgMosiDbg {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let a7: SgMosiDbg = SgMosiDbg::new(gpioa.a7);
+    /// let a7: SgMosiDbg = cortex_m::interrupt::free(|cs| SgMosiDbg::new(gpioa.a7, cs));
     /// ```
-    pub fn new(mut pin: pins::A7) -> Self {
+    #[inline]
+    pub fn new(mut pin: pins::A7, cs: &CriticalSection) -> Self {
         use sealed::Spi3Mosi;
-        cortex_m::interrupt::free(|cs| pin.set_spi3_mosi_af(cs));
+        pin.set_spi3_mosi_af(cs);
         Self { pin }
     }
 
@@ -2109,6 +2118,7 @@ impl SgMosiDbg {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
+    ///     cortex_m,
     ///     gpio::{pins, PortA, SgMosiDbg},
     ///     pac,
     /// };
@@ -2116,9 +2126,10 @@ impl SgMosiDbg {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let a7: SgMosiDbg = SgMosiDbg::new(gpioa.a7);
+    /// let a7: SgMosiDbg = cortex_m::interrupt::free(|cs| SgMosiDbg::new(gpioa.a7, cs));
     /// let a7: pins::A7 = a7.free();
     /// ```
+    #[inline]
     pub fn free(self) -> pins::A7 {
         self.pin
     }

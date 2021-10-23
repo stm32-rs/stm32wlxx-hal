@@ -4,6 +4,7 @@ use crate::{
     gpio::{self},
     pac, rcc, Ratio,
 };
+use cortex_m::interrupt::CriticalSection;
 use embedded_hal::prelude::*;
 
 typestate!(NoRx, "no RX on a generic UART structure");
@@ -427,6 +428,7 @@ macro_rules! impl_tx_en_dis {
             ///
             /// ```no_run
             /// use stm32wl_hal::{
+            ///     cortex_m,
             ///     gpio::{pins, PortB},
             ///     pac,
             ///     uart::{self, LpUart, NoRx},
@@ -439,11 +441,17 @@ macro_rules! impl_tx_en_dis {
             /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
             ///
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-            /// let uart: LpUart<NoRx, pins::B11> =
-            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC).enable_tx(gpiob.b11);
+            /// let uart: LpUart<NoRx, pins::B11> = cortex_m::interrupt::free(|cs| {
+            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
+            ///         .enable_tx(gpiob.b11, cs)
+            /// });
             /// ```
-            pub fn enable_tx<TX: gpio::sealed::$trt>(self, mut tx: TX) -> $uart<RX, TX> {
-                cortex_m::interrupt::free(|cs| tx.$method(cs));
+            pub fn enable_tx<TX: gpio::sealed::$trt>(
+                self,
+                mut tx: TX,
+                cs: &CriticalSection,
+            ) -> $uart<RX, TX> {
+                tx.$method(cs);
                 self.uart.cr1.modify(|_, w| w.te().enabled());
                 $uart {
                     uart: self.uart,
@@ -460,6 +468,7 @@ macro_rules! impl_tx_en_dis {
             ///
             /// ```no_run
             /// use stm32wl_hal::{
+            ///     cortex_m,
             ///     dma::{AllDma, Dma2Ch7},
             ///     gpio::{pins, PortB},
             ///     pac,
@@ -474,16 +483,18 @@ macro_rules! impl_tx_en_dis {
             ///
             /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-            /// let uart: LpUart<NoRx, (pins::B11, Dma2Ch7)> =
+            /// let uart: LpUart<NoRx, (pins::B11, Dma2Ch7)> = cortex_m::interrupt::free(|cs| {
             ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
-            ///         .enable_tx_dma(gpiob.b11, dma.d2.c7);
+            ///         .enable_tx_dma(gpiob.b11, dma.d2.c7, cs)
+            /// });
             /// ```
             pub fn enable_tx_dma<TxPin: gpio::sealed::$trt, TxDma: DmaCh>(
                 self,
                 mut tx: TxPin,
                 mut tx_dma: TxDma,
+                cs: &CriticalSection,
             ) -> $uart<RX, (TxPin, TxDma)> {
-                cortex_m::interrupt::free(|cs| tx.$method(cs));
+                tx.$method(cs);
                 self.uart.cr1.modify(|_, w| w.te().enabled());
                 self.uart.cr3.modify(|_, w| w.dmat().enabled());
 
@@ -507,6 +518,7 @@ macro_rules! impl_tx_en_dis {
             ///
             /// ```no_run
             /// use stm32wl_hal::{
+            ///     cortex_m,
             ///     gpio::{pins, PortB},
             ///     pac,
             ///     uart::{self, LpUart, NoRx, NoTx},
@@ -519,8 +531,10 @@ macro_rules! impl_tx_en_dis {
             /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
             ///
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-            /// let uart: LpUart<NoRx, pins::B11> =
-            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC).enable_tx(gpiob.b11);
+            /// let uart: LpUart<NoRx, pins::B11> = cortex_m::interrupt::free(|cs| {
+            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
+            ///         .enable_tx(gpiob.b11, cs)
+            /// });
             ///
             /// let (uart, b11): (LpUart<NoRx, NoTx>, pins::B11) = uart.disable_tx();
             /// ```
@@ -553,6 +567,7 @@ macro_rules! impl_rx_en_dis {
             ///
             /// ```no_run
             /// use stm32wl_hal::{
+            ///     cortex_m,
             ///     gpio::{pins, PortB},
             ///     pac,
             ///     uart::{self, LpUart, NoTx},
@@ -565,11 +580,17 @@ macro_rules! impl_rx_en_dis {
             /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
             ///
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-            /// let uart: LpUart<pins::B10, NoTx> =
-            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC).enable_rx(gpiob.b10);
+            /// let uart: LpUart<pins::B10, NoTx> = cortex_m::interrupt::free(|cs| {
+            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
+            ///         .enable_rx(gpiob.b10, cs)
+            /// });
             /// ```
-            pub fn enable_rx<RX: gpio::sealed::$trt>(self, mut rx: RX) -> $uart<RX, TX> {
-                cortex_m::interrupt::free(|cs| rx.$method(cs));
+            pub fn enable_rx<RX: gpio::sealed::$trt>(
+                self,
+                mut rx: RX,
+                cs: &CriticalSection,
+            ) -> $uart<RX, TX> {
+                rx.$method(cs);
                 self.uart.cr1.modify(|_, w| w.re().enabled());
                 $uart {
                     uart: self.uart,
@@ -600,16 +621,18 @@ macro_rules! impl_rx_en_dis {
             ///
             /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-            /// let uart: LpUart<(pins::B10, Dma2Ch2), NoTx> =
+            /// let uart: LpUart<(pins::B10, Dma2Ch2), NoTx> = cortex_m::interrupt::free(|cs| {
             ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
-            ///         .enable_rx_dma(gpiob.b10, dma.d2.c2);
+            ///         .enable_rx_dma(gpiob.b10, dma.d2.c2, cs)
+            /// });
             /// ```
             pub fn enable_rx_dma<RxPin: gpio::sealed::$trt, RxDma: DmaCh>(
                 self,
                 mut rx: RxPin,
                 mut rx_dma: RxDma,
+                cs: &CriticalSection,
             ) -> $uart<(RxPin, RxDma), TX> {
-                cortex_m::interrupt::free(|cs| rx.$method(cs));
+                rx.$method(cs);
                 self.uart.cr1.modify(|_, w| w.re().enabled());
                 self.uart.cr3.modify(|_, w| w.dmar().enabled());
 
@@ -645,8 +668,10 @@ macro_rules! impl_rx_en_dis {
             /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
             ///
             /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-            /// let uart: LpUart<pins::B10, NoTx> =
-            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC).enable_rx(gpiob.b10);
+            /// let uart: LpUart<pins::B10, NoTx> = cortex_m::interrupt::free(|cs| {
+            ///     LpUart::new(dp.LPUART, 115_200, uart::Clk::Hsi16, &mut dp.RCC)
+            ///         .enable_rx(gpiob.b10, cs)
+            /// });
             ///
             /// let (uart, b10): (LpUart<NoRx, NoTx>, pins::B10) = uart.disable_rx();
             /// ```

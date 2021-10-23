@@ -4,7 +4,7 @@
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use nucleo_wl55jc_bsp::hal::{
-    pac, rcc,
+    cortex_m, pac, rcc,
     rng::{rand_core::RngCore, Clk, Rng},
 };
 use panic_probe as _;
@@ -36,7 +36,9 @@ mod tests {
     fn init() -> Rng {
         let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
 
-        unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
+        cortex_m::interrupt::free(|cs| unsafe {
+            rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC, cs)
+        });
 
         Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC)
     }

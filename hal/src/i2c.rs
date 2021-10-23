@@ -7,6 +7,7 @@ use crate::{
     rcc::{pclk1_hz, sysclk_hz},
 };
 
+use cortex_m::interrupt::CriticalSection;
 use embedded_time::{fixed_point::FixedPoint, rate::*};
 
 /// I2C error
@@ -369,7 +370,7 @@ macro_rules! impl_new_free {
                 ///
                 /// * Frequency is greater than 1 MHz
                 /// * Resulting TIMINGR fields PRESC, SCLDEL, SCADEL, SCLH, SCLL are out of range
-                pub fn new(i2c: $I2CX, mut pins: (SCL, SDA), freq: Hertz, rcc: &mut RCC, pullup: bool) -> Self
+                pub fn new(i2c: $I2CX, mut pins: (SCL, SDA), freq: Hertz, rcc: &mut RCC, pullup: bool, cs: &CriticalSection) -> Self
                     where
                     SCL: crate::gpio::sealed::$I2cXScl + crate::gpio::sealed::PinOps,
                     SDA: crate::gpio::sealed::$I2cXSda + crate::gpio::sealed::PinOps,
@@ -378,19 +379,18 @@ macro_rules! impl_new_free {
 
                         Self::enable_clock(rcc);
                         Self::pulse_reset(rcc);
-                        cortex_m::interrupt::free(|cs| unsafe {
-                            pins.0.set_output_type(cs, OutputType::OpenDrain);
-                            pins.1.set_output_type(cs, OutputType::OpenDrain);
-                            pins.0.$i2cXsclAf(cs);
-                            pins.1.$i2cXsdaAf(cs);
-                            if (pullup) {
-                                pins.0.set_pull(cs, Pull::Up);
-                                pins.1.set_pull(cs, Pull::Up);
-                            } else {
-                                pins.0.set_pull(cs, Pull::None);
-                                pins.1.set_pull(cs, Pull::None);
-                            }
-                        });
+
+                        pins.0.set_output_type(cs, OutputType::OpenDrain);
+                        pins.1.set_output_type(cs, OutputType::OpenDrain);
+                        pins.0.$i2cXsclAf(cs);
+                        pins.1.$i2cXsdaAf(cs);
+                        if (pullup) {
+                            pins.0.set_pull(cs, Pull::Up);
+                            pins.1.set_pull(cs, Pull::Up);
+                        } else {
+                            pins.0.set_pull(cs, Pull::None);
+                            pins.1.set_pull(cs, Pull::None);
+                        }
 
                         let (presc, scll, sclh, sdadel, scldel) = i2c_clocks(Self::clock(rcc), freq);
 

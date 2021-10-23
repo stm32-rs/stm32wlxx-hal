@@ -1,5 +1,8 @@
 //! Push-buttons
-use stm32wl_hal::gpio::{pins, Exti, Input, PinState, Pull};
+use stm32wl_hal::{
+    cortex_m::interrupt::CriticalSection,
+    gpio::{pins, Exti, Input, PinState, Pull},
+};
 
 const PULL: Pull = Pull::Up;
 
@@ -28,6 +31,7 @@ pub trait PushButton {
     /// ```no_run
     /// use lora_e5_bsp::{
     ///     hal::{
+    ///         cortex_m,
     ///         gpio::{Exti, ExtiTrg, PortA},
     ///         pac,
     ///     },
@@ -37,7 +41,7 @@ pub trait PushButton {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let d0 = D0::new(gpioa.a0);
+    /// let d0 = cortex_m::interrupt::free(|cs| D0::new(gpioa.a0, cs));
     ///
     /// <D0 as PushButton>::Pin::setup_exti_c1(&mut dp.EXTI, &mut dp.SYSCFG, ExtiTrg::Falling);
     /// ```
@@ -72,18 +76,18 @@ impl D0 {
     ///
     /// ```no_run
     /// use lora_e5_bsp::{
-    ///     hal::{gpio::PortA, pac},
+    ///     hal::{cortex_m, gpio::PortA, pac},
     ///     pb::{PushButton, D0},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let d0 = D0::new(gpioa.a0);
+    /// let d0 = cortex_m::interrupt::free(|cs| D0::new(gpioa.a0, cs));
     /// ```
-    pub fn new(a0: pins::A0) -> Self {
+    pub fn new(a0: pins::A0, cs: &CriticalSection) -> Self {
         Self {
-            gpio: Input::new(a0, PULL),
+            gpio: Input::new(a0, PULL, cs),
         }
     }
 
@@ -93,14 +97,14 @@ impl D0 {
     ///
     /// ```no_run
     /// use lora_e5_bsp::{
-    ///     hal::{gpio::PortA, pac},
+    ///     hal::{cortex_m, gpio::PortA, pac},
     ///     pb::{PushButton, D0},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let d0 = D0::new(gpioa.a0);
+    /// let d0 = cortex_m::interrupt::free(|cs| D0::new(gpioa.a0, cs));
     /// // ... use push button
     /// let c0 = d0.free();
     /// ```
@@ -141,18 +145,18 @@ impl Boot {
     ///
     /// ```no_run
     /// use lora_e5_bsp::{
-    ///     hal::{gpio::PortB, pac},
+    ///     hal::{cortex_m, gpio::PortB, pac},
     ///     pb::{Boot, PushButton},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let boot = Boot::new(gpiob.b13);
+    /// let boot = cortex_m::interrupt::free(|cs| Boot::new(gpiob.b13, cs));
     /// ```
-    pub fn new(b13: pins::B13) -> Self {
+    pub fn new(b13: pins::B13, cs: &CriticalSection) -> Self {
         Self {
-            gpio: Input::new(b13, PULL),
+            gpio: Input::new(b13, PULL, cs),
         }
     }
 
@@ -162,14 +166,14 @@ impl Boot {
     ///
     /// ```no_run
     /// use lora_e5_bsp::{
-    ///     hal::{gpio::PortB, pac},
+    ///     hal::{cortex_m, gpio::PortB, pac},
     ///     pb::{Boot, PushButton},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let boot = Boot::new(gpiob.b13);
+    /// let boot = cortex_m::interrupt::free(|cs| Boot::new(gpiob.b13, cs));
     /// // ... use push button
     /// let b13 = boot.free();
     /// ```

@@ -5,9 +5,9 @@ use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use nucleo_wl55jc_bsp::hal::{
     adc::{self, Adc},
-    cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
+    cortex_m::{self, delay::Delay, peripheral::syst::SystClkSource},
     dac::{Dac, ModeChip, ModePin},
-    gpio::PortA,
+    gpio::{Analog, PortA},
     pac, rcc,
 };
 use panic_probe as _;
@@ -24,26 +24,29 @@ mod tests {
 
     #[init]
     fn init() -> TestArgs {
-        let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
-        let cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
+        cortex_m::interrupt::free(|cs| {
+            let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
+            let cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
 
-        unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
+            unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC, cs) };
 
-        let delay: Delay = Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
+            let delay: Delay =
+                Delay::new(cp.SYST, rcc::cpu1_systick_hz(&dp.RCC, SystClkSource::Core));
 
-        dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-        while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+            dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+            while dp.RCC.cr.read().hsirdy().is_not_ready() {}
 
-        dp.RCC.csr.modify(|_, w| w.lsion().on());
-        while dp.RCC.csr.read().lsirdy().is_not_ready() {}
+            dp.RCC.csr.modify(|_, w| w.lsion().on());
+            while dp.RCC.csr.read().lsirdy().is_not_ready() {}
 
-        let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-        let mut dac: Dac = Dac::new(dp.DAC, &mut dp.RCC);
-        let adc: Adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
+            let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+            let mut dac: Dac = Dac::new(dp.DAC, &mut dp.RCC);
+            let adc: Adc = Adc::new(dp.ADC, adc::Clk::RccHsi, &mut dp.RCC);
 
-        dac.set_mode_pin(gpioa.a10.into(), ModePin::NormChipBuf);
+            dac.set_mode_pin(Analog::new(gpioa.a10, cs), ModePin::NormChipBuf);
 
-        TestArgs { adc, dac, delay }
+            TestArgs { adc, dac, delay }
+        })
     }
 
     #[test]

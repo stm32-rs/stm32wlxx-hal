@@ -4,6 +4,7 @@
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use nucleo_wl55jc_bsp::hal::{
+    cortex_m,
     embedded_hal::digital::v2::ToggleableOutputPin,
     embedded_hal::timer::CountDown,
     gpio::{pins, Output, PortA, PortB},
@@ -73,42 +74,44 @@ mod tests {
 
     #[init]
     fn init() -> TestArgs {
-        let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
-        let mut cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
+        cortex_m::interrupt::free(|cs| {
+            let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
+            let mut cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
 
-        unsafe { rcc::pulse_reset_backup_domain(&mut dp.RCC, &mut dp.PWR) };
-        unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
-        defmt::assert_eq!(rcc::sysclk_hz(&dp.RCC), FREQ);
+            unsafe { rcc::pulse_reset_backup_domain(&mut dp.RCC, &mut dp.PWR) };
+            unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC, cs) };
+            defmt::assert_eq!(rcc::sysclk_hz(&dp.RCC), FREQ);
 
-        cp.DCB.enable_trace();
-        cp.DWT.enable_cycle_counter();
-        reset_cycle_count(&mut cp.DWT);
+            cp.DCB.enable_trace();
+            cp.DWT.enable_cycle_counter();
+            reset_cycle_count(&mut cp.DWT);
 
-        // enable HSI
-        dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-        while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+            // enable HSI
+            dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+            while dp.RCC.cr.read().hsirdy().is_not_ready() {}
 
-        // enable LSE
-        dp.PWR.cr1.modify(|_, w| w.dbp().enabled());
-        dp.RCC
-            .bdcr
-            .modify(|_, w| w.lseon().on().lsesysen().enabled());
-        while dp.RCC.bdcr.read().lserdy().is_not_ready() {}
+            // enable LSE
+            dp.PWR.cr1.modify(|_, w| w.dbp().enabled());
+            dp.RCC
+                .bdcr
+                .modify(|_, w| w.lseon().on().lsesysen().enabled());
+            while dp.RCC.bdcr.read().lserdy().is_not_ready() {}
 
-        // enable LSI
-        rcc::enable_lsi(&mut dp.RCC);
+            // enable LSI
+            rcc::enable_lsi(&mut dp.RCC);
 
-        let _: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-        let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
+            let _: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+            let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
 
-        let lptim3: LpTim3 =
-            LpTim3::new(dp.LPTIM3, lptim::Clk::Hsi16, Prescaler::Div1, &mut dp.RCC);
+            let lptim3: LpTim3 =
+                LpTim3::new(dp.LPTIM3, lptim::Clk::Hsi16, Prescaler::Div1, &mut dp.RCC);
 
-        TestArgs {
-            lptim3,
-            rcc: dp.RCC,
-            b7: Output::default(gpiob.b7),
-        }
+            TestArgs {
+                lptim3,
+                rcc: dp.RCC,
+                b7: Output::default(gpiob.b7, cs),
+            }
+        })
     }
 
     #[test]
@@ -119,7 +122,10 @@ mod tests {
 
         let a11 = unsafe { PortA::steal() }.a11;
 
-        ta.lptim3.new_trigger_pin(a11, Filter::Any, TrgPol::Both);
+        cortex_m::interrupt::free(|cs| {
+            ta.lptim3
+                .new_trigger_pin(a11, Filter::Any, TrgPol::Both, cs)
+        });
         ta.lptim3.start(u16::MAX);
 
         // wait 10 LPTIM3 cycles

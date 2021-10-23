@@ -56,7 +56,6 @@ jobs:
         with:
           toolchain: stable
           target: thumbv7em-none-eabi
-      - run: cargo install flip-link
       - run: cargo build -p testsuite --target thumbv7em-none-eabi --bins
       - name: Upload test binaries
         uses: actions/upload-artifact@v2
@@ -95,9 +94,9 @@ jobs:
           if [[ "$binpath" != "bins/subghz" ]]; then
               # alternate probes to wear out flash evenly
               if (( count % 2 )); then
-                  probe="002900205553500A20393256"
-              else
                   probe="0034001A5553500B20393256"
+              else
+                  probe="002900205553500A20393256"
               fi
 
               echo "Running $binpath on $probe"

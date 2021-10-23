@@ -119,16 +119,57 @@ impl Rtc {
             }
         }
 
-        #[cfg(not(feature = "stm32wl5x_cm0p"))]
-        rcc.apb1enr1.modify(|_, w| w.rtcapben().set_bit());
-        #[cfg(feature = "stm32wl5x_cm0p")]
-        rcc.c2apb1enr1.modify(|_, w| w.rtcapben().set_bit());
+        Self::apbclken(rcc);
 
         let mut rtc: Rtc = Rtc { rtc };
         rtc.disable_write_protect();
         rtc.configure_prescaler(rcc);
 
         rtc
+    }
+
+    /// Create a new real-time clock driver preserving backup domain values.
+    ///
+    /// Unlike [`new`](Self::new) this will enable the LSE clock source if not
+    /// already enabled.  This function assumes the LSE clock source will be
+    /// used because it is the only clock source that is preserved in the
+    /// shutdown mode.
+    ///
+    /// The RTC calendar may not be initialized, this can occur if this function
+    /// is called after power loss or after a backup domain reset.
+    ///
+    /// # Safety
+    ///
+    /// 1. This function relies on global hardware state in the backup domain.
+    ///    The backup domain is **not** reset with normal system resets.
+    ///    Reset the backup domain before calling this function if determinism
+    ///    is required.
+    pub unsafe fn renew(rtc: pac::RTC, pwr: &mut pac::PWR, rcc: &mut pac::RCC) -> Rtc {
+        pwr.cr1.modify(|_, w| w.dbp().enabled());
+        Self::apbclken(rcc);
+
+        let bdcr = rcc.bdcr.read();
+        if bdcr.rtcsel().is_lse() && bdcr.rtcen().is_enabled() && bdcr.lseon().is_on() {
+            while rcc.bdcr.read().lserdy().is_not_ready() {}
+            Rtc { rtc }
+        } else {
+            rcc.bdcr.modify(|_, w| w.lseon().on());
+            while rcc.bdcr.read().lserdy().is_not_ready() {}
+            rcc.bdcr.modify(|_, w| w.rtcsel().lse().rtcen().enabled());
+
+            let mut rtc: Rtc = Rtc { rtc };
+            rtc.disable_write_protect();
+            rtc.configure_prescaler(rcc);
+            rtc
+        }
+    }
+
+    #[inline(always)]
+    fn apbclken(rcc: &mut pac::RCC) {
+        #[cfg(not(feature = "stm32wl5x_cm0p"))]
+        rcc.apb1enr1.modify(|_, w| w.rtcapben().set_bit());
+        #[cfg(feature = "stm32wl5x_cm0p")]
+        rcc.c2apb1enr1.modify(|_, w| w.rtcapben().set_bit());
     }
 
     /// Source clock frequency in hertz.
@@ -255,8 +296,9 @@ impl Rtc {
         self.rtc.icsr.modify(|_, w| w.init().free_running_mode());
     }
 
-    /// Returns `None` if the calendar is uninitialized
-    fn calendar_initialized(&self) -> Option<()> {
+    /// Returns `None` if the calendar is uninitialized.
+    #[inline]
+    pub fn calendar_initialized(&self) -> Option<()> {
         use pac::rtc::icsr::INITS_A;
         match self.rtc.icsr.read().inits().variant() {
             INITS_A::NOTINITALIZED => None,

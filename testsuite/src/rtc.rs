@@ -120,7 +120,7 @@ mod tests {
     }
 
     #[test]
-    fn test_set_date_time_lse(ta: &mut TestArgs) {
+    fn set_date_time_lse(ta: &mut TestArgs) {
         unsafe { pulse_reset_backup_domain(&mut ta.rcc, &mut ta.pwr) };
         ta.pwr.cr1.modify(|_, w| w.dbp().enabled());
         ta.rcc.bdcr.modify(|_, w| w.lseon().on());
@@ -129,15 +129,34 @@ mod tests {
         test_set_date_time_with_clk(rtc::Clk::Lse)
     }
 
+    // must come directly after set_date_time_lse
     #[test]
-    fn test_set_date_time_lsi(ta: &mut TestArgs) {
+    fn renew(ta: &mut TestArgs) {
+        {
+            let mut dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
+            let rtc: Rtc = unsafe { Rtc::renew(dp.RTC, &mut dp.PWR, &mut dp.RCC) };
+            let date: NaiveDate = unwrap!(rtc.date());
+            assert_eq!(date, NaiveDate::from_ymd(2021, 10, 20));
+        }
+
+        unsafe { pulse_reset_backup_domain(&mut ta.rcc, &mut ta.pwr) };
+
+        {
+            let mut dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
+            let rtc: Rtc = unsafe { Rtc::renew(dp.RTC, &mut dp.PWR, &mut dp.RCC) };
+            defmt::assert!(rtc.date().is_none());
+        }
+    }
+
+    #[test]
+    fn set_date_time_lsi(ta: &mut TestArgs) {
         unsafe { pulse_reset_backup_domain(&mut ta.rcc, &mut ta.pwr) };
         unsafe { setup_lsi(&mut ta.rcc, LsiPre::DIV1) };
         test_set_date_time_with_clk(rtc::Clk::Lsi)
     }
 
     #[test]
-    fn test_set_date_time_hse(ta: &mut TestArgs) {
+    fn set_date_time_hse(ta: &mut TestArgs) {
         unsafe { pulse_reset_backup_domain(&mut ta.rcc, &mut ta.pwr) };
         ta.rcc
             .cr

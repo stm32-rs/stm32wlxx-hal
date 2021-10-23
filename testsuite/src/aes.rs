@@ -1562,6 +1562,7 @@ mod tests {
 
     #[init]
     fn init() -> Aes {
+        defmt::info!("init");
         let mut cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
         let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
 

@@ -502,7 +502,9 @@ unsafe fn set_sysclk_msi_inner(
 /// use stm32wl_hal::{pac, rcc::set_sysclk_msi_max};
 ///
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-/// cortex_m::interrupt::free(|cs| unsafe { set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) });
+/// cortex_m::interrupt::free(|cs| unsafe {
+///     set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC, cs)
+/// });
 /// ```
 pub unsafe fn set_sysclk_msi_max(
     flash: &mut pac::FLASH,

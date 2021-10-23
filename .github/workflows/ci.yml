@@ -100,7 +100,7 @@ jobs:
               fi
 
               echo "Running $binpath on $probe"
-              probe-run --chip STM32WLE5JCIx --connect-under-reset "$binpath" --probe "$probe" -v
+              probe-run --chip STM32WLE5JCIx --connect-under-reset "$binpath" --probe "$probe"
               echo "Done $binpath"
               ((count=count+1))
           fi

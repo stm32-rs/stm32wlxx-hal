@@ -1483,16 +1483,6 @@ defmt::timestamp!("{=u32:µs}", DWT::get_cycle_count() / CYC_PER_US);
 const ZERO_16B: [u32; 4] = [0; 4];
 const ZERO_32B: [u32; 8] = [0; 8];
 
-#[cortex_m_rt::exception]
-#[allow(non_snake_case)]
-fn HardFault(ef: &cortex_m_rt::ExceptionFrame) -> ! {
-    cortex_m::interrupt::disable();
-    defmt::error!("HardFault {:#}", defmt::Debug2Format(ef));
-    loop {
-        cortex_m::asm::udf()
-    }
-}
-
 #[inline(always)]
 fn stopwatch<F>(f: F) -> u32
 where
@@ -1832,264 +1822,264 @@ mod tests {
         );
     }
 
-    // #[test]
-    // fn decrypt_ecb_inplace_128(aes: &mut Aes) {
-    //     let mut total_elapsed: u32 = 0;
+    #[test]
+    fn decrypt_ecb_inplace_128(aes: &mut Aes) {
+        let mut total_elapsed: u32 = 0;
 
-    //     for (plaintext, ciphertext) in ECB_PT_CT_128.iter() {
-    //         let mut output_plaintext: [u32; 4] = *ciphertext;
-    //         total_elapsed +=
-    //             stopwatch(|| unwrap!(aes.decrypt_ecb_inplace(&ZERO_16B, &mut output_plaintext)));
-    //         defmt::assert_eq!(&output_plaintext, plaintext);
-    //     }
+        for (plaintext, ciphertext) in ECB_PT_CT_128.iter() {
+            let mut output_plaintext: [u32; 4] = *ciphertext;
+            total_elapsed +=
+                stopwatch(|| unwrap!(aes.decrypt_ecb_inplace(&ZERO_16B, &mut output_plaintext)));
+            defmt::assert_eq!(&output_plaintext, plaintext);
+        }
 
-    //     for (key, ciphertext) in ECB_KEY_CT_128.iter() {
-    //         let mut output_plaintext: [u32; 4] = *ciphertext;
-    //         total_elapsed +=
-    //             stopwatch(|| unwrap!(aes.decrypt_ecb_inplace(key, &mut output_plaintext)));
-    //         defmt::assert_eq!(output_plaintext, ZERO_16B);
-    //     }
+        for (key, ciphertext) in ECB_KEY_CT_128.iter() {
+            let mut output_plaintext: [u32; 4] = *ciphertext;
+            total_elapsed +=
+                stopwatch(|| unwrap!(aes.decrypt_ecb_inplace(key, &mut output_plaintext)));
+            defmt::assert_eq!(output_plaintext, ZERO_16B);
+        }
 
-    //     defmt::info!(
-    //         "Average cycles per 128-bit decrypt: {}",
-    //         total_elapsed / NUM_ECB_128
-    //     );
-    // }
+        defmt::info!(
+            "Average cycles per 128-bit decrypt: {}",
+            total_elapsed / NUM_ECB_128
+        );
+    }
 
-    // #[test]
-    // fn decrypt_ecb_256(aes: &mut Aes) {
-    //     let mut total_elapsed: u32 = 0;
+    #[test]
+    fn decrypt_ecb_256(aes: &mut Aes) {
+        let mut total_elapsed: u32 = 0;
 
-    //     for (plaintext, ciphertext) in ECB_PT_CT_256.iter() {
-    //         let mut output_plaintext: [u32; 4] = [0; 4];
-    //         total_elapsed += stopwatch(|| {
-    //             unwrap!(aes.decrypt_ecb(&ZERO_32B, ciphertext, &mut output_plaintext))
-    //         });
-    //         defmt::assert_eq!(&output_plaintext, plaintext);
-    //     }
+        for (plaintext, ciphertext) in ECB_PT_CT_256.iter() {
+            let mut output_plaintext: [u32; 4] = [0; 4];
+            total_elapsed += stopwatch(|| {
+                unwrap!(aes.decrypt_ecb(&ZERO_32B, ciphertext, &mut output_plaintext))
+            });
+            defmt::assert_eq!(&output_plaintext, plaintext);
+        }
 
-    //     for (key, ciphertext) in ECB_KEY_CT_256.iter() {
-    //         let mut output_plaintext: [u32; 4] = [0; 4];
-    //         total_elapsed +=
-    //             stopwatch(|| unwrap!(aes.decrypt_ecb(key, ciphertext, &mut output_plaintext)));
-    //         defmt::assert_eq!(output_plaintext, ZERO_16B);
-    //     }
+        for (key, ciphertext) in ECB_KEY_CT_256.iter() {
+            let mut output_plaintext: [u32; 4] = [0; 4];
+            total_elapsed +=
+                stopwatch(|| unwrap!(aes.decrypt_ecb(key, ciphertext, &mut output_plaintext)));
+            defmt::assert_eq!(output_plaintext, ZERO_16B);
+        }
 
-    //     defmt::info!(
-    //         "Average cycles per 256-bit decrypt: {}",
-    //         total_elapsed / NUM_ECB_256
-    //     );
-    // }
+        defmt::info!(
+            "Average cycles per 256-bit decrypt: {}",
+            total_elapsed / NUM_ECB_256
+        );
+    }
 
-    // #[test]
-    // fn decrypt_ecb_inplace_256(aes: &mut Aes) {
-    //     let mut total_elapsed: u32 = 0;
+    #[test]
+    fn decrypt_ecb_inplace_256(aes: &mut Aes) {
+        let mut total_elapsed: u32 = 0;
 
-    //     for (plaintext, ciphertext) in ECB_PT_CT_256.iter() {
-    //         let mut output_plaintext: [u32; 4] = *ciphertext;
-    //         total_elapsed +=
-    //             stopwatch(|| unwrap!(aes.decrypt_ecb_inplace(&ZERO_32B, &mut output_plaintext)));
-    //         defmt::assert_eq!(&output_plaintext, plaintext);
-    //     }
+        for (plaintext, ciphertext) in ECB_PT_CT_256.iter() {
+            let mut output_plaintext: [u32; 4] = *ciphertext;
+            total_elapsed +=
+                stopwatch(|| unwrap!(aes.decrypt_ecb_inplace(&ZERO_32B, &mut output_plaintext)));
+            defmt::assert_eq!(&output_plaintext, plaintext);
+        }
 
-    //     for (key, ciphertext) in ECB_KEY_CT_256.iter() {
-    //         let mut output_plaintext: [u32; 4] = *ciphertext;
-    //         total_elapsed +=
-    //             stopwatch(|| unwrap!(aes.decrypt_ecb_inplace(key, &mut output_plaintext)));
-    //         defmt::assert_eq!(output_plaintext, ZERO_16B);
-    //     }
+        for (key, ciphertext) in ECB_KEY_CT_256.iter() {
+            let mut output_plaintext: [u32; 4] = *ciphertext;
+            total_elapsed +=
+                stopwatch(|| unwrap!(aes.decrypt_ecb_inplace(key, &mut output_plaintext)));
+            defmt::assert_eq!(output_plaintext, ZERO_16B);
+        }
 
-    //     defmt::info!(
-    //         "Average cycles per 256-bit decrypt: {}",
-    //         total_elapsed / NUM_ECB_256
-    //     );
-    // }
+        defmt::info!(
+            "Average cycles per 256-bit decrypt: {}",
+            total_elapsed / NUM_ECB_256
+        );
+    }
 
-    // #[test]
-    // fn decrypt_gcm_inplace_128(aes: &mut Aes) {
-    //     let mut total_elapsed: u32 = 0;
+    #[test]
+    fn decrypt_gcm_inplace_128(aes: &mut Aes) {
+        let mut total_elapsed: u32 = 0;
 
-    //     for gcm in GCM_128.iter() {
-    //         let mut tag: [u32; 4] = [0; 4];
-    //         let mut buf: [u8; 16] = [0; 16];
-    //         defmt::assert!(buf.len() >= gcm.pt.len());
-    //         gcm.ct
-    //             .iter()
-    //             .enumerate()
-    //             .for_each(|(idx, &byte)| buf[idx] = byte);
+        for gcm in GCM_128.iter() {
+            let mut tag: [u32; 4] = [0; 4];
+            let mut buf: [u8; 16] = [0; 16];
+            defmt::assert!(buf.len() >= gcm.pt.len());
+            gcm.ct
+                .iter()
+                .enumerate()
+                .for_each(|(idx, &byte)| buf[idx] = byte);
 
-    //         total_elapsed += stopwatch(|| {
-    //             unwrap!(aes.decrypt_gcm_inplace(
-    //                 &gcm.key,
-    //                 &gcm.iv,
-    //                 &gcm.aad,
-    //                 &mut buf[..gcm.pt.len()],
-    //                 &mut tag
-    //             ))
-    //         });
+            total_elapsed += stopwatch(|| {
+                unwrap!(aes.decrypt_gcm_inplace(
+                    &gcm.key,
+                    &gcm.iv,
+                    &gcm.aad,
+                    &mut buf[..gcm.pt.len()],
+                    &mut tag
+                ))
+            });
 
-    //         defmt::assert_eq!(tag, gcm.tag);
-    //         defmt::assert_eq!(&buf[..gcm.pt.len()], gcm.pt);
-    //     }
+            defmt::assert_eq!(tag, gcm.tag);
+            defmt::assert_eq!(&buf[..gcm.pt.len()], gcm.pt);
+        }
 
-    //     defmt::info!(
-    //         "Approximate cycles per 128-bit decrypt: {}",
-    //         total_elapsed / NUM_GCM_128
-    //     );
-    // }
+        defmt::info!(
+            "Approximate cycles per 128-bit decrypt: {}",
+            total_elapsed / NUM_GCM_128
+        );
+    }
 
-    // #[test]
-    // fn decrypt_gcm_inplace_128_u32(aes: &mut Aes) {
-    //     let mut total_elapsed: u32 = 0;
+    #[test]
+    fn decrypt_gcm_inplace_128_u32(aes: &mut Aes) {
+        let mut total_elapsed: u32 = 0;
 
-    //     for gcm in GCM_128.iter() {
-    //         let mut tag: [u32; 4] = [0; 4];
-    //         let mut buf: [u32; 4] = [0; 4];
-    //         let mut aad: [u32; 4] = [0; 4];
-    //         let mut expected: [u32; 4] = [0; 4];
-    //         let ct_len: usize = align_bytes(gcm.ct, &mut buf);
-    //         let aad_len: usize = align_bytes(gcm.aad, &mut aad);
-    //         align_bytes(gcm.pt, &mut expected);
+        for gcm in GCM_128.iter() {
+            let mut tag: [u32; 4] = [0; 4];
+            let mut buf: [u32; 4] = [0; 4];
+            let mut aad: [u32; 4] = [0; 4];
+            let mut expected: [u32; 4] = [0; 4];
+            let ct_len: usize = align_bytes(gcm.ct, &mut buf);
+            let aad_len: usize = align_bytes(gcm.aad, &mut aad);
+            align_bytes(gcm.pt, &mut expected);
 
-    //         total_elapsed += stopwatch(|| {
-    //             unwrap!(aes.decrypt_gcm_inplace_u32(
-    //                 &gcm.key,
-    //                 &gcm.iv,
-    //                 &aad[..aad_len],
-    //                 &mut buf[..ct_len],
-    //                 &mut tag
-    //             ))
-    //         });
+            total_elapsed += stopwatch(|| {
+                unwrap!(aes.decrypt_gcm_inplace_u32(
+                    &gcm.key,
+                    &gcm.iv,
+                    &aad[..aad_len],
+                    &mut buf[..ct_len],
+                    &mut tag
+                ))
+            });
 
-    //         defmt::assert_eq!(tag, gcm.tag);
-    //         defmt::assert_eq!(buf, expected);
-    //     }
+            defmt::assert_eq!(tag, gcm.tag);
+            defmt::assert_eq!(buf, expected);
+        }
 
-    //     defmt::info!(
-    //         "Approximate cycles per 128-bit decrypt: {}",
-    //         total_elapsed / NUM_GCM_128
-    //     );
-    // }
+        defmt::info!(
+            "Approximate cycles per 128-bit decrypt: {}",
+            total_elapsed / NUM_GCM_128
+        );
+    }
 
-    // #[test]
-    // fn decrypt_gcm_inplace_256(aes: &mut Aes) {
-    //     let mut total_elapsed: u32 = 0;
+    #[test]
+    fn decrypt_gcm_inplace_256(aes: &mut Aes) {
+        let mut total_elapsed: u32 = 0;
 
-    //     for gcm in GCM_256.iter() {
-    //         let mut tag: [u32; 4] = [0; 4];
-    //         let mut buf: [u8; 16] = [0; 16];
-    //         defmt::assert!(buf.len() >= gcm.pt.len());
-    //         gcm.ct
-    //             .iter()
-    //             .enumerate()
-    //             .for_each(|(idx, &byte)| buf[idx] = byte);
+        for gcm in GCM_256.iter() {
+            let mut tag: [u32; 4] = [0; 4];
+            let mut buf: [u8; 16] = [0; 16];
+            defmt::assert!(buf.len() >= gcm.pt.len());
+            gcm.ct
+                .iter()
+                .enumerate()
+                .for_each(|(idx, &byte)| buf[idx] = byte);
 
-    //         total_elapsed += stopwatch(|| {
-    //             unwrap!(aes.decrypt_gcm_inplace(
-    //                 &gcm.key,
-    //                 &gcm.iv,
-    //                 &gcm.aad,
-    //                 &mut buf[..gcm.pt.len()],
-    //                 &mut tag
-    //             ))
-    //         });
+            total_elapsed += stopwatch(|| {
+                unwrap!(aes.decrypt_gcm_inplace(
+                    &gcm.key,
+                    &gcm.iv,
+                    &gcm.aad,
+                    &mut buf[..gcm.pt.len()],
+                    &mut tag
+                ))
+            });
 
-    //         defmt::assert_eq!(tag, gcm.tag);
-    //         defmt::assert_eq!(&buf[..gcm.pt.len()], gcm.pt);
-    //     }
+            defmt::assert_eq!(tag, gcm.tag);
+            defmt::assert_eq!(&buf[..gcm.pt.len()], gcm.pt);
+        }
 
-    //     defmt::info!(
-    //         "Approximate cycles per 256-bit decrypt: {}",
-    //         total_elapsed / NUM_GCM_256
-    //     );
-    // }
+        defmt::info!(
+            "Approximate cycles per 256-bit decrypt: {}",
+            total_elapsed / NUM_GCM_256
+        );
+    }
 
-    // #[test]
-    // fn decrypt_gcm_inplace_256_u32(aes: &mut Aes) {
-    //     let mut total_elapsed: u32 = 0;
+    #[test]
+    fn decrypt_gcm_inplace_256_u32(aes: &mut Aes) {
+        let mut total_elapsed: u32 = 0;
 
-    //     for gcm in GCM_256.iter() {
-    //         let mut tag: [u32; 4] = [0; 4];
-    //         let mut buf: [u32; 4] = [0; 4];
-    //         let mut aad: [u32; 4] = [0; 4];
-    //         let mut expected: [u32; 4] = [0; 4];
-    //         let ct_len: usize = align_bytes(gcm.ct, &mut buf);
-    //         let aad_len: usize = align_bytes(gcm.aad, &mut aad);
-    //         align_bytes(gcm.pt, &mut expected);
+        for gcm in GCM_256.iter() {
+            let mut tag: [u32; 4] = [0; 4];
+            let mut buf: [u32; 4] = [0; 4];
+            let mut aad: [u32; 4] = [0; 4];
+            let mut expected: [u32; 4] = [0; 4];
+            let ct_len: usize = align_bytes(gcm.ct, &mut buf);
+            let aad_len: usize = align_bytes(gcm.aad, &mut aad);
+            align_bytes(gcm.pt, &mut expected);
 
-    //         total_elapsed += stopwatch(|| {
-    //             unwrap!(aes.decrypt_gcm_inplace_u32(
-    //                 &gcm.key,
-    //                 &gcm.iv,
-    //                 &aad[..aad_len],
-    //                 &mut buf[..ct_len],
-    //                 &mut tag
-    //             ))
-    //         });
+            total_elapsed += stopwatch(|| {
+                unwrap!(aes.decrypt_gcm_inplace_u32(
+                    &gcm.key,
+                    &gcm.iv,
+                    &aad[..aad_len],
+                    &mut buf[..ct_len],
+                    &mut tag
+                ))
+            });
 
-    //         defmt::assert_eq!(tag, gcm.tag);
-    //         defmt::assert_eq!(buf, expected);
-    //     }
+            defmt::assert_eq!(tag, gcm.tag);
+            defmt::assert_eq!(buf, expected);
+        }
 
-    //     defmt::info!(
-    //         "Approximate cycles per 256-bit decrypt: {}",
-    //         total_elapsed / NUM_GCM_256
-    //     );
-    // }
+        defmt::info!(
+            "Approximate cycles per 256-bit decrypt: {}",
+            total_elapsed / NUM_GCM_256
+        );
+    }
 
-    // #[test]
-    // fn gcm_inplace_normal_use(aes: &mut Aes) {
-    //     const ASSOCIATED_DATA: &[u8; 13] = b"Hello, World!";
-    //     const PLAINTEXT: &[u8; 445] = b"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+    #[test]
+    fn gcm_inplace_normal_use(aes: &mut Aes) {
+        const ASSOCIATED_DATA: &[u8; 13] = b"Hello, World!";
+        const PLAINTEXT: &[u8; 445] = b"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
-    //     // purpose of this test is to check encryption on data that does not
-    //     // match the native hardware size
-    //     defmt::assert_ne!(ASSOCIATED_DATA.len() % 16, 0);
-    //     defmt::assert_ne!(PLAINTEXT.len() % 16, 0);
+        // purpose of this test is to check encryption on data that does not
+        // match the native hardware size
+        defmt::assert_ne!(ASSOCIATED_DATA.len() % 16, 0);
+        defmt::assert_ne!(PLAINTEXT.len() % 16, 0);
 
-    //     const IV: [u32; 3] = [0; 3];
+        const IV: [u32; 3] = [0; 3];
 
-    //     // static to prevent the stack from going crazy
-    //     static mut BUF: [u8; 445] = *PLAINTEXT;
-    //     let mut encrypt_tag: [u32; 4] = [0; 4];
-    //     let encrypt_elapsed: u32 = stopwatch(|| {
-    //         unwrap!(aes.encrypt_gcm_inplace(
-    //             &ZERO_16B,
-    //             &IV,
-    //             ASSOCIATED_DATA,
-    //             unsafe { &mut BUF },
-    //             &mut encrypt_tag
-    //         ))
-    //     });
-    //     defmt::info!(
-    //         "Encrypting {} bytes: {} cycles",
-    //         PLAINTEXT.len(),
-    //         encrypt_elapsed
-    //     );
+        // static to prevent the stack from going crazy
+        static mut BUF: [u8; 445] = *PLAINTEXT;
+        let mut encrypt_tag: [u32; 4] = [0; 4];
+        let encrypt_elapsed: u32 = stopwatch(|| {
+            unwrap!(aes.encrypt_gcm_inplace(
+                &ZERO_16B,
+                &IV,
+                ASSOCIATED_DATA,
+                unsafe { &mut BUF },
+                &mut encrypt_tag
+            ))
+        });
+        defmt::info!(
+            "Encrypting {} bytes: {} cycles",
+            PLAINTEXT.len(),
+            encrypt_elapsed
+        );
 
-    //     assert_ne!(unsafe { &BUF }, PLAINTEXT);
-    //     defmt::assert_ne!(encrypt_tag, ZERO_16B);
+        assert_ne!(unsafe { &BUF }, PLAINTEXT);
+        defmt::assert_ne!(encrypt_tag, ZERO_16B);
 
-    //     let mut decrypt_tag: [u32; 4] = [0; 4];
-    //     let decrypt_elapsed: u32 = stopwatch(|| {
-    //         unwrap!(aes.decrypt_gcm_inplace(
-    //             &ZERO_16B,
-    //             &IV,
-    //             ASSOCIATED_DATA,
-    //             unsafe { &mut BUF },
-    //             &mut decrypt_tag
-    //         ))
-    //     });
+        let mut decrypt_tag: [u32; 4] = [0; 4];
+        let decrypt_elapsed: u32 = stopwatch(|| {
+            unwrap!(aes.decrypt_gcm_inplace(
+                &ZERO_16B,
+                &IV,
+                ASSOCIATED_DATA,
+                unsafe { &mut BUF },
+                &mut decrypt_tag
+            ))
+        });
 
-    //     assert_eq!(unsafe { &BUF }, PLAINTEXT);
-    //     defmt::assert_eq!(decrypt_tag, encrypt_tag);
+        assert_eq!(unsafe { &BUF }, PLAINTEXT);
+        defmt::assert_eq!(decrypt_tag, encrypt_tag);
 
-    //     defmt::info!(
-    //         "Decrypting {} bytes: {} cycles",
-    //         PLAINTEXT.len(),
-    //         decrypt_elapsed
-    //     );
-    // }
+        defmt::info!(
+            "Decrypting {} bytes: {} cycles",
+            PLAINTEXT.len(),
+            decrypt_elapsed
+        );
+    }
 
     #[test]
     fn gcm_inplace_all_sizes(aes: &mut Aes) {

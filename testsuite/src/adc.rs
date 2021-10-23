@@ -6,7 +6,7 @@ use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use nucleo_wl55jc_bsp::hal::{
     adc::{self, Adc, Clk},
-    cortex_m::delay::Delay,
+    cortex_m::{self, delay::Delay},
     pac::{self, DWT},
     rcc,
     util::{new_delay, reset_cycle_count},
@@ -44,7 +44,9 @@ mod tests {
         let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
         let mut cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
 
-        unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
+        cortex_m::interrupt::free(|cs| unsafe {
+            rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC, cs)
+        });
         defmt::assert_eq!(rcc::sysclk_hz(&dp.RCC), FREQ);
 
         let delay = new_delay(cp.SYST, &dp.RCC);

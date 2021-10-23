@@ -4,6 +4,7 @@
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use nucleo_wl55jc_bsp::hal::{
+    cortex_m,
     pac::{self, DWT},
     pka::{
         curve::NIST_P256, EcdsaPublicKey, EcdsaSignError, EcdsaSignature, EcdsaVerifyError, Pka,
@@ -68,7 +69,9 @@ mod tests {
         let mut cp: pac::CorePeripherals = unwrap!(pac::CorePeripherals::take());
         let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
 
-        unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
+        cortex_m::interrupt::free(|cs| unsafe {
+            rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC, cs)
+        });
 
         cp.DCB.enable_trace();
         cp.DWT.enable_cycle_counter();

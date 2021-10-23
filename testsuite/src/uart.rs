@@ -5,6 +5,7 @@ use core::fmt::Write;
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use nucleo_wl55jc_bsp::hal::{
+    cortex_m,
     dma::{AllDma, Dma1Ch3, Dma2Ch6},
     embedded_hal::prelude::*,
     gpio::{pins, PortA, PortC},
@@ -24,31 +25,33 @@ mod tests {
 
     #[init]
     fn init() -> TestArgs {
-        let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
-        unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC) };
+        cortex_m::interrupt::free(|cs| {
+            let mut dp: pac::Peripherals = unwrap!(pac::Peripherals::take());
+            unsafe { rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC, cs) };
 
-        dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
-        while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+            dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+            while dp.RCC.cr.read().hsirdy().is_not_ready() {}
 
-        let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
-        let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-        let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+            let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
+            let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+            let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
 
-        let lpuart: LpUart<(pins::C0, Dma2Ch6), pins::C1> =
-            LpUart::new(dp.LPUART, 115200, uart::Clk::Hsi16, &mut dp.RCC)
-                .enable_rx_dma(gpioc.c0, dma.d2.c6)
-                .enable_tx(gpioc.c1);
-        let uart1: Uart1<pins::A10, (pins::A9, Dma1Ch3)> =
-            Uart1::new(dp.USART1, 115200, uart::Clk::Hsi16, &mut dp.RCC)
-                .enable_rx(gpioa.a10)
-                .enable_tx_dma(gpioa.a9, dma.d1.c3);
+            let lpuart: LpUart<(pins::C0, Dma2Ch6), pins::C1> =
+                LpUart::new(dp.LPUART, 115200, uart::Clk::Hsi16, &mut dp.RCC)
+                    .enable_rx_dma(gpioc.c0, dma.d2.c6, cs)
+                    .enable_tx(gpioc.c1, cs);
+            let uart1: Uart1<pins::A10, (pins::A9, Dma1Ch3)> =
+                Uart1::new(dp.USART1, 115200, uart::Clk::Hsi16, &mut dp.RCC)
+                    .enable_rx(gpioa.a10, cs)
+                    .enable_tx_dma(gpioa.a9, dma.d1.c3, cs);
 
-        defmt::warn!(
-            "UART tests require C1 (LPUART TX) connected to A10 (UART1 RX) and \
+            defmt::warn!(
+                "UART tests require C1 (LPUART TX) connected to A10 (UART1 RX) and \
              C0 (LPUART RX) connected to A9 (UART1 TX)"
-        );
+            );
 
-        TestArgs { lpuart, uart1 }
+            TestArgs { lpuart, uart1 }
+        })
     }
 
     #[test]

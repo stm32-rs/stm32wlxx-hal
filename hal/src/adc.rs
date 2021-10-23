@@ -253,7 +253,7 @@ impl Ts {
     ///
     /// # Example
     ///
-    /// Assuming the ADC clock frequency is 16 Mhz.
+    /// Assuming the ADC clock frequency is 16 MHz.
     ///
     /// ```
     /// use core::time::Duration;

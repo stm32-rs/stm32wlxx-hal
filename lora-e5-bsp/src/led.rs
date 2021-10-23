@@ -4,6 +4,7 @@ use stm32wl_hal as hal;
 
 use core::ops::Not;
 use hal::{
+    cortex_m::interrupt::CriticalSection,
     embedded_hal::digital::v2::OutputPin,
     gpio::{self, pins, Output, OutputArgs},
 };
@@ -28,19 +29,19 @@ impl D5 {
     ///
     /// ```no_run
     /// use lora_e5_bsp::{
-    ///     hal::{gpio::PortB, pac},
+    ///     hal::{cortex_m, gpio::PortB, pac},
     ///     led,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let mut d5 = led::D5::new(gpiob.b5);
+    /// let mut d5 = cortex_m::interrupt::free(|cs| led::D5::new(gpiob.b5, cs));
     /// d5.set_on();
     /// ```
-    pub fn new(b5: pins::B5) -> Self {
+    pub fn new(b5: pins::B5, cs: &CriticalSection) -> Self {
         Self {
-            gpio: Output::new(b5, &LED_ARGS),
+            gpio: Output::new(b5, &LED_ARGS, cs),
         }
     }
 
@@ -50,14 +51,14 @@ impl D5 {
     ///
     /// ```no_run
     /// use lora_e5_bsp::{
-    ///     hal::{gpio::PortB, pac},
+    ///     hal::{cortex_m, gpio::PortB, pac},
     ///     led,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let mut d5 = led::D5::new(gpiob.b5);
+    /// let mut d5 = cortex_m::interrupt::free(|cs| led::D5::new(gpiob.b5, cs));
     /// // ... use LED
     /// let b5 = d5.free();
     /// ```

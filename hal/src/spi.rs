@@ -65,6 +65,8 @@ pub use embedded_hal::{
     spi::{FullDuplex, Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3},
 };
 
+use cortex_m::interrupt::CriticalSection;
+
 typestate!(NoSck, "no SCK on a generic SPI structure");
 typestate!(NoMosi, "no MOSI on a generic SPI structure");
 typestate!(NoMiso, "no MISO on a generic SPI structure");
@@ -711,6 +713,7 @@ macro_rules! impl_new_full_duplex {
                 ///
                 /// ```no_run
                 /// use stm32wl_hal::{
+                ///     cortex_m,
                 ///     gpio::PortA,
                 ///     pac,
                 ///     spi::{BaudRate::Div2, Spi, MODE_0},
@@ -719,13 +722,16 @@ macro_rules! impl_new_full_duplex {
                 /// let mut dp = pac::Peripherals::take().unwrap();
                 ///
                 /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
-                /// let spi = Spi::new_spi1_full_duplex(
-                ///     dp.SPI1,
-                ///     (pa.a5, pa.a6, pa.a7),
-                ///     MODE_0,
-                ///     Div2,
-                ///     &mut dp.RCC
-                /// );
+                /// let spi = cortex_m::interrupt::free(|cs| {
+                ///     Spi::new_spi1_full_duplex(
+                ///         dp.SPI1,
+                ///         (pa.a5, pa.a6, pa.a7),
+                ///         MODE_0,
+                ///         Div2,
+                ///         &mut dp.RCC,
+                ///         cs,
+                ///     )
+                /// });
                 /// ```
                 pub fn [<new_spi $n _full_duplex>](
                     spi: [<SPI $n>],
@@ -733,15 +739,14 @@ macro_rules! impl_new_full_duplex {
                     mode: Mode,
                     div: BaudRate,
                     rcc: &mut pac::RCC,
+                    cs: &CriticalSection,
                 ) -> Self {
                     Self::enable_clock(rcc);
                     unsafe { Self::pulse_reset(rcc) };
 
-                    cortex_m::interrupt::free(|cs| {
-                        pins.0.[<set_spi $n _sck_af>](cs);
-                        pins.1.[<set_spi $n _miso_af>](cs);
-                        pins.2.[<set_spi $n _mosi_af>](cs);
-                    });
+                    pins.0.[<set_spi $n _sck_af>](cs);
+                    pins.1.[<set_spi $n _miso_af>](cs);
+                    pins.2.[<set_spi $n _mosi_af>](cs);
 
                     spi.cr1.write(|w| {
                         w
@@ -787,6 +792,7 @@ macro_rules! impl_new_full_duplex_slave {
                 ///
                 /// ```no_run
                 /// use stm32wl_hal::{
+                ///     cortex_m,
                 ///     gpio::PortA,
                 ///     pac,
                 ///     spi::{Spi, MODE_0},
@@ -795,27 +801,29 @@ macro_rules! impl_new_full_duplex_slave {
                 /// let mut dp = pac::Peripherals::take().unwrap();
                 ///
                 /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
-                /// let spi = Spi::new_spi1_full_duplex_slave(
-                ///     dp.SPI1,
-                ///     (pa.a5, pa.a6, pa.a7),
-                ///     MODE_0,
-                ///     &mut dp.RCC
-                /// );
+                /// let spi = cortex_m::interrupt::free(|cs| {
+                ///     Spi::new_spi1_full_duplex_slave(
+                ///         dp.SPI1,
+                ///         (pa.a5, pa.a6, pa.a7),
+                ///         MODE_0,
+                ///         &mut dp.RCC,
+                ///         cs,
+                ///     )
+                /// });
                 /// ```
                 pub fn [<new_spi $n _full_duplex_slave>](
                     spi: [<SPI $n>],
                     mut pins: (SCK, MISO, MOSI),
                     mode: Mode,
                     rcc: &mut pac::RCC,
+                    cs: &CriticalSection,
                 ) -> Self {
                     Self::enable_clock(rcc);
                     unsafe { Self::pulse_reset(rcc) };
 
-                    cortex_m::interrupt::free(|cs| {
-                        pins.0.[<set_spi $n _sck_af>](cs);
-                        pins.1.[<set_spi $n _miso_af>](cs);
-                        pins.2.[<set_spi $n _mosi_af>](cs);
-                    });
+                    pins.0.[<set_spi $n _sck_af>](cs);
+                    pins.1.[<set_spi $n _miso_af>](cs);
+                    pins.2.[<set_spi $n _mosi_af>](cs);
 
                     spi.cr1.write(|w| {
                         w
@@ -861,6 +869,7 @@ macro_rules! impl_new_full_duplex_dma {
                 ///
                 /// ```no_run
                 /// use stm32wl_hal::{
+                ///     cortex_m,
                 ///     dma::AllDma,
                 ///     gpio::PortA,
                 ///     pac,
@@ -871,14 +880,17 @@ macro_rules! impl_new_full_duplex_dma {
                 ///
                 /// let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
                 /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
-                /// let spi = Spi::new_spi1_full_duplex_dma(
-                ///     dp.SPI1,
-                ///     (pa.a5, pa.a6, pa.a7),
-                ///     (dma.d1.c1, dma.d1.c2),
-                ///     MODE_0,
-                ///     Div2,
-                ///     &mut dp.RCC,
-                /// );
+                /// let spi = cortex_m::interrupt::free(|cs| {
+                ///     Spi::new_spi1_full_duplex_dma(
+                ///         dp.SPI1,
+                ///         (pa.a5, pa.a6, pa.a7),
+                ///         (dma.d1.c1, dma.d1.c2),
+                ///         MODE_0,
+                ///         Div2,
+                ///         &mut dp.RCC,
+                ///         cs,
+                ///     )
+                /// });
                 /// ```
                 pub fn [<new_spi $n _full_duplex_dma>](
                     spi: [<SPI $n>],
@@ -887,15 +899,14 @@ macro_rules! impl_new_full_duplex_dma {
                     mode: Mode,
                     div: BaudRate,
                     rcc: &mut pac::RCC,
+                    cs: &CriticalSection,
                 ) -> Self {
                     Self::enable_clock(rcc);
                     unsafe { Self::pulse_reset(rcc) };
 
-                    cortex_m::interrupt::free(|cs| {
-                        pins.0.[<set_spi $n _sck_af>](cs);
-                        pins.1.[<set_spi $n _miso_af>](cs);
-                        pins.2.[<set_spi $n _mosi_af>](cs);
-                    });
+                    pins.0.[<set_spi $n _sck_af>](cs);
+                    pins.1.[<set_spi $n _miso_af>](cs);
+                    pins.2.[<set_spi $n _mosi_af>](cs);
 
                     spi.cr1.write(|w| {
                         w
@@ -954,6 +965,7 @@ macro_rules! impl_new_full_duplex_slave_dma {
                 ///
                 /// ```no_run
                 /// use stm32wl_hal::{
+                ///     cortex_m,
                 ///     dma::AllDma,
                 ///     gpio::PortA,
                 ///     pac,
@@ -964,13 +976,16 @@ macro_rules! impl_new_full_duplex_slave_dma {
                 ///
                 /// let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
                 /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
-                /// let spi = Spi::new_spi1_full_duplex_slave_dma(
-                ///     dp.SPI1,
-                ///     (pa.a5, pa.a6, pa.a7),
-                ///     (dma.d1.c1, dma.d1.c2),
-                ///     MODE_0,
-                ///     &mut dp.RCC,
-                /// );
+                /// let spi = cortex_m::interrupt::free(|cs| {
+                ///     Spi::new_spi1_full_duplex_slave_dma(
+                ///         dp.SPI1,
+                ///         (pa.a5, pa.a6, pa.a7),
+                ///         (dma.d1.c1, dma.d1.c2),
+                ///         MODE_0,
+                ///         &mut dp.RCC,
+                ///         cs,
+                ///     )
+                /// });
                 /// ```
                 pub fn [<new_spi $n _full_duplex_slave_dma>](
                     spi: [<SPI $n>],
@@ -978,15 +993,14 @@ macro_rules! impl_new_full_duplex_slave_dma {
                     mut dmas: (MISODMA, MOSIDMA),
                     mode: Mode,
                     rcc: &mut pac::RCC,
+                    cs: &CriticalSection,
                 ) -> Self {
                     Self::enable_clock(rcc);
                     unsafe { Self::pulse_reset(rcc) };
 
-                    cortex_m::interrupt::free(|cs| {
-                        pins.0.[<set_spi $n _sck_af>](cs);
-                        pins.1.[<set_spi $n _miso_af>](cs);
-                        pins.2.[<set_spi $n _mosi_af>](cs);
-                    });
+                    pins.0.[<set_spi $n _sck_af>](cs);
+                    pins.1.[<set_spi $n _miso_af>](cs);
+                    pins.2.[<set_spi $n _mosi_af>](cs);
 
                     spi.cr1.write(|w| {
                         w
@@ -1040,6 +1054,7 @@ macro_rules! impl_new_mosi_simplex {
                 ///
                 /// ```no_run
                 /// use stm32wl_hal::{
+                ///     cortex_m,
                 ///     gpio::PortA,
                 ///     pac,
                 ///     spi::{BaudRate::Div2, Spi, MODE_0},
@@ -1048,13 +1063,16 @@ macro_rules! impl_new_mosi_simplex {
                 /// let mut dp = pac::Peripherals::take().unwrap();
                 ///
                 /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
-                /// let spi = Spi::new_spi1_mosi_simplex(
-                ///     dp.SPI1,
-                ///     (pa.a5, pa.a7),
-                ///     MODE_0,
-                ///     Div2,
-                ///     &mut dp.RCC,
-                /// );
+                /// let spi = cortex_m::interrupt::free(|cs| {
+                ///     Spi::new_spi1_mosi_simplex(
+                ///         dp.SPI1,
+                ///         (pa.a5, pa.a7),
+                ///         MODE_0,
+                ///         Div2,
+                ///         &mut dp.RCC,
+                ///         cs,
+                ///     )
+                /// });
                 /// ```
                 pub fn [<new_spi $n _mosi_simplex>](
                     spi: [<SPI $n>],
@@ -1062,14 +1080,13 @@ macro_rules! impl_new_mosi_simplex {
                     mode: Mode,
                     div: BaudRate,
                     rcc: &mut pac::RCC,
+                    cs: &CriticalSection,
                 ) -> Self {
                     Self::enable_clock(rcc);
                     unsafe { Self::pulse_reset(rcc) };
 
-                    cortex_m::interrupt::free(|cs| {
-                        pins.0.[<set_spi $n _sck_af>](cs);
-                        pins.1.[<set_spi $n _mosi_af>](cs);
-                    });
+                    pins.0.[<set_spi $n _sck_af>](cs);
+                    pins.1.[<set_spi $n _mosi_af>](cs);
 
                     spi.cr1.write(|w|
                         w
@@ -1116,6 +1133,7 @@ macro_rules! impl_new_mosi_simplex_slave {
                 ///
                 /// ```no_run
                 /// use stm32wl_hal::{
+                ///     cortex_m,
                 ///     gpio::PortA,
                 ///     pac,
                 ///     spi::{Spi, MODE_0},
@@ -1124,26 +1142,28 @@ macro_rules! impl_new_mosi_simplex_slave {
                 /// let mut dp = pac::Peripherals::take().unwrap();
                 ///
                 /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
-                /// let spi = Spi::new_spi1_mosi_simplex_slave(
-                ///     dp.SPI1,
-                ///     (pa.a5, pa.a7),
-                ///     MODE_0,
-                ///     &mut dp.RCC,
-                /// );
+                /// let spi = cortex_m::interrupt::free(|cs| {
+                ///     Spi::new_spi1_mosi_simplex_slave(
+                ///         dp.SPI1,
+                ///         (pa.a5, pa.a7),
+                ///         MODE_0,
+                ///         &mut dp.RCC,
+                ///         cs,
+                ///     );
+                /// });
                 /// ```
                 pub fn [<new_spi $n _mosi_simplex_slave>](
                     spi: [<SPI $n>],
                     mut pins: (SCK, MOSI),
                     mode: Mode,
                     rcc: &mut pac::RCC,
+                    cs: &CriticalSection,
                 ) -> Self {
                     Self::enable_clock(rcc);
                     unsafe { Self::pulse_reset(rcc) };
 
-                    cortex_m::interrupt::free(|cs| {
-                        pins.0.[<set_spi $n _sck_af>](cs);
-                        pins.1.[<set_spi $n _mosi_af>](cs);
-                    });
+                    pins.0.[<set_spi $n _sck_af>](cs);
+                    pins.1.[<set_spi $n _mosi_af>](cs);
 
                     spi.cr1.write(|w|
                         w
@@ -1188,6 +1208,7 @@ macro_rules! impl_new_mosi_simplex_dma {
                 ///
                 /// ```no_run
                 /// use stm32wl_hal::{
+                ///     cortex_m,
                 ///     dma::AllDma,
                 ///     gpio::PortA,
                 ///     pac,
@@ -1198,14 +1219,17 @@ macro_rules! impl_new_mosi_simplex_dma {
                 ///
                 /// let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
                 /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
-                /// let spi = Spi::new_spi1_mosi_simplex_dma(
-                ///     dp.SPI1,
-                ///     (pa.a5, pa.a7),
-                ///     dma.d1.c1,
-                ///     MODE_0,
-                ///     Div2,
-                ///     &mut dp.RCC,
-                /// );
+                /// let spi = cortex_m::interrupt::free(|cs| {
+                ///     Spi::new_spi1_mosi_simplex_dma(
+                ///         dp.SPI1,
+                ///         (pa.a5, pa.a7),
+                ///         dma.d1.c1,
+                ///         MODE_0,
+                ///         Div2,
+                ///         &mut dp.RCC,
+                ///         cs,
+                ///     )
+                /// });
                 /// ```
                 pub fn [<new_spi $n _mosi_simplex_dma>](
                     spi: [<SPI $n>],
@@ -1214,14 +1238,13 @@ macro_rules! impl_new_mosi_simplex_dma {
                     mode: Mode,
                     div: BaudRate,
                     rcc: &mut pac::RCC,
+                    cs: &CriticalSection,
                 ) -> Self {
                     Self::enable_clock(rcc);
                     unsafe { Self::pulse_reset(rcc) };
 
-                    cortex_m::interrupt::free(|cs| {
-                        pins.0.[<set_spi $n _sck_af>](cs);
-                        pins.1.[<set_spi $n _mosi_af>](cs);
-                    });
+                    pins.0.[<set_spi $n _sck_af>](cs);
+                    pins.1.[<set_spi $n _mosi_af>](cs);
 
                     spi.cr1.write(|w|
                         w
@@ -1274,6 +1297,7 @@ macro_rules! impl_new_mosi_simplex_slave_dma {
                 ///
                 /// ```no_run
                 /// use stm32wl_hal::{
+                ///     cortex_m,
                 ///     dma::AllDma,
                 ///     gpio::PortA,
                 ///     pac,
@@ -1284,13 +1308,16 @@ macro_rules! impl_new_mosi_simplex_slave_dma {
                 ///
                 /// let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
                 /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
-                /// let spi = Spi::new_spi1_mosi_simplex_slave_dma(
-                ///     dp.SPI1,
-                ///     (pa.a5, pa.a7),
-                ///     dma.d1.c1,
-                ///     MODE_0,
-                ///     &mut dp.RCC,
-                /// );
+                /// let spi = cortex_m::interrupt::free(|cs| {
+                ///     Spi::new_spi1_mosi_simplex_slave_dma(
+                ///         dp.SPI1,
+                ///         (pa.a5, pa.a7),
+                ///         dma.d1.c1,
+                ///         MODE_0,
+                ///         &mut dp.RCC,
+                ///         cs,
+                ///     )
+                /// });
                 /// ```
                 pub fn [<new_spi $n _mosi_simplex_slave_dma>](
                     spi: [<SPI $n>],
@@ -1298,14 +1325,13 @@ macro_rules! impl_new_mosi_simplex_slave_dma {
                     mut dma: MOSIDMA,
                     mode: Mode,
                     rcc: &mut pac::RCC,
+                    cs: &CriticalSection,
                 ) -> Self {
                     Self::enable_clock(rcc);
                     unsafe { Self::pulse_reset(rcc) };
 
-                    cortex_m::interrupt::free(|cs| {
-                        pins.0.[<set_spi $n _sck_af>](cs);
-                        pins.1.[<set_spi $n _mosi_af>](cs);
-                    });
+                    pins.0.[<set_spi $n _sck_af>](cs);
+                    pins.1.[<set_spi $n _mosi_af>](cs);
 
                     spi.cr1.write(|w|
                         w
@@ -1354,6 +1380,7 @@ macro_rules! impl_new_miso_simplex {
                 ///
                 /// ```no_run
                 /// use stm32wl_hal::{
+                ///     cortex_m,
                 ///     gpio::PortA,
                 ///     pac,
                 ///     spi::{Spi, MODE_0},
@@ -1362,26 +1389,28 @@ macro_rules! impl_new_miso_simplex {
                 /// let mut dp = pac::Peripherals::take().unwrap();
                 ///
                 /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
-                /// let spi = Spi::new_spi1_miso_simplex_slave(
-                ///     dp.SPI1,
-                ///     (pa.a5, pa.a6),
-                ///     MODE_0,
-                ///     &mut dp.RCC,
-                /// );
+                /// let spi = cortex_m::interrupt::free(|cs| {
+                ///     Spi::new_spi1_miso_simplex_slave(
+                ///         dp.SPI1,
+                ///         (pa.a5, pa.a6),
+                ///         MODE_0,
+                ///         &mut dp.RCC,
+                ///         cs,
+                ///     )
+                /// });
                 /// ```
                 pub fn [<new_spi $n _miso_simplex_slave>](
                     spi: [<SPI $n>],
                     mut pins: (SCK, MISO),
                     mode: Mode,
                     rcc: &mut pac::RCC,
+                    cs: &CriticalSection,
                 ) -> Self {
                     Self::enable_clock(rcc);
                     unsafe { Self::pulse_reset(rcc) };
 
-                    cortex_m::interrupt::free(|cs| {
-                        pins.0.[<set_spi $n _sck_af>](cs);
-                        pins.1.[<set_spi $n _miso_af>](cs);
-                    });
+                    pins.0.[<set_spi $n _sck_af>](cs);
+                    pins.1.[<set_spi $n _miso_af>](cs);
 
                     spi.cr1.write(|w| {
                         w
@@ -1427,6 +1456,7 @@ macro_rules! impl_new_miso_simplex_dma {
                 ///
                 /// ```no_run
                 /// use stm32wl_hal::{
+                ///     cortex_m,
                 ///     dma::AllDma,
                 ///     gpio::PortA,
                 ///     pac,
@@ -1437,13 +1467,16 @@ macro_rules! impl_new_miso_simplex_dma {
                 ///
                 /// let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
                 /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
-                /// let spi = Spi::new_spi1_miso_simplex_slave_dma(
-                ///     dp.SPI1,
-                ///     (pa.a5, pa.a6),
-                ///     dma.d1.c1,
-                ///     MODE_0,
-                ///     &mut dp.RCC,
-                /// );
+                /// let spi = cortex_m::interrupt::free(|cs| {
+                ///     Spi::new_spi1_miso_simplex_slave_dma(
+                ///         dp.SPI1,
+                ///         (pa.a5, pa.a6),
+                ///         dma.d1.c1,
+                ///         MODE_0,
+                ///         &mut dp.RCC,
+                ///         cs,
+                ///     )
+                /// });
                 /// ```
                 pub fn [<new_spi $n _miso_simplex_slave_dma>](
                     spi: [<SPI $n>],
@@ -1451,14 +1484,13 @@ macro_rules! impl_new_miso_simplex_dma {
                     mut dma: MISODMA,
                     mode: Mode,
                     rcc: &mut pac::RCC,
+                    cs: &CriticalSection,
                 ) -> Self {
                     Self::enable_clock(rcc);
                     unsafe { Self::pulse_reset(rcc) };
 
-                    cortex_m::interrupt::free(|cs| {
-                        pins.0.[<set_spi $n _sck_af>](cs);
-                        pins.1.[<set_spi $n _miso_af>](cs);
-                    });
+                    pins.0.[<set_spi $n _sck_af>](cs);
+                    pins.1.[<set_spi $n _miso_af>](cs);
 
                     spi.cr1.write(|w| {
                         w
@@ -1607,13 +1639,16 @@ impl<SPI: SpiRegs, SCK, MISO, MOSI> Spi<SPI, SCK, MISO, MOSI, Slave> {
     ///
     /// let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
     /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let mut spi = Spi::new_spi1_full_duplex_slave_dma(
-    ///     dp.SPI1,
-    ///     (pa.a5, pa.a6, pa.a7),
-    ///     (dma.d1.c1, dma.d1.c2),
-    ///     MODE_0,
-    ///     &mut dp.RCC,
-    /// );
+    /// let mut spi = cortex_m::interrupt::free(|cs| {
+    ///     Spi::new_spi1_full_duplex_slave_dma(
+    ///         dp.SPI1,
+    ///         (pa.a5, pa.a6, pa.a7),
+    ///         (dma.d1.c1, dma.d1.c2),
+    ///         MODE_0,
+    ///         &mut dp.RCC,
+    ///         cs,
+    ///     )
+    /// });
     ///
     /// // set SSI slow, enabling SPI transfers
     /// spi.set_ssi(false);
@@ -1645,14 +1680,17 @@ impl<SPI, SCK, MISO, MOSI, MODE> Spi<SPI, SCK, MISO, MOSI, MODE> {
     ///
     /// let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
     /// let pa = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let spi = Spi::new_spi1_full_duplex_dma(
-    ///     dp.SPI1,
-    ///     (pa.a5, pa.a6, pa.a7),
-    ///     (dma.d1.c1, dma.d1.c2),
-    ///     MODE_0,
-    ///     Div2,
-    ///     &mut dp.RCC,
-    /// );
+    /// let spi = cortex_m::interrupt::free(|cs| {
+    ///     Spi::new_spi1_full_duplex_dma(
+    ///         dp.SPI1,
+    ///         (pa.a5, pa.a6, pa.a7),
+    ///         (dma.d1.c1, dma.d1.c2),
+    ///         MODE_0,
+    ///         Div2,
+    ///         &mut dp.RCC,
+    ///         cs,
+    ///     )
+    /// });
     /// // .. use spi
     /// let (spi1, a5, (a6, d1c1), (a7, d1c2)) = spi.free();
     /// ```

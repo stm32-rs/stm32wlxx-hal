@@ -1,5 +1,8 @@
 //! Push-buttons
-use stm32wl_hal::gpio::{pins, Exti, Input, PinState, Pull};
+use stm32wl_hal::{
+    cortex_m::interrupt::CriticalSection,
+    gpio::{pins, Exti, Input, PinState, Pull},
+};
 
 const PULL: Pull = Pull::Up;
 
@@ -34,6 +37,7 @@ pub trait PushButton {
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
     ///     hal::{
+    ///         cortex_m,
     ///         gpio::{Exti, ExtiTrg, PortC},
     ///         pac,
     ///     },
@@ -43,7 +47,7 @@ pub trait PushButton {
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let pb3 = Pb3::new(gpioc.c6);
+    /// let pb3: Pb3 = cortex_m::interrupt::free(|cs| Pb3::new(gpioc.c6, cs));
     ///
     /// <Pb3 as PushButton>::Pin::setup_exti_c1(&mut dp.EXTI, &mut dp.SYSCFG, ExtiTrg::Falling);
     /// ```
@@ -87,18 +91,18 @@ impl Pb3 {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{gpio::PortC, pac},
+    ///     hal::{cortex_m, gpio::PortC, pac},
     ///     pb::{Pb3, PushButton},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let pb3 = Pb3::new(gpioc.c6);
+    /// let pb3 = cortex_m::interrupt::free(|cs| Pb3::new(gpioc.c6, cs));
     /// ```
-    pub fn new(c6: pins::C6) -> Self {
+    pub fn new(c6: pins::C6, cs: &CriticalSection) -> Self {
         Self {
-            gpio: Input::new(c6, PULL),
+            gpio: Input::new(c6, PULL, cs),
         }
     }
 
@@ -108,14 +112,14 @@ impl Pb3 {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{gpio::PortC, pac},
+    ///     hal::{cortex_m, gpio::PortC, pac},
     ///     pb::{Pb3, PushButton},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    /// let pb3 = Pb3::new(gpioc.c6);
+    /// let pb3 = cortex_m::interrupt::free(|cs| Pb3::new(gpioc.c6, cs));
     /// // ... use push button
     /// let c6 = pb3.free();
     /// ```
@@ -156,18 +160,18 @@ impl Pb2 {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{gpio::PortA, pac},
+    ///     hal::{cortex_m, gpio::PortA, pac},
     ///     pb::{Pb2, PushButton},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let pb2 = Pb2::new(gpioa.a1);
+    /// let pb2 = cortex_m::interrupt::free(|cs| Pb2::new(gpioa.a1, cs));
     /// ```
-    pub fn new(a1: pins::A1) -> Self {
+    pub fn new(a1: pins::A1, cs: &CriticalSection) -> Self {
         Self {
-            gpio: Input::new(a1, PULL),
+            gpio: Input::new(a1, PULL, cs),
         }
     }
 
@@ -177,14 +181,14 @@ impl Pb2 {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{gpio::PortA, pac},
+    ///     hal::{cortex_m, gpio::PortA, pac},
     ///     pb::{Pb2, PushButton},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let pb2 = Pb2::new(gpioa.a1);
+    /// let pb2 = cortex_m::interrupt::free(|cs| Pb2::new(gpioa.a1, cs));
     /// // ... use push button
     /// let a1 = pb2.free();
     /// ```
@@ -227,18 +231,18 @@ impl Pb1 {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{gpio::PortA, pac},
+    ///     hal::{cortex_m, gpio::PortA, pac},
     ///     pb::{Pb1, PushButton},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let pb1 = Pb1::new(gpioa.a0);
+    /// let pb1 = cortex_m::interrupt::free(|cs| Pb1::new(gpioa.a0, cs));
     /// ```
-    pub fn new(a0: pins::A0) -> Self {
+    pub fn new(a0: pins::A0, cs: &CriticalSection) -> Self {
         Self {
-            gpio: Input::new(a0, PULL),
+            gpio: Input::new(a0, PULL, cs),
         }
     }
 
@@ -248,14 +252,14 @@ impl Pb1 {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{gpio::PortA, pac},
+    ///     hal::{cortex_m, gpio::PortA, pac},
     ///     pb::{Pb1, PushButton},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    /// let pb1 = Pb1::new(gpioa.a0);
+    /// let pb1 = cortex_m::interrupt::free(|cs| Pb1::new(gpioa.a0, cs));
     /// // ... use push button
     /// let a0 = pb1.free();
     /// ```

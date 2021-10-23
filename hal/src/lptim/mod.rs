@@ -30,6 +30,7 @@ mod cfgr;
 mod cr;
 
 pub use cfgr::{Cfgr, Filter, Prescaler, TrgPol, TrgSel, TrgSel3};
+use cortex_m::interrupt::CriticalSection;
 pub use cr::Cr;
 
 use crate::{
@@ -715,9 +716,10 @@ impl LpTim1 {
         filter: Filter,
         pol: TrgPol,
         mut pin: P,
+        cs: &CriticalSection,
     ) -> LpTim1Trg<P> {
         debug_assert!(!self.is_enabled());
-        cortex_m::interrupt::free(|cs| pin.set_lptim1_etr_af(cs));
+        pin.set_lptim1_etr_af(cs);
         self.as_mut_tim()
             .modify_cfgr(|w| w.set_trg_sel(0).set_trg_pol(pol).set_trg_filter(filter));
         LpTim1Trg { pin }
@@ -774,9 +776,10 @@ impl LpTim2 {
         filter: Filter,
         pol: TrgPol,
         mut pin: P,
+        cs: &CriticalSection,
     ) -> LpTim2Trg<P> {
         debug_assert!(!self.is_enabled());
-        cortex_m::interrupt::free(|cs| pin.set_lptim2_etr_af(cs));
+        pin.set_lptim2_etr_af(cs);
         self.as_mut_tim()
             .modify_cfgr(|w| w.set_trg_sel(0).set_trg_pol(pol).set_trg_filter(filter));
         LpTim2Trg { pin }
@@ -832,6 +835,7 @@ impl LpTim3 {
     ///
     /// ```no_run
     /// use stm32wl_hal::{
+    ///     cortex_m,
     ///     embedded_hal::timer::CountDown,
     ///     gpio::PortA,
     ///     lptim::{self, Filter, LpTim, LpTim3, LpTim3Trg, Prescaler::Div1, TrgPol},
@@ -846,7 +850,9 @@ impl LpTim3 {
     ///
     /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
     /// let mut lptim3: LpTim3 = LpTim3::new(dp.LPTIM3, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
-    /// let lptim3trg: LpTim3Trg = lptim3.new_trigger_pin(pa.a11, Filter::Any, TrgPol::Both);
+    /// let lptim3trg: LpTim3Trg = cortex_m::interrupt::free(|cs| {
+    ///     lptim3.new_trigger_pin(pa.a11, Filter::Any, TrgPol::Both, cs)
+    /// });
     /// lptim3.start(12_345_u16);
     /// // timer will only start after any transition on pin A11
     /// nb::block!(lptim3.wait());
@@ -856,9 +862,10 @@ impl LpTim3 {
         mut pin: pins::A11,
         filter: Filter,
         pol: TrgPol,
+        cs: &CriticalSection,
     ) -> LpTim3Trg {
         debug_assert!(!self.is_enabled());
-        cortex_m::interrupt::free(|cs| pin.set_lptim3_etr_af(cs));
+        pin.set_lptim3_etr_af(cs);
         self.as_mut_tim()
             .modify_cfgr(|w| w.set_trg_sel(0).set_trg_pol(pol).set_trg_filter(filter));
         LpTim3Trg { pin }
@@ -893,7 +900,9 @@ impl LpTim3 {
     ///
     /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
     /// let mut lptim3: LpTim3 = LpTim3::new(dp.LPTIM3, lptim::Clk::Hsi16, Div1, &mut dp.RCC);
-    /// let lptim3trg: LpTim3Trg = lptim3.new_trigger_pin(pa.a11, Filter::Any, TrgPol::Both);
+    /// let lptim3trg: LpTim3Trg = cortex_m::interrupt::free(|cs| {
+    ///     lptim3.new_trigger_pin(pa.a11, Filter::Any, TrgPol::Both, cs)
+    /// });
     /// lptim3.start(12_345_u16);
     /// // timer will only start after any transition on pin A11
     /// nb::block!(lptim3.wait());

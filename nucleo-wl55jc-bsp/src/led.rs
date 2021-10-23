@@ -3,6 +3,7 @@
 use stm32wl_hal as hal;
 
 use hal::{
+    cortex_m::interrupt::CriticalSection,
     embedded_hal::digital::v2::{OutputPin, ToggleableOutputPin},
     gpio::{self, pins, Output, OutputArgs},
 };
@@ -54,19 +55,19 @@ impl Red {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{gpio::PortB, pac},
+    ///     hal::{cortex_m, gpio::PortB, pac},
     ///     led::{self, Led},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let mut red = led::Red::new(gpiob.b11);
+    /// let mut red = cortex_m::interrupt::free(|cs| led::Red::new(gpiob.b11, cs));
     /// red.set_on();
     /// ```
-    pub fn new(b11: pins::B11) -> Self {
+    pub fn new(b11: pins::B11, cs: &CriticalSection) -> Self {
         Self {
-            gpio: Output::new(b11, &LED_ARGS),
+            gpio: Output::new(b11, &LED_ARGS, cs),
         }
     }
 
@@ -76,14 +77,14 @@ impl Red {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{gpio::PortB, pac},
+    ///     hal::{cortex_m, gpio::PortB, pac},
     ///     led::{self, Led},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let mut red = led::Red::new(gpiob.b11);
+    /// let mut red = cortex_m::interrupt::free(|cs| led::Red::new(gpiob.b11, cs));
     /// // ... use LED
     /// let b11 = red.free();
     /// ```
@@ -140,19 +141,19 @@ impl Green {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{gpio::PortB, pac},
+    ///     hal::{cortex_m, gpio::PortB, pac},
     ///     led::{self, Led},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let mut green = led::Green::new(gpiob.b9);
+    /// let mut green = cortex_m::interrupt::free(|cs| led::Green::new(gpiob.b9, cs));
     /// green.set_on();
     /// ```
-    pub fn new(b9: pins::B9) -> Self {
+    pub fn new(b9: pins::B9, cs: &CriticalSection) -> Self {
         Self {
-            gpio: Output::new(b9, &LED_ARGS),
+            gpio: Output::new(b9, &LED_ARGS, cs),
         }
     }
 
@@ -162,14 +163,14 @@ impl Green {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{gpio::PortB, pac},
+    ///     hal::{cortex_m, gpio::PortB, pac},
     ///     led::{self, Led},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let mut green = led::Green::new(gpiob.b9);
+    /// let mut green = cortex_m::interrupt::free(|cs| led::Green::new(gpiob.b9, cs));
     /// // ... use LED
     /// let b9 = green.free();
     /// ```
@@ -226,19 +227,19 @@ impl Blue {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{gpio::PortB, pac},
+    ///     hal::{cortex_m, gpio::PortB, pac},
     ///     led::{self, Led},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let mut blue = led::Blue::new(gpiob.b15);
+    /// let mut blue = cortex_m::interrupt::free(|cs| led::Blue::new(gpiob.b15, cs));
     /// blue.set_on();
     /// ```
-    pub fn new(b15: pins::B15) -> Self {
+    pub fn new(b15: pins::B15, cs: &CriticalSection) -> Self {
         Self {
-            gpio: Output::new(b15, &LED_ARGS),
+            gpio: Output::new(b15, &LED_ARGS, cs),
         }
     }
 
@@ -248,14 +249,14 @@ impl Blue {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{gpio::PortB, pac},
+    ///     hal::{cortex_m, gpio::PortB, pac},
     ///     led::{self, Led},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
     /// let gpiob: PortB = PortB::split(dp.GPIOB, &mut dp.RCC);
-    /// let mut blue = led::Blue::new(gpiob.b15);
+    /// let mut blue = cortex_m::interrupt::free(|cs| led::Blue::new(gpiob.b15, cs));
     /// // ... use LED
     /// let b15 = blue.free();
     /// ```

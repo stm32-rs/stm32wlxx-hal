@@ -100,15 +100,15 @@ jobs:
               fi
 
               echo "Running $binpath on $probe"
-              probe-run --chip STM32WLE5JCIx --connect-under-reset "$binpath" --probe "$probe"
+              probe-run --chip STM32WLE5JCIx --connect-under-reset "$binpath" --probe "$probe" --speed 500
               echo "Done $binpath"
               ((count=count+1))
           fi
           done 
 
           echo "Running subghz"
-          probe-run --chip STM32WLE5JCIx --connect-under-reset bins/subghz --probe 002900205553500A20393256 &
-          probe-run --chip STM32WLE5JCIx --connect-under-reset bins/subghz --probe 0034001A5553500B20393256 &
+          probe-run --chip STM32WLE5JCIx --connect-under-reset bins/subghz --probe 002900205553500A20393256 --speed 500 &
+          probe-run --chip STM32WLE5JCIx --connect-under-reset bins/subghz --probe 0034001A5553500B20393256 --speed 500 &
 
           wait
           echo "Done subghz"

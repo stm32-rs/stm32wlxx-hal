@@ -12,8 +12,8 @@ use defmt_rtt as _; // global logger
 use hex_literal::hex;
 use nucleo_wl55jc_bsp::hal::{
     aes::{Aes, AesWrapClk, SwapMode},
-    cortex_m::peripheral::DWT,
-    pac, rcc,
+    cortex_m::{self, peripheral::DWT},
+    cortex_m_rt, pac, rcc,
     util::reset_cycle_count,
 };
 use panic_probe as _;

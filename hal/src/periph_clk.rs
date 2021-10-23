@@ -48,12 +48,7 @@ impl<P: PeriphClk> WrapClk<P> {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
-    ///     aes::{Aes},
-    ///     WrapClk,
-    ///     PeriphClk,
-    ///     pac,
-    /// };
+    /// use stm32wl_hal::{aes::Aes, pac, PeriphClk, WrapClk};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///

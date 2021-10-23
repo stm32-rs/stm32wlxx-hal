@@ -94,13 +94,13 @@ jobs:
           if [[ "$binpath" != "bins/subghz" ]]; then
               # alternate probes to wear out flash evenly
               if (( count % 2 )); then
-                  probe="0034001A5553500B20393256"
-              else
                   probe="002900205553500A20393256"
+              else
+                  probe="0034001A5553500B20393256"
               fi
 
               echo "Running $binpath on $probe"
-              probe-run --chip STM32WLE5JCIx --connect-under-reset "$binpath" --probe "$probe"
+              probe-run --chip STM32WLE5JCIx --connect-under-reset "$binpath" --probe "$probe" -v
               echo "Done $binpath"
               ((count=count+1))
           fi

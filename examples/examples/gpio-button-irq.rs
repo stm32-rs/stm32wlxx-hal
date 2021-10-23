@@ -6,7 +6,7 @@
 use defmt_rtt as _; // global logger
 use panic_probe as _; // panic handler
 use stm32wl_hal::{
-    self as hal,
+    self as hal, cortex_m,
     gpio::{pins, Exti, ExtiTrg, Input, PortC, Pull},
     pac::{self, interrupt},
 };
@@ -16,7 +16,7 @@ fn main() -> ! {
     let mut dp: pac::Peripherals = defmt::unwrap!(pac::Peripherals::take());
 
     let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
-    let _c6: Input<pins::C6> = Input::new(gpioc.c6, Pull::Up);
+    let _c6: Input<pins::C6> = cortex_m::interrupt::free(|cs| Input::new(gpioc.c6, Pull::Up, cs));
 
     pins::C6::setup_exti_c1(&mut dp.EXTI, &mut dp.SYSCFG, ExtiTrg::Both);
     unsafe { pins::C6::unmask() };

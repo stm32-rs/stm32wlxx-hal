@@ -11,7 +11,7 @@ use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use hex_literal::hex;
 use nucleo_wl55jc_bsp::hal::{
-    aes::{Aes, SwapMode},
+    aes::{Aes, AesWrapClk, SwapMode},
     cortex_m::peripheral::DWT,
     pac, rcc,
     util::reset_cycle_count,
@@ -2148,5 +2148,35 @@ mod tests {
         unwrap!(aes.encrypt_ecb(&ZERO_16B, &pt, &mut output_ciphertext));
 
         defmt::assert_eq!(output_ciphertext, ct);
+    }
+
+    #[test]
+    fn aes_wrap_clk() {
+        let mut dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
+        unsafe { Aes::pulse_reset(&mut dp.RCC) };
+        unsafe { Aes::disable_clock(&mut dp.RCC) };
+
+        let mut aeswrap: AesWrapClk = unsafe { Aes::new_no_init(dp.AES) }.into();
+
+        for (plaintext, ciphertext) in ECB_PT_CT_128.iter() {
+            let mut output_plaintext: [u32; 4] = [0; 4];
+            unwrap!(aeswrap.with_clk(&mut dp.RCC, |aes| aes.decrypt_ecb(
+                &ZERO_16B,
+                ciphertext,
+                &mut output_plaintext
+            )));
+            defmt::assert_eq!(&output_plaintext, plaintext);
+        }
+
+        for (key, ciphertext) in ECB_KEY_CT_128.iter() {
+            let mut output_plaintext: [u32; 4] = [0; 4];
+
+            unwrap!(aeswrap.with_clk(&mut dp.RCC, |aes| aes.decrypt_ecb(
+                key,
+                ciphertext,
+                &mut output_plaintext
+            )));
+            defmt::assert_eq!(output_plaintext, ZERO_16B);
+        }
     }
 }

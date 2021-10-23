@@ -88,7 +88,10 @@ impl AesWrapClk {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{aes::Aes, pac};
+    /// use stm32wl_hal::{
+    ///     aes::{Aes, AesWrapClk},
+    ///     pac,
+    /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///

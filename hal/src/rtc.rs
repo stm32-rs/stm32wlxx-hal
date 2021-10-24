@@ -2,7 +2,7 @@
 
 use crate::{pac, rcc::lsi_hz};
 
-use chrono::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
+use time::{Date, Month, PrimitiveDateTime, Time};
 
 use pac::rcc::{
     bdcr::RTCSEL_A,
@@ -233,7 +233,7 @@ impl Rtc {
     /// * Year is greater than or equal to 2100.
     /// * Year is less than 2000.
     /// * Backup domain write protection is enabled.
-    pub fn set_date_time(&mut self, date_time: chrono::NaiveDateTime) {
+    pub fn set_date_time(&mut self, date_time: PrimitiveDateTime) {
         // safety: atomic read with no side effects
         assert!(unsafe { (*pac::PWR::ptr()).cr1.read().dbp().bit_is_set() });
 
@@ -241,15 +241,15 @@ impl Rtc {
         self.rtc.icsr.modify(|_, w| w.init().init_mode());
         while self.rtc.icsr.read().initf().is_not_allowed() {}
 
-        let hour: u8 = date_time.hour() as u8;
+        let hour: u8 = date_time.hour();
         let ht: u8 = hour / 10;
         let hu: u8 = hour % 10;
 
-        let minute: u8 = date_time.minute() as u8;
+        let minute: u8 = date_time.minute();
         let mnt: u8 = minute / 10;
         let mnu: u8 = minute % 10;
 
-        let second: u8 = date_time.second() as u8;
+        let second: u8 = date_time.second();
         let st: u8 = second / 10;
         let su: u8 = second % 10;
 
@@ -270,13 +270,13 @@ impl Rtc {
         let yt: u8 = ((year - 2000) / 10) as u8;
         let yu: u8 = ((year - 2000) % 10) as u8;
 
-        let wdu: u8 = date_time.weekday().number_from_monday() as u8;
+        let wdu: u8 = date_time.weekday().number_from_monday();
 
-        let month: u8 = date_time.month() as u8;
+        let month: u8 = date_time.month().into();
         let mt: bool = month > 9;
         let mu: u8 = month % 10;
 
-        let day: u8 = date_time.day() as u8;
+        let day: u8 = date_time.day();
         let dt: u8 = day / 10;
         let du: u8 = day % 10;
 
@@ -309,13 +309,13 @@ impl Rtc {
     /// Calendar Date
     ///
     /// Returns `None` if the calendar has not been initialized.
-    pub fn date(&self) -> Option<NaiveDate> {
+    pub fn date(&self) -> Option<Date> {
         self.calendar_initialized()?;
         let data = self.rtc.dr.read();
         let year: i32 = 2000 + (data.yt().bits() as i32) * 10 + (data.yu().bits() as i32);
         let month: u8 = data.mt().bits() as u8 * 10 + data.mu().bits();
         let day: u8 = data.dt().bits() * 10 + data.du().bits();
-        NaiveDate::from_ymd_opt(year, month.into(), day.into())
+        Date::from_calendar_date(year, Month::try_from(month).ok()?, day).ok()
     }
 
     fn ss_to_us(&self, ss: u32) -> u32 {
@@ -339,7 +339,7 @@ impl Rtc {
     /// Current Time
     ///
     /// Returns `None` if the calendar has not been initialized.
-    pub fn time(&self) -> Option<NaiveTime> {
+    pub fn time(&self) -> Option<Time> {
         loop {
             self.calendar_initialized()?;
             let ss: u32 = self.rtc.ssr.read().ss().bits();
@@ -356,14 +356,9 @@ impl Rtc {
                 }
                 let minute: u8 = data.mnt().bits() * 10 + data.mnu().bits();
                 let second: u8 = data.st().bits() * 10 + data.su().bits();
-                let micro: u32 = self.ss_to_us(ss);
+                let microsecond: u32 = self.ss_to_us(ss);
 
-                return NaiveTime::from_hms_micro_opt(
-                    hour as u32,
-                    minute as u32,
-                    second as u32,
-                    micro,
-                );
+                return Time::from_hms_micro(hour, minute, second, microsecond).ok();
             }
         }
     }
@@ -371,7 +366,7 @@ impl Rtc {
     /// Calendar Date and Time
     ///
     /// Returns `None` if the calendar has not been initialized.
-    pub fn date_time(&self) -> Option<NaiveDateTime> {
+    pub fn date_time(&self) -> Option<PrimitiveDateTime> {
         loop {
             self.calendar_initialized()?;
             let ss: u32 = self.rtc.ssr.read().ss().bits();
@@ -387,7 +382,8 @@ impl Rtc {
                 let month: u8 = dr.mt().bits() as u8 * 10 + dr.mu().bits();
                 let day: u8 = dr.dt().bits() * 10 + dr.du().bits();
 
-                let date: NaiveDate = NaiveDate::from_ymd_opt(year, month as u32, day as u32)?;
+                let date: Date =
+                    Date::from_calendar_date(year, Month::try_from(month).ok()?, day).ok()?;
 
                 let mut hour: u8 = tr.ht().bits() * 10 + tr.hu().bits();
                 if tr.pm().is_pm() {
@@ -395,16 +391,11 @@ impl Rtc {
                 }
                 let minute: u8 = tr.mnt().bits() * 10 + tr.mnu().bits();
                 let second: u8 = tr.st().bits() * 10 + tr.su().bits();
-                let micro: u32 = self.ss_to_us(ss);
+                let microsecond: u32 = self.ss_to_us(ss);
 
-                let time = NaiveTime::from_hms_micro_opt(
-                    hour as u32,
-                    minute as u32,
-                    second as u32,
-                    micro,
-                )?;
+                let time: Time = Time::from_hms_micro(hour, minute, second, microsecond).ok()?;
 
-                return Some(date.and_time(time));
+                return Some(PrimitiveDateTime::new(date, time));
             }
         }
     }

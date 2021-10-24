@@ -69,7 +69,7 @@ pub use ratio::Ratio;
 #[cfg(feature = "rt")]
 pub use cortex_m_rt;
 
-pub use chrono;
 pub use cortex_m;
 pub use embedded_hal;
 pub use embedded_time;
+pub use time;

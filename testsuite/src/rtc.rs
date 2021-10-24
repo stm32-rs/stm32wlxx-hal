@@ -4,11 +4,11 @@
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use nucleo_wl55jc_bsp::hal::{
-    chrono::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Timelike},
     cortex_m,
     pac::{self, DWT},
     rcc::{self, pulse_reset_backup_domain, setup_lsi, LsiPre},
     rtc::{self, Rtc},
+    time::{Date, Month, PrimitiveDateTime, Time},
     util::reset_cycle_count,
 };
 use panic_probe as _;
@@ -39,8 +39,9 @@ fn test_set_date_time_with_clk(clk: rtc::Clk) {
 
     defmt::trace!("four_rtc_clk_cycles={}", four_rtc_clk_cycles);
 
-    let date: NaiveDate = NaiveDate::from_ymd(2021, 10, 20);
-    let set_dt: NaiveDateTime = date.and_hms(12, 02, 05);
+    let date: Date = unwrap!(Date::from_calendar_date(2021, Month::October, 24).ok());
+    let time: Time = unwrap!(Time::from_hms(08, 52, 36).ok());
+    let set_dt: PrimitiveDateTime = PrimitiveDateTime::new(date, time);
     rtc.set_date_time(set_dt);
     let start: u32 = DWT::get_cycle_count();
 
@@ -52,36 +53,37 @@ fn test_set_date_time_with_clk(clk: rtc::Clk) {
         }
     }
 
-    let rtc_time: NaiveTime = unwrap!(rtc.time());
+    let rtc_time: Time = unwrap!(rtc.time());
     defmt::assert_eq!(rtc_time.hour(), set_dt.hour());
     defmt::assert_eq!(rtc_time.minute(), set_dt.minute());
     defmt::assert_eq!(rtc_time.second(), set_dt.second());
 
-    let rtc_date: NaiveDate = unwrap!(rtc.date());
+    let rtc_date: Date = unwrap!(rtc.date());
     defmt::assert_eq!(rtc_date.year(), set_dt.year());
-    defmt::assert_eq!(rtc_date.month(), set_dt.month());
+    defmt::assert_eq!(u8::from(rtc_date.month()), u8::from(set_dt.month()));
     defmt::assert_eq!(rtc_date.day(), set_dt.day());
 
     // delay 10ms
     const TEN_MILLIS: u32 = CYC_PER_MILLI * 10;
     let start: u32 = DWT::get_cycle_count();
     loop {
-        let elapsed: u32 = DWT::get_cycle_count() - start;
+        let elapsed: u32 = DWT::get_cycle_count().wrapping_sub(start);
         if elapsed > TEN_MILLIS {
+            defmt::trace!("delayed {} CPU CLK cycles", elapsed);
             break;
         }
     }
 
-    let rtc_date_time: NaiveDateTime = unwrap!(rtc.date_time());
+    let rtc_date_time: PrimitiveDateTime = unwrap!(rtc.date_time());
     defmt::assert_eq!(rtc_date_time.hour(), set_dt.hour());
     defmt::assert_eq!(rtc_date_time.minute(), set_dt.minute());
     defmt::assert_eq!(rtc_date_time.second(), set_dt.second());
     defmt::assert_eq!(rtc_date_time.year(), set_dt.year());
-    defmt::assert_eq!(rtc_date_time.month(), set_dt.month());
+    defmt::assert_eq!(u8::from(rtc_date_time.month()), u8::from(set_dt.month()));
     defmt::assert_eq!(rtc_date_time.day(), set_dt.day());
 
-    let before: i64 = set_dt.timestamp_millis();
-    let after: i64 = rtc_date_time.timestamp_millis();
+    let before: i128 = set_dt.assume_utc().unix_timestamp_nanos();
+    let after: i128 = rtc_date_time.assume_utc().unix_timestamp_nanos();
     defmt::debug!(
         "Timestamp before {} after {} Δ {}",
         before,
@@ -135,8 +137,10 @@ mod tests {
         {
             let mut dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
             let rtc: Rtc = unsafe { Rtc::renew(dp.RTC, &mut dp.PWR, &mut dp.RCC) };
-            let date: NaiveDate = unwrap!(rtc.date());
-            assert_eq!(date, NaiveDate::from_ymd(2021, 10, 20));
+            let date: Date = unwrap!(rtc.date());
+            let expected_date: Date =
+                unwrap!(Date::from_calendar_date(2021, Month::October, 24).ok());
+            assert_eq!(date, expected_date);
         }
 
         unsafe { pulse_reset_backup_domain(&mut ta.rcc, &mut ta.pwr) };

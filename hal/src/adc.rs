@@ -428,6 +428,39 @@ impl Adc {
         adc
     }
 
+    /// Create a new ADC driver from an ADC peripheral without initialization.
+    ///
+    /// This is a slightly safer version of [`steal`](Self::steal).
+    ///
+    /// # Safety
+    ///
+    /// 1. Reset the ADC peripheral if determinism is required.
+    /// 2. Enable the ADC peripheral clock before using the ADC.
+    /// 3. Select the clock source if a non-default clock is required.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{adc::{self, Adc}, pac};
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // safety: nothing is using the peripheral
+    /// unsafe { Adc::pulse_reset(&mut dp.RCC) };
+    ///
+    /// Adc::enable_clock(&mut dp.RCC);
+    ///
+    /// // safety: ADC peripheral has been reset and clocks are enabled
+    /// let adc: Adc = unsafe { Adc::new_no_init(dp.ADC) };
+    ///
+    /// // select the ADC clock, optional
+    /// adc.set_clock_source(adc::Clk::PClkDiv4, &mut dp.RCC);
+    /// ```
+    #[inline]
+    pub const unsafe fn new_no_init(adc: pac::ADC) -> Self {
+        Self { adc }
+    }
+
     /// Free the ADC peripheral from the driver.
     ///
     /// # Example
@@ -456,16 +489,26 @@ impl Adc {
     ///
     /// 1. Ensure that the code stealing the ADC has exclusive access to the
     ///    peripheral. Singleton checks are bypassed with this method.
-    /// 2. You are responsible for setting up the ADC correctly.
+    /// 2. Reset the ADC peripheral if determinism is required.
+    /// 3. Enable the ADC peripheral clock before using the ADC.
+    /// 4. Select the clock source if a non-default clock is required.
     ///
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::adc::Adc;
+    /// use stm32wl_hal::{adc::{self, Adc}, pac};
     ///
-    /// // ... setup happens here
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let _: pac::ADC = dp.ADC;
     ///
-    /// let adc = unsafe { Adc::steal() };
+    /// unsafe { Adc::pulse_reset(&mut dp.RCC) };
+    ///
+    /// Adc::enable_clock(&mut dp.RCC);
+    ///
+    /// let adc: Adc = unsafe { Adc::steal() };
+    ///
+    /// // select the ADC clock, optional
+    /// adc.set_clock_source(adc::Clk::PClkDiv4, &mut dp.RCC);
     /// ```
     ///
     /// [`new`]: Adc::new

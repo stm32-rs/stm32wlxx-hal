@@ -441,7 +441,10 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{adc::{self, Adc}, pac};
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac,
+    /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
@@ -451,7 +454,7 @@ impl Adc {
     /// Adc::enable_clock(&mut dp.RCC);
     ///
     /// // safety: ADC peripheral has been reset and clocks are enabled
-    /// let adc: Adc = unsafe { Adc::new_no_init(dp.ADC) };
+    /// let mut adc: Adc = unsafe { Adc::new_no_init(dp.ADC) };
     ///
     /// // select the ADC clock, optional
     /// adc.set_clock_source(adc::Clk::PClkDiv4, &mut dp.RCC);
@@ -495,8 +498,11 @@ impl Adc {
     ///
     /// # Example
     ///
-    /// ```
-    /// use stm32wl_hal::{adc::{self, Adc}, pac};
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     adc::{self, Adc},
+    ///     pac,
+    /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let _: pac::ADC = dp.ADC;
@@ -505,7 +511,7 @@ impl Adc {
     ///
     /// Adc::enable_clock(&mut dp.RCC);
     ///
-    /// let adc: Adc = unsafe { Adc::steal() };
+    /// let mut adc: Adc = unsafe { Adc::steal() };
     ///
     /// // select the ADC clock, optional
     /// adc.set_clock_source(adc::Clk::PClkDiv4, &mut dp.RCC);

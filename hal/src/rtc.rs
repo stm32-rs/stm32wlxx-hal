@@ -1,12 +1,13 @@
 //! Real-time clock.
 
 use crate::{pac, rcc::lsi_hz};
-
 use chrono::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
-
-use pac::rcc::{
-    bdcr::RTCSEL_A,
-    csr::LSIPRE_A::{DIV1, DIV128},
+use pac::{
+    rcc::{
+        bdcr::RTCSEL_A,
+        csr::LSIPRE_A::{DIV1, DIV128},
+    },
+    rtc::cr::WUCKSEL_A,
 };
 
 /// RTC clock selection
@@ -20,6 +21,29 @@ pub enum Clk {
     Lsi = RTCSEL_A::LSI as u8,
     /// HSE32 oscillator clock divided by 32 selected.
     Hse = RTCSEL_A::HSE32 as u8,
+}
+
+/// Status (interrupt) masks.
+///
+/// Used for [`Rtc::clear_status`].
+pub mod stat {
+    /// SSR underflow flag
+    pub const SSRU: u32 = 1 << 6;
+    /// Internal timestamp flag
+    pub const ITS: u32 = 1 << 5;
+    /// Timestamp overflow flag
+    pub const TSOV: u32 = 1 << 4;
+    /// Timestamp flag
+    pub const TS: u32 = 1 << 3;
+    /// Wakeup timer flag
+    pub const WUT: u32 = 1 << 2;
+    /// Alarm B flag
+    pub const ALRB: u32 = 1 << 1;
+    /// Alarm A flag
+    pub const ALRA: u32 = 1 << 0;
+
+    /// All status flags.
+    pub const ALL: u32 = SSRU | ITS | TSOV | TS | WUT | ALRB | ALRA;
 }
 
 /// Real-time clock driver.
@@ -181,6 +205,29 @@ impl Rtc {
             RTCSEL_A::LSI => lsi_hz(rcc).into(),
             RTCSEL_A::HSE32 => 1_000_000,
         }
+    }
+
+    /// Read the RTC status (interrupt) register.
+    #[inline]
+    pub fn status() -> pac::rtc::sr::R {
+        // saftey: atomic read with no side-effects
+        unsafe { (*pac::RTC::ptr()).sr.read() }
+    }
+
+    /// Read the RTC masked status (interrupt) register.
+    #[inline]
+    pub fn masked_status() -> pac::rtc::misr::R {
+        // saftey: atomic read with no side-effects
+        unsafe { (*pac::RTC::ptr()).misr.read() }
+    }
+
+    /// Clear status (interrupt) flags.
+    ///
+    /// Status flag masks can be found in [`stat`].
+    #[inline]
+    pub fn clear_status(mask: u32) {
+        // safety: mask is masked with valid register fields
+        unsafe { (*pac::RTC::ptr()).scr.write(|w| w.bits(mask & stat::ALL)) }
     }
 
     // configure prescaler for a 1Hz clock
@@ -407,6 +454,75 @@ impl Rtc {
                 return Some(date.and_time(time));
             }
         }
+    }
+
+    /// Setup the periodic wakeup timer for `sec + 1` seconds.
+    ///
+    /// `sec` can only go up to 2<sup>17</sup> (36 hours), values greater than
+    /// this will be set to the maximum.
+    ///
+    /// # Example
+    ///
+    /// Setup the wakeup timer to go off in 1 hour, without interrupts.
+    ///
+    /// ```no_run
+    /// use stm32wl_hal::{
+    ///     pac,
+    ///     rcc::pulse_reset_backup_domain,
+    ///     rtc::{Clk, Rtc},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// unsafe { pulse_reset_backup_domain(&mut dp.RCC, &mut dp.PWR) };
+    /// dp.PWR.cr1.modify(|_, w| w.dbp().enabled());
+    /// dp.RCC.bdcr.modify(|_, w| w.lseon().on());
+    /// while dp.RCC.bdcr.read().lserdy().is_not_ready() {}
+    ///
+    /// let rtc: Rtc = Rtc::new(dp.RTC, Clk::Lse, &mut dp.PWR, &mut dp.RCC);
+    /// rtc.setup_wakeup_timer(3599, false);
+    /// ```
+    pub fn setup_wakeup_timer(&mut self, sec: u32, irq_en: bool) {
+        // The following sequence is required to configure or change the wakeup
+        // timer auto-reload value (WUT[15:0] in RTC_WUTR):
+
+        // 1. Clear WUTE in RTC_CR to disable the wakeup timer.
+        self.rtc.cr.modify(|_, w| w.wute().clear_bit());
+        // 2. Poll WUTWF until it is set in RTC_ICSR to make sure the access to
+        // wakeup auto-reload counter and to WUCKSEL[2:0] bits is allowed.
+        // This step must be skipped in calendar initialization mode.
+        // If WUCKSEL[2] = 0:
+        //  WUTWF is set around 1 ck_wut + 1 RTCCLK cycles after WUTE bit is cleared.
+        // If WUCKSEL[2] = 1:
+        //  WUTWF is set up to 1 ck_apre + 1 RTCCLK cycles after WUTE bit is cleared.
+        while self.rtc.icsr.read().wutwf().bit_is_clear() {}
+        // 3. Program the wakeup auto-reload value WUT[15:0], WUTOCLR[15:0]
+        // and the wakeup clock selection (WUCKSEL[2:0] bits in RTC_CR).
+        // Set WUTE in RTC_CR to enable the timer again.
+        // The wakeup timer restarts down-counting.
+        // If WUCKSEL[2] = 0:
+        //  WUTWF is cleared around 1 ck_wut + 1 RTCCLK cycles after WUTE bit is set.
+        // If WUCKSEL[2] = 1:
+        //  WUTWF is cleared up to 1 ck_apre + 1 RTCCLK cycles after WUTE bit is set.
+        let (wucksel, sec): (WUCKSEL_A, u16) = match u16::try_from(sec) {
+            Ok(sec) => (WUCKSEL_A::CLOCKSPARE, sec),
+            Err(_) => (
+                WUCKSEL_A::CLOCKSPAREWITHOFFSET,
+                u16::try_from(sec - (1 << 16) - 1).unwrap_or(u16::MAX),
+            ),
+        };
+
+        self.rtc
+            .cr
+            .modify(|_, w| w.wucksel().variant(wucksel).wutie().bit(irq_en));
+        self.rtc.wutr.write(|w| w.wut().bits(sec).wutoclr().bits(0));
+        self.rtc.cr.modify(|_, w| w.wute().set_bit());
+    }
+
+    /// Disable the wakeup timer.
+    #[inline]
+    pub fn disable_wakeup_timer(&mut self) {
+        self.rtc.cr.modify(|_, w| w.wute().clear_bit());
     }
 
     /// Disable the RTC write protection.

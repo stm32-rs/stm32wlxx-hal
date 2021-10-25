@@ -20,7 +20,7 @@ const CYC_PER_MICRO: u32 = FREQ / 1000 / 1000;
 // WARNING will wrap-around eventually, use this for relative timing only
 defmt::timestamp!("{=u32:µs}", DWT::get_cycle_count() / CYC_PER_MICRO);
 
-fn test_set_date_time_with_clk(clk: rtc::Clk) {
+fn test_set_date_time_with_clk(clk: rtc::Clk) -> Rtc {
     let mut dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
     let mut rtc: Rtc = Rtc::new(dp.RTC, clk, &mut dp.PWR, &mut dp.RCC);
 
@@ -89,6 +89,8 @@ fn test_set_date_time_with_clk(clk: rtc::Clk) {
         after - before
     );
     defmt::assert!(after > before);
+
+    rtc
 }
 
 #[defmt_test::tests]
@@ -126,7 +128,7 @@ mod tests {
         ta.rcc.bdcr.modify(|_, w| w.lseon().on());
         while ta.rcc.bdcr.read().lserdy().is_not_ready() {}
 
-        test_set_date_time_with_clk(rtc::Clk::Lse)
+        test_set_date_time_with_clk(rtc::Clk::Lse);
     }
 
     // must come directly after set_date_time_lse
@@ -152,7 +154,7 @@ mod tests {
     fn set_date_time_lsi(ta: &mut TestArgs) {
         unsafe { pulse_reset_backup_domain(&mut ta.rcc, &mut ta.pwr) };
         unsafe { setup_lsi(&mut ta.rcc, LsiPre::DIV1) };
-        test_set_date_time_with_clk(rtc::Clk::Lsi)
+        test_set_date_time_with_clk(rtc::Clk::Lsi);
     }
 
     #[test]
@@ -162,6 +164,33 @@ mod tests {
             .cr
             .modify(|_, w| w.hseon().enabled().hsebyppwr().vddtcxo());
         while ta.rcc.cr.read().hserdy().is_not_ready() {}
-        test_set_date_time_with_clk(rtc::Clk::Hse)
+        test_set_date_time_with_clk(rtc::Clk::Hse);
+    }
+
+    #[test]
+    fn wakeup_timer(ta: &mut TestArgs) {
+        unsafe { pulse_reset_backup_domain(&mut ta.rcc, &mut ta.pwr) };
+        ta.pwr.cr1.modify(|_, w| w.dbp().enabled());
+        ta.rcc.bdcr.modify(|_, w| w.lseon().on());
+        while ta.rcc.bdcr.read().lserdy().is_not_ready() {}
+        let mut rtc: Rtc = test_set_date_time_with_clk(rtc::Clk::Lse);
+
+        rtc.setup_wakeup_timer(0, false);
+
+        let start: u32 = DWT::get_cycle_count();
+        loop {
+            let elapsed_micros: u32 = DWT::get_cycle_count().wrapping_sub(start) / CYC_PER_MICRO;
+            if Rtc::status().wutf().bit_is_set() {
+                defmt::info!("elapsed: {=u32:µs}", elapsed_micros);
+                // 100ms tolerance
+                defmt::assert!(elapsed_micros > 900_000 && elapsed_micros < 1_100_000);
+                return;
+            } else if elapsed_micros > 3 * 1000 * 1000 {
+                defmt::panic!(
+                    "this is taking too long, elapsed: {=u32:µs}",
+                    elapsed_micros
+                );
+            }
+        }
     }
 }

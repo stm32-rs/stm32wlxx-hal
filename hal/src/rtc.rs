@@ -466,20 +466,9 @@ impl Rtc {
     /// Setup the wakeup timer to go off in 1 hour, without interrupts.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
-    ///     pac,
-    ///     rcc::pulse_reset_backup_domain,
-    ///     rtc::{Clk, Rtc},
-    /// };
-    ///
-    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    ///
-    /// unsafe { pulse_reset_backup_domain(&mut dp.RCC, &mut dp.PWR) };
-    /// dp.PWR.cr1.modify(|_, w| w.dbp().enabled());
-    /// dp.RCC.bdcr.modify(|_, w| w.lseon().on());
-    /// while dp.RCC.bdcr.read().lserdy().is_not_ready() {}
-    ///
-    /// let rtc: Rtc = Rtc::new(dp.RTC, Clk::Lse, &mut dp.PWR, &mut dp.RCC);
+    /// # use stm32wl_hal::{pac, rtc};
+    /// # let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// # let mut rtc = rtc::Rtc::new(dp.RTC, rtc::Clk::Lse, &mut dp.PWR, &mut dp.RCC);
     /// rtc.setup_wakeup_timer(3599, false);
     /// ```
     pub fn setup_wakeup_timer(&mut self, sec: u32, irq_en: bool) {

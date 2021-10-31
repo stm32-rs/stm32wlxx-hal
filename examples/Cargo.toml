@@ -2,7 +2,7 @@
 name = "examples"
 version = "0.1.0"
 publish = false
-authors = ["Alex M. <alexmgit@protonmail.com>"]
+authors = ["Alex Martens <alexmgit@protonmail.com>"]
 edition = "2021"
 
 [dependencies]

@@ -22,6 +22,9 @@ jobs:
           - "stm32wl5x_cm0p"
           - "stm32wl5x_cm4"
           - "stm32wle5"
+        toolchain:
+          - "1.56" # MSRV
+          - "beta"
         exclude:
           - mcu: "stm32wl5x_cm0p"
             target: "thumbv7em-none-eabi"
@@ -31,21 +34,24 @@ jobs:
             target: "thumbv6m-none-eabi"
     steps:
       - uses: actions/checkout@v2
-      - name: setup rust stable
-        uses: actions-rs/toolchain@v1.0.7
+      - uses: actions-rs/toolchain@v1.0.7
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.toolchain }}
           target: ${{ matrix.target }}
-      - name: Build off-target
-        run: |
-          cargo build \
-          --target x86_64-unknown-linux-gnu \
-          --features ${{ matrix.mcu }}
-      - name: Build on-target
+      - name: Build HAL
         run: |
           cargo build \
           --target ${{ matrix.target }} \
           --features ${{ matrix.mcu }}
+      - name: Build NUCLEO BSP
+        if: ${{ startsWith(matrix.mxu, 'stm32wl5x') }}
+        run: |
+          cargo build -p nucleo-wl55jc-bsp \
+          --target thumbv7em-none-eabi \
+          --features ${{ matrix.mcu }}
+      - name: Build LoRa E5 BSP
+        if: ${{ startsWith(matrix.mxu, 'stm32wle5') }}
+        run: cargo build -p lora-e5-bsp --target thumbv7em-none-eabi
 
   build_testsuite:
     name: Testsuite Compile
@@ -113,8 +119,8 @@ jobs:
           wait
           echo "Done subghz"
 
-  build_test_nucleo_bsp:
-    name: Build and Test nucleo BSP
+  test_nucleo_bsp:
+    name: Test NUCLEO BSP
     runs-on: ubuntu-latest
     env: {"RUSTFLAGS": "-D warnings"}
     steps:
@@ -123,23 +129,14 @@ jobs:
         with:
           toolchain: stable
           target: thumbv7em-none-eabi
-      - name: "Build"
-        run: |
-          cargo build -p nucleo-wl55jc-bsp \
-          --target thumbv7em-none-eabi \
-          --features stm32wl5x_cm4
-      - uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: stable
-          target: x86_64-unknown-linux-gnu
       - name: "Test"
         run: |
           cargo test -p nucleo-wl55jc-bsp \
           --target x86_64-unknown-linux-gnu \
           --features stm32wl5x_cm4
 
-  build_test_seeed_bsp:
-    name: Build and Test LoRa E5 BSP
+  test_lora_e5_bsp:
+    name: Test LoRa E5 BSP
     runs-on: ubuntu-latest
     env: {"RUSTFLAGS": "-D warnings"}
     steps:
@@ -148,12 +145,6 @@ jobs:
         with:
           toolchain: stable
           target: thumbv7em-none-eabi
-      - name: "Build"
-        run: cargo build -p lora-e5-bsp --target thumbv7em-none-eabi
-      - uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: stable
-          target: x86_64-unknown-linux-gnu
       - name: "Test"
         run: cargo test -p lora-e5-bsp --target x86_64-unknown-linux-gnu
 
@@ -249,14 +240,14 @@ jobs:
           publish_dir: ./target/doc
           force_orphan: true
 
-  release_hal:
-    name: crates.io hal release
+  release:
+    name: crates.io release
     if: startsWith(github.ref, 'refs/tags/v')
     needs:
       - build
       - build_examples
-      - build_test_nucleo_bsp
-      - build_test_seeed_bsp
+      - test_nucleo_bsp
+      - test_lora_e5_bsp
       - build_testsuite
       - clippy
       - doc
@@ -269,24 +260,24 @@ jobs:
       - uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
-      - run: |
+      - name: Release stm32wlxx-hal
+        run: |
           cd hal
           cargo publish --token ${CRATES_IO_TOKEN}
+          cd ..
         env:
           CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
-
-  release_bsp:
-    name: crates.io bsp release
-    needs:
-      - release_hal
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: stable
-      - run: |
+      - name: Release nucleo-wl55jc-bsp
+        run: |
           cd nucleo-wl55jc-bsp
           cargo publish --token ${CRATES_IO_TOKEN}
+          cd ..
+        env:
+          CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+      - name: Release lora-e5-bsp
+        run: |
+          cd lora-e5-bsp
+          cargo publish --token ${CRATES_IO_TOKEN}
+          cd ..
         env:
           CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}

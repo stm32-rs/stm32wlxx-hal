@@ -9,6 +9,51 @@ on:
 name: CI
 
 jobs:
+  build:
+    name: Cargo Build
+    runs-on: ubuntu-latest
+    env: {"RUSTFLAGS": "-D warnings"}
+    strategy:
+      matrix:
+        target:
+          - "thumbv6m-none-eabi"
+          - "thumbv7em-none-eabi"
+        mcu:
+          - "stm32wl5x_cm0p"
+          - "stm32wl5x_cm4"
+          - "stm32wle5"
+        toolchain:
+          - "1.56" # MSRV
+          - "beta"
+        exclude:
+          - mcu: "stm32wl5x_cm0p"
+            target: "thumbv7em-none-eabi"
+          - mcu: "stm32wl5x_cm4"
+            target: "thumbv6m-none-eabi"
+          - mcu: "stm32wle5"
+            target: "thumbv6m-none-eabi"
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          target: ${{ matrix.target }}
+          default: true
+      - name: Build HAL
+        run: |
+          cargo build \
+          --target ${{ matrix.target }} \
+          --features ${{ matrix.mcu }}
+      - name: Build NUCLEO BSP
+        if: ${{ startsWith(matrix.mxu, 'stm32wl5x') }}
+        run: |
+          cargo build -p nucleo-wl55jc-bsp \
+          --target thumbv7em-none-eabi \
+          --features ${{ matrix.mcu }}
+      - name: Build LoRa E5 BSP
+        if: ${{ startsWith(matrix.mxu, 'stm32wle5') }}
+        run: cargo build -p lora-e5-bsp --target thumbv7em-none-eabi
+
   build_testsuite:
     name: Build Testsuite
     runs-on: ubuntu-latest
@@ -74,51 +119,6 @@ jobs:
 
           wait
           echo "Done subghz"
-
-  build:
-    name: Cargo Build
-    runs-on: ubuntu-latest
-    env: {"RUSTFLAGS": "-D warnings"}
-    strategy:
-      matrix:
-        target:
-          - "thumbv6m-none-eabi"
-          - "thumbv7em-none-eabi"
-        mcu:
-          - "stm32wl5x_cm0p"
-          - "stm32wl5x_cm4"
-          - "stm32wle5"
-        toolchain:
-          - "1.56" # MSRV
-          - "beta"
-        exclude:
-          - mcu: "stm32wl5x_cm0p"
-            target: "thumbv7em-none-eabi"
-          - mcu: "stm32wl5x_cm4"
-            target: "thumbv6m-none-eabi"
-          - mcu: "stm32wle5"
-            target: "thumbv6m-none-eabi"
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: ${{ matrix.toolchain }}
-          target: ${{ matrix.target }}
-          default: true
-      - name: Build HAL
-        run: |
-          cargo build \
-          --target ${{ matrix.target }} \
-          --features ${{ matrix.mcu }}
-      - name: Build NUCLEO BSP
-        if: ${{ startsWith(matrix.mxu, 'stm32wl5x') }}
-        run: |
-          cargo build -p nucleo-wl55jc-bsp \
-          --target thumbv7em-none-eabi \
-          --features ${{ matrix.mcu }}
-      - name: Build LoRa E5 BSP
-        if: ${{ startsWith(matrix.mxu, 'stm32wle5') }}
-        run: cargo build -p lora-e5-bsp --target thumbv7em-none-eabi
 
   test_nucleo_bsp:
     name: Test NUCLEO BSP

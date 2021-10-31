@@ -3,9 +3,10 @@ name = "lora-e5-bsp"
 description = "Board support package for the seeed LoRa-E5 development kit"
 readme = "README.md"
 
-version = "0.1.0-alpha.0"
-authors = ["Alex M. <alexmgit@protonmail.com>"]
+version = "0.2.0"
+authors = ["Alex Martens <alexmgit@protonmail.com>"]
 edition = "2021"
+rust-version = "1.56"
 license = "MIT"
 keywords = ["arm", "cortex-m", "stm32", "bsp", "seeed"]
 categories = ["embedded", "hardware-support", "no-std"]

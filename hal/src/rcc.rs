@@ -76,7 +76,7 @@ impl MsiRange {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::rcc::MsiRange;
+    /// use stm32wlxx_hal::rcc::MsiRange;
     ///
     /// assert_eq!(MsiRange::Range100k.to_hz(), 100_000);
     /// assert_eq!(MsiRange::Range200k.to_hz(), 200_000);
@@ -253,7 +253,7 @@ const fn ppre_div(pre: u8) -> u8 {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{
+/// use stm32wlxx_hal::{
 ///     pac,
 ///     rcc::{set_sysclk_hse, Vos},
 /// };
@@ -330,7 +330,7 @@ pub unsafe fn set_sysclk_hse(
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{pac, rcc::set_sysclk_hsi};
+/// use stm32wlxx_hal::{pac, rcc::set_sysclk_hsi};
 ///
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 /// cortex_m::interrupt::free(|cs| unsafe {
@@ -376,7 +376,7 @@ pub unsafe fn set_sysclk_hsi(
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{
+/// use stm32wlxx_hal::{
 ///     pac,
 ///     rcc::{set_sysclk_msi, MsiRange},
 /// };
@@ -499,7 +499,7 @@ unsafe fn set_sysclk_msi_inner(
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{pac, rcc::set_sysclk_msi_max};
+/// use stm32wlxx_hal::{pac, rcc::set_sysclk_msi_max};
 ///
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 /// cortex_m::interrupt::free(|cs| unsafe {
@@ -598,7 +598,7 @@ pub(crate) fn sysclk(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{pac, rcc::sysclk_hz};
+/// use stm32wlxx_hal::{pac, rcc::sysclk_hz};
 ///
 /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 ///
@@ -622,7 +622,7 @@ fn hclk1(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{pac, rcc::hclk1_hz};
+/// use stm32wlxx_hal::{pac, rcc::hclk1_hz};
 ///
 /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 ///
@@ -647,7 +647,7 @@ fn hclk2(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{pac, rcc::hclk2_hz};
+/// use stm32wlxx_hal::{pac, rcc::hclk2_hz};
 ///
 /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 ///
@@ -672,7 +672,7 @@ pub(crate) fn hclk3(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{pac, rcc::hclk3_hz};
+/// use stm32wlxx_hal::{pac, rcc::hclk3_hz};
 ///
 /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 ///
@@ -719,7 +719,7 @@ pub(crate) fn apb1timx(rcc: &pac::RCC) -> Ratio<u32> {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{pac, rcc::pclk1_hz};
+/// use stm32wlxx_hal::{pac, rcc::pclk1_hz};
 ///
 /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 ///
@@ -743,7 +743,7 @@ pub(crate) fn pclk2(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{pac, rcc::pclk2_hz};
+/// use stm32wlxx_hal::{pac, rcc::pclk2_hz};
 ///
 /// let dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 ///
@@ -764,7 +764,7 @@ pub fn pclk2_hz(rcc: &pac::RCC) -> u32 {
 /// Created a systick based delay structure.
 ///
 /// ```no_run
-/// use stm32wl_hal::{
+/// use stm32wlxx_hal::{
 ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
 ///     pac,
 ///     rcc::cpu1_systick_hz,
@@ -802,7 +802,7 @@ fn cpu2_systick(rcc: &pac::RCC, cfgr: pac::rcc::cfgr::R, src: SystClkSource) -> 
 /// Created a systick based delay structure.
 ///
 /// ```no_run
-/// use stm32wl_hal::{
+/// use stm32wlxx_hal::{
 ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
 ///     pac,
 ///     rcc::cpu2_systick_hz,
@@ -833,7 +833,7 @@ pub fn cpu2_systick_hz(rcc: &pac::RCC, src: SystClkSource) -> u32 {
 /// Created a systick based delay structure.
 ///
 /// ```no_run
-/// use stm32wl_hal::{
+/// use stm32wlxx_hal::{
 ///     cortex_m::{delay::Delay, peripheral::syst::SystClkSource},
 ///     pac,
 ///     rcc::cpu_systick_hz,
@@ -866,7 +866,7 @@ pub fn cpu_systick_hz(rcc: &pac::RCC, src: SystClkSource) -> u32 {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{pac, rcc::lsi_hz};
+/// use stm32wlxx_hal::{pac, rcc::lsi_hz};
 ///
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 ///
@@ -899,7 +899,7 @@ pub fn lsi_hz(rcc: &pac::RCC) -> u16 {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{
+/// use stm32wlxx_hal::{
 ///     pac,
 ///     rcc::{setup_lsi, LsiPre},
 /// };
@@ -925,7 +925,7 @@ pub unsafe fn setup_lsi(rcc: &mut pac::RCC, pre: LsiPre) {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{pac, rcc::enable_lsi};
+/// use stm32wlxx_hal::{pac, rcc::enable_lsi};
 ///
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 /// enable_lsi(&mut dp.RCC);
@@ -948,7 +948,7 @@ pub fn enable_lsi(rcc: &mut pac::RCC) {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{pac, rcc::pulse_reset_backup_domain};
+/// use stm32wlxx_hal::{pac, rcc::pulse_reset_backup_domain};
 ///
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 /// unsafe { pulse_reset_backup_domain(&mut dp.RCC, &mut dp.PWR) };

@@ -284,7 +284,7 @@ pub trait Exti {
     /// Set port C as the pin-6 EXTI port.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins::C6, Exti},
     ///     pac,
     /// };
@@ -301,7 +301,7 @@ pub trait Exti {
     /// Set C6 to trigger on a rising edge.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins::C6, Exti},
     ///     pac,
     /// };
@@ -319,7 +319,7 @@ pub trait Exti {
     /// Set C6 to trigger on a falling edge.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins::C6, Exti},
     ///     pac,
     /// };
@@ -340,7 +340,7 @@ pub trait Exti {
     /// Unmask C6.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins::C6, Exti},
     ///     pac,
     /// };
@@ -357,7 +357,7 @@ pub trait Exti {
     ///
     /// See [`gpio-button-irq.rs`].
     ///
-    /// [`gpio-button-irq.rs`]: https://github.com/newAM/stm32wl-hal/blob/main/examples/examples/gpio-button-irq.rs
+    /// [`gpio-button-irq.rs`]: https://github.com/newAM/stm32wlxx-hal/blob/main/examples/examples/gpio-button-irq.rs
     fn clear_exti();
 
     /// Setup an input pin as an EXTI interrupt source on core 1.
@@ -373,7 +373,7 @@ pub trait Exti {
     /// Setup C6 to trigger on both edges.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins::C6, Exti, ExtiTrg},
     ///     pac,
     /// };
@@ -402,7 +402,7 @@ pub trait Exti {
     /// Setup and unmask C6 (which will unmask all pins 5-9).
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins::C6, Exti, ExtiTrg},
     ///     pac,
     /// };
@@ -426,7 +426,7 @@ pub trait Exti {
     /// Mask C6 (which will mask all pins 5-9).
     ///
     /// ```no_run
-    /// use stm32wl_hal::gpio::{pins::C6, Exti};
+    /// use stm32wlxx_hal::gpio::{pins::C6, Exti};
     ///
     /// C6::mask();
     /// ```
@@ -857,7 +857,7 @@ impl PortA {
     /// Get GPIO A0.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, PortA},
     ///     pac,
     /// };
@@ -893,7 +893,7 @@ impl PortA {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::gpio::PortA;
+    /// use stm32wlxx_hal::gpio::PortA;
     ///
     /// // ... setup happens here
     ///
@@ -992,7 +992,7 @@ impl PortB {
     /// Get GPIO B0.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, PortB},
     ///     pac,
     /// };
@@ -1028,7 +1028,7 @@ impl PortB {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::gpio::PortB;
+    /// use stm32wlxx_hal::gpio::PortB;
     ///
     /// // ... setup happens here
     ///
@@ -1115,7 +1115,7 @@ impl PortC {
     /// Get GPIO C0.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, PortC},
     ///     pac,
     /// };
@@ -1151,7 +1151,7 @@ impl PortC {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::gpio::PortC;
+    /// use stm32wlxx_hal::gpio::PortC;
     ///
     /// // ... setup happens here
     ///
@@ -1223,7 +1223,7 @@ impl OutputArgs {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::gpio::OutputArgs;
+    /// use stm32wlxx_hal::gpio::OutputArgs;
     ///
     /// assert_eq!(OutputArgs::new(), OutputArgs::default());
     /// ```
@@ -1263,7 +1263,7 @@ where
     /// These are the GPIOs for the RF switch on the NUCLEO-WL55JC2.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{self, pins, Output, PortC},
     ///     pac,
     /// };
@@ -1307,7 +1307,7 @@ where
     /// Configure GPIO C0 as an output.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, Output, OutputArgs, PortC},
     ///     pac,
     /// };
@@ -1335,7 +1335,7 @@ where
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::gpio::{pins, Output};
+    /// use stm32wlxx_hal::gpio::{pins, Output};
     ///
     /// // ... setup occurs here
     ///
@@ -1353,7 +1353,7 @@ where
     /// Configure a GPIO as an output, then free it.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, Output, PortC},
     ///     pac,
     /// };
@@ -1379,7 +1379,7 @@ where
     /// Pulse a GPIO pin.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, Output, PinState, PortC},
     ///     pac,
     /// };
@@ -1406,7 +1406,7 @@ where
     /// Set GPIO C0 high.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, Output, PortC},
     ///     pac,
     /// };
@@ -1432,7 +1432,7 @@ where
     /// Set GPIO C0 low.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, Output, PortC},
     ///     pac,
     /// };
@@ -1456,7 +1456,7 @@ where
     ///
     /// ```no_run
     /// use core::ops::Not;
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, Output, PinState, PortC},
     ///     pac,
     /// };
@@ -1528,7 +1528,7 @@ where
     /// This is the GPIO for button 3 on the NUCLEO-WL55JC2.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, Input, PortC, Pull},
     ///     pac,
     /// };
@@ -1553,7 +1553,7 @@ where
     /// Configure GPIO C0 as an input.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, Input, PortC},
     ///     pac,
     /// };
@@ -1580,7 +1580,7 @@ where
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::gpio::{pins, Input};
+    /// use stm32wlxx_hal::gpio::{pins, Input};
     ///
     /// // ... setup occurs here
     ///
@@ -1598,7 +1598,7 @@ where
     /// Configure a GPIO as an input, then free it.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, Input, PortC},
     ///     pac,
     /// };
@@ -1622,7 +1622,7 @@ where
     /// This is the GPIO for button 3 on the NUCLEO-WL55JC2.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, Input, PinState, PortC, Pull},
     ///     pac,
     /// };
@@ -1679,7 +1679,7 @@ where
     /// Configure GPIO B14 as an analog pin (ADC_IN1).
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, Analog, PortB},
     ///     pac,
     /// };
@@ -1701,7 +1701,7 @@ where
     /// Configure a GPIO as an analog pin, then free it.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, Analog, PortB},
     ///     pac,
     /// };
@@ -1730,7 +1730,7 @@ impl RfBusy {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{PortA, RfBusy},
     ///     pac,
     /// };
@@ -1752,7 +1752,7 @@ impl RfBusy {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, PortA, RfBusy},
     ///     pac,
     /// };
@@ -1782,7 +1782,7 @@ impl RfIrq0 {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{PortB, RfIrq0},
     ///     pac,
     /// };
@@ -1804,7 +1804,7 @@ impl RfIrq0 {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, PortB, RfIrq0},
     ///     pac,
     /// };
@@ -1834,7 +1834,7 @@ impl RfIrq1 {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{PortB, RfIrq1},
     ///     pac,
     /// };
@@ -1856,7 +1856,7 @@ impl RfIrq1 {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, PortB, RfIrq1},
     ///     pac,
     /// };
@@ -1886,7 +1886,7 @@ impl RfIrq2 {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{PortB, RfIrq2},
     ///     pac,
     /// };
@@ -1908,7 +1908,7 @@ impl RfIrq2 {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, PortB, RfIrq2},
     ///     pac,
     /// };
@@ -1938,7 +1938,7 @@ impl RfNssDbg {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, PortA, RfNssDbg},
     ///     pac,
     /// };
@@ -1960,7 +1960,7 @@ impl RfNssDbg {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, PortA, RfNssDbg},
     ///     pac,
     /// };
@@ -1990,7 +1990,7 @@ impl SgSckDbg {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, PortA, SgSckDbg},
     ///     pac,
     /// };
@@ -2012,7 +2012,7 @@ impl SgSckDbg {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, PortA, SgSckDbg},
     ///     pac,
     /// };
@@ -2042,7 +2042,7 @@ impl SgMisoDbg {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, PortA, SgMisoDbg},
     ///     pac,
     /// };
@@ -2064,7 +2064,7 @@ impl SgMisoDbg {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     gpio::{pins, PortA, SgMisoDbg},
     ///     pac,
     /// };
@@ -2094,7 +2094,7 @@ impl SgMosiDbg {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     cortex_m,
     ///     gpio::{pins, PortA, SgMosiDbg},
     ///     pac,
@@ -2117,7 +2117,7 @@ impl SgMosiDbg {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     cortex_m,
     ///     gpio::{pins, PortA, SgMosiDbg},
     ///     pac,

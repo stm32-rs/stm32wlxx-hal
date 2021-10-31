@@ -81,7 +81,7 @@ impl Dac {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{dac::Dac, pac};
+    /// use stm32wlxx_hal::{dac::Dac, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
@@ -110,7 +110,7 @@ impl Dac {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     dac::{Dac, ModeChip},
     ///     pac,
     /// };
@@ -145,7 +145,7 @@ impl Dac {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{dac::Dac, pac};
+    /// use stm32wlxx_hal::{dac::Dac, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let dac = dp.DAC;
@@ -167,7 +167,7 @@ impl Dac {
     /// # Example
     ///
     /// ```no_run
-    /// unsafe { stm32wl_hal::dac::Dac::unmask_irq() };
+    /// unsafe { stm32wlxx_hal::dac::Dac::unmask_irq() };
     /// ```
     #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
     pub unsafe fn unmask_irq() {
@@ -179,7 +179,7 @@ impl Dac {
     /// # Example
     ///
     /// ```no_run
-    /// stm32wl_hal::dac::Dac::mask_irq();
+    /// stm32wlxx_hal::dac::Dac::mask_irq();
     /// ```
     #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
     pub fn mask_irq() {
@@ -193,7 +193,7 @@ impl Dac {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{dac::Dac, pac};
+    /// use stm32wlxx_hal::{dac::Dac, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// Dac::enable_clock(&mut dp.RCC);
@@ -247,7 +247,7 @@ impl Dac {
     /// Normal mode
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     dac::{Dac, ModePin},
     ///     gpio::{Analog, PortA},
     ///     pac,
@@ -263,7 +263,7 @@ impl Dac {
     /// Sample and hold.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     dac::{Dac, ModePin},
     ///     gpio::{Analog, PortA},
     ///     pac,
@@ -310,7 +310,7 @@ impl Dac {
     /// Normal mode.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     dac::{Dac, ModeChip},
     ///     pac,
     /// };
@@ -323,7 +323,7 @@ impl Dac {
     /// Sample and hold mode.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     dac::{Dac, ModeChip},
     ///     pac,
     /// };
@@ -343,7 +343,7 @@ impl Dac {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     dac::{Dac, ModeChip, ModePin},
     ///     gpio::{pins, Analog, PortA},
     ///     pac,
@@ -371,7 +371,7 @@ impl Dac {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{dac::Dac, pac};
+    /// use stm32wlxx_hal::{dac::Dac, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut dac: Dac = Dac::new(dp.DAC, &mut dp.RCC);
@@ -407,7 +407,7 @@ impl Dac {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{dac::Dac, pac};
+    /// use stm32wlxx_hal::{dac::Dac, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut dac: Dac = Dac::new(dp.DAC, &mut dp.RCC);
@@ -430,7 +430,7 @@ impl Dac {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{dac::Dac, pac};
+    /// use stm32wlxx_hal::{dac::Dac, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut dac: Dac = Dac::new(dp.DAC, &mut dp.RCC);

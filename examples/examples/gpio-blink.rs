@@ -5,7 +5,7 @@
 
 use defmt_rtt as _; // global logger
 use panic_probe as _; // panic handler
-use stm32wl_hal::{
+use stm32wlxx_hal::{
     self as hal,
     cortex_m::{self, delay::Delay},
     gpio::{pins, Output, PinState, PortB},

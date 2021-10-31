@@ -47,7 +47,7 @@ impl Uid {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::info::uid;
+    /// use stm32wlxx_hal::info::uid;
     ///
     /// let coord: u32 = uid().coord();
     /// ```
@@ -60,7 +60,7 @@ impl Uid {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::info::uid;
+    /// use stm32wlxx_hal::info::uid;
     ///
     /// let wafer: u8 = uid().wafer();
     /// ```
@@ -73,7 +73,7 @@ impl Uid {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::info::uid;
+    /// use stm32wlxx_hal::info::uid;
     ///
     /// let lot: [u8; 7] = uid().lot();
     /// ```
@@ -95,7 +95,7 @@ impl Uid {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::info::{uid, Uid};
+/// use stm32wlxx_hal::info::{uid, Uid};
 ///
 /// let uid: Uid = uid();
 /// ```
@@ -116,7 +116,7 @@ pub fn uid() -> Uid {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::info::flash_size_kibibyte;
+/// use stm32wlxx_hal::info::flash_size_kibibyte;
 ///
 /// // valid for the NUCLEO-WL55JC2 dev board
 /// assert_eq!(flash_size_kibibyte(), 256);
@@ -131,7 +131,7 @@ pub fn flash_size_kibibyte() -> u16 {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::info::flash_size;
+/// use stm32wlxx_hal::info::flash_size;
 ///
 /// // valid for the NUCLEO-WL55JC2 dev board
 /// assert_eq!(flash_size(), 256 * 1024);
@@ -183,7 +183,7 @@ impl From<Package> for u8 {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::info;
+/// use stm32wlxx_hal::info;
 ///
 /// let package: Result<info::Package, u8> = info::package();
 /// // valid for the NUCLEO-WL55JC2 dev board
@@ -214,7 +214,7 @@ impl Uid64 {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::info::uid64;
+    /// use stm32wlxx_hal::info::uid64;
     ///
     /// let devnum: u32 = uid64().devnum();
     /// ```
@@ -231,7 +231,7 @@ impl Uid64 {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::info::uid64;
+    /// use stm32wlxx_hal::info::uid64;
     ///
     /// assert_eq!(uid64().company_id(), 0x0080E1);
     /// ```
@@ -246,7 +246,7 @@ impl Uid64 {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::info::uid64;
+    /// use stm32wlxx_hal::info::uid64;
     ///
     /// assert_eq!(uid64().dev_id(), 0x15);
     /// ```
@@ -285,7 +285,7 @@ pub const UID64: *const u8 = 0x1FFF_7580 as *const u8;
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::info;
+/// use stm32wlxx_hal::info;
 ///
 /// let uid64: info::Uid64 = info::uid64();
 /// assert_eq!(uid64.dev_id(), 0x15);
@@ -304,7 +304,7 @@ pub fn uid64() -> Uid64 {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::info;
+/// use stm32wlxx_hal::info;
 ///
 /// let devnum: u32 = info::uid64_devnum();
 /// ```

@@ -56,7 +56,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::Cr;
+    /// use stm32wlxx_hal::dma::Cr;
     /// assert_eq!(Cr::RESET.raw(), 0);
     /// ```
     pub const RESET: Cr = Cr::new(0);
@@ -69,7 +69,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::Cr;
+    /// use stm32wlxx_hal::dma::Cr;
     /// assert_eq!(Cr::DISABLE.enabled(), false);
     /// assert_eq!(Cr::DISABLE, Cr::RESET);
     /// ```
@@ -80,7 +80,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::Cr;
+    /// use stm32wlxx_hal::dma::Cr;
     /// const CR: Cr = Cr::new(0x1234_5678);
     /// ```
     pub const fn new(val: u32) -> Cr {
@@ -92,7 +92,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::Cr;
+    /// use stm32wlxx_hal::dma::Cr;
     /// const CR: Cr = Cr::new(0x1234_5678);
     /// assert_eq!(CR.raw(), 0x1234_5678);
     /// ```
@@ -113,7 +113,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::Cr;
+    /// use stm32wlxx_hal::dma::Cr;
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.privileged(), false);
@@ -165,7 +165,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::Cr;
+    /// use stm32wlxx_hal::dma::Cr;
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.dest_sec(), false);
@@ -220,7 +220,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::Cr;
+    /// use stm32wlxx_hal::dma::Cr;
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.src_sec(), false);
@@ -267,7 +267,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::Cr;
+    /// use stm32wlxx_hal::dma::Cr;
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.secure(), false);
@@ -313,7 +313,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::Cr;
+    /// use stm32wlxx_hal::dma::Cr;
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.mem2mem(), false);
@@ -352,7 +352,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::{Cr, Priority};
+    /// use stm32wlxx_hal::dma::{Cr, Priority};
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.priority(), Priority::Low);
@@ -409,7 +409,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::{Cr, Size};
+    /// use stm32wlxx_hal::dma::{Cr, Size};
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.mem_size(), Some(Size::Bits8));
@@ -459,7 +459,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::{Cr, Size};
+    /// use stm32wlxx_hal::dma::{Cr, Size};
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.periph_size(), Some(Size::Bits8));
@@ -510,7 +510,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::Cr;
+    /// use stm32wlxx_hal::dma::Cr;
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.mem_inc(), false);
@@ -560,7 +560,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::Cr;
+    /// use stm32wlxx_hal::dma::Cr;
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.periph_inc(), false);
@@ -601,7 +601,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::Cr;
+    /// use stm32wlxx_hal::dma::Cr;
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.circ(), false);
@@ -632,7 +632,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::{Cr, Dir};
+    /// use stm32wlxx_hal::dma::{Cr, Dir};
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.dir(), Dir::FromPeriph);
@@ -650,7 +650,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::{Cr, Dir};
+    /// use stm32wlxx_hal::dma::{Cr, Dir};
     ///
     /// let cr = Cr::RESET.set_dir_from_mem();
     /// assert_eq!(cr.dir(), Dir::FromMem);
@@ -668,7 +668,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::{Cr, Dir};
+    /// use stm32wlxx_hal::dma::{Cr, Dir};
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.dir(), Dir::FromPeriph);
@@ -701,7 +701,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::Cr;
+    /// use stm32wlxx_hal::dma::Cr;
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.xfer_err_irq_en(), false);
@@ -731,7 +731,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::Cr;
+    /// use stm32wlxx_hal::dma::Cr;
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.xfer_hlf_irq_en(), false);
@@ -761,7 +761,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::Cr;
+    /// use stm32wlxx_hal::dma::Cr;
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.xfer_cpl_irq_en(), false);
@@ -791,7 +791,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::Cr;
+    /// use stm32wlxx_hal::dma::Cr;
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.enabled(), false);
@@ -816,7 +816,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::Cr;
+    /// use stm32wlxx_hal::dma::Cr;
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.enabled(), false);
@@ -838,7 +838,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::dma::Cr;
+    /// use stm32wlxx_hal::dma::Cr;
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.enabled(), false);

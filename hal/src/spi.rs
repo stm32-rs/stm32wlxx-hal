@@ -113,7 +113,7 @@ impl BaudRate {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::spi::BaudRate;
+    /// use stm32wlxx_hal::spi::BaudRate;
     ///
     /// assert_eq!(BaudRate::Div256.div(), 256);
     /// assert_eq!(BaudRate::Div128.div(), 128);
@@ -538,7 +538,7 @@ impl<SCK, MISO, MOSI, MODE> Spi<pac::SPI1, SCK, MISO, MOSI, MODE> {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     spi::{Master, NoMiso, NoMosi, NoSck, Spi},
     /// };
@@ -567,7 +567,7 @@ impl<SCK, MISO, MOSI, MODE> Spi<pac::SPI1, SCK, MISO, MOSI, MODE> {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     spi::{Master, NoMiso, NoMosi, NoSck, Spi},
     /// };
@@ -587,7 +587,7 @@ impl<SCK, MISO, MOSI, MODE> Spi<pac::SPI1, SCK, MISO, MOSI, MODE> {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     spi::{Master, NoMiso, NoMosi, NoSck, Spi},
     /// };
@@ -613,7 +613,7 @@ impl<SCK, MISO, MOSI, MODE> Spi<pac::SPI2, SCK, MISO, MOSI, MODE> {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     spi::{Master, NoMiso, NoMosi, NoSck, Spi},
     /// };
@@ -642,7 +642,7 @@ impl<SCK, MISO, MOSI, MODE> Spi<pac::SPI2, SCK, MISO, MOSI, MODE> {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     spi::{Master, NoMiso, NoMosi, NoSck, Spi},
     /// };
@@ -662,7 +662,7 @@ impl<SCK, MISO, MOSI, MODE> Spi<pac::SPI2, SCK, MISO, MOSI, MODE> {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     spi::{Master, NoMiso, NoMosi, NoSck, Spi},
     /// };
@@ -712,7 +712,7 @@ macro_rules! impl_new_full_duplex {
                 /// # Example
                 ///
                 /// ```no_run
-                /// use stm32wl_hal::{
+                /// use stm32wlxx_hal::{
                 ///     cortex_m,
                 ///     gpio::PortA,
                 ///     pac,
@@ -791,7 +791,7 @@ macro_rules! impl_new_full_duplex_slave {
                 /// # Example
                 ///
                 /// ```no_run
-                /// use stm32wl_hal::{
+                /// use stm32wlxx_hal::{
                 ///     cortex_m,
                 ///     gpio::PortA,
                 ///     pac,
@@ -868,7 +868,7 @@ macro_rules! impl_new_full_duplex_dma {
                 /// # Example
                 ///
                 /// ```no_run
-                /// use stm32wl_hal::{
+                /// use stm32wlxx_hal::{
                 ///     cortex_m,
                 ///     dma::AllDma,
                 ///     gpio::PortA,
@@ -964,7 +964,7 @@ macro_rules! impl_new_full_duplex_slave_dma {
                 /// # Example
                 ///
                 /// ```no_run
-                /// use stm32wl_hal::{
+                /// use stm32wlxx_hal::{
                 ///     cortex_m,
                 ///     dma::AllDma,
                 ///     gpio::PortA,
@@ -1053,7 +1053,7 @@ macro_rules! impl_new_mosi_simplex {
                 /// # Example
                 ///
                 /// ```no_run
-                /// use stm32wl_hal::{
+                /// use stm32wlxx_hal::{
                 ///     cortex_m,
                 ///     gpio::PortA,
                 ///     pac,
@@ -1132,7 +1132,7 @@ macro_rules! impl_new_mosi_simplex_slave {
                 /// # Example
                 ///
                 /// ```no_run
-                /// use stm32wl_hal::{
+                /// use stm32wlxx_hal::{
                 ///     cortex_m,
                 ///     gpio::PortA,
                 ///     pac,
@@ -1207,7 +1207,7 @@ macro_rules! impl_new_mosi_simplex_dma {
                 /// # Example
                 ///
                 /// ```no_run
-                /// use stm32wl_hal::{
+                /// use stm32wlxx_hal::{
                 ///     cortex_m,
                 ///     dma::AllDma,
                 ///     gpio::PortA,
@@ -1296,7 +1296,7 @@ macro_rules! impl_new_mosi_simplex_slave_dma {
                 /// # Example
                 ///
                 /// ```no_run
-                /// use stm32wl_hal::{
+                /// use stm32wlxx_hal::{
                 ///     cortex_m,
                 ///     dma::AllDma,
                 ///     gpio::PortA,
@@ -1379,7 +1379,7 @@ macro_rules! impl_new_miso_simplex {
                 /// # Example
                 ///
                 /// ```no_run
-                /// use stm32wl_hal::{
+                /// use stm32wlxx_hal::{
                 ///     cortex_m,
                 ///     gpio::PortA,
                 ///     pac,
@@ -1455,7 +1455,7 @@ macro_rules! impl_new_miso_simplex_dma {
                 /// # Example
                 ///
                 /// ```no_run
-                /// use stm32wl_hal::{
+                /// use stm32wlxx_hal::{
                 ///     cortex_m,
                 ///     dma::AllDma,
                 ///     gpio::PortA,
@@ -1628,7 +1628,7 @@ impl<SPI: SpiRegs, SCK, MISO, MOSI> Spi<SPI, SCK, MISO, MOSI, Slave> {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     dma::AllDma,
     ///     gpio::PortA,
     ///     pac,
@@ -1669,7 +1669,7 @@ impl<SPI, SCK, MISO, MOSI, MODE> Spi<SPI, SCK, MISO, MOSI, MODE> {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     dma::AllDma,
     ///     gpio::PortA,
     ///     pac,

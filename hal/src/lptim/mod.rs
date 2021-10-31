@@ -8,7 +8,7 @@
 //! Setup a one-shot timer.
 //!
 //! ```no_run
-//! use stm32wl_hal::{
+//! use stm32wlxx_hal::{
 //!     embedded_hal::timer::CountDown,
 //!     lptim::{self, LpTim, LpTim1, Prescaler::Div1},
 //!     pac,
@@ -285,7 +285,7 @@ pub trait LpTim: sealed::LpTim {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     lptim::{self, LpTim, LpTim1, Prescaler::Div1},
     ///     pac,
     /// };
@@ -305,7 +305,7 @@ pub trait LpTim: sealed::LpTim {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     lptim::{self, LpTim, LpTim1, Prescaler::Div1},
     ///     pac,
     /// };
@@ -350,7 +350,7 @@ pub trait LpTim: sealed::LpTim {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     lptim::{self, LpTim, LpTim1},
     ///     pac,
     /// };
@@ -366,7 +366,7 @@ pub trait LpTim: sealed::LpTim {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     lptim::{self, LpTim, LpTim1, Prescaler::Div1},
     ///     pac,
     /// };
@@ -408,7 +408,7 @@ pub trait LpTim: sealed::LpTim {
     /// Enable all IRQs.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     lptim::{self, LpTim, LpTim1, Prescaler::Div1},
     ///     pac,
     /// };
@@ -834,7 +834,7 @@ impl LpTim3 {
     /// [`A11`](crate::gpio::pins::A11).
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     cortex_m,
     ///     embedded_hal::timer::CountDown,
     ///     gpio::PortA,
@@ -885,7 +885,7 @@ impl LpTim3 {
     /// Setup a one-shot timer that starts after a transition on pin A11.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     embedded_hal::timer::CountDown,
     ///     gpio::PortA,
     ///     lptim::{self, Filter, LpTim, LpTim3, LpTim3Trg, Prescaler::Div1, TrgPol},

@@ -73,7 +73,7 @@ impl Rtc {
     /// LSE clock source (this depends on HW, example valid for NUCLEO board):
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     rcc::pulse_reset_backup_domain,
     ///     rtc::{Clk, Rtc},
@@ -92,7 +92,7 @@ impl Rtc {
     /// LSI clock source:
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     rcc::{enable_lsi, pulse_reset_backup_domain},
     ///     rtc::{Clk, Rtc},
@@ -109,7 +109,7 @@ impl Rtc {
     /// HSE clock source (this depends on HW, example valid for NUCLEO board):
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     rcc::pulse_reset_backup_domain,
     ///     rtc::{Clk, Rtc},
@@ -466,7 +466,7 @@ impl Rtc {
     /// Setup the wakeup timer to go off in 1 hour, without interrupts.
     ///
     /// ```no_run
-    /// # use stm32wl_hal::{pac, rtc};
+    /// # use stm32wlxx_hal::{pac, rtc};
     /// # let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// # let mut rtc = rtc::Rtc::new(dp.RTC, rtc::Clk::Lse, &mut dp.PWR, &mut dp.RCC);
     /// rtc.setup_wakeup_timer(3599, false);

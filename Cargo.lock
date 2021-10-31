@@ -207,7 +207,7 @@ dependencies = [
  "defmt-rtt",
  "nucleo-wl55jc-bsp",
  "panic-probe",
- "stm32wl-hal",
+ "stm32wlxx-hal",
 ]
 
 [[package]]
@@ -257,7 +257,7 @@ dependencies = [
 name = "lora-e5-bsp"
 version = "0.1.0-alpha.0"
 dependencies = [
- "stm32wl-hal",
+ "stm32wlxx-hal",
 ]
 
 [[package]]
@@ -279,7 +279,7 @@ checksum = "546c37ac5d9e56f55e73b677106873d9d9f5190605e41a856503623648488cae"
 name = "nucleo-wl55jc-bsp"
 version = "0.1.0-alpha.0"
 dependencies = [
- "stm32wl-hal",
+ "stm32wlxx-hal",
 ]
 
 [[package]]
@@ -462,7 +462,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "stm32wl-hal"
+name = "stm32wlxx-hal"
 version = "0.1.0-alpha.0"
 dependencies = [
  "cfg-if",

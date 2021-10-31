@@ -1,6 +1,6 @@
 //! LEDs
 
-use stm32wl_hal as hal;
+use stm32wlxx_hal as hal;
 
 use core::ops::Not;
 use hal::{

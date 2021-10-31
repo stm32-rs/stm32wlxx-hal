@@ -20,7 +20,7 @@ impl<T> ValueError<T> {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::ValueError;
+    /// use stm32wlxx_hal::subghz::ValueError;
     ///
     /// const ERROR: ValueError<u8> = ValueError::too_high(101u8, 100u8);
     /// assert!(ERROR.over());
@@ -42,7 +42,7 @@ impl<T> ValueError<T> {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::ValueError;
+    /// use stm32wlxx_hal::subghz::ValueError;
     ///
     /// const ERROR: ValueError<u8> = ValueError::too_low(200u8, 201u8);
     /// assert!(ERROR.under());
@@ -61,7 +61,7 @@ impl<T> ValueError<T> {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::ValueError;
+    /// use stm32wlxx_hal::subghz::ValueError;
     ///
     /// const ERROR: ValueError<u8> = ValueError::too_high(101u8, 100u8);
     /// assert_eq!(ERROR.value(), &101u8);
@@ -75,7 +75,7 @@ impl<T> ValueError<T> {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::ValueError;
+    /// use stm32wlxx_hal::subghz::ValueError;
     ///
     /// const ERROR: ValueError<u8> = ValueError::too_high(101u8, 100u8);
     /// assert_eq!(ERROR.limit(), &100u8);
@@ -89,7 +89,7 @@ impl<T> ValueError<T> {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::ValueError;
+    /// use stm32wlxx_hal::subghz::ValueError;
     ///
     /// const ERROR: ValueError<u8> = ValueError::too_high(101u8, 100u8);
     /// assert!(ERROR.over());
@@ -104,7 +104,7 @@ impl<T> ValueError<T> {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::ValueError;
+    /// use stm32wlxx_hal::subghz::ValueError;
     ///
     /// const ERROR: ValueError<u8> = ValueError::too_low(200u8, 201u8);
     /// assert!(ERROR.under());

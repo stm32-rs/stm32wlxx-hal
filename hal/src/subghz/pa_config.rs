@@ -73,7 +73,7 @@ impl PaConfig {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::PaConfig;
+    /// use stm32wlxx_hal::subghz::PaConfig;
     ///
     /// const PA_CONFIG: PaConfig = PaConfig::new();
     /// ```
@@ -99,7 +99,7 @@ impl PaConfig {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{PaConfig, PaSel};
+    /// use stm32wlxx_hal::subghz::{PaConfig, PaSel};
     ///
     /// const PA_CONFIG: PaConfig = PaConfig::new().set_pa(PaSel::Lp).set_pa_duty_cycle(0x4);
     /// # assert_eq!(PA_CONFIG.as_slice()[1], 0x04);
@@ -117,7 +117,7 @@ impl PaConfig {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{PaConfig, PaSel};
+    /// use stm32wlxx_hal::subghz::{PaConfig, PaSel};
     ///
     /// const PA_CONFIG: PaConfig = PaConfig::new().set_pa(PaSel::Hp).set_hp_max(0x2);
     /// # assert_eq!(PA_CONFIG.as_slice()[2], 0x02);
@@ -133,7 +133,7 @@ impl PaConfig {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{PaConfig, PaSel};
+    /// use stm32wlxx_hal::subghz::{PaConfig, PaSel};
     ///
     /// const PA_CONFIG_HP: PaConfig = PaConfig::new().set_pa(PaSel::Hp);
     /// const PA_CONFIG_LP: PaConfig = PaConfig::new().set_pa(PaSel::Lp);
@@ -151,7 +151,7 @@ impl PaConfig {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{PaConfig, PaSel};
+    /// use stm32wlxx_hal::subghz::{PaConfig, PaSel};
     ///
     /// const PA_CONFIG: PaConfig = PaConfig::new()
     ///     .set_pa(PaSel::Hp)

@@ -24,7 +24,7 @@ impl FskPacketStatus {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{CmdStatus, FskPacketStatus, Status, StatusMode};
+    /// use stm32wlxx_hal::subghz::{CmdStatus, FskPacketStatus, Status, StatusMode};
     ///
     /// let example_data_from_radio: [u8; 4] = [0x54, 0, 0, 0];
     /// let pkt_status: FskPacketStatus = FskPacketStatus::from(example_data_from_radio);
@@ -88,7 +88,7 @@ impl FskPacketStatus {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::{subghz::FskPacketStatus, Ratio};
+    /// use stm32wlxx_hal::{subghz::FskPacketStatus, Ratio};
     ///
     /// let example_data_from_radio: [u8; 4] = [0, 0, 80, 0];
     /// let pkt_status: FskPacketStatus = FskPacketStatus::from(example_data_from_radio);
@@ -105,7 +105,7 @@ impl FskPacketStatus {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::{subghz::FskPacketStatus, Ratio};
+    /// use stm32wlxx_hal::{subghz::FskPacketStatus, Ratio};
     ///
     /// let example_data_from_radio: [u8; 4] = [0, 0, 0, 100];
     /// let pkt_status: FskPacketStatus = FskPacketStatus::from(example_data_from_radio);
@@ -189,7 +189,7 @@ impl LoRaPacketStatus {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{CmdStatus, LoRaPacketStatus, Status, StatusMode};
+    /// use stm32wlxx_hal::subghz::{CmdStatus, LoRaPacketStatus, Status, StatusMode};
     ///
     /// let example_data_from_radio: [u8; 4] = [0x54, 0, 0, 0];
     /// let pkt_status: LoRaPacketStatus = LoRaPacketStatus::from(example_data_from_radio);
@@ -208,7 +208,7 @@ impl LoRaPacketStatus {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::{subghz::LoRaPacketStatus, Ratio};
+    /// use stm32wlxx_hal::{subghz::LoRaPacketStatus, Ratio};
     ///
     /// let example_data_from_radio: [u8; 4] = [0, 80, 0, 0];
     /// let pkt_status: LoRaPacketStatus = LoRaPacketStatus::from(example_data_from_radio);
@@ -225,7 +225,7 @@ impl LoRaPacketStatus {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::{subghz::LoRaPacketStatus, Ratio};
+    /// use stm32wlxx_hal::{subghz::LoRaPacketStatus, Ratio};
     ///
     /// let example_data_from_radio: [u8; 4] = [0, 0, 40, 0];
     /// let pkt_status: LoRaPacketStatus = LoRaPacketStatus::from(example_data_from_radio);
@@ -242,7 +242,7 @@ impl LoRaPacketStatus {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::{subghz::LoRaPacketStatus, Ratio};
+    /// use stm32wlxx_hal::{subghz::LoRaPacketStatus, Ratio};
     ///
     /// let example_data_from_radio: [u8; 4] = [0, 0, 0, 80];
     /// let pkt_status: LoRaPacketStatus = LoRaPacketStatus::from(example_data_from_radio);

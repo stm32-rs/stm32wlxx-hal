@@ -50,7 +50,7 @@ impl WakeupPin {
 /// Enable A0 to wakeup on a falling edge.
 ///
 /// ```no_run
-/// use stm32wl_hal::{
+/// use stm32wlxx_hal::{
 ///     pac,
 ///     pwr::{setup_wakeup_pins, WakeupPin},
 /// };
@@ -96,7 +96,7 @@ pub fn setup_wakeup_pins(pwr: &mut pac::PWR, wp1: WakeupPin, wp2: WakeupPin, wp3
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{pac, pwr::shutdown};
+/// use stm32wlxx_hal::{pac, pwr::shutdown};
 ///
 /// let mut cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
 /// // SLEEPDEEP is implemented with retention
@@ -132,7 +132,7 @@ pub fn shutdown() -> ! {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{pac, pwr::enable_shutdown_sleeponexit};
+/// use stm32wlxx_hal::{pac, pwr::enable_shutdown_sleeponexit};
 ///
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 /// let mut cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
@@ -158,7 +158,7 @@ pub fn enable_shutdown_sleeponexit(pwr: &mut pac::PWR, scb: &mut pac::SCB) {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{pac, pwr::enable_shutdown};
+/// use stm32wlxx_hal::{pac, pwr::enable_shutdown};
 ///
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
 /// let mut cp: pac::CorePeripherals = pac::CorePeripherals::take().unwrap();
@@ -216,7 +216,7 @@ impl From<LprunRange> for MsiRange {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{
+/// use stm32wlxx_hal::{
 ///     pac,
 ///     pwr::{enter_lprun_msi, LprunRange},
 /// };
@@ -252,7 +252,7 @@ pub unsafe fn enter_lprun_msi(
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{
+/// use stm32wlxx_hal::{
 ///     pac,
 ///     pwr::{enter_lprun_msi, exit_lprun, LprunRange},
 /// };

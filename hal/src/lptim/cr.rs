@@ -11,7 +11,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::lptim::Cr;
+    /// use stm32wlxx_hal::lptim::Cr;
     /// assert_eq!(Cr::RESET.raw(), 0);
     /// ```
     pub const RESET: Cr = Cr::new(0);
@@ -24,7 +24,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::lptim::Cr;
+    /// use stm32wlxx_hal::lptim::Cr;
     /// assert_eq!(Cr::DISABLE.enabled(), false);
     /// assert_eq!(Cr::DISABLE, Cr::RESET);
     /// ```
@@ -35,7 +35,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::lptim::Cr;
+    /// use stm32wlxx_hal::lptim::Cr;
     /// const CR: Cr = Cr::new(0b1);
     /// ```
     pub const fn new(val: u32) -> Cr {
@@ -47,7 +47,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::lptim::Cr;
+    /// use stm32wlxx_hal::lptim::Cr;
     /// const CR: Cr = Cr::new(0x1234_5678);
     /// assert_eq!(CR.raw(), 0x1234_5678);
     /// ```
@@ -88,7 +88,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::lptim::Cr;
+    /// use stm32wlxx_hal::lptim::Cr;
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.enabled(), false);
@@ -113,7 +113,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::lptim::Cr;
+    /// use stm32wlxx_hal::lptim::Cr;
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.enabled(), false);
@@ -135,7 +135,7 @@ impl Cr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::lptim::Cr;
+    /// use stm32wlxx_hal::lptim::Cr;
     ///
     /// let cr = Cr::RESET;
     /// assert_eq!(cr.enabled(), false);

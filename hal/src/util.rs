@@ -9,7 +9,7 @@ use cortex_m::{delay::Delay, peripheral::syst::SystClkSource};
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{pac, util::new_delay};
+/// use stm32wlxx_hal::{pac, util::new_delay};
 ///
 /// let dp = pac::Peripherals::take().unwrap();
 /// let cp = pac::CorePeripherals::take().unwrap();
@@ -31,7 +31,7 @@ pub fn new_delay(syst: pac::SYST, rcc: &pac::RCC) -> Delay {
 /// # Example
 ///
 /// ```no_run
-/// use stm32wl_hal::{pac, util::reset_cycle_count};
+/// use stm32wlxx_hal::{pac, util::reset_cycle_count};
 ///
 /// let mut cp = pac::CorePeripherals::take().unwrap();
 /// cp.DCB.enable_trace();

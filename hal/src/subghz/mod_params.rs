@@ -52,7 +52,7 @@ impl FskBandwidth {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::FskBandwidth;
+    /// use stm32wlxx_hal::subghz::FskBandwidth;
     ///
     /// assert_eq!(FskBandwidth::Bw4.hertz(), 4_800);
     /// assert_eq!(FskBandwidth::Bw5.hertz(), 5_800);
@@ -109,7 +109,7 @@ impl FskBandwidth {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::FskBandwidth;
+    /// use stm32wlxx_hal::subghz::FskBandwidth;
     ///
     /// assert_eq!(FskBandwidth::from_bits(0x1F), Ok(FskBandwidth::Bw4));
     /// assert_eq!(FskBandwidth::from_bits(0x17), Ok(FskBandwidth::Bw5));
@@ -206,7 +206,7 @@ impl FskBitrate {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::FskBitrate;
+    /// use stm32wlxx_hal::subghz::FskBitrate;
     ///
     /// const BITRATE: FskBitrate = FskBitrate::from_bps(9600);
     /// assert_eq!(BITRATE.as_bps(), 9600);
@@ -235,7 +235,7 @@ impl FskBitrate {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::FskBitrate;
+    /// use stm32wlxx_hal::subghz::FskBitrate;
     ///
     /// const BITRATE: FskBitrate = FskBitrate::from_raw(0x7D00);
     /// assert_eq!(BITRATE.as_bps(), 32_000);
@@ -251,7 +251,7 @@ impl FskBitrate {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::FskBitrate;
+    /// use stm32wlxx_hal::subghz::FskBitrate;
     ///
     /// const BITS_PER_SEC: u32 = 9600;
     /// const BITRATE: FskBitrate = FskBitrate::from_bps(BITS_PER_SEC);
@@ -296,7 +296,7 @@ impl FskFdev {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::FskFdev;
+    /// use stm32wlxx_hal::subghz::FskFdev;
     ///
     /// const FDEV: FskFdev = FskFdev::from_hertz(31_250);
     /// assert_eq!(FDEV.as_hertz(), 31_250);
@@ -317,7 +317,7 @@ impl FskFdev {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::FskFdev;
+    /// use stm32wlxx_hal::subghz::FskFdev;
     ///
     /// const FDEV: FskFdev = FskFdev::from_raw(0x8000);
     /// assert_eq!(FDEV.as_hertz(), 31_250);
@@ -333,7 +333,7 @@ impl FskFdev {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::FskFdev;
+    /// use stm32wlxx_hal::subghz::FskFdev;
     ///
     /// const HERTZ: u32 = 31_250;
     /// const FDEV: FskFdev = FskFdev::from_hertz(HERTZ);
@@ -363,7 +363,7 @@ impl FskModParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::FskModParams;
+    /// use stm32wlxx_hal::subghz::FskModParams;
     ///
     /// const MOD_PARAMS: FskModParams = FskModParams::new();
     /// ```
@@ -394,7 +394,7 @@ impl FskModParams {
     /// Setting the bitrate to 32,000 bits per second.
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{FskBitrate, FskModParams};
+    /// use stm32wlxx_hal::subghz::{FskBitrate, FskModParams};
     ///
     /// const BITRATE: FskBitrate = FskBitrate::from_bps(32_000);
     /// const MOD_PARAMS: FskModParams = FskModParams::new().set_bitrate(BITRATE);
@@ -412,7 +412,7 @@ impl FskModParams {
     /// Setting the bitrate to 32,000 bits per second.
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{FskBitrate, FskModParams};
+    /// use stm32wlxx_hal::subghz::{FskBitrate, FskModParams};
     ///
     /// const BITRATE: FskBitrate = FskBitrate::from_bps(32_000);
     /// const MOD_PARAMS: FskModParams = FskModParams::new().set_bitrate(BITRATE);
@@ -434,7 +434,7 @@ impl FskModParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{FskModParams, FskPulseShape};
+    /// use stm32wlxx_hal::subghz::{FskModParams, FskPulseShape};
     ///
     /// const MOD_PARAMS: FskModParams = FskModParams::new().set_pulse_shape(FskPulseShape::Bt03);
     /// # assert_eq!(MOD_PARAMS.as_slice()[4], 0x08);
@@ -453,7 +453,7 @@ impl FskModParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{FskBandwidth, FskModParams};
+    /// use stm32wlxx_hal::subghz::{FskBandwidth, FskModParams};
     ///
     /// const MOD_PARAMS: FskModParams = FskModParams::new().set_bandwidth(FskBandwidth::Bw9);
     /// assert_eq!(MOD_PARAMS.bandwidth(), Ok(FskBandwidth::Bw9));
@@ -467,7 +467,7 @@ impl FskModParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{FskBandwidth, FskModParams};
+    /// use stm32wlxx_hal::subghz::{FskBandwidth, FskModParams};
     ///
     /// const MOD_PARAMS: FskModParams = FskModParams::new().set_bandwidth(FskBandwidth::Bw9);
     /// # assert_eq!(MOD_PARAMS.as_slice()[5], 0x1E);
@@ -483,7 +483,7 @@ impl FskModParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{FskFdev, FskModParams};
+    /// use stm32wlxx_hal::subghz::{FskFdev, FskModParams};
     ///
     /// const FDEV: FskFdev = FskFdev::from_hertz(31_250);
     /// const MOD_PARAMS: FskModParams = FskModParams::new().set_fdev(FDEV);
@@ -499,7 +499,7 @@ impl FskModParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{FskFdev, FskModParams};
+    /// use stm32wlxx_hal::subghz::{FskFdev, FskModParams};
     ///
     /// const FDEV: FskFdev = FskFdev::from_hertz(31_250);
     /// const MOD_PARAMS: FskModParams = FskModParams::new().set_fdev(FDEV);
@@ -536,7 +536,7 @@ impl FskModParams {
     ///
     /// ```
     /// extern crate static_assertions as sa;
-    /// use stm32wl_hal::subghz::{FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape};
+    /// use stm32wlxx_hal::subghz::{FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape};
     ///
     /// const MOD_PARAMS: FskModParams = FskModParams::new()
     ///     .set_bitrate(FskBitrate::from_bps(20_000))
@@ -576,7 +576,7 @@ impl FskModParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape};
+    /// use stm32wlxx_hal::subghz::{FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape};
     ///
     /// const BITRATE: FskBitrate = FskBitrate::from_bps(20_000);
     /// const PULSE_SHAPE: FskPulseShape = FskPulseShape::Bt03;
@@ -671,7 +671,7 @@ impl LoRaBandwidth {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::LoRaBandwidth;
+    /// use stm32wlxx_hal::subghz::LoRaBandwidth;
     ///
     /// assert_eq!(LoRaBandwidth::Bw7.hertz(), 7_810);
     /// assert_eq!(LoRaBandwidth::Bw10.hertz(), 10_420);
@@ -747,7 +747,7 @@ impl LoRaModParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::LoRaModParams;
+    /// use stm32wlxx_hal::subghz::LoRaModParams;
     ///
     /// const MOD_PARAMS: LoRaModParams = LoRaModParams::new();
     /// assert_eq!(MOD_PARAMS, LoRaModParams::default());
@@ -769,7 +769,7 @@ impl LoRaModParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{LoRaModParams, SpreadingFactor};
+    /// use stm32wlxx_hal::subghz::{LoRaModParams, SpreadingFactor};
     ///
     /// const MOD_PARAMS: LoRaModParams = LoRaModParams::new().set_sf(SpreadingFactor::Sf7);
     /// # assert_eq!(MOD_PARAMS.as_slice(), &[0x8B, 0x07, 0x00, 0x00, 0x00]);
@@ -785,7 +785,7 @@ impl LoRaModParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{LoRaBandwidth, LoRaModParams};
+    /// use stm32wlxx_hal::subghz::{LoRaBandwidth, LoRaModParams};
     ///
     /// const MOD_PARAMS: LoRaModParams = LoRaModParams::new().set_bw(LoRaBandwidth::Bw125);
     /// # assert_eq!(MOD_PARAMS.as_slice(), &[0x8B, 0x05, 0x04, 0x00, 0x00]);
@@ -801,7 +801,7 @@ impl LoRaModParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{CodingRate, LoRaModParams};
+    /// use stm32wlxx_hal::subghz::{CodingRate, LoRaModParams};
     ///
     /// const MOD_PARAMS: LoRaModParams = LoRaModParams::new().set_cr(CodingRate::Cr45);
     /// # assert_eq!(MOD_PARAMS.as_slice(), &[0x8B, 0x05, 0x00, 0x01, 0x00]);
@@ -817,7 +817,7 @@ impl LoRaModParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::LoRaModParams;
+    /// use stm32wlxx_hal::subghz::LoRaModParams;
     ///
     /// const MOD_PARAMS: LoRaModParams = LoRaModParams::new().set_ldro_en(true);
     /// # assert_eq!(MOD_PARAMS.as_slice(), &[0x8B, 0x05, 0x00, 0x00, 0x01]);
@@ -833,7 +833,7 @@ impl LoRaModParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{CodingRate, LoRaBandwidth, LoRaModParams, SpreadingFactor};
+    /// use stm32wlxx_hal::subghz::{CodingRate, LoRaBandwidth, LoRaModParams, SpreadingFactor};
     ///
     /// const MOD_PARAMS: LoRaModParams = LoRaModParams::new()
     ///     .set_sf(SpreadingFactor::Sf7)
@@ -872,7 +872,7 @@ impl BpskModParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::BpskModParams;
+    /// use stm32wlxx_hal::subghz::BpskModParams;
     ///
     /// const MOD_PARAMS: BpskModParams = BpskModParams::new();
     /// assert_eq!(MOD_PARAMS, BpskModParams::default());
@@ -891,7 +891,7 @@ impl BpskModParams {
     /// Setting the bitrate to 600 bits per second.
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{BpskModParams, FskBitrate};
+    /// use stm32wlxx_hal::subghz::{BpskModParams, FskBitrate};
     ///
     /// const BITRATE: FskBitrate = FskBitrate::from_bps(600);
     /// const MOD_PARAMS: BpskModParams = BpskModParams::new().set_bitrate(BITRATE);
@@ -913,7 +913,7 @@ impl BpskModParams {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{BpskModParams, FskBitrate};
+    /// use stm32wlxx_hal::subghz::{BpskModParams, FskBitrate};
     ///
     /// const BITRATE: FskBitrate = FskBitrate::from_bps(100);
     /// const MOD_PARAMS: BpskModParams = BpskModParams::new().set_bitrate(BITRATE);

@@ -157,9 +157,9 @@ pub trait DmaCh: sealed::DmaOps {
     /// Check if the transfer is complete.
     ///
     /// ```no_run
-    /// use stm32wl_hal::dma::{flags, DmaCh};
+    /// use stm32wlxx_hal::dma::{flags, DmaCh};
     ///
-    /// # let dma = unsafe { stm32wl_hal::dma::AllDma::steal().d1.c1 };
+    /// # let dma = unsafe { stm32wlxx_hal::dma::AllDma::steal().d1.c1 };
     /// let xfer_cpl: bool = dma.flags() & flags::XFER_CPL != 0;
     /// ```
     fn flags(&self) -> u8;
@@ -173,9 +173,9 @@ pub trait DmaCh: sealed::DmaOps {
     /// Check and clear all set flags.
     ///
     /// ```no_run
-    /// use stm32wl_hal::dma::{flags, DmaCh};
+    /// use stm32wlxx_hal::dma::{flags, DmaCh};
     ///
-    /// # let mut dma = unsafe { stm32wl_hal::dma::AllDma::steal().d1.c1 };
+    /// # let mut dma = unsafe { stm32wlxx_hal::dma::AllDma::steal().d1.c1 };
     /// let flags: u8 = dma.flags();
     /// dma.clear_flags(flags);
     /// ```
@@ -412,7 +412,7 @@ impl AllDma {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{dma::AllDma, pac};
+    /// use stm32wlxx_hal::{dma::AllDma, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
@@ -492,7 +492,7 @@ impl AllDma {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{dma::AllDma, pac};
+    /// use stm32wlxx_hal::{dma::AllDma, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
@@ -529,7 +529,7 @@ impl AllDma {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{dma::AllDma, pac};
+    /// use stm32wlxx_hal::{dma::AllDma, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
@@ -566,7 +566,7 @@ impl Dma1 {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{dma::Dma1, pac};
+    /// use stm32wlxx_hal::{dma::Dma1, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
@@ -626,7 +626,7 @@ impl Dma1 {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{dma::Dma1, pac};
+    /// use stm32wlxx_hal::{dma::Dma1, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let dma1: Dma1 = Dma1::split(dp.DMAMUX, dp.DMA1, &mut dp.RCC);
@@ -658,7 +658,7 @@ impl Dma1 {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{dma::Dma1, pac};
+    /// use stm32wlxx_hal::{dma::Dma1, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///

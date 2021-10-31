@@ -165,7 +165,7 @@ pub unsafe fn wakeup() {
 /// # Example
 ///
 /// ```no_run
-/// unsafe { stm32wl_hal::subghz::unmask_irq() };
+/// unsafe { stm32wlxx_hal::subghz::unmask_irq() };
 /// ```
 #[inline]
 pub unsafe fn unmask_irq() {
@@ -177,7 +177,7 @@ pub unsafe fn unmask_irq() {
 /// # Example
 ///
 /// ```no_run
-/// stm32wl_hal::subghz::mask_irq();
+/// stm32wlxx_hal::subghz::mask_irq();
 /// ```
 #[inline]
 pub fn mask_irq() {
@@ -214,7 +214,7 @@ pub fn rfbusyms() -> bool {
 ///
 /// ```no_run
 /// use static_assertions as sa;
-/// use stm32wl_hal::{
+/// use stm32wlxx_hal::{
 ///     dma::{AllDma, Dma1Ch1, Dma1Ch2},
 ///     pac,
 ///     subghz::{
@@ -285,14 +285,14 @@ pub fn rfbusyms() -> bool {
 /// sg.calibrate_image(CalibrateImage::ISM_430_440)?;
 /// sg.set_rf_frequency(&RF_FREQ)?;
 /// sg.set_irq_cfg(&IRQ_CFG)?;
-/// # Ok::<(), stm32wl_hal::subghz::Error>(())
+/// # Ok::<(), stm32wlxx_hal::subghz::Error>(())
 /// ```
 ///
 /// Basic RX, requires setup.
 ///
 /// ```no_run
-/// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-/// use stm32wl_hal::subghz::{Irq, Timeout};
+/// # let mut sg = unsafe { stm32wlxx_hal::subghz::SubGhz::steal() };
+/// use stm32wlxx_hal::subghz::{Irq, Timeout};
 ///
 /// // if you have an RF switch put it into RX mode on this line
 /// sg.set_rx(Timeout::DISABLED)?;
@@ -313,15 +313,15 @@ pub fn rfbusyms() -> bool {
 ///         // ... handle other IRQs
 ///     }
 /// }
-/// # Ok::<(), stm32wl_hal::subghz::Error>(())
+/// # Ok::<(), stm32wlxx_hal::subghz::Error>(())
 /// ```
 ///
 /// Basic TX, requires setup.
 ///
 /// ```no_run
 /// # const TX_BUF_OFFSET: u8 = 0;
-/// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
-/// use stm32wl_hal::subghz::{Irq, Timeout};
+/// # let mut sg = unsafe { stm32wlxx_hal::subghz::SubGhz::steal() };
+/// use stm32wlxx_hal::subghz::{Irq, Timeout};
 ///
 /// sg.write_buffer(TX_BUF_OFFSET, b"Hello, World!")?;
 /// // if you have an RF switch put it into TX mode on this line
@@ -339,7 +339,7 @@ pub fn rfbusyms() -> bool {
 ///         // ... handle other IRQs
 ///     }
 /// }
-/// # Ok::<(), stm32wl_hal::subghz::Error>(())
+/// # Ok::<(), stm32wlxx_hal::subghz::Error>(())
 /// ```
 #[derive(Debug)]
 pub struct SubGhz<MISO, MOSI> {
@@ -394,7 +394,7 @@ impl<MISO, MOSI> SubGhz<MISO, MOSI> {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{pac, subghz::SubGhz};
+    /// use stm32wlxx_hal::{pac, subghz::SubGhz};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let sg = SubGhz::new(dp.SPI3, &mut dp.RCC);
@@ -455,7 +455,7 @@ impl SubGhz<SgMiso, SgMosi> {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{pac, subghz::SubGhz};
+    /// use stm32wlxx_hal::{pac, subghz::SubGhz};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let sg = SubGhz::new(dp.SPI3, &mut dp.RCC);
@@ -484,7 +484,7 @@ impl SubGhz<SgMiso, SgMosi> {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::SubGhz;
+    /// use stm32wlxx_hal::subghz::SubGhz;
     ///
     /// // ... setup happens here
     ///
@@ -507,7 +507,7 @@ impl<MISO: DmaCh, MOSI: DmaCh> SubGhz<MISO, MOSI> {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{dma::AllDma, pac, subghz::SubGhz};
+    /// use stm32wlxx_hal::{dma::AllDma, pac, subghz::SubGhz};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
@@ -546,7 +546,7 @@ impl<MISO: DmaCh, MOSI: DmaCh> SubGhz<MISO, MOSI> {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     dma::{AllDma, Dma1Ch1, Dma2Ch1},
     ///     subghz::SubGhz,
     /// };
@@ -776,11 +776,11 @@ where
     /// Put the radio into sleep mode.
     ///
     /// ```no_run
-    /// # let cp = unsafe { stm32wl_hal::pac::CorePeripherals::steal() };
-    /// # let dp = unsafe { stm32wl_hal::pac::Peripherals::steal() };
-    /// # let mut sg = unsafe { stm32wl_hal::subghz::SubGhz::steal() };
+    /// # let cp = unsafe { stm32wlxx_hal::pac::CorePeripherals::steal() };
+    /// # let dp = unsafe { stm32wlxx_hal::pac::Peripherals::steal() };
+    /// # let mut sg = unsafe { stm32wlxx_hal::subghz::SubGhz::steal() };
     /// # let mut delay = new_delay(cp.SYST, &dp.RCC);
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     subghz::{wakeup, SleepCfg, StandbyClk},
     ///     util::new_delay,
     /// };
@@ -789,7 +789,7 @@ where
     /// unsafe { sg.set_sleep(SleepCfg::default())? };
     /// delay.delay_us(500);
     /// unsafe { wakeup() };
-    /// # Ok::<(), stm32wl_hal::subghz::Error>(())
+    /// # Ok::<(), stm32wlxx_hal::subghz::Error>(())
     /// ```
     pub unsafe fn set_sleep(&mut self, cfg: SleepCfg) -> Result<(), Error> {
         self.write(&[OpCode::SetSleep as u8, u8::from(cfg)])

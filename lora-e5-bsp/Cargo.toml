@@ -9,7 +9,7 @@ edition = "2021"
 license = "MIT"
 keywords = ["arm", "cortex-m", "stm32", "bsp", "seeed"]
 categories = ["embedded", "hardware-support", "no-std"]
-repository = "https://github.com/newAM/stm32wlxx-hal"
+repository = "https://github.com/stm32-rs/stm32wlxx-hal"
 
 [features]
 defmt = ["stm32wlxx-hal/defmt"]

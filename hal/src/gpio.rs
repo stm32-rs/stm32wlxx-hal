@@ -357,7 +357,7 @@ pub trait Exti {
     ///
     /// See [`gpio-button-irq.rs`].
     ///
-    /// [`gpio-button-irq.rs`]: https://github.com/newAM/stm32wlxx-hal/blob/main/examples/examples/gpio-button-irq.rs
+    /// [`gpio-button-irq.rs`]: https://github.com/stm32-rs/stm32wlxx-hal/blob/main/examples/examples/gpio-button-irq.rs
     fn clear_exti();
 
     /// Setup an input pin as an EXTI interrupt source on core 1.

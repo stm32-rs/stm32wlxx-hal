@@ -7,7 +7,7 @@ Until then please pin the version you use.
 
 ```toml
 [dependencies.stm32wlxx-hal]
-git = "https://github.com/newAM/stm32wlxx-hal.git"
+git = "https://github.com/stm32-rs/stm32wlxx-hal.git"
 rev = "" # put a specific git commit hash here
 features = [
     # use exactly one of the following depending on your target hardware
@@ -97,5 +97,5 @@ this is not consistent (see [#78])
 
 [stm32-rs]: https://github.com/stm32-rs/stm32-rs
 [svd2rust]: https://github.com/rust-embedded/svd2rust
-[#78]: https://github.com/newAM/stm32wlxx-hal/issues/78
-[#149]: https://github.com/newAM/stm32wlxx-hal/issues/149
+[#78]: https://github.com/stm32-rs/stm32wlxx-hal/issues/78
+[#149]: https://github.com/stm32-rs/stm32wlxx-hal/issues/149

@@ -1,7 +1,7 @@
 # stm32wlxx-hal
 
-[![CI](https://github.com/newAM/stm32wlxx-hal/workflows/CI/badge.svg)](https://github.com/newAM/stm32wlxx-hal/actions?query=branch%3Amain)
-[![docs](https://img.shields.io/badge/docs-gh--pages-blue)](https://newam.github.io/stm32wlxx-hal/stm32wlxx_hal/index.html)
+[![CI](https://github.com/stm32-rs/stm32wlxx-hal/workflows/CI/badge.svg)](https://github.com/stm32-rs/stm32wlxx-hal/actions?query=branch%3Amain)
+[![docs](https://img.shields.io/badge/docs-gh--pages-blue)](https://stm32-rs.github.io/stm32wlxx-hal/stm32wlxx_hal/index.html)
 
 Embedded rust HAL (hardware abstraction layer) for the STM32WL series.
 

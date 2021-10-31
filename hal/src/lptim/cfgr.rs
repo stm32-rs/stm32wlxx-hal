@@ -111,7 +111,7 @@ impl Prescaler {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::lptim::Prescaler;
+    /// use stm32wlxx_hal::lptim::Prescaler;
     ///
     /// assert_eq!(Prescaler::Div1.div(), 1);
     /// assert_eq!(Prescaler::Div2.div(), 2);
@@ -149,7 +149,7 @@ impl Cfgr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::lptim::Cfgr;
+    /// use stm32wlxx_hal::lptim::Cfgr;
     /// assert_eq!(Cfgr::RESET.raw(), 0);
     /// ```
     pub const RESET: Cfgr = Cfgr::new(0);
@@ -159,7 +159,7 @@ impl Cfgr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::lptim::Cfgr;
+    /// use stm32wlxx_hal::lptim::Cfgr;
     /// const CFGR: Cfgr = Cfgr::new(0);
     /// ```
     pub const fn new(val: u32) -> Cfgr {
@@ -171,7 +171,7 @@ impl Cfgr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::lptim::Cfgr;
+    /// use stm32wlxx_hal::lptim::Cfgr;
     /// const CFGR: Cfgr = Cfgr::new(0x1234_5678);
     /// assert_eq!(CFGR.raw(), 0x1234_5678);
     /// ```
@@ -211,7 +211,7 @@ impl Cfgr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::lptim::{Cfgr, Prescaler};
+    /// use stm32wlxx_hal::lptim::{Cfgr, Prescaler};
     ///
     /// assert_eq!(Cfgr::default().prescaler(), Prescaler::default());
     /// ```
@@ -234,7 +234,7 @@ impl Cfgr {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::lptim::{Cfgr, Prescaler};
+    /// use stm32wlxx_hal::lptim::{Cfgr, Prescaler};
     ///
     /// let cfgr: Cfgr = Cfgr::RESET;
     ///

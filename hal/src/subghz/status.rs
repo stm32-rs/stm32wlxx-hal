@@ -26,7 +26,7 @@ impl StatusMode {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::StatusMode;
+    /// use stm32wlxx_hal::subghz::StatusMode;
     ///
     /// assert_eq!(StatusMode::from_raw(0x2), Ok(StatusMode::StandbyRc));
     /// assert_eq!(StatusMode::from_raw(0x3), Ok(StatusMode::StandbyHse));
@@ -89,7 +89,7 @@ impl CmdStatus {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::CmdStatus;
+    /// use stm32wlxx_hal::subghz::CmdStatus;
     ///
     /// assert_eq!(CmdStatus::from_raw(0x2), Ok(CmdStatus::Avaliable));
     /// assert_eq!(CmdStatus::from_raw(0x3), Ok(CmdStatus::Timeout));
@@ -138,7 +138,7 @@ impl Status {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{CmdStatus, Status, StatusMode};
+    /// use stm32wlxx_hal::subghz::{CmdStatus, Status, StatusMode};
     ///
     /// const STATUS: Status = Status::from_raw(0x54_u8);
     /// assert_eq!(STATUS.mode(), Ok(StatusMode::Rx));
@@ -153,7 +153,7 @@ impl Status {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{Status, StatusMode};
+    /// use stm32wlxx_hal::subghz::{Status, StatusMode};
     ///
     /// let status: Status = 0xACu8.into();
     /// assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
@@ -170,7 +170,7 @@ impl Status {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::subghz::{CmdStatus, Status};
+    /// use stm32wlxx_hal::subghz::{CmdStatus, Status};
     ///
     /// let status: Status = 0xACu8.into();
     /// assert_eq!(status.cmd(), Ok(CmdStatus::Complete));

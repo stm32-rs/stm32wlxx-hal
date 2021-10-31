@@ -5,7 +5,7 @@
 pub mod led;
 pub mod pb;
 
-pub use stm32wl_hal as hal;
+pub use stm32wlxx_hal as hal;
 
 use hal::{
     cortex_m::interrupt::CriticalSection,

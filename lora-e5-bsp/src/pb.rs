@@ -1,5 +1,5 @@
 //! Push-buttons
-use stm32wl_hal::{
+use stm32wlxx_hal::{
     cortex_m::interrupt::CriticalSection,
     gpio::{pins, Exti, Input, PinState, Pull},
 };

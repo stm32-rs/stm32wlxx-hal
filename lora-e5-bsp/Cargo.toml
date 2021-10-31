@@ -9,20 +9,20 @@ edition = "2021"
 license = "MIT"
 keywords = ["arm", "cortex-m", "stm32", "bsp", "seeed"]
 categories = ["embedded", "hardware-support", "no-std"]
-repository = "https://github.com/newAM/stm32wl-hal"
+repository = "https://github.com/newAM/stm32wlxx-hal"
 
 [features]
-defmt = ["stm32wl-hal/defmt"]
-rt = ["stm32wl-hal/rt"]
+defmt = ["stm32wlxx-hal/defmt"]
+rt = ["stm32wlxx-hal/rt"]
 
 # do NOT modify these features
-defmt-default = ["stm32wl-hal/defmt-default"]
-defmt-trace = ["stm32wl-hal/defmt-trace"]
-defmt-debug = ["stm32wl-hal/defmt-debug"]
-defmt-info = ["stm32wl-hal/defmt-info"]
-defmt-warn = ["stm32wl-hal/defmt-warn"]
-defmt-error = ["stm32wl-hal/defmt-error"]
+defmt-default = ["stm32wlxx-hal/defmt-default"]
+defmt-trace = ["stm32wlxx-hal/defmt-trace"]
+defmt-debug = ["stm32wlxx-hal/defmt-debug"]
+defmt-info = ["stm32wlxx-hal/defmt-info"]
+defmt-warn = ["stm32wlxx-hal/defmt-warn"]
+defmt-error = ["stm32wlxx-hal/defmt-error"]
 
-[dependencies.stm32wl-hal]
+[dependencies.stm32wlxx-hal]
 path = "../hal"
 features = ["stm32wle5"]

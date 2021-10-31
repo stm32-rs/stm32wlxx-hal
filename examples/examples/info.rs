@@ -5,7 +5,7 @@
 
 use defmt_rtt as _; // global logger
 use panic_probe as _; // panic handler
-use stm32wl_hal::{self as hal, info};
+use stm32wlxx_hal::{self as hal, info};
 
 #[hal::cortex_m_rt::entry]
 fn main() -> ! {

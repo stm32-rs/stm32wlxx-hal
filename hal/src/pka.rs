@@ -37,7 +37,7 @@
 //! that keypair becomes this:
 //!
 //! ```
-//! use stm32wl_hal::pka::EcdsaPublicKey;
+//! use stm32wlxx_hal::pka::EcdsaPublicKey;
 //!
 //! const PRIV_KEY: [u32; 8] = [
 //!     0x49ac8727, 0xcee87484, 0xfe6dfda5, 0x10238ad4, 0x11ace8fe, 0x593a8cb7, 0x0492d659,
@@ -250,7 +250,7 @@ impl Pka {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{pac, pka::Pka};
+    /// use stm32wlxx_hal::{pac, pka::Pka};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut pka = Pka::new(dp.PKA, &mut dp.RCC);
@@ -281,7 +281,7 @@ impl Pka {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{pac, pka::Pka};
+    /// use stm32wlxx_hal::{pac, pka::Pka};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let pka: pac::PKA = dp.PKA;
@@ -308,7 +308,7 @@ impl Pka {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::pka::Pka;
+    /// use stm32wlxx_hal::pka::Pka;
     ///
     /// // ... setup happens here
     ///
@@ -367,7 +367,7 @@ impl Pka {
     ///
     /// ```no_run
     /// # #[cfg(not(feature = "stm32wl5x_cm0p"))]
-    /// unsafe { stm32wl_hal::pka::Pka::unmask_irq() };
+    /// unsafe { stm32wlxx_hal::pka::Pka::unmask_irq() };
     /// ```
     #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
     #[inline]
@@ -431,8 +431,8 @@ impl Pka {
     /// [`ecdsa_sign_result`](Self::ecdsa_sign_result).
     ///
     /// ```no_run
-    /// # let mut pka = unsafe { stm32wl_hal::pka::Pka::steal() };
-    /// # let curve = stm32wl_hal::pka::curve::NIST_P256;
+    /// # let mut pka = unsafe { stm32wlxx_hal::pka::Pka::steal() };
+    /// # let curve = stm32wlxx_hal::pka::curve::NIST_P256;
     /// # let nonce: [u32; 8] = [0; 8];
     /// # let priv_key: [u32; 8] = [0; 8];
     /// # let hash: [u32; 8] = [0; 8];
@@ -444,7 +444,7 @@ impl Pka {
     /// // non-blocking
     /// pka.ecdsa_sign_start(&curve, &nonce, &priv_key, &hash)?;
     /// nb::block!(pka.ecdsa_sign_result(&mut r_sign, &mut s_sign))?;
-    /// # Ok::<(), stm32wl_hal::pka::EcdsaSignError>(())
+    /// # Ok::<(), stm32wlxx_hal::pka::EcdsaSignError>(())
     /// ```
     ///
     /// # Computation Times
@@ -563,14 +563,14 @@ impl Pka {
     /// [`ecdsa_verify_result`](Self::ecdsa_verify_result).
     ///
     /// ```no_run
-    /// # let mut pka = unsafe { stm32wl_hal::pka::Pka::steal() };
-    /// # let curve = stm32wl_hal::pka::curve::NIST_P256;
+    /// # let mut pka = unsafe { stm32wlxx_hal::pka::Pka::steal() };
+    /// # let curve = stm32wlxx_hal::pka::curve::NIST_P256;
     /// # let r_sign: [u32; 8] = [0; 8];
     /// # let s_sign: [u32; 8] = [0; 8];
     /// # let curve_pt_x: [u32; 8] = [0; 8];
     /// # let curve_pt_y: [u32; 8] = [0; 8];
-    /// # let sig = stm32wl_hal::pka::EcdsaSignature { r_sign: &r_sign, s_sign: &s_sign };
-    /// # let pub_key = stm32wl_hal::pka::EcdsaPublicKey { curve_pt_x: &curve_pt_x, curve_pt_y: &curve_pt_y };
+    /// # let sig = stm32wlxx_hal::pka::EcdsaSignature { r_sign: &r_sign, s_sign: &s_sign };
+    /// # let pub_key = stm32wlxx_hal::pka::EcdsaPublicKey { curve_pt_x: &curve_pt_x, curve_pt_y: &curve_pt_y };
     /// # let hash: [u32; 8] = [0; 8];
     /// // blocking
     /// pka.ecdsa_verify(&curve, &sig, &pub_key, &hash)?;
@@ -578,7 +578,7 @@ impl Pka {
     /// // non-blocking
     /// pka.ecdsa_verify_start(&curve, &sig, &pub_key, &hash)?;
     /// nb::block!(pka.ecdsa_verify_result())?;
-    /// # Ok::<(), stm32wl_hal::pka::EcdsaVerifyError>(())
+    /// # Ok::<(), stm32wlxx_hal::pka::EcdsaVerifyError>(())
     /// ```
     ///
     /// # Computation Times

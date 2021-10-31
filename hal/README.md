@@ -6,8 +6,8 @@ This crate is not yet published to crates.io, see issue [#149] for details.
 Until then please pin the version you use.
 
 ```toml
-[dependencies.stm32wl-hal]
-git = "https://github.com/newAM/stm32wl-hal.git"
+[dependencies.stm32wlxx-hal]
+git = "https://github.com/newAM/stm32wlxx-hal.git"
 rev = "" # put a specific git commit hash here
 features = [
     # use exactly one of the following depending on your target hardware
@@ -21,7 +21,7 @@ features = [
 ]
 
 # include cortex-m-rt directly in your crate if you need interrupts
-# use the interrupt macro from the hal with `use stm32wl_hal::pac::interrupt;`
+# use the interrupt macro from the hal with `use stm32wlxx_hal::pac::interrupt;`
 # DO NOT use the interrupt macro from cortex-m-rt, it will fail to compile
 [dependencies]
 cortex-m-rt = "0.6"
@@ -31,7 +31,7 @@ cortex-m-rt = "0.6"
 or `stm32wl` (the PAC) directly, these are re-exported by the hal.
 
 ```rust
-use stm32wl_hal as hal;
+use stm32wlxx_hal as hal;
 
 use hal::cortex_m;
 use hal::cortex_m_rt; // requires "rt" feature
@@ -64,7 +64,7 @@ simple enough. That being said if you find somthing missing it is likely
 because this crate is incomplete, and not an intentional design decision.
 
 ```rust
-use stm32wl_hal as hal;
+use stm32wlxx_hal as hal;
 use hal::pac;
 
 use hal::{aes::Aes, pka::Pka};
@@ -97,5 +97,5 @@ this is not consistent (see [#78])
 
 [stm32-rs]: https://github.com/stm32-rs/stm32-rs
 [svd2rust]: https://github.com/rust-embedded/svd2rust
-[#78]: https://github.com/newAM/stm32wl-hal/issues/78
-[#149]: https://github.com/newAM/stm32wl-hal/issues/149
+[#78]: https://github.com/newAM/stm32wlxx-hal/issues/78
+[#149]: https://github.com/newAM/stm32wlxx-hal/issues/149

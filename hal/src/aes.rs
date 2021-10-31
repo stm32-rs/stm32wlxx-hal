@@ -88,7 +88,7 @@ impl AesWrapClk {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     aes::{Aes, AesWrapClk},
     ///     pac,
     /// };
@@ -104,7 +104,7 @@ impl AesWrapClk {
     ///
     /// let mut text: [u32; 4] = [0xf34481ec, 0x3cc627ba, 0xcd5dc3fb, 0x08f273e6];
     /// aeswrap.with_clk(&mut dp.RCC, |aes| aes.encrypt_ecb_inplace(&KEY, &mut text))?;
-    /// # Ok::<(), stm32wl_hal::aes::Error>(())
+    /// # Ok::<(), stm32wlxx_hal::aes::Error>(())
     /// ```
     ///
     /// [`enable_clock`]: Aes::enable_clock
@@ -155,7 +155,7 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{aes::Aes, pac};
+    /// use stm32wlxx_hal::{aes::Aes, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
@@ -176,7 +176,7 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{aes::Aes, pac};
+    /// use stm32wlxx_hal::{aes::Aes, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
@@ -215,7 +215,7 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{aes::Aes, pac};
+    /// use stm32wlxx_hal::{aes::Aes, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
@@ -259,7 +259,7 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{aes::Aes, pac};
+    /// use stm32wlxx_hal::{aes::Aes, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
@@ -293,7 +293,7 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{aes::Aes, pac};
+    /// use stm32wlxx_hal::{aes::Aes, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// // AES cannot be used via registers now
@@ -330,7 +330,7 @@ impl Aes {
     ///
     /// ```no_run
     /// # #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
-    /// unsafe { stm32wl_hal::aes::Aes::unmask_irq() };
+    /// unsafe { stm32wlxx_hal::aes::Aes::unmask_irq() };
     /// ```
     #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
     #[inline]
@@ -684,7 +684,7 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{aes::Aes, pac};
+    /// use stm32wlxx_hal::{aes::Aes, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
@@ -694,7 +694,7 @@ impl Aes {
     /// let plaintext: [u32; 4] = [0xf34481ec, 0x3cc627ba, 0xcd5dc3fb, 0x08f273e6];
     /// let mut ciphertext: [u32; 4] = [0; 4];
     /// aes.encrypt_ecb(&KEY, &plaintext, &mut ciphertext)?;
-    /// # Ok::<(), stm32wl_hal::aes::Error>(())
+    /// # Ok::<(), stm32wlxx_hal::aes::Error>(())
     /// ```
     pub fn encrypt_ecb(
         &mut self,
@@ -743,7 +743,7 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{aes::Aes, pac};
+    /// use stm32wlxx_hal::{aes::Aes, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
@@ -752,7 +752,7 @@ impl Aes {
     ///
     /// let mut text: [u32; 4] = [0xf34481ec, 0x3cc627ba, 0xcd5dc3fb, 0x08f273e6];
     /// aes.encrypt_ecb_inplace(&KEY, &mut text)?;
-    /// # Ok::<(), stm32wl_hal::aes::Error>(())
+    /// # Ok::<(), stm32wlxx_hal::aes::Error>(())
     /// ```
     pub fn encrypt_ecb_inplace(
         &mut self,
@@ -800,7 +800,7 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     aes::Aes,
     ///     pac,
     ///     rng::{self, Rng},
@@ -820,7 +820,7 @@ impl Aes {
     /// let mut plaintext: [u8; 13] = b"Hello, World!".clone();
     /// let mut tag: [u32; 4] = [0; 4];
     /// aes.encrypt_gcm_inplace(&KEY, &iv, &associated_data, &mut plaintext, &mut tag)?;
-    /// # Ok::<(), stm32wl_hal::aes::Error>(())
+    /// # Ok::<(), stm32wlxx_hal::aes::Error>(())
     /// ```
     pub fn encrypt_gcm_inplace(
         &mut self,
@@ -847,7 +847,7 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     aes::Aes,
     ///     pac,
     ///     rng::{self, Rng},
@@ -867,7 +867,7 @@ impl Aes {
     /// let mut plaintext: [u32; 1] = [0x12345678];
     /// let mut tag: [u32; 4] = [0; 4];
     /// aes.encrypt_gcm_inplace_u32(&KEY, &iv, &associated_data, &mut plaintext, &mut tag)?;
-    /// # Ok::<(), stm32wl_hal::aes::Error>(())
+    /// # Ok::<(), stm32wlxx_hal::aes::Error>(())
     /// ```
     pub fn encrypt_gcm_inplace_u32(
         &mut self,
@@ -890,7 +890,7 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{aes::Aes, pac};
+    /// use stm32wlxx_hal::{aes::Aes, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
@@ -900,7 +900,7 @@ impl Aes {
     /// let ciphertext: [u32; 4] = [0x0336763e, 0x966d9259, 0x5a567cc9, 0xce537f5e];
     /// let mut plaintext: [u32; 4] = [0; 4];
     /// aes.decrypt_ecb(&KEY, &ciphertext, &mut plaintext)?;
-    /// # Ok::<(), stm32wl_hal::aes::Error>(())
+    /// # Ok::<(), stm32wlxx_hal::aes::Error>(())
     /// ```
     pub fn decrypt_ecb(
         &mut self,
@@ -949,7 +949,7 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{aes::Aes, pac};
+    /// use stm32wlxx_hal::{aes::Aes, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
@@ -958,7 +958,7 @@ impl Aes {
     ///
     /// let mut text: [u32; 4] = [0x0336763e, 0x966d9259, 0x5a567cc9, 0xce537f5e];
     /// aes.decrypt_ecb_inplace(&KEY, &mut text)?;
-    /// # Ok::<(), stm32wl_hal::aes::Error>(())
+    /// # Ok::<(), stm32wlxx_hal::aes::Error>(())
     /// ```
     pub fn decrypt_ecb_inplace(
         &mut self,
@@ -1008,7 +1008,7 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{aes::Aes, pac};
+    /// use stm32wlxx_hal::{aes::Aes, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
@@ -1020,7 +1020,7 @@ impl Aes {
     /// let mut ciphertext: [u8; 5] = [0xf3, 0x44, 0x81, 0xec, 0x3c];
     /// let mut tag: [u32; 4] = [0; 4];
     /// aes.decrypt_gcm_inplace(&KEY, &IV, &associated_data, &mut ciphertext, &mut tag)?;
-    /// # Ok::<(), stm32wl_hal::aes::Error>(())
+    /// # Ok::<(), stm32wlxx_hal::aes::Error>(())
     /// ```
     pub fn decrypt_gcm_inplace(
         &mut self,
@@ -1050,7 +1050,7 @@ impl Aes {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{aes::Aes, pac};
+    /// use stm32wlxx_hal::{aes::Aes, pac};
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
@@ -1062,7 +1062,7 @@ impl Aes {
     /// let mut ciphertext: [u32; 1] = [0xf34481ec];
     /// let mut tag: [u32; 4] = [0; 4];
     /// aes.decrypt_gcm_inplace_u32(&KEY, &IV, &associated_data, &mut ciphertext, &mut tag)?;
-    /// # Ok::<(), stm32wl_hal::aes::Error>(())
+    /// # Ok::<(), stm32wlxx_hal::aes::Error>(())
     /// ```
     pub fn decrypt_gcm_inplace_u32(
         &mut self,

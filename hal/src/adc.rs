@@ -65,7 +65,7 @@ pub const T_ADCVREG_SETUP: Duration = Duration::from_micros(20);
 /// # Example
 ///
 /// ```
-/// use stm32wl_hal::adc::{T_ADCVREG_SETUP, T_ADCVREG_SETUP_MICROS};
+/// use stm32wlxx_hal::adc::{T_ADCVREG_SETUP, T_ADCVREG_SETUP_MICROS};
 ///
 /// assert_eq!(
 ///     u128::from(T_ADCVREG_SETUP_MICROS),
@@ -199,7 +199,7 @@ impl Ts {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::adc::Ts;
+    /// use stm32wlxx_hal::adc::Ts;
     ///
     /// assert_eq!(Ts::MAX, Ts::Cyc160);
     /// ```
@@ -210,7 +210,7 @@ impl Ts {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::adc::Ts;
+    /// use stm32wlxx_hal::adc::Ts;
     ///
     /// assert_eq!(Ts::MIN, Ts::Cyc1);
     /// ```
@@ -221,7 +221,7 @@ impl Ts {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::adc::Ts;
+    /// use stm32wlxx_hal::adc::Ts;
     ///
     /// assert!(f32::from(Ts::Cyc1.cycles()) - 1.5 < 0.001);
     /// assert!(f32::from(Ts::Cyc3.cycles()) - 3.5 < 0.001);
@@ -257,7 +257,7 @@ impl Ts {
     ///
     /// ```
     /// use core::time::Duration;
-    /// use stm32wl_hal::adc::Ts;
+    /// use stm32wlxx_hal::adc::Ts;
     ///
     /// const FREQ: u32 = 16_000_000;
     ///
@@ -363,7 +363,7 @@ impl Ch {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::adc::Ch;
+    /// use stm32wlxx_hal::adc::Ch;
     ///
     /// assert_eq!(Ch::In0.mask(), 0x001);
     /// assert_eq!(Ch::In8.mask(), 0x100);
@@ -394,7 +394,7 @@ impl Adc {
     /// Initialize the ADC with HSI16.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac,
     /// };
@@ -411,7 +411,7 @@ impl Adc {
     /// Initialize the ADC with PCLK/4.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac,
     /// };
@@ -441,7 +441,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac,
     /// };
@@ -469,7 +469,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac,
     /// };
@@ -499,7 +499,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac,
     /// };
@@ -534,7 +534,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac,
     /// };
@@ -563,7 +563,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac,
     /// };
@@ -633,7 +633,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac,
     /// };
@@ -705,7 +705,7 @@ impl Adc {
     ///
     /// ```no_run
     /// # #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
-    /// unsafe { stm32wl_hal::adc::Adc::unmask_irq() };
+    /// unsafe { stm32wlxx_hal::adc::Adc::unmask_irq() };
     /// ```
     #[cfg(feature = "rt")]
     #[inline]
@@ -719,7 +719,7 @@ impl Adc {
     ///
     /// ```no_run
     /// # #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
-    /// unsafe { stm32wl_hal::adc::Adc::mask_irq() }
+    /// unsafe { stm32wlxx_hal::adc::Adc::mask_irq() }
     /// ```
     #[cfg(feature = "rt")]
     #[inline]
@@ -746,7 +746,7 @@ impl Adc {
     /// 160.5 clock cycles.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     self as hal,
     ///     adc::{self, Adc, Ts},
     ///     gpio::pins::{B13, B14},
@@ -782,8 +782,8 @@ impl Adc {
     /// This method is equivalent to this:
     ///
     /// ```no_run
-    /// # let mut adc = unsafe { stm32wl_hal::adc::Adc::steal() };
-    /// use stm32wl_hal::adc::Ts;
+    /// # let mut adc = unsafe { stm32wlxx_hal::adc::Adc::steal() };
+    /// use stm32wlxx_hal::adc::Ts;
     ///
     /// adc.set_sample_times(0, Ts::Cyc160, Ts::Cyc160);
     /// ```
@@ -791,7 +791,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac,
     /// };
@@ -812,7 +812,7 @@ impl Adc {
     /// Clear all interrupts.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac,
     /// };
@@ -834,7 +834,7 @@ impl Adc {
     /// Check if the ADC is ready.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac,
     /// };
@@ -857,7 +857,7 @@ impl Adc {
     /// Enable all IRQs
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac,
     /// };
@@ -893,7 +893,7 @@ impl Adc {
     /// Select the ADC V<sub>BAT</sub> channel.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac,
     /// };
@@ -968,7 +968,7 @@ impl Adc {
     /// Read the ADC V<sub>BAT</sub> channel.
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac,
     ///     util::new_delay,
@@ -1025,7 +1025,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac, rcc,
     ///     util::new_delay,
@@ -1089,7 +1089,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac, rcc,
     ///     util::new_delay,
@@ -1161,7 +1161,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac, rcc,
     ///     util::new_delay,
@@ -1208,7 +1208,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     dac::{Dac, ModeChip},
     ///     pac, rcc,
@@ -1253,7 +1253,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     gpio::{pins::B4, Analog, PortB},
     ///     pac, rcc,
@@ -1323,7 +1323,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     self as hal,
     ///     adc::{self, Adc},
     ///     dac::{Dac, ModeChip},
@@ -1366,7 +1366,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac,
     /// };
@@ -1399,7 +1399,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac,
     /// };
@@ -1437,7 +1437,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac,
     /// };
@@ -1465,7 +1465,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac,
     /// };
@@ -1497,7 +1497,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac,
     /// };
@@ -1535,7 +1535,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac,
     /// };
@@ -1581,7 +1581,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac, rcc,
     ///     util::new_delay,
@@ -1625,7 +1625,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac, rcc,
     ///     util::new_delay,
@@ -1692,7 +1692,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac, rcc,
     ///     util::new_delay,
@@ -1750,7 +1750,7 @@ impl Adc {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
     ///     pac, rcc,
     ///     util::new_delay,

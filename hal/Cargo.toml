@@ -1,5 +1,5 @@
 [package]
-name = "stm32wl-hal"
+name = "stm32wlxx-hal"
 description = "Hardware abstraction layer for the STM32WL series microcontrollers."
 readme = "README.md"
 
@@ -9,7 +9,7 @@ edition = "2021"
 license = "MIT"
 keywords = ["arm", "cortex-m", "stm32", "hal"]
 categories = ["embedded", "hardware-support", "no-std"]
-repository = "https://github.com/newAM/stm32wl-hal"
+repository = "https://github.com/newAM/stm32wlxx-hal"
 
 [features]
 stm32wl5x_cm0p = ["stm32wl/stm32wl5x_cm0p"]

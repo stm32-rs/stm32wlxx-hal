@@ -70,7 +70,7 @@ impl Rng {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     rng::{Clk, Rng},
     /// };
@@ -130,7 +130,7 @@ impl Rng {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     rng::{Clk, Rng},
     /// };
@@ -165,7 +165,7 @@ impl Rng {
     /// # Example
     ///
     /// ```
-    /// use stm32wl_hal::rng::Rng;
+    /// use stm32wlxx_hal::rng::Rng;
     ///
     /// // ... setup happens here
     ///
@@ -191,7 +191,7 @@ impl Rng {
     ///
     /// ```no_run
     /// # #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
-    /// unsafe { stm32wl_hal::rng::Rng::unmask_irq() };
+    /// unsafe { stm32wlxx_hal::rng::Rng::unmask_irq() };
     /// ```
     #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
     pub unsafe fn unmask_irq() {
@@ -251,7 +251,7 @@ impl Rng {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     rng::{Clk, Rng},
     /// };
@@ -261,7 +261,7 @@ impl Rng {
     ///
     /// let mut nonce: [u32; 4] = [0; 4];
     /// rng.try_fill_u32(&mut nonce)?;
-    /// # Ok::<(), stm32wl_hal::rng::Error>(())
+    /// # Ok::<(), stm32wlxx_hal::rng::Error>(())
     /// ```
     pub fn try_fill_u32(&mut self, dest: &mut [u32]) -> Result<(), Error> {
         for dw in dest {
@@ -275,7 +275,7 @@ impl Rng {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     rng::{Clk, Rng},
     /// };
@@ -285,7 +285,7 @@ impl Rng {
     ///
     /// let mut nonce: [u8; 16] = [0; 16];
     /// rng.try_fill_u8(&mut nonce)?;
-    /// # Ok::<(), stm32wl_hal::rng::Error>(())
+    /// # Ok::<(), stm32wlxx_hal::rng::Error>(())
     /// ```
     pub fn try_fill_u8(&mut self, dest: &mut [u8]) -> Result<(), Error> {
         for chunk in dest.chunks_mut(4) {
@@ -311,7 +311,7 @@ impl Rng {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     rng::{Clk, Rng},
     /// };
@@ -320,7 +320,7 @@ impl Rng {
     /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
     ///
     /// let rand_value: u8 = rng.try_u8()?;
-    /// # Ok::<(), stm32wl_hal::rng::Error>(())
+    /// # Ok::<(), stm32wlxx_hal::rng::Error>(())
     /// ```
     pub fn try_u8(&mut self) -> Result<u8, Error> {
         Ok(self.try_u32()? as u8)
@@ -336,7 +336,7 @@ impl Rng {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     rng::{Clk, Rng},
     /// };
@@ -345,7 +345,7 @@ impl Rng {
     /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
     ///
     /// let rand_value: u16 = rng.try_u16()?;
-    /// # Ok::<(), stm32wl_hal::rng::Error>(())
+    /// # Ok::<(), stm32wlxx_hal::rng::Error>(())
     /// ```
     pub fn try_u16(&mut self) -> Result<u16, Error> {
         Ok(self.try_u32()? as u16)
@@ -361,7 +361,7 @@ impl Rng {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     rng::{Clk, Rng},
     /// };
@@ -370,7 +370,7 @@ impl Rng {
     /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
     ///
     /// let rand_value: u32 = rng.try_u32()?;
-    /// # Ok::<(), stm32wl_hal::rng::Error>(())
+    /// # Ok::<(), stm32wlxx_hal::rng::Error>(())
     /// ```
     pub fn try_u32(&mut self) -> Result<u32, Error> {
         // reference manual recommends verifying DR is non-zero for
@@ -390,7 +390,7 @@ impl Rng {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     rng::{Clk, Rng},
     /// };
@@ -399,7 +399,7 @@ impl Rng {
     /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
     ///
     /// let rand_value: u64 = rng.try_u64()?;
-    /// # Ok::<(), stm32wl_hal::rng::Error>(())
+    /// # Ok::<(), stm32wlxx_hal::rng::Error>(())
     /// ```
     pub fn try_u64(&mut self) -> Result<u64, Error> {
         let mut buf: [u8; 8] = [0; 8];
@@ -417,7 +417,7 @@ impl Rng {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     rng::{Clk, Rng},
     /// };
@@ -426,7 +426,7 @@ impl Rng {
     /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
     ///
     /// let rand_value: u128 = rng.try_u128()?;
-    /// # Ok::<(), stm32wl_hal::rng::Error>(())
+    /// # Ok::<(), stm32wlxx_hal::rng::Error>(())
     /// ```
     pub fn try_u128(&mut self) -> Result<u128, Error> {
         let mut buf: [u8; 16] = [0; 16];

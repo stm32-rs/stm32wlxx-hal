@@ -84,7 +84,7 @@ impl LpUart<NoRx, NoTx> {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     uart::{self, LpUart, NoRx, NoTx},
     /// };
@@ -130,7 +130,7 @@ impl Uart1<NoRx, NoTx> {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     uart::{self, NoRx, NoTx, Uart1},
     /// };
@@ -174,7 +174,7 @@ impl Uart2<NoRx, NoTx> {
     /// # Example
     ///
     /// ```no_run
-    /// use stm32wl_hal::{
+    /// use stm32wlxx_hal::{
     ///     pac,
     ///     uart::{self, NoRx, NoTx, Uart2},
     /// };
@@ -313,7 +313,7 @@ macro_rules! impl_clock_en_dis {
             /// # Example
             ///
             /// ```no_run
-            /// use stm32wl_hal::{pac, uart::LpUart};
+            /// use stm32wlxx_hal::{pac, uart::LpUart};
             ///
             /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
             /// LpUart::enable_clock(&mut dp.RCC);
@@ -360,7 +360,7 @@ macro_rules! impl_free_steal {
             /// # Example
             ///
             /// ```no_run
-            /// use stm32wl_hal::{
+            /// use stm32wlxx_hal::{
             ///     pac,
             ///     uart::{LpUart, NoRx, NoTx},
             /// };
@@ -395,7 +395,7 @@ macro_rules! impl_free_steal {
             /// # Example
             ///
             /// ```no_run
-            /// use stm32wl_hal::{
+            /// use stm32wlxx_hal::{
             ///     pac,
             ///     uart::{self, LpUart, NoRx, NoTx},
             /// };
@@ -427,7 +427,7 @@ macro_rules! impl_tx_en_dis {
             /// # Example
             ///
             /// ```no_run
-            /// use stm32wl_hal::{
+            /// use stm32wlxx_hal::{
             ///     cortex_m,
             ///     gpio::{pins, PortB},
             ///     pac,
@@ -467,7 +467,7 @@ macro_rules! impl_tx_en_dis {
             /// # Example
             ///
             /// ```no_run
-            /// use stm32wl_hal::{
+            /// use stm32wlxx_hal::{
             ///     cortex_m,
             ///     dma::{AllDma, Dma2Ch7},
             ///     gpio::{pins, PortB},
@@ -517,7 +517,7 @@ macro_rules! impl_tx_en_dis {
             /// # Example
             ///
             /// ```no_run
-            /// use stm32wl_hal::{
+            /// use stm32wlxx_hal::{
             ///     cortex_m,
             ///     gpio::{pins, PortB},
             ///     pac,
@@ -566,7 +566,7 @@ macro_rules! impl_rx_en_dis {
             /// # Example
             ///
             /// ```no_run
-            /// use stm32wl_hal::{
+            /// use stm32wlxx_hal::{
             ///     cortex_m,
             ///     gpio::{pins, PortB},
             ///     pac,
@@ -606,7 +606,7 @@ macro_rules! impl_rx_en_dis {
             /// # Example
             ///
             /// ```no_run
-            /// use stm32wl_hal::{
+            /// use stm32wlxx_hal::{
             ///     dma::{AllDma, Dma2Ch2},
             ///     gpio::{pins, PortB},
             ///     pac,
@@ -655,7 +655,7 @@ macro_rules! impl_rx_en_dis {
             /// # Example
             ///
             /// ```no_run
-            /// use stm32wl_hal::{
+            /// use stm32wlxx_hal::{
             ///     gpio::{pins, PortB},
             ///     pac,
             ///     uart::{self, LpUart, NoRx, NoTx},

@@ -9,6 +9,72 @@ on:
 name: CI
 
 jobs:
+  build_testsuite:
+    name: Build Testsuite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: stable
+          target: thumbv7em-none-eabi
+      - run: cargo build -p testsuite --target thumbv7em-none-eabi --bins
+      - name: Upload test binaries
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-bins
+          if-no-files-found: error
+          retention-days: 1
+          path: |
+            target/thumbv7em-none-eabi/debug/*
+            !target/thumbv7em-none-eabi/debug/*.cargo-lock
+            !target/thumbv7em-none-eabi/debug/*.d
+            !target/thumbv7em-none-eabi/debug/.fingerprint/**/*
+            !target/thumbv7em-none-eabi/debug/build/**/*
+            !target/thumbv7em-none-eabi/debug/deps/**/*
+            !target/thumbv7em-none-eabi/debug/examples/**/*
+            !target/thumbv7em-none-eabi/debug/incremental/**/*
+
+  testsuite:
+    name: Run Testsuite
+    runs-on: self-hosted
+    needs:
+      - build_testsuite
+    steps:
+      - name: Display probe-run version
+        run: probe-run --version
+      - name: List probes
+        run: probe-run --list-probes
+      - uses: actions/download-artifact@v2
+        with:
+          name: test-bins
+          path: bins
+      - name: Run on-target tests
+        run: |
+          count=0
+          for binpath in bins/*; do
+          if [[ "$binpath" != "bins/subghz" ]]; then
+              # alternate probes to wear out flash evenly
+              if (( count % 2 )); then
+                  probe="002900205553500A20393256"
+              else
+                  probe="0034001A5553500B20393256"
+              fi
+
+              echo "Running $binpath on $probe"
+              probe-run --chip STM32WLE5JCIx --connect-under-reset "$binpath" --probe "$probe"
+              echo "Done $binpath"
+              ((count=count+1))
+          fi
+          done 
+
+          echo "Running subghz"
+          probe-run --chip STM32WLE5JCIx --connect-under-reset bins/subghz --probe 002900205553500A20393256 &
+          probe-run --chip STM32WLE5JCIx --connect-under-reset bins/subghz --probe 0034001A5553500B20393256 &
+
+          wait
+          echo "Done subghz"
+
   build:
     name: Cargo Build
     runs-on: ubuntu-latest
@@ -54,72 +120,6 @@ jobs:
         if: ${{ startsWith(matrix.mxu, 'stm32wle5') }}
         run: cargo build -p lora-e5-bsp --target thumbv7em-none-eabi
 
-  build_testsuite:
-    name: Testsuite Compile
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: stable
-          target: thumbv7em-none-eabi
-      - run: cargo build -p testsuite --target thumbv7em-none-eabi --bins
-      - name: Upload test binaries
-        uses: actions/upload-artifact@v2
-        with:
-          name: test-bins
-          if-no-files-found: error
-          retention-days: 1
-          path: |
-            target/thumbv7em-none-eabi/debug/*
-            !target/thumbv7em-none-eabi/debug/*.cargo-lock
-            !target/thumbv7em-none-eabi/debug/*.d
-            !target/thumbv7em-none-eabi/debug/.fingerprint/**/*
-            !target/thumbv7em-none-eabi/debug/build/**/*
-            !target/thumbv7em-none-eabi/debug/deps/**/*
-            !target/thumbv7em-none-eabi/debug/examples/**/*
-            !target/thumbv7em-none-eabi/debug/incremental/**/*
-
-  testsuite:
-    name: Testsuite Run
-    runs-on: self-hosted
-    needs:
-      - build_testsuite
-    steps:
-      - name: Display probe-run version
-        run: probe-run --version
-      - name: List probes
-        run: probe-run --list-probes
-      - uses: actions/download-artifact@v2
-        with:
-          name: test-bins
-          path: bins
-      - name: Run on-target tests
-        run: |
-          count=0
-          for binpath in bins/*; do
-          if [[ "$binpath" != "bins/subghz" ]]; then
-              # alternate probes to wear out flash evenly
-              if (( count % 2 )); then
-                  probe="002900205553500A20393256"
-              else
-                  probe="0034001A5553500B20393256"
-              fi
-
-              echo "Running $binpath on $probe"
-              probe-run --chip STM32WLE5JCIx --connect-under-reset "$binpath" --probe "$probe"
-              echo "Done $binpath"
-              ((count=count+1))
-          fi
-          done 
-
-          echo "Running subghz"
-          probe-run --chip STM32WLE5JCIx --connect-under-reset bins/subghz --probe 002900205553500A20393256 &
-          probe-run --chip STM32WLE5JCIx --connect-under-reset bins/subghz --probe 0034001A5553500B20393256 &
-
-          wait
-          echo "Done subghz"
-
   test_nucleo_bsp:
     name: Test NUCLEO BSP
     runs-on: ubuntu-latest
@@ -150,7 +150,7 @@ jobs:
         run: cargo test -p lora-e5-bsp --target x86_64-unknown-linux-gnu
 
   build_examples:
-    name: Examples Compile
+    name: Build Examples
     runs-on: ubuntu-latest
     env: {"RUSTFLAGS": "-D warnings"}
     steps:

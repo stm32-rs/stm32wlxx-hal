@@ -462,11 +462,11 @@ impl<SCK, MISO, MOSI> Spi<pac::SPI1, SCK, MISO, MOSI> {
     /// ```no_run
     /// use stm32wlxx_hal::{
     ///     pac,
-    ///     spi::{Master, NoMiso, NoMosi, NoSck, Spi},
+    ///     spi::{NoMiso, NoMosi, NoSck, Spi},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// unsafe { Spi::<pac::SPI1, NoSck, NoMiso, NoMosi, Master>::pulse_reset(&mut dp.RCC) };
+    /// unsafe { Spi::<pac::SPI1, NoSck, NoMiso, NoMosi>::pulse_reset(&mut dp.RCC) };
     /// ```
     #[inline]
     pub unsafe fn pulse_reset(rcc: &mut pac::RCC) {
@@ -491,11 +491,11 @@ impl<SCK, MISO, MOSI> Spi<pac::SPI1, SCK, MISO, MOSI> {
     /// ```no_run
     /// use stm32wlxx_hal::{
     ///     pac,
-    ///     spi::{Master, NoMiso, NoMosi, NoSck, Spi},
+    ///     spi::{NoMiso, NoMosi, NoSck, Spi},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// unsafe { Spi::<pac::SPI1, NoSck, NoMiso, NoMosi, Master>::disable_clock(&mut dp.RCC) };
+    /// unsafe { Spi::<pac::SPI1, NoSck, NoMiso, NoMosi>::disable_clock(&mut dp.RCC) };
     /// ```
     #[inline]
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
@@ -511,11 +511,11 @@ impl<SCK, MISO, MOSI> Spi<pac::SPI1, SCK, MISO, MOSI> {
     /// ```no_run
     /// use stm32wlxx_hal::{
     ///     pac,
-    ///     spi::{Master, NoMiso, NoMosi, NoSck, Spi},
+    ///     spi::{NoMiso, NoMosi, NoSck, Spi},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// Spi::<pac::SPI1, NoSck, NoMiso, NoMosi, Master>::enable_clock(&mut dp.RCC);
+    /// Spi::<pac::SPI1, NoSck, NoMiso, NoMosi>::enable_clock(&mut dp.RCC);
     /// ```
     #[inline]
     pub fn enable_clock(rcc: &mut pac::RCC) {
@@ -537,11 +537,11 @@ impl<SCK, MISO, MOSI> Spi<pac::SPI2, SCK, MISO, MOSI> {
     /// ```no_run
     /// use stm32wlxx_hal::{
     ///     pac,
-    ///     spi::{Master, NoMiso, NoMosi, NoSck, Spi},
+    ///     spi::{NoMiso, NoMosi, NoSck, Spi},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// unsafe { Spi::<pac::SPI2, NoSck, NoMiso, NoMosi, Master>::pulse_reset(&mut dp.RCC) };
+    /// unsafe { Spi::<pac::SPI2, NoSck, NoMiso, NoMosi>::pulse_reset(&mut dp.RCC) };
     /// ```
     #[inline]
     pub unsafe fn pulse_reset(rcc: &mut pac::RCC) {
@@ -566,11 +566,11 @@ impl<SCK, MISO, MOSI> Spi<pac::SPI2, SCK, MISO, MOSI> {
     /// ```no_run
     /// use stm32wlxx_hal::{
     ///     pac,
-    ///     spi::{Master, NoMiso, NoMosi, NoSck, Spi},
+    ///     spi::{NoMiso, NoMosi, NoSck, Spi},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// unsafe { Spi::<pac::SPI2, NoSck, NoMiso, NoMosi, Master>::disable_clock(&mut dp.RCC) };
+    /// unsafe { Spi::<pac::SPI2, NoSck, NoMiso, NoMosi>::disable_clock(&mut dp.RCC) };
     /// ```
     #[inline]
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
@@ -586,11 +586,11 @@ impl<SCK, MISO, MOSI> Spi<pac::SPI2, SCK, MISO, MOSI> {
     /// ```no_run
     /// use stm32wlxx_hal::{
     ///     pac,
-    ///     spi::{Master, NoMiso, NoMosi, NoSck, Spi},
+    ///     spi::{NoMiso, NoMosi, NoSck, Spi},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// Spi::<pac::SPI2, NoSck, NoMiso, NoMosi, Master>::enable_clock(&mut dp.RCC);
+    /// Spi::<pac::SPI2, NoSck, NoMiso, NoMosi>::enable_clock(&mut dp.RCC);
     /// ```
     #[inline]
     pub fn enable_clock(rcc: &mut pac::RCC) {

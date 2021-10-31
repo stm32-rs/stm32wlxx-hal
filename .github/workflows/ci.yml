@@ -38,6 +38,7 @@ jobs:
         with:
           toolchain: ${{ matrix.toolchain }}
           target: ${{ matrix.target }}
+          default: true
       - name: Build HAL
         run: |
           cargo build \

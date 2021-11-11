@@ -2,6 +2,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*'
   pull_request:
 
 name: CI
@@ -267,21 +269,21 @@ jobs:
       - name: Release stm32wlxx-hal
         run: |
           cd hal
-          cargo publish --token ${CRATES_IO_TOKEN}
+          cargo publish --no-verify --token ${CRATES_IO_TOKEN}
           cd ..
         env:
           CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
       - name: Release nucleo-wl55jc-bsp
         run: |
           cd nucleo-wl55jc-bsp
-          cargo publish --token ${CRATES_IO_TOKEN}
+          cargo publish --no-verify --token ${CRATES_IO_TOKEN}
           cd ..
         env:
           CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
       - name: Release lora-e5-bsp
         run: |
           cd lora-e5-bsp
-          cargo publish --token ${CRATES_IO_TOKEN}
+          cargo publish --no-verify --token ${CRATES_IO_TOKEN}
           cd ..
         env:
           CRATES_IO_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}

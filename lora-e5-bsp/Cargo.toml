@@ -17,5 +17,6 @@ defmt = ["stm32wlxx-hal/defmt"]
 rt = ["stm32wlxx-hal/rt"]
 
 [dependencies.stm32wlxx-hal]
+version = "=0.2.0"
 path = "../hal"
 features = ["stm32wle5"]

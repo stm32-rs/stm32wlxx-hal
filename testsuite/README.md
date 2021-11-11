@@ -14,7 +14,11 @@ These tests will run automatically as part of CI for every pull-request.
   ([probe-run], [newAM/probe-run])
     * **Note:** My fork contains unreleased fixes for the stm32wl,
       see [#74] for details.
-* (Linux users only) udev rules are available at [newAM/nucleo-wl55jc2-rs]
+* Linux users: Add udev rules then run `sudo udevadm control --reload-rules && sudo udevadm trigger`
+```text
+# /etc/udev/rules.d/99-stm.rules
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="374e", MODE="0666"
+```
 * Connect the nucleo board to your PC via USB
 * `cargo run -p testsuite --target thumbv7em-none-eabi --bin pka`
 
@@ -72,7 +76,6 @@ $ cargo test -p testsuite --target thumbv7em-none-eabi --bin subghz -- --probe 0
 ```
 
 [defmt-test]: https://crates.io/crates/defmt-test
-[newAM/nucleo-wl55jc2-rs]: https://github.com/newAM/nucleo-wl55jc2-rs
 [newAM/probe-run]: https://github.com/newAM/probe-run
 [probe-run]: https://github.com/knurling-rs/probe-run
 [rustup]: https://rustup.rs/

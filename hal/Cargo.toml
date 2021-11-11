@@ -3,10 +3,10 @@ name = "stm32wlxx-hal"
 description = "Hardware abstraction layer for the STM32WL series microcontrollers."
 readme = "README.md"
 
-version = "0.2.0"
+version = "0.2.0"  # update BSP versions, HAL depdendency version, and README
 authors = ["Alex Martens <alexmgit@protonmail.com>"]
 edition = "2021"
-rust-version = "1.56"
+rust-version = "1.56"  # update MSRV in CI, change BSPs to match
 license = "MIT OR Apache-2.0"
 keywords = ["arm", "cortex-m", "stm32", "hal"]
 categories = ["embedded", "hardware-support", "no-std"]

@@ -1,13 +1,14 @@
 # stm32wlxx-hal
 
 [![CI](https://github.com/stm32-rs/stm32wlxx-hal/workflows/CI/badge.svg)](https://github.com/stm32-rs/stm32wlxx-hal/actions?query=branch%3Amain)
-[![docs](https://img.shields.io/badge/docs-gh--pages-blue)](https://stm32-rs.github.io/stm32wlxx-hal/stm32wlxx_hal/index.html)
+[![stable-docs](https://img.shields.io/badge/docs-stable-blue)](https://docs.rs/stm32wlxx-hal/)
+[![nightly-docs](https://img.shields.io/badge/docs-nightly-blue)](https://stm32-rs.github.io/stm32wlxx-hal/stm32wlxx_hal/index.html)
+[![crates.io](https://img.shields.io/crates/v/stm32wlxx-hal.svg)](https://crates.io/crates/stm32wlxx-hal)
+![license](https://img.shields.io/crates/l/stm32wlxx-hal?color=green)
 
 Embedded rust HAL (hardware abstraction layer) for the STM32WL series.
 
-⚠️ This is a **work in progress** ⚠️
-
-The code that exists today covers basic usage of:
+This is still in development, the code that exists today covers basic usage of:
 
 * SubGHz LoRa TX + RX
 * SubGHz (G)FSK TX + RX

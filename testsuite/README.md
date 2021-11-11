@@ -21,7 +21,7 @@ These tests will run automatically as part of CI for every pull-request.
 ## Sample output
 
 ```console
-$ cargo run -p testsuite --target thumbv7em-none-eabi --bin pka
+$ cargo test -p testsuite --target thumbv7em-none-eabi --bin pka
     Finished dev [optimized + debuginfo] target(s) in 0.01s
      Running `probe-run --chip STM32WLE5JCIx --connect-under-reset target/thumbv7em-none-eabi/debug/pka`
 (HOST) INFO  flashing program (17.31 KiB)

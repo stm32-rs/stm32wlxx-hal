@@ -18,7 +18,7 @@ const FREQ: u32 = 48_000_000;
 const CYC_PER_MICRO: u32 = FREQ / 1000 / 1000;
 
 // WARNING will wrap-around eventually, use this for relative timing only
-defmt::timestamp!("{=u32:µs}", DWT::get_cycle_count() / CYC_PER_MICRO);
+defmt::timestamp!("{=u32:us}", DWT::get_cycle_count() / CYC_PER_MICRO);
 
 // Message hash
 const HASH: [u32; 8] = [

@@ -18,7 +18,7 @@ const CYC_PER_MILLI: u32 = FREQ / 1000;
 const CYC_PER_MICRO: u32 = FREQ / 1000 / 1000;
 
 // WARNING will wrap-around eventually, use this for relative timing only
-defmt::timestamp!("{=u32:µs}", DWT::get_cycle_count() / CYC_PER_MICRO);
+defmt::timestamp!("{=u32:us}", DWT::get_cycle_count() / CYC_PER_MICRO);
 
 fn test_set_date_time_with_clk(clk: rtc::Clk) -> Rtc {
     let mut dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
@@ -181,13 +181,13 @@ mod tests {
         loop {
             let elapsed_micros: u32 = DWT::get_cycle_count().wrapping_sub(start) / CYC_PER_MICRO;
             if Rtc::status().wutf().bit_is_set() {
-                defmt::info!("elapsed: {=u32:µs}", elapsed_micros);
+                defmt::info!("elapsed: {=u32:us}", elapsed_micros);
                 // 100ms tolerance
                 defmt::assert!(elapsed_micros > 900_000 && elapsed_micros < 1_100_000);
                 return;
             } else if elapsed_micros > 3 * 1000 * 1000 {
                 defmt::panic!(
-                    "this is taking too long, elapsed: {=u32:µs}",
+                    "this is taking too long, elapsed: {=u32:us}",
                     elapsed_micros
                 );
             }

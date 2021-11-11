@@ -11,72 +11,73 @@ version = "0.1.0"
 [[bin]]
 name = "adc"
 path = "src/adc.rs"
+harness = false
 
 [[bin]]
 name = "aes"
 path = "src/aes.rs"
+harness = false
 
 [[bin]]
 name = "dac"
 path = "src/dac.rs"
+harness = false
 
 [[bin]]
 name = "i2c"
 path = "src/i2c.rs"
+harness = false
 
 [[bin]]
 name = "lptim"
 path = "src/lptim.rs"
+harness = false
 
 [[bin]]
 name = "pka"
 path = "src/pka.rs"
+harness = false
 
 [[bin]]
 name = "rcc"
 path = "src/rcc.rs"
+harness = false
 
 [[bin]]
 name = "rng"
 path = "src/rng.rs"
+harness = false
 
 [[bin]]
 name = "rtc"
 path = "src/rtc.rs"
+harness = false
 
 [[bin]]
 name = "spi"
 path = "src/spi.rs"
+harness = false
 
 [[bin]]
 name = "subghz"
 path = "src/subghz.rs"
+harness = false
 
 [[bin]]
 name = "uart"
 path = "src/uart.rs"
+harness = false
 
 [dependencies]
-cortex-m-rt = "0.6"
-defmt = "0.2"
-defmt-rtt = "0.2"
-defmt-test = "0.2"
+cortex-m-rt = "0.7"
+defmt = "0.3"
+defmt-rtt = "0.3"
+defmt-test = "0.3"
 embedded-time = "0.12"
 hex-literal = "0.3"
 itertools = { version = "0.10", default-features = false }
 nb = "1"
 nucleo-wl55jc-bsp = { path = "../nucleo-wl55jc-bsp", features = ["stm32wl5x_cm4", "defmt", "rt"] }
-panic-probe = { version = "0.2", features = ["print-defmt" ] }
+panic-probe = { version = "0.3", features = ["print-defmt" ] }
 rand_chacha = { version = "0.3", default-features = false }
 static_assertions = "1"
-
-[features]
-default = ["defmt-trace", "nucleo-wl55jc-bsp/defmt-trace"]
-
-# do NOT modify these features
-defmt-default = []
-defmt-trace = []
-defmt-debug = []
-defmt-info = []
-defmt-warn = []
-defmt-error = []

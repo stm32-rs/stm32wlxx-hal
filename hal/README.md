@@ -2,13 +2,9 @@
 
 ## Usage
 
-This crate is not yet published to crates.io, see issue [#149] for details.
-Until then please pin the version you use.
-
 ```toml
 [dependencies.stm32wlxx-hal]
-git = "https://github.com/stm32-rs/stm32wlxx-hal.git"
-rev = "" # put a specific git commit hash here
+version = "0.2.0"
 features = [
     # use exactly one of the following depending on your target hardware
     "stm32wl5x_cm0p",
@@ -24,7 +20,7 @@ features = [
 # use the interrupt macro from the hal with `use stm32wlxx_hal::pac::interrupt;`
 # DO NOT use the interrupt macro from cortex-m-rt, it will fail to compile
 [dependencies]
-cortex-m-rt = "0.6"
+cortex-m-rt = "0.7"
 ```
 
 **Note:** To avoid version mismatches do not include `cortex-m`, `embedded-hal`,
@@ -42,6 +38,7 @@ use hal::pac; // published as "stm32wl" on crates.io
 ## Design
 
 ### Peripheral Access
+
 The layout of device memory for the STM32WL is provided from the vendor in a
 format called system view description (SVD).
 The SVD is not perfect, so there is a set of community maintained SVD
@@ -98,4 +95,3 @@ this is not consistent (see [#78])
 [stm32-rs]: https://github.com/stm32-rs/stm32-rs
 [svd2rust]: https://github.com/rust-embedded/svd2rust
 [#78]: https://github.com/stm32-rs/stm32wlxx-hal/issues/78
-[#149]: https://github.com/stm32-rs/stm32wlxx-hal/issues/149

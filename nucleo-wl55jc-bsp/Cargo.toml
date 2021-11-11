@@ -19,4 +19,5 @@ stm32wl5x_cm4 = ["stm32wlxx-hal/stm32wl5x_cm4"]
 stm32wl5x_cm0p = ["stm32wlxx-hal/stm32wl5x_cm0p"]
 
 [dependencies.stm32wlxx-hal]
+version = "=0.2.0"
 path = "../hal"

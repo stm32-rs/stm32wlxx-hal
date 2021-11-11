@@ -1,4 +1,4 @@
-# STM32WL Hardware Abstraction Layer
+# STM32WLxx Hardware Abstraction Layer
 
 ## Usage
 

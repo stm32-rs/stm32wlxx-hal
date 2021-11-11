@@ -14,7 +14,7 @@ These tests will run automatically as part of CI for every pull-request.
   ([probe-run], [newAM/probe-run])
     * **Note:** My fork contains unreleased fixes for the stm32wl,
       see [#74] for details.
-* (Linux users only) add udev rules then run `sudo udevadm control --reload-rules && sudo udevadm trigger`
+* Linux users: Add udev rules then run `sudo udevadm control --reload-rules && sudo udevadm trigger`
 ```text
 # /etc/udev/rules.d/99-stm.rules
 SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="374e", MODE="0666"

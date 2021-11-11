@@ -1,7 +1,7 @@
 # stm32wlxx-hal
 
 [![CI](https://github.com/stm32-rs/stm32wlxx-hal/workflows/CI/badge.svg)](https://github.com/stm32-rs/stm32wlxx-hal/actions?query=branch%3Amain)
-[![stable-docs](https://img.shields.io/badge/docs-stable-blue)](https://stm32-rs.github.io/stm32wlxx-hal/stm32wlxx_hal/index.html)
+[![stable-docs](https://img.shields.io/badge/docs-stable-blue)](https://docs.rs/stm32wlxx-hal/)
 [![nightly-docs](https://img.shields.io/badge/docs-nightly-blue)](https://stm32-rs.github.io/stm32wlxx-hal/stm32wlxx_hal/index.html)
 [![crates.io](https://img.shields.io/crates/v/stm32wlxx-hal.svg)](https://crates.io/crates/stm32wlxx-hal)
 ![license](https://img.shields.io/crates/l/stm32wlxx-hal?color=green)

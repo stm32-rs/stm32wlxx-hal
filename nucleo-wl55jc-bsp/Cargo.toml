@@ -18,13 +18,5 @@ rt = ["stm32wlxx-hal/rt"]
 stm32wl5x_cm4 = ["stm32wlxx-hal/stm32wl5x_cm4"]
 stm32wl5x_cm0p = ["stm32wlxx-hal/stm32wl5x_cm0p"]
 
-# do NOT modify these features
-defmt-default = ["stm32wlxx-hal/defmt-default"]
-defmt-trace = ["stm32wlxx-hal/defmt-trace"]
-defmt-debug = ["stm32wlxx-hal/defmt-debug"]
-defmt-info = ["stm32wlxx-hal/defmt-info"]
-defmt-warn = ["stm32wlxx-hal/defmt-warn"]
-defmt-error = ["stm32wlxx-hal/defmt-error"]
-
 [dependencies.stm32wlxx-hal]
 path = "../hal"

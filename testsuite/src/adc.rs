@@ -19,7 +19,7 @@ const FREQ_RATIO: u32 = FREQ / ADC_FREQ;
 const CYC_PER_US: u32 = FREQ / 1000 / 1000;
 
 // WARNING will wrap-around eventually, use this for relative timing only
-defmt::timestamp!("{=u32:µs}", DWT::get_cycle_count() / CYC_PER_US);
+defmt::timestamp!("{=u32:us}", DWT::get_cycle_count() / CYC_PER_US);
 
 fn validate_vbat(sample: u16) {
     const EXPECTED: i16 = 4096 / 3;

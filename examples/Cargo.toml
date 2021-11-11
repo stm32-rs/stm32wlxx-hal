@@ -6,21 +6,9 @@ authors = ["Alex Martens <alexmgit@protonmail.com>"]
 edition = "2021"
 
 [dependencies]
-defmt = "0.2"
-defmt-rtt = "0.2"
-cortex-m-rt = "0.6"
-panic-probe = { version = "0.2", features = ["print-defmt" ] }
+defmt = "0.3"
+defmt-rtt = "0.3"
+cortex-m-rt = "0.7"
+panic-probe = { version = "0.3", features = ["print-defmt" ] }
 stm32wlxx-hal = { path = "../hal", features = ["stm32wl5x_cm4", "rt", "defmt"] }
 nucleo-wl55jc-bsp = { path = "../nucleo-wl55jc-bsp" }
-
-[features]
-# set logging levels here
-default = ["defmt-trace", "nucleo-wl55jc-bsp/defmt-trace"]
-
-# do NOT modify these features
-defmt-default = []
-defmt-trace = []
-defmt-debug = []
-defmt-info = []
-defmt-warn = []
-defmt-error = []

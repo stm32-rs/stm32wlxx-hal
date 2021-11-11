@@ -19,7 +19,7 @@ const FREQ: u32 = 48_000_000;
 const CYC_PER_US: u32 = FREQ / 1000 / 1000;
 
 // WARNING will wrap-around eventually, use this for relative timing only
-defmt::timestamp!("{=u32:µs}", DWT::get_cycle_count() / CYC_PER_US);
+defmt::timestamp!("{=u32:us}", DWT::get_cycle_count() / CYC_PER_US);
 
 fn test_clk_src<LPTIM>(lptim: &mut LPTIM, src: lptim::Clk, rcc: &pac::RCC)
 where

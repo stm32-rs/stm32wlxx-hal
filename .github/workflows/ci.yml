@@ -63,7 +63,7 @@ jobs:
         with:
           toolchain: stable
           target: thumbv7em-none-eabi
-      - run: cargo build -p testsuite --target thumbv7em-none-eabi --bins
+      - run: cargo test -p testsuite --target thumbv7em-none-eabi --bins --no-run
       - name: Upload test binaries
         uses: actions/upload-artifact@v2
         with:
@@ -71,14 +71,17 @@ jobs:
           if-no-files-found: error
           retention-days: 1
           path: |
-            target/thumbv7em-none-eabi/debug/*
-            !target/thumbv7em-none-eabi/debug/*.cargo-lock
-            !target/thumbv7em-none-eabi/debug/*.d
-            !target/thumbv7em-none-eabi/debug/.fingerprint/**/*
-            !target/thumbv7em-none-eabi/debug/build/**/*
-            !target/thumbv7em-none-eabi/debug/deps/**/*
-            !target/thumbv7em-none-eabi/debug/examples/**/*
-            !target/thumbv7em-none-eabi/debug/incremental/**/*
+            target/thumbv7em-none-eabi/debug/deps/*
+            !target/thumbv7em-none-eabi/debug/deps/*.cargo-lock
+            !target/thumbv7em-none-eabi/debug/deps/*.d
+            !target/thumbv7em-none-eabi/debug/deps/*.meta
+            !target/thumbv7em-none-eabi/debug/deps/*.rlib
+            !target/thumbv7em-none-eabi/debug/deps/*.rmeta
+            !target/thumbv7em-none-eabi/debug/deps/.fingerprint/**/*
+            !target/thumbv7em-none-eabi/debug/deps/build/**/*
+            !target/thumbv7em-none-eabi/debug/deps/deps/**/*
+            !target/thumbv7em-none-eabi/debug/deps/examples/**/*
+            !target/thumbv7em-none-eabi/debug/deps/incremental/**/*
 
   testsuite:
     name: Run Testsuite
@@ -98,7 +101,7 @@ jobs:
         run: |
           count=0
           for binpath in bins/*; do
-          if [[ "$binpath" != "bins/subghz" ]]; then
+          if [[ "$binpath" != bins/subghz* ]]; then
               # alternate probes to wear out flash evenly
               if (( count % 2 )); then
                   probe="002900205553500A20393256"
@@ -113,9 +116,11 @@ jobs:
           fi
           done 
 
-          echo "Running subghz"
-          probe-run --chip STM32WLE5JCIx --connect-under-reset bins/subghz --probe 002900205553500A20393256 &
-          probe-run --chip STM32WLE5JCIx --connect-under-reset bins/subghz --probe 0034001A5553500B20393256 &
+          echo "Spawning subghz job 1"
+          probe-run --chip STM32WLE5JCIx --connect-under-reset $(find bins -name 'subghz*') --probe 002900205553500A20393256 &
+          echo "Spawning subghz job 2"
+          probe-run --chip STM32WLE5JCIx --connect-under-reset $(find bins -name 'subghz*') --probe 0034001A5553500B20393256 &
+          echo "Waiting for subghz job completion"
 
           wait
           echo "Done subghz"

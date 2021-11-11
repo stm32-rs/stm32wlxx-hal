@@ -95,7 +95,7 @@ const TCXO_MODE: TcxoMode = TcxoMode::new()
     .set_timeout(Timeout::from_duration_sat(Duration::from_millis(10)));
 
 // WARNING will wrap-around eventually, use this for relative timing only
-defmt::timestamp!("{=u32:µs}", DWT::get_cycle_count() / CYC_PER_US);
+defmt::timestamp!("{=u32:us}", DWT::get_cycle_count() / CYC_PER_US);
 
 fn tx_or_panic(sg: &mut MySubghz, rfs: &mut RfSwitch) {
     rfs.set_tx_lp();

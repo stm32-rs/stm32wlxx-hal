@@ -5,6 +5,7 @@
 [![nightly-docs](https://img.shields.io/badge/docs-nightly-blue)](https://stm32-rs.github.io/stm32wlxx-hal/stm32wlxx_hal/index.html)
 [![crates.io](https://img.shields.io/crates/v/stm32wlxx-hal.svg)](https://crates.io/crates/stm32wlxx-hal)
 ![license](https://img.shields.io/crates/l/stm32wlxx-hal?color=green)
+![MSRV](https://img.shields.io/badge/MSRV-1.56-informational)
 
 Embedded rust HAL (hardware abstraction layer) for the STM32WL series.
 
@@ -26,33 +27,38 @@ This is still in development, the code that exists today covers basic usage of:
 
 ## Usage
 
-See [hal/README.md](hal/README.md).
+```toml
+[dependencies.stm32wlxx-hal]
+version = "0.2.0"
+features = [
+    # use exactly one of the following depending on your target hardware
+    "stm32wl5x_cm0p",
+    "stm32wl5x_cm4",
+    "stm32wle5",
+    # optional: use the cortex-m-rt interrupt interface
+    "rt",
+    # optional: use defmt
+    "defmt",
+]
+```
 
 ## Examples
 
-All examples run on the NUCLEO-WL55JC2.
-Examples are located in the `examples` crate.
-The arguments got long for this, so a `run-ex` cargo alias is provided.
+All examples run on the NUCLEO-WL55JC2. Examples are located in the `examples` crate. The arguments got long for this, so a `run-ex` cargo alias is provided.
 
 ```bash
 cargo run-ex gpio-blink
 ```
 
-The on-target tests are also excellent reference material,
-they are automatically tested for every commit and are guaranteed to work.
+The on-target tests are also excellent reference material.
 
 ### System Level Example
 
-The testsuites and examples are a good starting point,
-but they demonstrate features independent of each-other.
-A system-level example using multiple features simultaneously is provided in a
-separate repo:
-[stm32wl-lightswitch-demo](https://github.com/newAM/stm32wl-lightswitch-demo)
+The testsuites and examples are a good starting point, but they demonstrate features independent of each-other. A system-level example using multiple features simultaneously is provided in a separate repo: [stm32wl-lightswitch-demo](https://github.com/newAM/stm32wl-lightswitch-demo)
 
 ## Unit Tests
 
-Off-target unit tests use the built-in cargo framework.
-You must specify the target device as a feature.
+Off-target unit tests use the built-in cargo framework. You must specify the target device as a feature.
 
 ```bash
 cargo test --features stm32wl5x_cm4

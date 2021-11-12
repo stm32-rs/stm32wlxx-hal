@@ -847,7 +847,7 @@ impl Adc {
     #[inline]
     pub fn isr() -> pac::adc::isr::R {
         // saftey: atomic read with no side-effects
-        unsafe { (*pac::ADC::ptr()).isr.read() }
+        unsafe { (*pac::ADC::PTR).isr.read() }
     }
 
     /// Enable and disable interrupts.

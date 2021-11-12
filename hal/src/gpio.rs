@@ -440,9 +440,9 @@ pub trait Exti {
 pub mod pins {
     // Switch to this when avaliable on stable
     // https://github.com/rust-lang/rust/issues/51910
-    // const GPIOA_BASE: usize = pac::GPIOA::ptr() as *const _ as usize;
-    // const GPIOB_BASE: usize = pac::GPIOB::ptr() as *const _ as usize;
-    // const GPIOC_BASE: usize = pac::GPIOC::ptr() as *const _ as usize;
+    // const GPIOA_BASE: usize = pac::GPIOA::PTR as *const _ as usize;
+    // const GPIOB_BASE: usize = pac::GPIOB::PTR as *const _ as usize;
+    // const GPIOC_BASE: usize = pac::GPIOC::PTR as *const _ as usize;
 
     const GPIOA_BASE: usize = 0x4800_0000;
     const GPIOB_BASE: usize = 0x4800_0400;
@@ -752,7 +752,7 @@ pub mod pins {
                     #[inline]
                     fn clear_exti() {
                         // safety: atomic write with no side effects
-                        unsafe { (*pac::EXTI::ptr()).pr1.write(|w| w.[<pif $n>]().set_bit()) }
+                        unsafe { (*pac::EXTI::PTR).pr1.write(|w| w.[<pif $n>]().set_bit()) }
                     }
                 }
             }

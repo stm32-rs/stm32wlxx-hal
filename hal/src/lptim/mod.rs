@@ -122,7 +122,7 @@ macro_rules! impl_lptim_base_for {
             #[inline(always)]
             fn isr() -> u32 {
                 // safety: atomic read with no side effects
-                unsafe { (*pac::$lptim::ptr()).isr.read().bits() }
+                unsafe { (*pac::$lptim::PTR).isr.read().bits() }
             }
 
             #[inline(always)]
@@ -181,7 +181,7 @@ macro_rules! impl_lptim_base_for {
             /// is set.
             #[inline(always)]
             unsafe fn cnt() -> u16 {
-                (*pac::$lptim::ptr()).cnt.read().cnt().bits()
+                (*pac::$lptim::PTR).cnt.read().cnt().bits()
             }
 
             #[inline(always)]

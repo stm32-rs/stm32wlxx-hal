@@ -211,14 +211,14 @@ impl Rtc {
     #[inline]
     pub fn status() -> pac::rtc::sr::R {
         // saftey: atomic read with no side-effects
-        unsafe { (*pac::RTC::ptr()).sr.read() }
+        unsafe { (*pac::RTC::PTR).sr.read() }
     }
 
     /// Read the RTC masked status (interrupt) register.
     #[inline]
     pub fn masked_status() -> pac::rtc::misr::R {
         // saftey: atomic read with no side-effects
-        unsafe { (*pac::RTC::ptr()).misr.read() }
+        unsafe { (*pac::RTC::PTR).misr.read() }
     }
 
     /// Clear status (interrupt) flags.
@@ -227,7 +227,7 @@ impl Rtc {
     #[inline]
     pub fn clear_status(mask: u32) {
         // safety: mask is masked with valid register fields
-        unsafe { (*pac::RTC::ptr()).scr.write(|w| w.bits(mask & stat::ALL)) }
+        unsafe { (*pac::RTC::PTR).scr.write(|w| w.bits(mask & stat::ALL)) }
     }
 
     // configure prescaler for a 1Hz clock
@@ -282,7 +282,7 @@ impl Rtc {
     /// * Backup domain write protection is enabled.
     pub fn set_date_time(&mut self, date_time: chrono::NaiveDateTime) {
         // safety: atomic read with no side effects
-        assert!(unsafe { (*pac::PWR::ptr()).cr1.read().dbp().bit_is_set() });
+        assert!(unsafe { (*pac::PWR::PTR).cr1.read().dbp().bit_is_set() });
 
         // enter initialization mode
         self.rtc.icsr.modify(|_, w| w.init().init_mode());

@@ -101,17 +101,13 @@ impl Nss {
     /// Clear NSS, enabling SPI transactions
     #[inline(always)]
     fn clear() {
-        unsafe {
-            (*pac::PWR::ptr())
-                .subghzspicr
-                .write(|w| w.nss().clear_bit())
-        }
+        unsafe { (*pac::PWR::PTR).subghzspicr.write(|w| w.nss().clear_bit()) }
     }
 
     /// Set NSS, disabling SPI transactions
     #[inline(always)]
     fn set() {
-        unsafe { (*pac::PWR::ptr()).subghzspicr.write(|w| w.nss().set_bit()) }
+        unsafe { (*pac::PWR::PTR).subghzspicr.write(|w| w.nss().set_bit()) }
     }
 }
 
@@ -193,7 +189,7 @@ pub fn mask_irq() {
 #[inline]
 pub fn rfbusys() -> bool {
     // safety: atmoic read with no side-effects
-    unsafe { (*pac::PWR::ptr()).sr2.read().rfbusys().is_busy() }
+    unsafe { (*pac::PWR::PTR).sr2.read().rfbusys().is_busy() }
 }
 
 /// Returns `true` if the radio is busy or NSS is low.
@@ -203,7 +199,7 @@ pub fn rfbusys() -> bool {
 #[inline]
 pub fn rfbusyms() -> bool {
     // saftey: atomic read with no side-effects
-    unsafe { (*pac::PWR::ptr()).sr2.read().rfbusyms().is_busy() }
+    unsafe { (*pac::PWR::PTR).sr2.read().rfbusyms().is_busy() }
 }
 
 /// Sub-GHz radio peripheral.

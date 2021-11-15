@@ -20,7 +20,7 @@ These tests will run automatically as part of CI for every pull-request.
 SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="374e", MODE="0666"
 ```
 * Connect the nucleo board to your PC via USB
-* `cargo run -p testsuite --target thumbv7em-none-eabi --bin pka`
+* `cargo test -p testsuite --target thumbv7em-none-eabi --bin pka`
 
 ## Sample output
 

@@ -89,6 +89,7 @@ jobs:
     needs:
       - build_testsuite
     steps:
+      - uses: actions/checkout@v2
       - name: Display probe-run version
         run: probe-run --version
       - name: List probes
@@ -98,32 +99,11 @@ jobs:
           name: test-bins
           path: bins
       - name: Run on-target tests
+        timeout-minutes: 5
         run: |
-          count=0
-          for binpath in bins/*; do
-          if [[ "$binpath" != bins/subghz* ]]; then
-              # alternate probes to wear out flash evenly
-              if (( count % 2 )); then
-                  probe="002900205553500A20393256"
-              else
-                  probe="0034001A5553500B20393256"
-              fi
-
-              echo "Running $binpath on $probe"
-              probe-run --chip STM32WLE5JCIx --connect-under-reset "$binpath" --probe "$probe"
-              echo "Done $binpath"
-              ((count=count+1))
-          fi
-          done 
-
-          echo "Spawning subghz job 1"
-          probe-run --chip STM32WLE5JCIx --connect-under-reset $(find bins -name 'subghz*') --probe 002900205553500A20393256 &
-          echo "Spawning subghz job 2"
-          probe-run --chip STM32WLE5JCIx --connect-under-reset $(find bins -name 'subghz*') --probe 0034001A5553500B20393256 &
-          echo "Waiting for subghz job completion"
-
-          wait
-          echo "Done subghz"
+          python3 testsuite/runall.py --elf-dir bins \
+          002900205553500A20393256 \
+          0034001A5553500B20393256
 
   test_nucleo_bsp:
     name: Test NUCLEO BSP

@@ -51,14 +51,16 @@ impl RfSwitch {
             fe_ctrl3: Output::new(c3, &ARGS, cs),
         }
     }
+}
 
+impl hal::subghz::RfSwRx for RfSwitch {
     /// Set the RF switch to receive.
     ///
     /// # Example
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{cortex_m, gpio::PortC, pac},
+    ///     hal::{cortex_m, gpio::PortC, pac, subghz::RfSwRx},
     ///     RfSwitch,
     /// };
     ///
@@ -69,19 +71,21 @@ impl RfSwitch {
     ///     cortex_m::interrupt::free(|cs| RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5, cs));
     /// rfs.set_rx()
     /// ```
-    pub fn set_rx(&mut self) {
+    fn set_rx(&mut self) {
         self.fe_ctrl1.set_level(PinState::High);
         self.fe_ctrl2.set_level(PinState::Low);
         self.fe_ctrl3.set_level(PinState::High);
     }
+}
 
+impl hal::subghz::RfSwTxLp for RfSwitch {
     /// Set the RF switch to low power transmit.
     ///
     /// # Example
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{cortex_m, gpio::PortC, pac},
+    ///     hal::{cortex_m, gpio::PortC, pac, subghz::RfSwTxLp},
     ///     RfSwitch,
     /// };
     ///
@@ -92,19 +96,21 @@ impl RfSwitch {
     ///     cortex_m::interrupt::free(|cs| RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5, cs));
     /// rfs.set_tx_lp()
     /// ```
-    pub fn set_tx_lp(&mut self) {
+    fn set_tx_lp(&mut self) {
         self.fe_ctrl1.set_level(PinState::High);
         self.fe_ctrl2.set_level(PinState::High);
         self.fe_ctrl3.set_level(PinState::High);
     }
+}
 
+impl hal::subghz::RfSwTxHp for RfSwitch {
     /// Set the RF switch to high power transmit.
     ///
     /// # Example
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{cortex_m, gpio::PortC, pac},
+    ///     hal::{cortex_m, gpio::PortC, pac, subghz::RfSwTxHp},
     ///     RfSwitch,
     /// };
     ///
@@ -115,7 +121,7 @@ impl RfSwitch {
     ///     cortex_m::interrupt::free(|cs| RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5, cs));
     /// rfs.set_tx_hp()
     /// ```
-    pub fn set_tx_hp(&mut self) {
+    fn set_tx_hp(&mut self) {
         self.fe_ctrl2.set_level(PinState::High);
         self.fe_ctrl1.set_level(PinState::Low);
         self.fe_ctrl3.set_level(PinState::High);

@@ -47,14 +47,16 @@ impl RfSwitch {
             a5: Output::new(a5, &ARGS, cs),
         }
     }
+}
 
+impl hal::subghz::RfSwRx for RfSwitch {
     /// Set the RF switch to receive.
     ///
     /// # Example
     ///
     /// ```no_run
     /// use lora_e5_bsp::{
-    ///     hal::{cortex_m, gpio::PortA, pac},
+    ///     hal::{cortex_m, gpio::PortA, pac, subghz::RfSwRx},
     ///     RfSwitch,
     /// };
     ///
@@ -64,18 +66,20 @@ impl RfSwitch {
     /// let mut rfs: RfSwitch = cortex_m::interrupt::free(|cs| RfSwitch::new(gpioa.a4, gpioa.a5, cs));
     /// rfs.set_rx();
     /// ```
-    pub fn set_rx(&mut self) {
+    fn set_rx(&mut self) {
         self.a5.set_level(PinState::Low);
         self.a4.set_level(PinState::High);
     }
+}
 
+impl hal::subghz::RfSwTxHp for RfSwitch {
     /// Set the RF switch to high power transmit.
     ///
     /// # Example
     ///
     /// ```no_run
     /// use lora_e5_bsp::{
-    ///     hal::{cortex_m, gpio::PortA, pac},
+    ///     hal::{cortex_m, gpio::PortA, pac, subghz::RfSwTxHp},
     ///     RfSwitch,
     /// };
     ///
@@ -85,7 +89,7 @@ impl RfSwitch {
     /// let mut rfs: RfSwitch = cortex_m::interrupt::free(|cs| RfSwitch::new(gpioa.a4, gpioa.a5, cs));
     /// rfs.set_tx_hp();
     /// ```
-    pub fn set_tx_hp(&mut self) {
+    fn set_tx_hp(&mut self) {
         self.a4.set_level(PinState::Low);
         self.a5.set_level(PinState::High);
     }

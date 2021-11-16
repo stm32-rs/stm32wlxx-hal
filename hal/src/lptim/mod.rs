@@ -30,7 +30,6 @@ mod cfgr;
 mod cr;
 
 pub use cfgr::{Cfgr, Filter, Prescaler, TrgPol, TrgSel, TrgSel3};
-use cortex_m::interrupt::CriticalSection;
 pub use cr::Cr;
 
 use crate::{
@@ -40,8 +39,9 @@ use crate::{
     },
     pac, Ratio,
 };
+use core::convert::Infallible;
+use cortex_m::interrupt::CriticalSection;
 use paste::paste;
-use void::Void;
 
 /// Timer IRQs.
 pub mod irq {
@@ -669,7 +669,7 @@ macro_rules! impl_eh_for {
                 }
             }
 
-            fn wait(&mut self) -> nb::Result<(), Void> {
+            fn wait(&mut self) -> nb::Result<(), Infallible> {
                 if Self::isr() & irq::UE == 0 {
                     Err(nb::Error::WouldBlock)
                 } else {

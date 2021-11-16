@@ -50,10 +50,6 @@ default-features = false
 version = "0.14"
 default-features = false
 
-[dependencies.void]
-version = "1"
-default-features = false
-
 [dev-dependencies]
 static_assertions = "1"
 

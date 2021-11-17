@@ -26,6 +26,8 @@ mod packet_type;
 mod pkt_ctrl;
 mod pmode;
 mod pwr_ctrl;
+#[cfg(feature = "radio")]
+pub mod radio;
 mod reg_mode;
 mod rf_frequency;
 mod rx_timeout_stop;

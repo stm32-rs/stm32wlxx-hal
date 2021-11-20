@@ -47,7 +47,7 @@ features = [
 All examples run on the NUCLEO-WL55JC2. Examples are located in the `examples` crate. The arguments got long for this, so a `run-ex` cargo alias is provided.
 
 ```bash
-cargo run-ex gpio-blink
+DEFMT_LOG=trace cargo run-ex gpio-blink
 ```
 
 The on-target tests are also excellent reference material.

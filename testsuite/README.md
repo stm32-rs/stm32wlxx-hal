@@ -25,7 +25,7 @@ SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="374e", MODE="0666"
 ## Sample output
 
 ```console
-$ cargo test -p testsuite --target thumbv7em-none-eabi --bin pka
+$ DEFMT_LOG=info cargo test -p testsuite --target thumbv7em-none-eabi --bin pka
     Finished dev [optimized + debuginfo] target(s) in 0.01s
      Running `probe-run --chip STM32WLE5JCIx --connect-under-reset target/thumbv7em-none-eabi/debug/pka`
 (HOST) INFO  flashing program (17.31 KiB)
@@ -71,8 +71,8 @@ $ probe-run --list-probes
 The following devices were found:
 [0]: STLink V3 (VID: 0483, PID: 374e, Serial: 001D00145553500A20393256, STLink)
 [1]: STLink V3 (VID: 0483, PID: 374e, Serial: 001600345553500A20393256, STLink)
-$ cargo test -p testsuite --target thumbv7em-none-eabi --bin subghz -- --probe 001D00145553500A20393256
-$ cargo test -p testsuite --target thumbv7em-none-eabi --bin subghz -- --probe 001600345553500A20393256
+$ DEFMT_LOG=info cargo test -p testsuite --target thumbv7em-none-eabi --bin subghz -- --probe 001D00145553500A20393256
+$ DEFMT_LOG=info cargo test -p testsuite --target thumbv7em-none-eabi --bin subghz -- --probe 001600345553500A20393256
 ```
 
 [defmt-test]: https://crates.io/crates/defmt-test

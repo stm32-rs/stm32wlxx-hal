@@ -788,7 +788,14 @@ where
     /// # Ok::<(), stm32wlxx_hal::subghz::Error>(())
     /// ```
     pub unsafe fn set_sleep(&mut self, cfg: SleepCfg) -> Result<(), Error> {
-        self.write(&[OpCode::SetSleep as u8, u8::from(cfg)])
+        // poll for busy before, but not after
+        // radio idles with busy high while in sleep mode
+        self.poll_not_busy();
+        {
+            let _nss: Nss = Nss::new();
+            self.spi.write(&[OpCode::SetSleep as u8, u8::from(cfg)])?;
+        }
+        Ok(())
     }
 
     /// Put the radio into standby mode.

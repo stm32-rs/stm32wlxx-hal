@@ -3,7 +3,7 @@ name = "nucleo-wl55jc-bsp"
 description = "Board support package for the NUCLEO-WL55JC"
 readme = "README.md"
 
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Alex Martens <alexmgit@protonmail.com>"]
 edition = "2021"
 rust-version = "1.56"
@@ -19,5 +19,5 @@ stm32wl5x_cm4 = ["stm32wlxx-hal/stm32wl5x_cm4"]
 stm32wl5x_cm0p = ["stm32wlxx-hal/stm32wl5x_cm0p"]
 
 [dependencies.stm32wlxx-hal]
-version = "=0.2.0"
+version = "=0.2.1"
 path = "../hal"

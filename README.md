@@ -29,7 +29,7 @@ This is still in development, the code that exists today covers basic usage of:
 
 ```toml
 [dependencies.stm32wlxx-hal]
-version = "0.2.0"
+version = "0.2.1"
 features = [
     # use exactly one of the following depending on your target hardware
     "stm32wl5x_cm0p",

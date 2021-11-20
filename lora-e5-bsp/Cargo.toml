@@ -3,7 +3,7 @@ name = "lora-e5-bsp"
 description = "Board support package for the seeed LoRa-E5 development kit"
 readme = "README.md"
 
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Alex Martens <alexmgit@protonmail.com>"]
 edition = "2021"
 rust-version = "1.56"
@@ -17,6 +17,6 @@ defmt = ["stm32wlxx-hal/defmt"]
 rt = ["stm32wlxx-hal/rt"]
 
 [dependencies.stm32wlxx-hal]
-version = "=0.2.0"
+version = "=0.2.1"
 path = "../hal"
 features = ["stm32wle5"]

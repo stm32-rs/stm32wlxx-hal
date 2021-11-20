@@ -2,6 +2,102 @@
 
 use core::{fmt::Display, mem::transmute, ptr::read};
 
+/// CPU core.
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub enum Core {
+    /// Cortex-M4, core 1.
+    Cm4,
+    /// Cortex-M0+, core 2.
+    Cm0p,
+}
+
+impl Core {
+    /// Returns `true` if the core is [`Cm4`].
+    ///
+    /// [`Cm4`]: Core::Cm4
+    pub const fn is_cm4(&self) -> bool {
+        matches!(self, Self::Cm4)
+    }
+
+    /// Returns `true` if the core is [`Cm0p`].
+    ///
+    /// [`Cm0p`]: Core::Cm0p
+    pub const fn is_cm0p(&self) -> bool {
+        matches!(self, Self::Cm0p)
+    }
+}
+
+impl core::fmt::Display for Core {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Core::Cm4 => write!(f, "Cortex-M4"),
+            Core::Cm0p => write!(f, "Cortex-M0+"),
+        }
+    }
+}
+
+/// Get the CPU core at compile time.
+///
+/// This is determined by the HAL features.
+///
+/// For a runtime mechanism use [`core()`].
+///
+/// # Example
+///
+/// ```
+/// use stm32wlxx_hal::info::{Core, CORE};
+///
+/// #[cfg(feature = "stm32wl5x_cm4")]
+/// assert_eq!(CORE, Core::Cm4);
+///
+/// #[cfg(feature = "stm32wl5x_cm0p")]
+/// assert_eq!(CORE, Core::Cm0p);
+///
+/// #[cfg(feature = "stm32wle5")]
+/// assert_eq!(CORE, Core::Cm4);
+/// ```
+pub const CORE: Core = {
+    #[cfg(not(feature = "stm32wl5x_cm0p"))]
+    {
+        Core::Cm4
+    }
+    #[cfg(feature = "stm32wl5x_cm0p")]
+    {
+        Core::Cm0p
+    }
+};
+
+/// Get the CPU core at runtime.
+///
+/// This is determined by the part number field in CPUID register in the
+/// system control block.
+///
+/// For a compile time mechanism use [`CORE`].
+///
+/// # Example
+///
+/// ```no_run
+/// # #[cfg(features = "defmt")] {
+/// use stm32wlxx_hal::info::{core, Core};
+///
+/// match core() {
+///     Core::Cm4 => defmt::info!("Hello world from the Cortex-M4 CPU"),
+///     Core::Cm0p => defmt::info!("Hello world from the Cortex-M0+ CPU"),
+/// }
+/// # }
+/// ```
+pub fn core() -> Core {
+    const CPUID: *const u32 = 0xE000ED00 as *const u32;
+    let cpuid: u32 = unsafe { CPUID.read_volatile() };
+
+    if cpuid & 0x0000_FFF0 == 0x0000_C240 {
+        Core::Cm4
+    } else {
+        Core::Cm0p
+    }
+}
+
 /// 96-bit unique device identifier
 ///
 /// Returned by [`uid`].

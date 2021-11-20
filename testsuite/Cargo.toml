@@ -29,6 +29,11 @@ path = "src/i2c.rs"
 harness = false
 
 [[bin]]
+name = "info"
+path = "src/info.rs"
+harness = false
+
+[[bin]]
 name = "lptim"
 path = "src/lptim.rs"
 harness = false

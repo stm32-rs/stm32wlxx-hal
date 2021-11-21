@@ -1,4 +1,4 @@
-//! Flash memory.
+//! Flash memory
 
 use crate::pac;
 use core::{ops::Range, ptr::write_volatile};
@@ -185,16 +185,15 @@ pub enum Error {
     /// the flash memory successively and the new data must be sent to the logic
     /// control before the current data is fully programmed.
     ///
-    /// This bit is set by hardware when the new data is not present in time and
-    /// cleared by writing 1.
+    /// This bit is set by hardware when the new data is not present in time.
     Miss,
     /// Programming sequence error.
     ///
     /// This bit is set by hardware when a write access to the flash memory is
     /// performed by the code, while PG or FSTPG have not been set previously.
+    ///
     /// This bit is also set by hardware when PROGERR, SIZERR, PGAERR, WRPERR,
-    /// MISSERR or FASTERR is set due to a
-    /// previous programming error.
+    /// MISSERR or FASTERR is set due to a previous programming error.
     Seq,
     /// Size error.
     ///
@@ -205,7 +204,7 @@ pub enum Error {
     /// Programming alignment error.
     ///
     /// This bit is set by hardware when the data to program cannot be contained in the same
-    /// double-word (64 bits) Flash memory in case of standard programming, or if there is a change
+    /// double-word (`u64`) Flash memory in case of standard programming, or if there is a change
     /// of page during fast programming.
     Align,
     /// Write protection error.
@@ -314,11 +313,12 @@ impl<'a> Flash<'a> {
                 if sr & flags::SIZERR == flags::SIZERR {
                     return Err(Error::Size);
                 }
-                if sr & flags::PGSERR == flags::PGSERR {
-                    return Err(Error::Seq);
-                }
                 if sr & flags::MISSERR == flags::MISSERR {
                     return Err(Error::Miss);
+                }
+                // check last because it can be set with other flags
+                if sr & flags::PGSERR == flags::PGSERR {
+                    return Err(Error::Seq);
                 }
 
                 return Ok(());

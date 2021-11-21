@@ -6,7 +6,7 @@
 #![cfg_attr(feature = "stm32wle5", doc = "STM32WLE5.")]
 //!
 #![cfg_attr(not(test), no_std)]
-#![cfg_attr(docsrs, feature(doc_cfg), feature(doc_cfg_hide))]
+#![cfg_attr(docsrs, feature(doc_cfg), feature(doc_auto_cfg), feature(doc_cfg_hide))]
 #![warn(missing_docs)]
 
 #[cfg(any(

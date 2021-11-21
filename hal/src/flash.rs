@@ -291,11 +291,13 @@ impl<'a> Flash<'a> {
         Self { flash }
     }
 
+    #[inline(always)]
     fn sr(&self) -> u32 {
         c1_c2!(self.flash.sr.read().bits(), self.flash.c2sr.read().bits())
     }
 
     #[rustfmt::skip]
+    #[inline(always)]
     fn clear_all_err(&mut self) {
         c1_c2!(
             self.flash.sr.write(|w| {
@@ -327,6 +329,7 @@ impl<'a> Flash<'a> {
         )
     }
 
+    #[inline(always)]
     fn wait_for_not_busy(&self) -> Result<(), Error> {
         loop {
             let sr: u32 = self.sr();
@@ -414,7 +417,7 @@ impl<'a> Flash<'a> {
     ///    The compiler may inline this function, because `#[inline(never)]` is
     ///    merely a suggestion.
     #[allow(unused_unsafe)]
-    #[link_section = ".data"] // CPU must execute this from SRAM
+    #[link_section = ".data"]
     #[inline(never)]
     pub unsafe fn fast_program(&mut self, from: *const u64, to: *mut u64) -> Result<(), Error> {
         let sr: u32 = self.sr();
@@ -496,7 +499,11 @@ impl<'a> Flash<'a> {
     ///
     /// # Safety
     ///
-    /// 1. This code must execute from RAM.
+    /// 1. The CPU must execute this from SRAM.
+    ///    The compiler may inline this function, because `#[inline(never)]` is
+    ///    merely a suggestion.
+    #[link_section = ".data"]
+    #[inline(never)]
     pub unsafe fn mass_erase(&mut self) -> Result<(), Error> {
         let sr: u32 = self.sr();
         if sr & flags::BSY != 0 {

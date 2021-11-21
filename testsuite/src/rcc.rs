@@ -84,6 +84,7 @@ const CLKS: [SysClkSrc; 14] = [
 unsafe fn HardFault(ef: &cortex_m_rt::ExceptionFrame) -> ! {
     cortex_m::interrupt::disable();
     defmt::error!("HardFault {:#}", defmt::Debug2Format(ef));
+    defmt::flush();
     loop {
         cortex_m::asm::udf()
     }

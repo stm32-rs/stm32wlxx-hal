@@ -74,6 +74,7 @@ def find_elfs(elf_dir: str) -> Tuple[List[str], str]:
 
 
 async def probe_run(elf_path: str, probe: str, log_prefix: str) -> TestResult:
+    print(f"[{log_prefix}] Running {elf_path}")
     start = time.monotonic()
     proc = await asyncio.create_subprocess_exec(
         "probe-run",

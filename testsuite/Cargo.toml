@@ -24,6 +24,11 @@ path = "src/dac.rs"
 harness = false
 
 [[bin]]
+name = "flash"
+path = "src/flash.rs"
+harness = false
+
+[[bin]]
 name = "i2c"
 path = "src/i2c.rs"
 harness = false
@@ -84,5 +89,6 @@ itertools = { version = "0.10", default-features = false }
 nb = "1"
 nucleo-wl55jc-bsp = { path = "../nucleo-wl55jc-bsp", features = ["stm32wl5x_cm4", "defmt", "rt"] }
 panic-probe = { version = "0.3", features = ["print-defmt" ] }
+rand = { version = "0.8", default-features = false }
 rand_chacha = { version = "0.3", default-features = false }
 static_assertions = "1"

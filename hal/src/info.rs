@@ -57,16 +57,7 @@ impl core::fmt::Display for Core {
 /// #[cfg(feature = "stm32wle5")]
 /// assert_eq!(CORE, Core::Cm4);
 /// ```
-pub const CORE: Core = {
-    #[cfg(not(feature = "stm32wl5x_cm0p"))]
-    {
-        Core::Cm4
-    }
-    #[cfg(feature = "stm32wl5x_cm0p")]
-    {
-        Core::Cm0p
-    }
-};
+pub const CORE: Core = c1_c2!(Core::Cm4, Core::Cm0p);
 
 /// Get the CPU core at runtime.
 ///

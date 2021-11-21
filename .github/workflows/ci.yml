@@ -45,14 +45,14 @@ jobs:
           --target ${{ matrix.target }} \
           --features ${{ matrix.mcu }}
       - name: Build NUCLEO BSP
-        if: ${{ startsWith(matrix.mxu, 'stm32wl5x') }}
+        if: ${{ startsWith(matrix.mcu, 'stm32wl5x') }}
         run: |
           cargo build -p nucleo-wl55jc-bsp \
-          --target thumbv7em-none-eabi \
+          --target ${{ matrix.target }} \
           --features ${{ matrix.mcu }}
       - name: Build LoRa E5 BSP
-        if: ${{ startsWith(matrix.mxu, 'stm32wle5') }}
-        run: cargo build -p lora-e5-bsp --target thumbv7em-none-eabi
+        if: ${{ matrix.mcu == 'stm32wle5' }}
+        run: cargo build -p lora-e5-bsp --target ${{ matrix.target }}
 
   build_testsuite:
     name: Build Testsuite

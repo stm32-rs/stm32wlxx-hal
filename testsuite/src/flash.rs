@@ -112,9 +112,41 @@ mod tests {
     }
 
     #[test]
+    fn fast_program(ta: &mut TestArgs) {
+        static mut BUF: [u64; 32] = [0; 32];
+        unsafe {
+            BUF.iter_mut()
+                .for_each(|word| *word = ta.rng.gen_range(1..u64::MAX - 1))
+        };
+
+        let mut flash: Flash = Flash::unlock(&mut ta.flash);
+
+        let start: u32 = DWT::get_cycle_count();
+        unwrap!(unsafe { flash.fast_program(BUF.as_ptr(), ta.page.addr() as *mut u64) });
+        let end: u32 = DWT::get_cycle_count();
+        let elapsed: u32 = end.wrapping_sub(start);
+
+        defmt::info!(
+            "256B program duration: {=u32:us} seconds",
+            elapsed / CYC_PER_MICRO
+        );
+
+        for (idx, &dw) in unsafe { BUF }.iter().enumerate() {
+            let expected: u64 = unsafe {
+                (ta.page.addr() as *const u64)
+                    .offset(unwrap!(idx.try_into()))
+                    .read_volatile()
+            };
+            defmt::assert_eq!(dw, expected);
+        }
+    }
+
+    #[test]
     fn standard_program(ta: &mut TestArgs) {
         let addr: usize = {
-            let unaligned_addr: usize = ta.rng.gen_range(ta.page.addr_range());
+            let unaligned_addr: usize = ta
+                .rng
+                .gen_range(ta.page.addr() + 256..ta.page.addr() + Page::SIZE - 1);
             unaligned_addr - (unaligned_addr % size_of::<u64>())
         };
 

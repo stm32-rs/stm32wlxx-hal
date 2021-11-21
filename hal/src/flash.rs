@@ -24,6 +24,23 @@ pub fn flash_end() -> usize {
     OFFSET + crate::info::flash_size() as usize
 }
 
+/// Number of flash pages.
+///
+/// This is calculated at runtime using the info registers.
+///
+/// # Example
+///
+/// ```no_run
+/// use stm32wlxx_hal::flash::num_pages;
+///
+/// // valid for the nucleo-wl55jc with 256k flash
+/// assert_eq!(num_pages(), 0x80);
+/// ```
+#[inline]
+pub fn num_pages() -> u8 {
+    (crate::info::flash_size_kibibyte() / 2) as u8
+}
+
 // status register (SR) flags
 mod flags {
     pub const PROGERR: u32 = 1 << 3;
@@ -36,7 +53,7 @@ mod flags {
     pub const PESD: u32 = 1 << 19;
 }
 
-/// 2k page address.
+/// Page address.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
 pub struct Page(u8);
 
@@ -44,20 +61,31 @@ impl Page {
     /// Page size in bytes.
     pub const SIZE: usize = 2048;
 
+    /// Create a page address from an index without checking bounds.
+    ///
+    /// # Safety
+    ///
+    /// 1. The `idx` argument must point to a valid flash page.
+    #[inline]
+    pub const unsafe fn from_index_unchecked(idx: u8) -> Self {
+        Page(idx)
+    }
+
     /// Create a page address from an index.
     ///
-    /// Returns `None` if the value index is greater than `0x7F` (page 127).
+    /// Returns `None` if the value index is greater than the index of the last
+    /// page, for example `0x7F` (page 127) on the STM32WLE5.
     ///
     /// # Example
     ///
-    /// ```
+    /// ```no_run
     /// use stm32wlxx_hal::flash::Page;
     ///
     /// assert!(Page::from_index(8).is_some());
     /// assert!(Page::from_index(128).is_none());
     /// ```
-    pub const fn from_index(idx: u8) -> Option<Self> {
-        if idx > 0x7F {
+    pub fn from_index(idx: u8) -> Option<Self> {
+        if idx >= num_pages() {
             None
         } else {
             Some(Page(idx))
@@ -70,7 +98,7 @@ impl Page {
     ///
     /// # Example
     ///
-    /// ```
+    /// ```no_run
     /// use stm32wlxx_hal::flash::Page;
     ///
     /// assert_eq!(Page::from_byte_offset(0), Page::from_index(0));
@@ -78,10 +106,10 @@ impl Page {
     /// assert!(Page::from_byte_offset(2047).is_none());
     /// assert!(Page::from_byte_offset(usize::MAX).is_none());
     /// ```
-    pub const fn from_byte_offset(offset: usize) -> Option<Self> {
+    pub fn from_byte_offset(offset: usize) -> Option<Self> {
         if offset % Self::SIZE == 0 {
             let idx: usize = offset / Self::SIZE;
-            if idx > 0x7F {
+            if idx >= usize::from(num_pages()) {
                 None
             } else {
                 Some(Page(idx as u8))
@@ -97,7 +125,7 @@ impl Page {
     ///
     /// # Example
     ///
-    /// ```
+    /// ```no_run
     /// use stm32wlxx_hal::flash::Page;
     ///
     /// assert_eq!(Page::from_addr(0x0800_0000), Page::from_index(0));
@@ -106,7 +134,7 @@ impl Page {
     /// assert!(Page::from_addr(usize::MAX).is_none());
     /// assert!(Page::from_addr(0x0800_0001).is_none());
     /// ```
-    pub const fn from_addr(addr: usize) -> Option<Self> {
+    pub fn from_addr(addr: usize) -> Option<Self> {
         if let Some(offset) = addr.checked_sub(FLASH_START) {
             Self::from_byte_offset(offset)
         } else {
@@ -119,10 +147,12 @@ impl Page {
     /// # Example
     ///
     /// ```
+    /// # let page7 = unsafe { Page::from_index_unchecked(7) };
     /// use stm32wlxx_hal::flash::Page;
     ///
-    /// assert_eq!(Page::from_index(7).unwrap().to_index(), 7);
+    /// assert_eq!(page7.to_index(), 7);
     /// ```
+    #[inline]
     pub const fn to_index(self) -> u8 {
         self.0
     }
@@ -131,11 +161,13 @@ impl Page {
     ///
     /// # Example
     ///
-    /// ```
+    /// ```no_run
+    /// # let page127 = unsafe { Page::from_index_unchecked(127) };
+    /// # let page0 = unsafe { Page::from_index_unchecked(0) };
     /// use stm32wlxx_hal::flash::Page;
     ///
-    /// assert_eq!(Page::from_index(0).unwrap().addr(), 0x0800_0000);
-    /// assert_eq!(Page::from_index(127).unwrap().addr(), 0x0803_F800);
+    /// assert_eq!(page0.addr(), 0x0800_0000);
+    /// assert_eq!(page127.addr(), 0x0803_F800);
     /// ```
     pub const fn addr(&self) -> usize {
         (self.0 as usize) * Self::SIZE + FLASH_START
@@ -145,12 +177,13 @@ impl Page {
     ///
     /// # Example
     ///
-    /// ```
+    /// ```no_run
+    /// # let page0 = unsafe { Page::from_index_unchecked(0) };
     /// use core::ops::Range;
     /// use stm32wlxx_hal::flash::Page;
     ///
     /// assert_eq!(
-    ///     Page::from_index(0).unwrap().addr_range(),
+    ///     page0.addr_range(),
     ///     Range {
     ///         start: 0x0800_0000,
     ///         end: 0x0800_07FF

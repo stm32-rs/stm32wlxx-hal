@@ -81,6 +81,7 @@ mod tests {
         defmt::debug!("flash_end()={:#08X}", flash::flash_end());
         defmt::assert_eq!(flash::FLASH_START, 0x0800_0000);
         defmt::assert_eq!(flash::flash_end(), 0x0803_FFFF);
+        defmt::assert_eq!(flash::num_pages(), 0x80);
 
         // ensure previous logs are seen before we start executing code that can
         // result in difficult-to-debug situations

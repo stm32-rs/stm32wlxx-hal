@@ -31,7 +31,7 @@ This is still in development, the code that exists today covers basic usage of:
 [dependencies.stm32wlxx-hal]
 version = "0.2.1"
 features = [
-    # use exactly one of the following depending on your target hardware
+    # use exactly one to match your target hardware
     "stm32wl5x_cm0p",
     "stm32wl5x_cm4",
     "stm32wle5",

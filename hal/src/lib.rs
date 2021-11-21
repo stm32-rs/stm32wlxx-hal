@@ -49,6 +49,7 @@ pub mod adc;
 pub mod aes;
 pub mod dac;
 pub mod dma;
+pub mod flash;
 pub mod gpio;
 pub mod i2c;
 pub mod info;

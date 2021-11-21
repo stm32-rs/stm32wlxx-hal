@@ -37,3 +37,24 @@ macro_rules! typestate {
         }
     };
 }
+
+// helper for conditional compilation
+#[cfg(any(feature = "stm32wl5x_cm4", feature = "stm32wle5"))]
+macro_rules! c1_c2 {
+    ($c1:expr, $c2:expr) => {
+        $c1
+    };
+    ($c1:expr, $c2:expr,) => {
+        $c1
+    };
+}
+
+#[cfg(feature = "stm32wl5x_cm0p")]
+macro_rules! c1_c2 {
+    ($c1:expr, $c2:expr) => {
+        $c2
+    };
+    ($c1:expr, $c2:expr,) => {
+        $c2
+    };
+}

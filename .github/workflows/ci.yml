@@ -57,6 +57,10 @@ jobs:
   build_testsuite:
     name: Build Testsuite
     runs-on: ubuntu-latest
+    env:
+      # setting this overrides environment variables used for linking
+      # RUSTFLAGS: "-D warnings"
+      DEFMT_LOG: "debug"
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1.0.7

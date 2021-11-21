@@ -368,6 +368,54 @@ impl<'a> Flash<'a> {
         ret
     }
 
+    /// Program 256 bytes.
+    ///
+    /// # Safety
+    ///
+    /// 1. Do not write to flash memory that is being used for your code.
+    /// 2. The destination address must be within the flash memory region.
+    /// 3. The flash clock frequency (HCLK3) must be at least 8 MHz.
+    /// 4. The `from` and `to` pointers must be aligned to the pointee type.
+    /// 5. The `from` pointer must point to 256 bytes of valid data.
+    /// 6. The CPU must execute this from SRAM.
+    ///    The compiler may inline this function, because `#[inline(never)]` is
+    ///    merely a suggestion.
+    #[allow(unused_unsafe)]
+    #[link_section = ".data"] // CPU must execute this from SRAM
+    #[inline(never)]
+    pub unsafe fn fast_program(&mut self, from: *const u64, to: *mut u64) -> Result<(), Error> {
+        let sr: u32 = self.sr();
+        if sr & flags::BSY != 0 {
+            return Err(Error::Busy);
+        }
+        if sr & flags::PESD != 0 {
+            return Err(Error::Suspend);
+        }
+
+        self.clear_all_err();
+
+        c1_c2!(
+            self.flash.cr.modify(|_, w| w.fstpg().set_bit()),
+            self.flash.c2cr.modify(|_, w| w.fstpg().set_bit())
+        );
+
+        let from: *const u32 = from as *const u32;
+        let to: *mut u32 = to as *mut u32;
+
+        (0..64)
+            .into_iter()
+            .for_each(|word| unsafe { write_volatile(to.offset(word), from.offset(word).read()) });
+
+        let ret: Result<(), Error> = self.wait_for_not_busy();
+
+        c1_c2!(
+            self.flash.cr.modify(|_, w| w.fstpg().clear_bit()),
+            self.flash.c2cr.modify(|_, w| w.fstpg().clear_bit())
+        );
+
+        ret
+    }
+
     /// Erases a 2048 byte page, setting all the bits to `1`.
     ///
     /// # Safety

@@ -3,15 +3,17 @@
 #![cfg_attr(not(test), no_std)]
 #![warn(missing_docs)]
 
-pub mod led;
-pub mod pb;
-
-pub use stm32wlxx_hal as hal;
-
 use hal::{
     cortex_m::interrupt::CriticalSection,
-    gpio::{self, pins, Output, OutputArgs, PinState},
+    gpio::{self, Output, OutputArgs, pins, PinState},
 };
+pub use stm32wlxx_hal as hal;
+use stm32wlxx_hal::subghz::{RfSwRx, RfSwTx};
+
+use crate::hal::subghz::{PaConfig, TxParams};
+
+pub mod led;
+pub mod pb;
 
 #[cfg(feature = "defmt")]
 use dfmt as defmt;
@@ -52,14 +54,16 @@ impl RfSwitch {
             a5: Output::new(a5, &ARGS, cs),
         }
     }
+}
 
+impl RfSwRx for RfSwitch {
     /// Set the RF switch to receive.
     ///
     /// # Example
     ///
     /// ```no_run
     /// use lora_e5_bsp::{
-    ///     hal::{cortex_m, gpio::PortA, pac},
+    ///     hal::{cortex_m, gpio::PortA, pac, subghz::RfSwRx},
     ///     RfSwitch,
     /// };
     ///
@@ -69,10 +73,15 @@ impl RfSwitch {
     /// let mut rfs: RfSwitch = cortex_m::interrupt::free(|cs| RfSwitch::new(gpioa.a4, gpioa.a5, cs));
     /// rfs.set_rx();
     /// ```
-    pub fn set_rx(&mut self) {
+    fn set_rx(&mut self) {
         self.a5.set_level(PinState::Low);
         self.a4.set_level(PinState::High);
     }
+}
+
+impl RfSwTx for RfSwitch {
+    const PA_CONFIG: PaConfig = PaConfig::HP_22;
+    const TX_PARAMS: TxParams = TxParams::HP;
 
     /// Set the RF switch to high power transmit.
     ///
@@ -80,7 +89,7 @@ impl RfSwitch {
     ///
     /// ```no_run
     /// use lora_e5_bsp::{
-    ///     hal::{cortex_m, gpio::PortA, pac},
+    ///     hal::{cortex_m, gpio::PortA, pac, subghz::RfSwTx},
     ///     RfSwitch,
     /// };
     ///
@@ -88,9 +97,9 @@ impl RfSwitch {
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
     /// let mut rfs: RfSwitch = cortex_m::interrupt::free(|cs| RfSwitch::new(gpioa.a4, gpioa.a5, cs));
-    /// rfs.set_tx_hp();
+    /// rfs.set_tx();
     /// ```
-    pub fn set_tx_hp(&mut self) {
+    fn set_tx(&mut self) {
         self.a4.set_level(PinState::Low);
         self.a5.set_level(PinState::High);
     }

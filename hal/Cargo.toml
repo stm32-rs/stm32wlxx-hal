@@ -30,7 +30,7 @@ lorawan-device = { path = "../../lorawan-device" }
 nb = "1"
 num-traits = { version = "0.2", default-features = false }
 paste = "1"
-radio = { git = "https://github.com/rust-iot/radio-hal.git", optional = true }
+radio = { git = "https://github.com/rust-iot/radio-hal.git" }
 rand_core = "0.6"
 stm32wl = { version = "0.14", default-features = false }
 void = { version = "1", default-features = false }

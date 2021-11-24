@@ -712,6 +712,24 @@ impl PartialOrd for LoRaBandwidth {
     }
 }
 
+impl From<u32> for LoRaBandwidth {
+    fn from(bw: u32) -> Self {
+        match bw {
+            7_810 => LoRaBandwidth::Bw7,
+            10_420 => LoRaBandwidth::Bw10,
+            15_630 => LoRaBandwidth::Bw15,
+            20_830 => LoRaBandwidth::Bw20,
+            31_250 => LoRaBandwidth::Bw31,
+            41_670 => LoRaBandwidth::Bw41,
+            62_500 => LoRaBandwidth::Bw62,
+            125_000 => LoRaBandwidth::Bw125,
+            250_000 => LoRaBandwidth::Bw250,
+            500_000 => LoRaBandwidth::Bw500,
+            _ => panic!("invalid LoRa bandwidth"),
+        }
+    }
+}
+
 /// LoRa forward error correction coding rate.
 ///
 /// Argument of [`LoRaModParams::set_cr`].

@@ -287,15 +287,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "log"
-version = "0.4.14"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51b9bbe6c47d51fc3e1a9b945965946b4c44142ab8792c50835a980d362c2710"
-dependencies = [
- "cfg-if",
-]
-
-[[package]]
 name = "lora-e5-bsp"
 version = "0.2.1"
 dependencies = [
@@ -481,11 +472,10 @@ dependencies = [
 [[package]]
 name = "radio"
 version = "0.10.0"
-source = "git+https://github.com/rust-iot/radio-hal.git#df588e3980de15c943a411a457aa455955c1f76b"
+source = "git+https://github.com/rust-iot/radio-hal.git?branch=modulation-types#5732e5b398b757467031cbba0c9c9d5f79497ab8"
 dependencies = [
  "chrono",
  "embedded-hal 1.0.0-alpha.5",
- "log",
  "nb 1.0.0",
 ]
 

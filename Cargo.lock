@@ -297,6 +297,7 @@ dependencies = [
 [[package]]
 name = "lorawan-device"
 version = "0.1.0"
+source = "git+https://github.com/Tortoaster/lorawan-device.git#d6798a6ba6d6dc97f597d856dd2862e7d89ad3a7"
 dependencies = [
  "embedded-hal 0.2.6",
  "lorawan-encoding",

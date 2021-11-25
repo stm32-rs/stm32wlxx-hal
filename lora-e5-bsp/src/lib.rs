@@ -5,7 +5,7 @@
 
 use hal::{
     cortex_m::interrupt::CriticalSection,
-    gpio::{self, Output, OutputArgs, pins, PinState},
+    gpio::{self, pins, Output, OutputArgs, PinState},
 };
 pub use stm32wlxx_hal as hal;
 use stm32wlxx_hal::subghz::{RfSwRx, RfSwTx};

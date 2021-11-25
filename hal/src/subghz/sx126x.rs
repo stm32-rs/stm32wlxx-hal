@@ -1,16 +1,17 @@
 use embedded_hal::blocking::delay::DelayUs;
 use lorawan_device::radio::{LoRaInfo, LoRaState};
-use radio::{Busy, Channel, Receive, State, Transmit};
 use radio::modulation::lora;
 use radio::modulation::lora::LoRaChannel;
+use radio::{Busy, Channel, Receive, State, Transmit};
 
 use crate::spi::Spi3;
 use crate::subghz;
-use crate::subghz::{CalibrateImage, CfgIrq, CodingRate, FallbackMode, HeaderType, Irq,
-                    LoRaModParams, LoRaPacketParams, LoRaSyncWord, Ocp, PacketType, PaConfig,
-                    RampTime, RegMode, RfFreq, SpreadingFactor, StandbyClk, SubGhz, TcxoMode,
-                    TcxoTrim, Timeout, TxParams};
 use crate::subghz::rfs::{RfSwRx, RfSwTx};
+use crate::subghz::{
+    CalibrateImage, CfgIrq, CodingRate, FallbackMode, HeaderType, Irq, LoRaModParams,
+    LoRaPacketParams, LoRaSyncWord, Ocp, PaConfig, PacketType, RampTime, RegMode, RfFreq,
+    SpreadingFactor, StandbyClk, SubGhz, TcxoMode, TcxoTrim, Timeout, TxParams,
+};
 
 const IRQ_CFG: CfgIrq = CfgIrq::new()
     .irq_enable_all(Irq::RxDone)
@@ -36,16 +37,14 @@ pub struct Sx126x<MISO, MOSI, RFS> {
 }
 
 impl<MISO, MOSI, RFS> Sx126x<MISO, MOSI, RFS>
-    where Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=subghz::Error>,
-          Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error=subghz::Error>,
-          RFS: RfSwRx + RfSwTx
+where
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = subghz::Error>,
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error = subghz::Error>,
+    RFS: RfSwRx + RfSwTx,
 {
     /// Creates a new Sx126x radio.
     pub fn new(sg: SubGhz<MISO, MOSI>, rfs: RFS) -> Self {
-        Sx126x {
-            sg,
-            rfs,
-        }
+        Sx126x { sg, rfs }
     }
 
     /// Returns the internal Sub-GHz radio peripheral.
@@ -60,9 +59,10 @@ impl<MISO, MOSI, RFS> Sx126x<MISO, MOSI, RFS>
 }
 
 impl<MISO, MOSI, RFS> Transmit for Sx126x<MISO, MOSI, RFS>
-    where Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=subghz::Error>,
-          Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error=subghz::Error>,
-          RFS: RfSwRx + RfSwTx
+where
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = subghz::Error>,
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error = subghz::Error>,
+    RFS: RfSwRx + RfSwTx,
 {
     type Error = Error;
 
@@ -90,9 +90,10 @@ impl<MISO, MOSI, RFS> Transmit for Sx126x<MISO, MOSI, RFS>
 }
 
 impl<MISO, MOSI, RFS> Receive for Sx126x<MISO, MOSI, RFS>
-    where Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=subghz::Error>,
-          Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error=subghz::Error>,
-          RFS: RfSwRx + RfSwTx
+where
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = subghz::Error>,
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error = subghz::Error>,
+    RFS: RfSwRx + RfSwTx,
 {
     type Error = Error;
     type Info = LoRaInfo;
@@ -122,8 +123,9 @@ impl<MISO, MOSI, RFS> Receive for Sx126x<MISO, MOSI, RFS>
 }
 
 impl<MISO, MOSI, RFS> Channel for Sx126x<MISO, MOSI, RFS>
-    where Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=subghz::Error>,
-          Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error=subghz::Error>
+where
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = subghz::Error>,
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error = subghz::Error>,
 {
     type Channel = LoRaChannel;
     type Error = Error;
@@ -141,7 +143,8 @@ impl<MISO, MOSI, RFS> Channel for Sx126x<MISO, MOSI, RFS>
         self.sg.set_tcxo_mode(&TCXO_MODE)?;
         self.sg.set_tx_rx_fallback_mode(FallbackMode::Standby)?;
         self.sg.set_regulator_mode(RegMode::Ldo)?;
-        self.sg.set_buffer_base_address(TX_BUF_OFFSET, RX_BUF_OFFSET)?;
+        self.sg
+            .set_buffer_base_address(TX_BUF_OFFSET, RX_BUF_OFFSET)?;
         self.sg.set_pa_config(&PA_CONFIG)?;
         self.sg.set_pa_ocp(Ocp::Max60m)?;
         self.sg.set_tx_params(&TX_PARAMS)?;
@@ -201,7 +204,7 @@ impl From<lora::CodingRate> for CodingRate {
             lora::CodingRate::Cr4_6 => CodingRate::Cr46,
             lora::CodingRate::Cr4_7 => CodingRate::Cr47,
             lora::CodingRate::Cr4_8 => CodingRate::Cr48,
-            _ => todo!("implement CodingRate: {:?}", cr)
+            _ => todo!("implement CodingRate: {:?}", cr),
         }
     }
 }
@@ -217,7 +220,7 @@ impl From<lora::SpreadingFactor> for SpreadingFactor {
             lora::SpreadingFactor::Sf10 => SpreadingFactor::Sf10,
             lora::SpreadingFactor::Sf11 => SpreadingFactor::Sf11,
             lora::SpreadingFactor::Sf12 => SpreadingFactor::Sf12,
-            _ => todo!("implement SpreadingFactor: {:?}", sf)
+            _ => todo!("implement SpreadingFactor: {:?}", sf),
         }
     }
 }

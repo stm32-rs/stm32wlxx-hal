@@ -18,9 +18,9 @@ pub use fallback_mode::FallbackMode;
 pub use hse_trim::HseTrim;
 pub use irq::{CfgIrq, Irq, IrqLine};
 pub use lora_sync_word::LoRaSyncWord;
+pub use mod_params::BpskModParams;
 pub use mod_params::{CodingRate, LoRaBandwidth, LoRaModParams, SpreadingFactor};
 pub use mod_params::{FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape};
-pub use mod_params::BpskModParams;
 pub use ocp::Ocp;
 pub use op_error::OpError;
 pub use pa_config::{PaConfig, PaSel};
@@ -48,12 +48,12 @@ pub use timeout::Timeout;
 pub use tx_params::{RampTime, TxParams};
 pub use value_error::ValueError;
 
+use crate::Ratio;
 use crate::{
     dma::DmaCh,
     pac,
     spi::{BaudRate, SgMiso, SgMosi, Spi3},
 };
-use crate::Ratio;
 
 mod bit_sync;
 mod cad_params;
@@ -405,9 +405,9 @@ impl<MISO, MOSI> SubGhz<MISO, MOSI> {
 }
 
 impl<MISO, MOSI> SubGhz<MISO, MOSI>
-    where
-        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=Error>
-        + embedded_hal::blocking::spi::Write<u8, Error=Error>,
+where
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
+        + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     fn read(&mut self, opcode: OpCode, data: &mut [u8]) -> Result<(), Error> {
         self.poll_not_busy();
@@ -569,9 +569,9 @@ impl<MISO: DmaCh, MOSI: DmaCh> SubGhz<MISO, MOSI> {
 // 5.8.2
 /// Synchronous buffer access commands
 impl<MISO, MOSI> SubGhz<MISO, MOSI>
-    where
-        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=Error>
-        + embedded_hal::blocking::spi::Write<u8, Error=Error>,
+where
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
+        + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     /// Write the radio buffer at the given offset.
     pub fn write_buffer(&mut self, offset: u8, data: &[u8]) -> Result<(), Error> {
@@ -622,9 +622,9 @@ macro_rules! wr_reg {
 // 5.8.2
 /// Register access
 impl<MISO, MOSI> SubGhz<MISO, MOSI>
-    where
-        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=Error>
-        + embedded_hal::blocking::spi::Write<u8, Error=Error>,
+where
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
+        + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     // register write with variable length data
     fn write_register(&mut self, register: Register, data: &[u8]) -> Result<(), Error> {
@@ -751,9 +751,9 @@ impl<MISO, MOSI> SubGhz<MISO, MOSI>
 // 5.8.3
 /// Operating mode commands
 impl<MISO, MOSI> SubGhz<MISO, MOSI>
-    where
-        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=Error>
-        + embedded_hal::blocking::spi::Write<u8, Error=Error>,
+where
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
+        + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     /// Put the radio into sleep mode.
     ///
@@ -939,9 +939,9 @@ impl<MISO, MOSI> SubGhz<MISO, MOSI>
 // 5.8.4
 /// Radio configuration commands
 impl<MISO, MOSI> SubGhz<MISO, MOSI>
-    where
-        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=Error>
-        + embedded_hal::blocking::spi::Write<u8, Error=Error>,
+where
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
+        + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     /// Set the packet type (modulation scheme).
     pub fn set_packet_type(&mut self, packet_type: PacketType) -> Result<(), Error> {
@@ -1034,9 +1034,9 @@ impl<MISO, MOSI> SubGhz<MISO, MOSI>
 // 5.8.5
 /// Communication status and information commands
 impl<MISO, MOSI> SubGhz<MISO, MOSI>
-    where
-        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=Error>
-        + embedded_hal::blocking::spi::Write<u8, Error=Error>,
+where
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
+        + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     /// Get the radio status.
     ///
@@ -1104,9 +1104,9 @@ impl<MISO, MOSI> SubGhz<MISO, MOSI>
 // 5.8.6
 /// IRQ commands
 impl<MISO, MOSI> SubGhz<MISO, MOSI>
-    where
-        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=Error>
-        + embedded_hal::blocking::spi::Write<u8, Error=Error>,
+where
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
+        + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     /// Set the interrupt configuration.
     pub fn set_irq_cfg(&mut self, cfg: &CfgIrq) -> Result<(), Error> {
@@ -1129,9 +1129,9 @@ impl<MISO, MOSI> SubGhz<MISO, MOSI>
 // 5.8.7
 /// Miscellaneous commands
 impl<MISO, MOSI> SubGhz<MISO, MOSI>
-    where
-        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=Error>
-        + embedded_hal::blocking::spi::Write<u8, Error=Error>,
+where
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
+        + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     /// Calibrate one or several blocks at any time when in standby mode.
     pub fn calibrate(&mut self, cal: u8) -> Result<(), Error> {
@@ -1166,9 +1166,9 @@ impl<MISO, MOSI> SubGhz<MISO, MOSI>
 // 5.8.8
 /// Set TCXO mode command
 impl<MISO, MOSI> SubGhz<MISO, MOSI>
-    where
-        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=Error>
-        + embedded_hal::blocking::spi::Write<u8, Error=Error>,
+where
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = Error>
+        + embedded_hal::blocking::spi::Write<u8, Error = Error>,
 {
     /// Set the TCXO trim and HSE32 ready timeout.
     pub fn set_tcxo_mode(&mut self, tcxo_mode: &TcxoMode) -> Result<(), Error> {

@@ -8,6 +8,9 @@ use hal::{
     gpio::{self, pins, Output, OutputArgs},
 };
 
+#[cfg(feature = "defmt")]
+use dfmt as defmt;
+
 const LED_ARGS: OutputArgs = OutputArgs {
     speed: gpio::Speed::Fast,
     level: gpio::PinState::Low,
@@ -44,6 +47,7 @@ where
 ///
 /// Marked as LED3 on the PCB
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Red {
     gpio: Output<pins::B11>,
 }
@@ -130,6 +134,7 @@ impl Led<Output<pins::B11>> for Red {
 ///
 /// Marked as LED2 on the PCB
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Green {
     gpio: Output<pins::B9>,
 }
@@ -216,6 +221,7 @@ impl Led<Output<pins::B9>> for Green {
 ///
 /// Marked as LED1 on the PCB
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Blue {
     gpio: Output<pins::B15>,
 }

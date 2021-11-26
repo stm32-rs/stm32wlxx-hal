@@ -20,39 +20,18 @@ rt = ["stm32wl/rt", "cortex-m-rt"]
 
 [dependencies]
 cfg-if = "1"
+chrono = { version = "0.4", default-features = false }
 cortex-m = "0.7.2"
+cortex-m-rt = { version = "0.7", optional = true }
+defmt = { version = "0.3", optional = true }
+embedded-hal = { version = "0.2.6", features = ["unproven"] }
 embedded-time = "0.12"
 nb = "1"
+num-traits = { version = "0.2", default-features = false }
 paste = "1"
 rand_core = "0.6"
-
-[dependencies.chrono]
-version = "0.4"
-default-features = false
-
-[dependencies.cortex-m-rt]
-version = "0.7"
-optional = true
-
-[dependencies.defmt]
-version = "0.3"
-optional = true
-
-[dependencies.embedded-hal]
-version = "0.2.6"
-features = ["unproven"]
-
-[dependencies.num-traits]
-version = "0.2"
-default-features = false
-
-[dependencies.stm32wl]
-version = "0.14"
-default-features = false
-
-[dependencies.void]
-version = "1"
-default-features = false
+stm32wl = { version = "0.14", default-features = false }
+void = { version = "1", default-features = false }
 
 [dev-dependencies]
 static_assertions = "1"

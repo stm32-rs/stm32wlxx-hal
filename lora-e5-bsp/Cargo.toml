@@ -13,10 +13,15 @@ categories = ["embedded", "hardware-support", "no-std"]
 repository = "https://github.com/stm32-rs/stm32wlxx-hal"
 
 [features]
-defmt = ["stm32wlxx-hal/defmt"]
+defmt = ["stm32wlxx-hal/defmt", "dfmt"]
 rt = ["stm32wlxx-hal/rt"]
 
 [dependencies.stm32wlxx-hal]
 version = "=0.2.1"
 path = "../hal"
 features = ["stm32wle5"]
+
+[dependencies.dfmt]
+package = "defmt"
+version = "0.3"
+optional = true

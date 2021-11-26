@@ -1,19 +1,25 @@
 //! Push-buttons
+
 use stm32wlxx_hal::{
     cortex_m::interrupt::CriticalSection,
     gpio::{pins, Exti, Input, PinState, Pull},
 };
 
+#[cfg(feature = "defmt")]
+use dfmt as defmt;
+
 const PULL: Pull = Pull::Up;
 
 /// Push-button D0.
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct D0 {
     gpio: Input<pins::A0>,
 }
 
 /// Push-button labeled "Boot".
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Boot {
     gpio: Input<pins::B13>,
 }

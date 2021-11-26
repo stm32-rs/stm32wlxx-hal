@@ -8,7 +8,10 @@ use crate::{
 };
 
 use cortex_m::interrupt::CriticalSection;
-use embedded_time::{fixed_point::FixedPoint, rate::*};
+use embedded_time::{
+    fixed_point::FixedPoint,
+    rate::{Extensions, Hertz},
+};
 
 /// I2C error
 #[derive(Debug)]

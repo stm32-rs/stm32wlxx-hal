@@ -130,7 +130,7 @@ impl<const BASE: usize, const CH: u8> Dma<BASE, CH> {
 }
 
 pub(crate) mod sealed {
-    use super::*;
+    use super::Cr;
 
     pub trait DmaOps {
         fn set_periph_addr(&mut self, pa: u32);

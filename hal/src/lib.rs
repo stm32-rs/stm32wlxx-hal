@@ -8,6 +8,7 @@
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg), feature(doc_auto_cfg), feature(doc_cfg_hide))]
 #![warn(missing_docs)]
+#![warn(clippy::wildcard_imports)]
 
 #[cfg(any(
     all(feature = "stm32wl5x_cm0p", feature = "stm32wl5x_cm4"),

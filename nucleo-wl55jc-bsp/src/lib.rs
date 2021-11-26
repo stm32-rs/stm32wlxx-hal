@@ -1,7 +1,7 @@
 //! NUCLEO-WL55JC board support package.
 
 #![cfg_attr(not(test), no_std)]
-#![forbid(missing_docs)]
+#![warn(missing_docs)]
 
 pub mod led;
 pub mod pb;

@@ -4,22 +4,28 @@ use stm32wlxx_hal::{
     gpio::{pins, Exti, Input, PinState, Pull},
 };
 
+#[cfg(feature = "defmt")]
+use dfmt as defmt;
+
 const PULL: Pull = Pull::Up;
 
 /// Push-button 3.
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Pb3 {
     gpio: Input<pins::C6>,
 }
 
 /// Push-button 2.
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Pb2 {
     gpio: Input<pins::A1>,
 }
 
 /// Push-button 1.
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Pb1 {
     gpio: Input<pins::A0>,
 }

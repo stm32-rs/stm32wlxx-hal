@@ -55,7 +55,9 @@ mod flags {
 
 /// Page address.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord, Hash)]
-pub struct Page(u8);
+pub struct Page {
+    idx: u8,
+}
 
 impl Page {
     /// Page size in bytes.
@@ -68,7 +70,7 @@ impl Page {
     /// 1. The `idx` argument must point to a valid flash page.
     #[inline]
     pub const unsafe fn from_index_unchecked(idx: u8) -> Self {
-        Page(idx)
+        Page { idx }
     }
 
     /// Create a page address from an index.
@@ -88,7 +90,7 @@ impl Page {
         if idx >= num_pages() {
             None
         } else {
-            Some(Page(idx))
+            Some(Page { idx })
         }
     }
 
@@ -112,7 +114,7 @@ impl Page {
             if idx >= usize::from(num_pages()) {
                 None
             } else {
-                Some(Page(idx as u8))
+                Some(Page { idx: idx as u8 })
             }
         } else {
             None
@@ -154,7 +156,7 @@ impl Page {
     /// ```
     #[inline]
     pub const fn to_index(self) -> u8 {
-        self.0
+        self.idx
     }
 
     /// Get the page address.
@@ -170,7 +172,7 @@ impl Page {
     /// assert_eq!(page127.addr(), 0x0803_F800);
     /// ```
     pub const fn addr(&self) -> usize {
-        (self.0 as usize) * Self::SIZE + FLASH_START
+        (self.idx as usize) * Self::SIZE + FLASH_START
     }
 
     /// Get the address range of the page.

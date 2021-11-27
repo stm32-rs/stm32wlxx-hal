@@ -4,11 +4,30 @@ Board support for the NUCLEO-WL55JC development board.
 
 This crate extends the [stm32wlxx-hal] with board specific hardware, see that crate for more information.
 
+## Usage
+
+```toml
+[dependencies.nucleo-wl55jc-bsp]
+version = "0.2.1"
+features = [
+    # required: build for core 1
+    # This is future proofing for when the HAL has APIs for core 2
+    "stm32wl5x_cm4",
+    # optional: use the cortex-m-rt interrupt interface
+    "rt",
+    # optional: use defmt
+    "defmt",
+]
+```
+
 ## Flashing
 
 To flash this board with various rust utilities such as `probe-run`, `cargo-embed`, and `cargo-flash` use the `--connected-under-reset` flag.
 
-Flashing binaries larger than 64k with `probe-rs` based tools will hard fault, see [#74] for more information.
+⚠️ You must use recent versions of `probe-rs` based tools to avoid bugs with the STM32WL ⚠️
+
+* `cargo-embed` >=0.12.0
+* `cargo-flash` >=0.12.0
+* `probe-run` >=0.3.1
 
 [stm32wlxx-hal]: https://github.com/stm32-rs/stm32wlxx-hal
-[#74]: https://github.com/stm32-rs/stm32wlxx-hal/issues/74

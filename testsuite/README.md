@@ -10,15 +10,16 @@ These tests will run automatically as part of CI for every pull-request.
 ## Quickstart
 
 * `rustup target add --toolchain stable thumbv7m-none-eabi` ([rustup])
-* `cargo install --git https://github.com/newAM/probe-run.git`
-  ([probe-run], [newAM/probe-run])
-    * **Note:** My fork contains unreleased fixes for the stm32wl,
-      see [#74] for details.
-* Linux users: Add udev rules then run `sudo udevadm control --reload-rules && sudo udevadm trigger`
+* `cargo install probe-run` ([probe-run])
+  * ⚠️ You must use version >=0.3.1 to avoid bugs with the STM32WL ⚠️
+* Linux users: Add udev rules
+
 ```text
 # /etc/udev/rules.d/99-stm.rules
 SUBSYSTEM=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="374e", MODE="0666"
 ```
+
+* Linux users: run `sudo udevadm control --reload-rules && sudo udevadm trigger`
 * Connect the nucleo board to your PC via USB
 * `cargo test -p testsuite --target thumbv7em-none-eabi --bin pka`
 
@@ -76,7 +77,5 @@ $ DEFMT_LOG=info cargo test -p testsuite --target thumbv7em-none-eabi --bin subg
 ```
 
 [defmt-test]: https://crates.io/crates/defmt-test
-[newAM/probe-run]: https://github.com/newAM/probe-run
 [probe-run]: https://github.com/knurling-rs/probe-run
 [rustup]: https://rustup.rs/
-[#74]: https://github.com/stm32-rs/stm32wlxx-hal/issues/74

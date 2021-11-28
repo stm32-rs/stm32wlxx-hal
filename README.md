@@ -65,7 +65,7 @@ cargo test --features stm32wl5x_cm4
 
 ## On-Target Tests
 
-See [testsuite/README.md](testsuite/README.md).
+See [testsuite/README.md](https://github.com/stm32-rs/stm32wlxx-hal/blob/main/testsuite/README.md).
 
 ## Reference Documentation
 

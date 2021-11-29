@@ -1,16 +1,16 @@
 use embedded_hal::blocking::delay::DelayUs;
+use radio::{BasicInfo, Busy, Receive, Transmit};
 use radio::modulation::lora;
 use radio::modulation::lora::LoRaChannel;
-use radio::{BasicInfo, Busy, Channel, Receive, Transmit};
 
 use crate::spi::Spi3;
 use crate::subghz;
-use crate::subghz::rfs::{RfSwRx, RfSwTx};
 use crate::subghz::{
     CalibrateImage, CfgIrq, CodingRate, FallbackMode, HeaderType, Irq, LoRaModParams,
-    LoRaPacketParams, LoRaSyncWord, Ocp, PaConfig, PacketType, RampTime, RegMode, RfFreq,
+    LoRaPacketParams, LoRaSyncWord, Ocp, PacketType, PaConfig, RampTime, RegMode, RfFreq,
     SpreadingFactor, StandbyClk, SubGhz, TcxoMode, TcxoTrim, Timeout, TxParams,
 };
+use crate::subghz::rfs::{RfSwRx, RfSwTx};
 
 const IRQ_CFG: CfgIrq = CfgIrq::new()
     .irq_enable_all(Irq::RxDone)
@@ -36,10 +36,10 @@ pub struct Sx126x<MISO, MOSI, RFS> {
 }
 
 impl<MISO, MOSI, RFS> Sx126x<MISO, MOSI, RFS>
-where
-    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = subghz::Error>,
-    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error = subghz::Error>,
-    RFS: RfSwRx + RfSwTx,
+    where
+        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=subghz::Error>,
+        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error=subghz::Error>,
+        RFS: RfSwRx + RfSwTx,
 {
     /// Creates a new Sx126x radio.
     pub fn new(sg: SubGhz<MISO, MOSI>, rfs: RFS) -> Self {
@@ -57,15 +57,28 @@ where
     }
 }
 
+/// All supported modulations for the Sx126x.
+#[derive(Debug)]
+pub enum Channel {
+    LoRa(LoRaChannel),
+}
+
+impl From<LoRaChannel> for Channel {
+    fn from(channel: LoRaChannel) -> Self {
+        Channel::LoRa(channel)
+    }
+}
+
 impl<MISO, MOSI, RFS> Transmit for Sx126x<MISO, MOSI, RFS>
-where
-    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = subghz::Error>,
-    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error = subghz::Error>,
-    RFS: RfSwRx + RfSwTx,
+    where
+        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=subghz::Error>,
+        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error=subghz::Error>,
+        RFS: RfSwRx + RfSwTx,
 {
     type Error = Error;
 
     fn start_transmit(&mut self, data: &[u8]) -> Result<(), Self::Error> {
+        // TODO: Check current modulation
         let lora_packet_params = LoRaPacketParams::new()
             .set_crc_en(true)
             .set_preamble_len(PREAMBLE_LEN)
@@ -89,10 +102,10 @@ where
 }
 
 impl<MISO, MOSI, RFS> Receive for Sx126x<MISO, MOSI, RFS>
-where
-    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = subghz::Error>,
-    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error = subghz::Error>,
-    RFS: RfSwRx + RfSwTx,
+    where
+        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=subghz::Error>,
+        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error=subghz::Error>,
+        RFS: RfSwRx + RfSwTx,
 {
     type Error = Error;
     type Info = BasicInfo;
@@ -121,39 +134,42 @@ where
     }
 }
 
-impl<MISO, MOSI, RFS> Channel for Sx126x<MISO, MOSI, RFS>
-where
-    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = subghz::Error>,
-    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error = subghz::Error>,
+impl<MISO, MOSI, RFS> radio::Channel for Sx126x<MISO, MOSI, RFS>
+    where
+        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=subghz::Error>,
+        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error=subghz::Error>,
 {
-    type Channel = LoRaChannel;
+    type Channel = Channel;
     type Error = Error;
 
     fn set_channel(&mut self, channel: &Self::Channel) -> Result<(), Self::Error> {
-        let rf_freq = RfFreq::from_frequency(channel.freq_khz * 1000);
-        let lora_mod_params = LoRaModParams::new()
-            .set_bw((channel.bw_khz as u32 * 1000).try_into()?)
-            .set_cr(channel.cr.into())
-            .set_ldro_en(true)
-            .set_sf(channel.sf.into());
+        match channel {
+            Channel::LoRa(channel) => {
+                let rf_freq = RfFreq::from_frequency(channel.freq_khz * 1000);
+                let lora_mod_params = LoRaModParams::new()
+                    .set_bw((channel.bw_khz as u32 * 1000).try_into()?)
+                    .set_cr(channel.cr.into())
+                    .set_ldro_en(true)
+                    .set_sf(channel.sf.into());
 
-        self.sg.set_standby(StandbyClk::Rc)?;
-        self.sg.set_tcxo_mode(&TCXO_MODE)?;
-        self.sg.set_tx_rx_fallback_mode(FallbackMode::Standby)?;
-        self.sg.set_regulator_mode(RegMode::Ldo)?;
-        self.sg
-            .set_buffer_base_address(TX_BUF_OFFSET, RX_BUF_OFFSET)?;
-        self.sg.set_pa_config(&PA_CONFIG)?;
-        self.sg.set_pa_ocp(Ocp::Max60m)?;
-        self.sg.set_tx_params(&TX_PARAMS)?;
-        self.sg.set_packet_type(PacketType::LoRa)?;
-        self.sg.set_lora_sync_word(LoRaSyncWord::Public)?;
-        self.sg.set_lora_mod_params(&lora_mod_params)?;
-        self.sg.calibrate_image(CalibrateImage::ISM_430_440)?;
-        self.sg.set_rf_frequency(&rf_freq)?;
-        self.sg.set_irq_cfg(&IRQ_CFG)?;
+                self.sg.set_standby(StandbyClk::Rc)?;
+                self.sg.set_tcxo_mode(&TCXO_MODE)?;
+                self.sg.set_tx_rx_fallback_mode(FallbackMode::Standby)?;
+                self.sg.set_regulator_mode(RegMode::Ldo)?;
+                self.sg.set_buffer_base_address(TX_BUF_OFFSET, RX_BUF_OFFSET)?;
+                self.sg.set_pa_config(&PA_CONFIG)?;
+                self.sg.set_pa_ocp(Ocp::Max60m)?;
+                self.sg.set_tx_params(&TX_PARAMS)?;
+                self.sg.set_packet_type(PacketType::LoRa)?;
+                self.sg.set_lora_sync_word(LoRaSyncWord::Public)?;
+                self.sg.set_lora_mod_params(&lora_mod_params)?;
+                self.sg.calibrate_image(CalibrateImage::ISM_430_440)?;
+                self.sg.set_rf_frequency(&rf_freq)?;
+                self.sg.set_irq_cfg(&IRQ_CFG)?;
 
-        Ok(())
+                Ok(())
+            }
+        }
     }
 }
 

@@ -713,7 +713,6 @@ impl PartialOrd for LoRaBandwidth {
 }
 
 impl TryFrom<u32> for LoRaBandwidth {
-
     type Error = BandwidthError;
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
@@ -733,6 +732,7 @@ impl TryFrom<u32> for LoRaBandwidth {
     }
 }
 
+/// Error that is returned when a bandwidth is not supported.
 #[derive(Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct BandwidthError(u32);

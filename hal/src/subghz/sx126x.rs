@@ -1,9 +1,7 @@
 use embedded_hal::blocking::delay::DelayUs;
-// TODO: Move to radio
-use lorawan_device::radio::{LoRaInfo, LoRaState};
 use radio::modulation::lora;
 use radio::modulation::lora::LoRaChannel;
-use radio::{Busy, Channel, Receive, State, Transmit};
+use radio::{BasicInfo, Busy, Channel, Receive, Transmit};
 
 use crate::spi::Spi3;
 use crate::subghz;
@@ -97,7 +95,7 @@ where
     RFS: RfSwRx + RfSwTx,
 {
     type Error = Error;
-    type Info = LoRaInfo;
+    type Info = BasicInfo;
 
     fn start_receive(&mut self) -> Result<(), Self::Error> {
         self.rfs.set_rx();
@@ -118,7 +116,7 @@ where
         let data: &mut [u8] = &mut buf[..size];
         self.sg.read_buffer(ptr, data)?;
         // TODO: get info
-        let info = LoRaInfo::default();
+        let info = BasicInfo::default();
         Ok((size, info))
     }
 }
@@ -156,19 +154,6 @@ where
         self.sg.set_irq_cfg(&IRQ_CFG)?;
 
         Ok(())
-    }
-}
-
-impl<MISO, MOSI, RFS> State for Sx126x<MISO, MOSI, RFS> {
-    type State = LoRaState;
-    type Error = Error;
-
-    fn set_state(&mut self, _state: Self::State) -> Result<(), Self::Error> {
-        todo!()
-    }
-
-    fn get_state(&mut self) -> Result<Self::State, Self::Error> {
-        todo!()
     }
 }
 

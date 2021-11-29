@@ -63,10 +63,12 @@ pub mod rng;
 pub mod rtc;
 pub mod spi;
 pub mod subghz;
+pub mod tim;
 pub mod uart;
 pub mod util;
 
 mod ratio;
+
 pub use ratio::Ratio;
 
 #[cfg(feature = "rt")]

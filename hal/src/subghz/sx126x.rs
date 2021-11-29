@@ -1,16 +1,17 @@
 use embedded_hal::blocking::delay::DelayUs;
-use radio::{BasicInfo, Busy, Receive, Transmit};
 use radio::modulation::lora;
 use radio::modulation::lora::LoRaChannel;
+use radio::{BasicInfo, Busy, Receive, Transmit};
 
 use crate::spi::Spi3;
 use crate::subghz;
+use crate::subghz::rfs::{RfSwRx, RfSwTx};
 use crate::subghz::{
     CalibrateImage, CfgIrq, CodingRate, FallbackMode, HeaderType, Irq, LoRaModParams,
-    LoRaPacketParams, LoRaSyncWord, Ocp, PacketType, PaConfig, RampTime, RegMode, RfFreq,
+    LoRaPacketParams, LoRaSyncWord, Ocp, PaConfig, PacketType, RampTime, RegMode, RfFreq,
     SpreadingFactor, StandbyClk, SubGhz, TcxoMode, TcxoTrim, Timeout, TxParams,
 };
-use crate::subghz::rfs::{RfSwRx, RfSwTx};
+use crate::tim::Tim2;
 
 const IRQ_CFG: CfgIrq = CfgIrq::new()
     .irq_enable_all(Irq::RxDone)
@@ -30,20 +31,22 @@ const TCXO_MODE: TcxoMode = TcxoMode::new()
     .set_timeout(Timeout::from_millis_sat(10));
 
 /// Sx126x radio.
+#[derive(Debug)]
 pub struct Sx126x<MISO, MOSI, RFS> {
     sg: SubGhz<MISO, MOSI>,
     rfs: RFS,
+    tim2: Tim2,
 }
 
 impl<MISO, MOSI, RFS> Sx126x<MISO, MOSI, RFS>
-    where
-        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=subghz::Error>,
-        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error=subghz::Error>,
-        RFS: RfSwRx + RfSwTx,
+where
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = subghz::Error>,
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error = subghz::Error>,
+    RFS: RfSwRx + RfSwTx,
 {
     /// Creates a new Sx126x radio.
-    pub fn new(sg: SubGhz<MISO, MOSI>, rfs: RFS) -> Self {
-        Sx126x { sg, rfs }
+    pub fn new(sg: SubGhz<MISO, MOSI>, rfs: RFS, tim2: Tim2) -> Self {
+        Sx126x { sg, rfs, tim2 }
     }
 
     /// Returns the internal Sub-GHz radio peripheral.
@@ -70,10 +73,10 @@ impl From<LoRaChannel> for Channel {
 }
 
 impl<MISO, MOSI, RFS> Transmit for Sx126x<MISO, MOSI, RFS>
-    where
-        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=subghz::Error>,
-        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error=subghz::Error>,
-        RFS: RfSwRx + RfSwTx,
+where
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = subghz::Error>,
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error = subghz::Error>,
+    RFS: RfSwRx + RfSwTx,
 {
     type Error = Error;
 
@@ -102,10 +105,10 @@ impl<MISO, MOSI, RFS> Transmit for Sx126x<MISO, MOSI, RFS>
 }
 
 impl<MISO, MOSI, RFS> Receive for Sx126x<MISO, MOSI, RFS>
-    where
-        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=subghz::Error>,
-        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error=subghz::Error>,
-        RFS: RfSwRx + RfSwTx,
+where
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = subghz::Error>,
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error = subghz::Error>,
+    RFS: RfSwRx + RfSwTx,
 {
     type Error = Error;
     type Info = BasicInfo;
@@ -135,9 +138,9 @@ impl<MISO, MOSI, RFS> Receive for Sx126x<MISO, MOSI, RFS>
 }
 
 impl<MISO, MOSI, RFS> radio::Channel for Sx126x<MISO, MOSI, RFS>
-    where
-        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error=subghz::Error>,
-        Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error=subghz::Error>,
+where
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = subghz::Error>,
+    Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Write<u8, Error = subghz::Error>,
 {
     type Channel = Channel;
     type Error = Error;
@@ -156,7 +159,8 @@ impl<MISO, MOSI, RFS> radio::Channel for Sx126x<MISO, MOSI, RFS>
                 self.sg.set_tcxo_mode(&TCXO_MODE)?;
                 self.sg.set_tx_rx_fallback_mode(FallbackMode::Standby)?;
                 self.sg.set_regulator_mode(RegMode::Ldo)?;
-                self.sg.set_buffer_base_address(TX_BUF_OFFSET, RX_BUF_OFFSET)?;
+                self.sg
+                    .set_buffer_base_address(TX_BUF_OFFSET, RX_BUF_OFFSET)?;
                 self.sg.set_pa_config(&PA_CONFIG)?;
                 self.sg.set_pa_ocp(Ocp::Max60m)?;
                 self.sg.set_tx_params(&TX_PARAMS)?;
@@ -182,8 +186,8 @@ impl<MISO, MOSI, RFS> Busy for Sx126x<MISO, MOSI, RFS> {
 }
 
 impl<MISO, MOSI, RFS> DelayUs<u32> for Sx126x<MISO, MOSI, RFS> {
-    fn delay_us(&mut self, _us: u32) {
-        todo!()
+    fn delay_us(&mut self, us: u32) {
+        self.tim2.delay_us(us)
     }
 }
 

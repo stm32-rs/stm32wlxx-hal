@@ -1,4 +1,5 @@
 use embedded_hal::blocking::delay::DelayUs;
+// TODO: Move to radio
 use lorawan_device::radio::{LoRaInfo, LoRaState};
 use radio::modulation::lora;
 use radio::modulation::lora::LoRaChannel;
@@ -131,10 +132,9 @@ where
     type Error = Error;
 
     fn set_channel(&mut self, channel: &Self::Channel) -> Result<(), Self::Error> {
-        let rf_freq = RfFreq::from_frequency(channel.freq_khz);
+        let rf_freq = RfFreq::from_frequency(channel.freq_khz * 1000);
         let lora_mod_params = LoRaModParams::new()
-            // TODO: Remove cast
-            .set_bw((channel.bw_khz as u32).into())
+            .set_bw((channel.bw_khz as u32 * 1000).try_into()?)
             .set_cr(channel.cr.into())
             .set_ldro_en(true)
             .set_sf(channel.sf.into());
@@ -189,11 +189,18 @@ impl<MISO, MOSI, RFS> DelayUs<u32> for Sx126x<MISO, MOSI, RFS> {
 #[derive(Debug)]
 pub enum Error {
     SubGhz(subghz::Error),
+    Bandwidth(subghz::BandwidthError),
 }
 
 impl From<subghz::Error> for Error {
     fn from(err: subghz::Error) -> Self {
         Error::SubGhz(err)
+    }
+}
+
+impl From<subghz::BandwidthError> for Error {
+    fn from(err: subghz::BandwidthError) -> Self {
+        Error::Bandwidth(err)
     }
 }
 

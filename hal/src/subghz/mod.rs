@@ -19,7 +19,7 @@ pub use hse_trim::HseTrim;
 pub use irq::{CfgIrq, Irq, IrqLine};
 pub use lora_sync_word::LoRaSyncWord;
 pub use mod_params::BpskModParams;
-pub use mod_params::{CodingRate, LoRaBandwidth, LoRaModParams, SpreadingFactor};
+pub use mod_params::{BandwidthError, CodingRate, LoRaBandwidth, LoRaModParams, SpreadingFactor};
 pub use mod_params::{FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape};
 pub use ocp::Ocp;
 pub use op_error::OpError;

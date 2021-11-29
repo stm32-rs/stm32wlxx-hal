@@ -233,9 +233,9 @@ dependencies = [
 
 [[package]]
 name = "embedded-hal"
-version = "1.0.0-alpha.5"
+version = "1.0.0-alpha.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a554c04648665230499563ccdfd1fcd719ef2d5a0af54bdc81c5d877fb556db4"
+checksum = "570e765da7319a256dfe1542f14501a53f74e020b68aa666a98b1ad31a614c7e"
 dependencies = [
  "nb 1.0.0",
 ]
@@ -297,7 +297,7 @@ dependencies = [
 [[package]]
 name = "lorawan-device"
 version = "0.1.0"
-source = "git+https://github.com/Tortoaster/lorawan-device.git#d6798a6ba6d6dc97f597d856dd2862e7d89ad3a7"
+source = "git+https://github.com/Tortoaster/lorawan-device.git#8c67deb4ffa125f53d209aaf2b6a3d9778121384"
 dependencies = [
  "embedded-hal 0.2.6",
  "lorawan-encoding",
@@ -476,7 +476,7 @@ version = "0.10.0"
 source = "git+https://github.com/rust-iot/radio-hal.git?branch=modulation-types#5732e5b398b757467031cbba0c9c9d5f79497ab8"
 dependencies = [
  "chrono",
- "embedded-hal 1.0.0-alpha.5",
+ "embedded-hal 1.0.0-alpha.6",
  "nb 1.0.0",
 ]
 

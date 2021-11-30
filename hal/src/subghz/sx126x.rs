@@ -1,3 +1,4 @@
+use core::time::Duration;
 use embedded_hal::blocking::delay::DelayUs;
 use radio::modulation::lora;
 use radio::modulation::lora::LoRaChannel;
@@ -29,6 +30,12 @@ const TX_PARAMS: TxParams = TxParams::LP_10.set_ramp_time(RampTime::Micros40);
 const TCXO_MODE: TcxoMode = TcxoMode::new()
     .set_txco_trim(TcxoTrim::Volts1pt7)
     .set_timeout(Timeout::from_millis_sat(10));
+
+/// Allowed transmission time before timeout.
+const TX_TIMEOUT: Timeout = Timeout::from_duration_sat(Duration::from_millis(4000));
+
+/// Allowed receiving time before timeout.
+const RX_TIMEOUT: Timeout = Timeout::from_duration_sat(Duration::from_millis(500));
 
 /// Sx126x radio.
 #[derive(Debug)]
@@ -92,15 +99,22 @@ where
         self.sg.set_lora_packet_params(&lora_packet_params)?;
         self.sg.write_buffer(TX_BUF_OFFSET, data)?;
         self.rfs.set_tx();
-        self.sg.set_tx(Timeout::from_millis_sat(100))?;
+        self.sg.set_tx(TX_TIMEOUT)?;
+
         Ok(())
     }
 
     fn check_transmit(&mut self) -> Result<bool, Self::Error> {
         let (_, irq_status) = self.sg.irq_status()?;
-        self.sg.clear_irq_status(irq_status)?;
-        // TODO: Check for timeout
-        Ok(irq_status & Irq::TxDone.mask() != 0)
+        if irq_status & Irq::Timeout.mask() != 0 {
+            self.sg.clear_irq_status(irq_status)?;
+            Err(Error::Timeout)
+        } else if irq_status & Irq::TxDone.mask() != 0 {
+            self.sg.clear_irq_status(irq_status)?;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
     }
 }
 
@@ -115,15 +129,21 @@ where
 
     fn start_receive(&mut self) -> Result<(), Self::Error> {
         self.rfs.set_rx();
-        self.sg.set_rx(Timeout::from_millis_sat(100))?;
+        self.sg.set_rx(RX_TIMEOUT)?;
         Ok(())
     }
 
     fn check_receive(&mut self, _: bool) -> Result<bool, Self::Error> {
         let (_, irq_status) = self.sg.irq_status()?;
-        self.sg.clear_irq_status(irq_status)?;
-        // TODO: Check for timeout
-        Ok(irq_status & Irq::RxDone.mask() != 0)
+        if irq_status & Irq::Timeout.mask() != 0 {
+            self.sg.clear_irq_status(irq_status)?;
+            Err(Error::Timeout)
+        } else if irq_status & Irq::TxDone.mask() != 0 {
+            self.sg.clear_irq_status(irq_status)?;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
     }
 
     fn get_received(&mut self, buf: &mut [u8]) -> Result<(usize, Self::Info), Self::Error> {
@@ -195,6 +215,7 @@ impl<MISO, MOSI, RFS> DelayUs<u32> for Sx126x<MISO, MOSI, RFS> {
 pub enum Error {
     SubGhz(subghz::Error),
     Bandwidth(subghz::BandwidthError),
+    Timeout,
 }
 
 impl From<subghz::Error> for Error {

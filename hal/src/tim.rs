@@ -1,5 +1,6 @@
 //! Timers
 
+use embedded_hal::blocking::delay::DelayUs;
 use crate::pac;
 
 /// Timer for delays.
@@ -16,7 +17,7 @@ impl Tim2 {
         rcc.apb1rstr1.modify(|_, w| w.tim2rst().set_bit());
         rcc.apb1rstr1.modify(|_, w| w.tim2rst().clear_bit());
 
-        // 1 microsecond delay
+        // Prescaler for 1 microsecond delay
         tim2.psc.write(|w| w.psc().bits(48 - 1));
 
         tim2.cr1.write(|w| w.dir().up().cen().enabled());
@@ -24,13 +25,26 @@ impl Tim2 {
 
         Tim2 { tim2 }
     }
+}
 
-    /// Delays for `us` microseconds.
-    pub fn delay_us(&mut self, us: u32) {
-        // TODO: GitHub Copilot gave me this, does it work?
-        self.tim2.cnt.write(|w| w.cnt().bits(0));
-        self.tim2.arr.write(|w| w.arr().bits(us));
+impl DelayUs<u32> for Tim2 {
+    fn delay_us(&mut self, us: u32) {
+        // Write Auto-Reload Register (ARR)
+        // Note: Make it impossible to set the ARR value to 0, since this
+        // would cause an infinite loop.
+        self.tim2.arr.write(|w| unsafe { w.bits(us.max(1)) });
+
+        // Trigger update event (UEV) in the event generation register (EGR)
+        // in order to immediately apply the config
+        self.tim2.cr1.modify(|_, w| w.urs().set_bit());
         self.tim2.egr.write(|w| w.ug().set_bit());
-        while self.tim2.sr.read().uif().bit_is_clear() {}
+        self.tim2.cr1.modify(|_, w| w.urs().clear_bit());
+
+        // Configure the counter in one-pulse mode (counter stops counting at
+        // the next updateevent, clearing the CEN bit) and enable the counter.
+        self.tim2.cr1.write(|w| w.opm().set_bit().cen().set_bit());
+
+        // Wait for CEN bit to clear
+        while self.tim2.cr1.read().cen().is_enabled() { /* wait */ }
     }
 }

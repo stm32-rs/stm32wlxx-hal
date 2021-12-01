@@ -32,10 +32,10 @@ const TCXO_MODE: TcxoMode = TcxoMode::new()
     .set_timeout(Timeout::from_millis_sat(10));
 
 /// Allowed transmission time before timeout.
-const TX_TIMEOUT: Timeout = Timeout::from_duration_sat(Duration::from_millis(4000));
+const TX_TIMEOUT: Timeout = Timeout::from_duration_sat(Duration::from_millis(5000));
 
 /// Allowed receiving time before timeout.
-const RX_TIMEOUT: Timeout = Timeout::from_duration_sat(Duration::from_millis(500));
+const RX_TIMEOUT: Timeout = Timeout::from_duration_sat(Duration::from_millis(600));
 
 /// Sx126x radio.
 #[derive(Debug)]
@@ -201,7 +201,7 @@ impl<MISO, MOSI, RFS> Busy for Sx126x<MISO, MOSI, RFS> {
     type Error = Error;
 
     fn is_busy(&mut self) -> Result<bool, Self::Error> {
-        Ok(subghz::rfbusyms())
+        Ok(subghz::rfbusys())
     }
 }
 

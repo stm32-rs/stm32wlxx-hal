@@ -419,7 +419,7 @@ impl<'a> Flash<'a> {
     ///    The compiler may inline this function, because `#[inline(never)]` is
     ///    merely a suggestion.
     #[allow(unused_unsafe)]
-    #[link_section = ".data"]
+    #[cfg_attr(target_os = "none", link_section = ".data")]
     #[inline(never)]
     pub unsafe fn fast_program(&mut self, from: *const u64, to: *mut u64) -> Result<(), Error> {
         let sr: u32 = self.sr();
@@ -504,7 +504,7 @@ impl<'a> Flash<'a> {
     /// 1. The CPU must execute this from SRAM.
     ///    The compiler may inline this function, because `#[inline(never)]` is
     ///    merely a suggestion.
-    #[link_section = ".data"]
+    #[cfg_attr(target_os = "none", link_section = ".data")]
     #[inline(never)]
     pub unsafe fn mass_erase(&mut self) -> Result<(), Error> {
         let sr: u32 = self.sr();

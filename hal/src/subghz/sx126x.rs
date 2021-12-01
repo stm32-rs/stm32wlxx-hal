@@ -212,6 +212,7 @@ impl<MISO, MOSI, RFS> DelayUs<u32> for Sx126x<MISO, MOSI, RFS> {
 }
 
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error {
     SubGhz(subghz::Error),
     Bandwidth(subghz::BandwidthError),
@@ -237,7 +238,7 @@ impl From<lora::CodingRate> for CodingRate {
             lora::CodingRate::Cr4_6 => CodingRate::Cr46,
             lora::CodingRate::Cr4_7 => CodingRate::Cr47,
             lora::CodingRate::Cr4_8 => CodingRate::Cr48,
-            _ => todo!("implement CodingRate: {:?}", cr),
+            _ => todo!("implement CodingRate"),
         }
     }
 }
@@ -253,7 +254,7 @@ impl From<lora::SpreadingFactor> for SpreadingFactor {
             lora::SpreadingFactor::Sf10 => SpreadingFactor::Sf10,
             lora::SpreadingFactor::Sf11 => SpreadingFactor::Sf11,
             lora::SpreadingFactor::Sf12 => SpreadingFactor::Sf12,
-            _ => todo!("implement SpreadingFactor: {:?}", sf),
+            _ => todo!("implement SpreadingFactor"),
         }
     }
 }

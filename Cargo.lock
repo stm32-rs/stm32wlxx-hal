@@ -297,11 +297,11 @@ dependencies = [
 [[package]]
 name = "lorawan-device"
 version = "0.1.0"
-source = "git+https://github.com/Tortoaster/lorawan-device.git#8c67deb4ffa125f53d209aaf2b6a3d9778121384"
 dependencies = [
  "embedded-hal 0.2.6",
  "lorawan-encoding",
  "radio",
+ "rand_core",
 ]
 
 [[package]]
@@ -473,7 +473,7 @@ dependencies = [
 [[package]]
 name = "radio"
 version = "0.10.0"
-source = "git+https://github.com/rust-iot/radio-hal.git?branch=modulation-types#5732e5b398b757467031cbba0c9c9d5f79497ab8"
+source = "git+https://github.com/Tortoaster/radio-hal.git?branch=modulation-types#19ea094c922328db1fd5c20442f0d05db1851b10"
 dependencies = [
  "chrono",
  "embedded-hal 1.0.0-alpha.6",

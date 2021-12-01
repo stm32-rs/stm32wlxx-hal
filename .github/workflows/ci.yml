@@ -79,7 +79,8 @@ jobs:
         with:
           toolchain: stable
           target: thumbv7em-none-eabi
-      - run: cargo test -p testsuite --target thumbv7em-none-eabi --bins --no-run
+      - run: |
+          cargo test -p testsuite --target thumbv7em-none-eabi --bins --locked --no-run
       - name: Upload test binaries
         uses: actions/upload-artifact@v2
         with:

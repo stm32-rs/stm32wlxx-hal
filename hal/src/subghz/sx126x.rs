@@ -1,10 +1,8 @@
 use core::time::Duration;
-use embedded_hal::blocking::delay::DelayUs;
+
 use radio::modulation::lora;
 use radio::modulation::lora::LoRaChannel;
 use radio::{BasicInfo, Busy, Receive, Transmit};
-use rand_core::RngCore;
-use crate::rng::Rng;
 
 use crate::spi::Spi3;
 use crate::subghz;
@@ -14,7 +12,6 @@ use crate::subghz::{
     LoRaPacketParams, LoRaSyncWord, Ocp, PaConfig, PacketType, RampTime, RegMode, RfFreq,
     SpreadingFactor, StandbyClk, SubGhz, TcxoMode, TcxoTrim, Timeout, TxParams,
 };
-use crate::tim::Tim2;
 
 const IRQ_CFG: CfgIrq = CfgIrq::new()
     .irq_enable_all(Irq::RxDone)
@@ -44,8 +41,6 @@ const RX_TIMEOUT: Timeout = Timeout::from_duration_sat(Duration::from_millis(600
 pub struct Sx126x<MISO, MOSI, RFS> {
     sg: SubGhz<MISO, MOSI>,
     rfs: RFS,
-    tim2: Tim2,
-    rng: Rng,
 }
 
 impl<MISO, MOSI, RFS> Sx126x<MISO, MOSI, RFS>
@@ -55,8 +50,8 @@ where
     RFS: RfSwRx + RfSwTx,
 {
     /// Creates a new Sx126x radio.
-    pub fn new(sg: SubGhz<MISO, MOSI>, rfs: RFS, tim2: Tim2, rng: Rng) -> Self {
-        Sx126x { sg, rfs, tim2, rng }
+    pub fn new(sg: SubGhz<MISO, MOSI>, rfs: RFS) -> Self {
+        Sx126x { sg, rfs }
     }
 
     /// Returns the internal Sub-GHz radio peripheral.
@@ -67,18 +62,6 @@ where
     /// Returns a mutable reference to the internal Sub-GHz radio peripheral.
     pub fn as_mut_subghz(&mut self) -> &mut SubGhz<MISO, MOSI> {
         &mut self.sg
-    }
-}
-
-/// All supported modulations for the Sx126x.
-#[derive(Debug)]
-pub enum Channel {
-    LoRa(LoRaChannel),
-}
-
-impl From<LoRaChannel> for Channel {
-    fn from(channel: LoRaChannel) -> Self {
-        Channel::LoRa(channel)
     }
 }
 
@@ -160,6 +143,18 @@ where
     }
 }
 
+/// All supported modulations for the Sx126x.
+#[derive(Debug)]
+pub enum Channel {
+    LoRa(LoRaChannel),
+}
+
+impl From<LoRaChannel> for Channel {
+    fn from(channel: LoRaChannel) -> Self {
+        Channel::LoRa(channel)
+    }
+}
+
 impl<MISO, MOSI, RFS> radio::Channel for Sx126x<MISO, MOSI, RFS>
 where
     Spi3<MISO, MOSI>: embedded_hal::blocking::spi::Transfer<u8, Error = subghz::Error>,
@@ -205,30 +200,6 @@ impl<MISO, MOSI, RFS> Busy for Sx126x<MISO, MOSI, RFS> {
 
     fn is_busy(&mut self) -> Result<bool, Self::Error> {
         Ok(subghz::rfbusys())
-    }
-}
-
-impl<MISO, MOSI, RFS> DelayUs<u32> for Sx126x<MISO, MOSI, RFS> {
-    fn delay_us(&mut self, us: u32) {
-        self.tim2.delay_us(us)
-    }
-}
-
-impl<MISO, MOSI, RFS> RngCore for Sx126x<MISO, MOSI, RFS> {
-    fn next_u32(&mut self) -> u32 {
-        self.rng.next_u32()
-    }
-
-    fn next_u64(&mut self) -> u64 {
-        self.rng.next_u64()
-    }
-
-    fn fill_bytes(&mut self, dest: &mut [u8]) {
-        self.rng.fill_bytes(dest)
-    }
-
-    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand_core::Error> {
-        self.rng.try_fill_bytes(dest)
     }
 }
 

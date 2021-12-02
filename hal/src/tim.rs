@@ -1,6 +1,7 @@
 //! Timers
 
 use embedded_hal::blocking::delay::DelayUs;
+
 use crate::pac;
 
 /// Timer for delays.

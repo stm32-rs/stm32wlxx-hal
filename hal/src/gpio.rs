@@ -70,6 +70,10 @@ pub enum Pull {
 struct Pin<const BASE: usize, const N: u8> {}
 
 impl<const BASE: usize, const N: u8> Pin<BASE, N> {
+    const _NPANIC: () = if N > 15 {
+        core::panic!("Pin index is out of range")
+    };
+
     const MODER_R: *const u32 = BASE as *const u32;
     const MODER_W: *mut u32 = BASE as *mut u32;
     const OTYPER_R: *const u32 = (BASE + 0x4) as *const u32;

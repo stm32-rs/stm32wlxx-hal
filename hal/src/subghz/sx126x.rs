@@ -3,6 +3,8 @@ use embedded_hal::blocking::delay::DelayUs;
 use radio::modulation::lora;
 use radio::modulation::lora::LoRaChannel;
 use radio::{BasicInfo, Busy, Receive, Transmit};
+use rand_core::RngCore;
+use crate::rng::Rng;
 
 use crate::spi::Spi3;
 use crate::subghz;
@@ -43,6 +45,7 @@ pub struct Sx126x<MISO, MOSI, RFS> {
     sg: SubGhz<MISO, MOSI>,
     rfs: RFS,
     tim2: Tim2,
+    rng: Rng,
 }
 
 impl<MISO, MOSI, RFS> Sx126x<MISO, MOSI, RFS>
@@ -52,8 +55,8 @@ where
     RFS: RfSwRx + RfSwTx,
 {
     /// Creates a new Sx126x radio.
-    pub fn new(sg: SubGhz<MISO, MOSI>, rfs: RFS, tim2: Tim2) -> Self {
-        Sx126x { sg, rfs, tim2 }
+    pub fn new(sg: SubGhz<MISO, MOSI>, rfs: RFS, tim2: Tim2, rng: Rng) -> Self {
+        Sx126x { sg, rfs, tim2, rng }
     }
 
     /// Returns the internal Sub-GHz radio peripheral.
@@ -208,6 +211,24 @@ impl<MISO, MOSI, RFS> Busy for Sx126x<MISO, MOSI, RFS> {
 impl<MISO, MOSI, RFS> DelayUs<u32> for Sx126x<MISO, MOSI, RFS> {
     fn delay_us(&mut self, us: u32) {
         self.tim2.delay_us(us)
+    }
+}
+
+impl<MISO, MOSI, RFS> RngCore for Sx126x<MISO, MOSI, RFS> {
+    fn next_u32(&mut self) -> u32 {
+        self.rng.next_u32()
+    }
+
+    fn next_u64(&mut self) -> u64 {
+        self.rng.next_u64()
+    }
+
+    fn fill_bytes(&mut self, dest: &mut [u8]) {
+        self.rng.fill_bytes(dest)
+    }
+
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand_core::Error> {
+        self.rng.try_fill_bytes(dest)
     }
 }
 

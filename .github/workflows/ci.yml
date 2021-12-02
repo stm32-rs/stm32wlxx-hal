@@ -23,7 +23,7 @@ jobs:
           - "stm32wl5x_cm4"
           - "stm32wle5"
         toolchain:
-          - "1.56" # MSRV
+          - "1.57" # MSRV
           - "beta"
         exclude:
           - mcu: "stm32wl5x_cm0p"

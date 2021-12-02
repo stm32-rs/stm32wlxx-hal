@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a `flash` module with erase and program functionality.
 - Added `defmt::Format` for all types declared in the BSPs.
 
+### Changed
+- Changed minimum rust version from 1.56 to 1.57 for `const_panic`.
+
 ## [0.2.1] - 2021-11-20
 ### Fixed
 - Fixed timeouts after calling `SubGhz::set_sleep`.

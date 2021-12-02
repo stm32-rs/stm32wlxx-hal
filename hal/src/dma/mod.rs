@@ -60,8 +60,8 @@ pub(crate) struct Dma<const BASE: usize, const CH: u8> {}
 impl<const BASE: usize, const CH: u8> Dma<BASE, CH> {
     pub const MUX_CH: u8 = match BASE {
         DMA1_BASE => CH,
-        // TODO: replace with const panic when avaliable
-        _ => CH + 7,
+        DMA2_BASE => CH + 7,
+        _ => core::panic!("DMA base address is invalid"),
     };
     const MUX_CR: *mut u32 = (MUX_BASE + 0x4 * (Self::MUX_CH as usize)) as *mut u32;
     // const MUX_RGCR: *mut u32 = (MUX_BASE + 0x100 + 0x4 * (Self::MUX_CH as usize)) as *mut u32;

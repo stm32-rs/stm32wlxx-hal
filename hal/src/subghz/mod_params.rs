@@ -733,7 +733,7 @@ impl TryFrom<u32> for LoRaBandwidth {
 }
 
 /// Error that is returned when a bandwidth is not supported.
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct BandwidthError(u32);
 

@@ -144,7 +144,8 @@ where
 }
 
 /// All supported modulations for the Sx126x.
-#[derive(Debug)]
+#[derive(Clone, Debug, PartialEq)]
+#[non_exhaustive]
 pub enum Channel {
     LoRa(LoRaChannel),
 }
@@ -203,7 +204,7 @@ impl<MISO, MOSI, RFS> Busy for Sx126x<MISO, MOSI, RFS> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error {
     SubGhz(subghz::Error),

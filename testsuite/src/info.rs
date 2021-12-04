@@ -50,7 +50,8 @@ mod tests {
 
     #[test]
     fn uid64() {
-        defmt::assert_eq!(info::uid64().dev_id(), 0x15);
-        defmt::assert_eq!(info::uid64().company_id(), 0x0080E1);
+        defmt::assert_eq!(info::Uid64::from_device().dev_id(), 0x15);
+        defmt::assert_eq!(info::Uid64::from_device().company_id(), 0x0080E1);
+        defmt::assert_eq!(info::Uid64::from_device().devnum(), Uid64::devnum());
     }
 }

@@ -17,7 +17,7 @@ impl Core {
     ///
     /// This is determined by the HAL features.
     ///
-    /// For a runtime mechanism use [`Core::core()`].
+    /// For a runtime mechanism use [`Core::from_cpuid()`].
     ///
     /// # Example
     ///
@@ -25,22 +25,22 @@ impl Core {
     /// use stm32wlxx_hal::info::Core;
     ///
     /// #[cfg(feature = "stm32wl5x_cm4")]
-    /// assert_eq!(Core::CORE, Core::Cm4);
+    /// assert_eq!(Core::CT, Core::Cm4);
     ///
     /// #[cfg(feature = "stm32wl5x_cm0p")]
-    /// assert_eq!(Core::CORE, Core::Cm0p);
+    /// assert_eq!(Core::CT, Core::Cm0p);
     ///
     /// #[cfg(feature = "stm32wle5")]
-    /// assert_eq!(Core::CORE, Core::Cm4);
+    /// assert_eq!(Core::CT, Core::Cm4);
     /// ```
-    pub const CORE: Core = c1_c2!(Core::Cm4, Core::Cm0p);
+    pub const CT: Core = c1_c2!(Core::Cm4, Core::Cm0p);
 
     /// Get the CPU core at runtime.
     ///
     /// This is determined by the part number field in CPUID register in the
     /// system control block.
     ///
-    /// For a compile time mechanism use [`Core::CORE`].
+    /// For a compile time mechanism use [`Core::CT`].
     ///
     /// # Example
     ///
@@ -48,13 +48,13 @@ impl Core {
     /// # #[cfg(features = "defmt")] {
     /// use stm32wlxx_hal::info::Core;
     ///
-    /// match Core::core() {
+    /// match Core::from_device() {
     ///     Core::Cm4 => defmt::info!("Hello world from the Cortex-M4 CPU"),
     ///     Core::Cm0p => defmt::info!("Hello world from the Cortex-M0+ CPU"),
     /// }
     /// # }
     /// ```
-    pub fn core() -> Core {
+    pub fn from_cpuid() -> Core {
         const CPUID: *const u32 = 0xE000ED00 as *const u32;
         let cpuid: u32 = unsafe { CPUID.read_volatile() };
 

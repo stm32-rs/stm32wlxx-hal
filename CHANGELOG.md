@@ -6,8 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Added `info::Core::CORE` to get the CPU core at compile time.
-- Added `info::Core::core()` to get the CPU core at runtime.
+- Added `info::Core::CT` to get the CPU core at compile time.
+- Added `info::Core::from_cpuid()` to get the CPU core at runtime.
 - Added a `flash` module with erase and program functionality.
 - Added `defmt::Format` for all types declared in the BSPs.
 - Added `info::uid::PTR`.

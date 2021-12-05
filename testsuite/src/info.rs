@@ -5,7 +5,7 @@ use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use nucleo_wl55jc_bsp::hal::{
     cortex_m,
-    info::{self, Core},
+    info::{self, Core, Uid64},
     pac::{self, DWT},
     rcc,
     util::reset_cycle_count,
@@ -38,8 +38,8 @@ mod tests {
 
     #[test]
     fn core() {
-        defmt::assert_eq!(info::CORE, Core::Cm4);
-        defmt::assert_eq!(info::core(), Core::Cm4);
+        defmt::assert_eq!(Core::CT, Core::Cm4);
+        defmt::assert_eq!(Core::from_cpuid(), Core::Cm4);
     }
 
     #[test]
@@ -50,7 +50,8 @@ mod tests {
 
     #[test]
     fn uid64() {
-        defmt::assert_eq!(info::uid64().dev_id(), 0x15);
-        defmt::assert_eq!(info::uid64().company_id(), 0x0080E1);
+        defmt::assert_eq!(Uid64::from_device().dev_id(), 0x15);
+        defmt::assert_eq!(Uid64::from_device().company_id(), 0x0080E1);
+        defmt::assert_eq!(Uid64::from_device().devnum(), Uid64::read_devnum());
     }
 }

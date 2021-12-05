@@ -6,13 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Added `info::CORE` to get the CPU core at compile time.
-- Added `info::core()` to get the CPU core at runtime.
+- Added `info::Core::CT` to get the CPU core at compile time.
+- Added `info::Core::from_cpuid()` to get the CPU core at runtime.
 - Added a `flash` module with erase and program functionality.
 - Added `defmt::Format` for all types declared in the BSPs.
+- Added `info::uid::PTR`.
 
 ### Changed
 - Changed minimum rust version from 1.56 to 1.57 for `const_panic`.
+- `info::UID64`
+  - Moved to `info::Uid64::PTR`.
+  - Changed the type from `*const u8` to `*const u32`.
+- Moved `info::uid64` to `info::Uid64::from_device`.
+- Moved `info::uid64_devnum` to `info::Uid64::read_devnum`.
+- Moved `info::package` to `info::Package::from_device`.
+- Moved `info::uid` to `info::Uid::from_device`.
 
 ## [0.2.1] - 2021-11-20
 ### Fixed

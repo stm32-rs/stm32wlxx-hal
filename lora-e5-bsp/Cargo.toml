@@ -14,6 +14,7 @@ repository = "https://github.com/stm32-rs/stm32wlxx-hal"
 
 [features]
 defmt = ["stm32wlxx-hal/defmt", "dfmt"]
+embedded-time = ["stm32wlxx-hal/embedded-time"]
 rt = ["stm32wlxx-hal/rt"]
 
 [dependencies.stm32wlxx-hal]
@@ -25,3 +26,8 @@ features = ["stm32wle5"]
 package = "defmt"
 version = "0.3"
 optional = true
+
+[package.metadata.docs.rs]
+all-features = false
+features = ["rt", "embedded-time"]
+rustdoc-args = ["--cfg", "docsrs"]

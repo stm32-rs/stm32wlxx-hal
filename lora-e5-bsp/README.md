@@ -14,6 +14,8 @@ features = [
     "rt",
     # optional: use defmt
     "defmt",
+    # optional: enable conversions with embedded-time types
+    "embedded-time",
 ]
 ```
 

@@ -8,10 +8,6 @@ use crate::{
 };
 
 use cortex_m::interrupt::CriticalSection;
-use embedded_time::{
-    fixed_point::FixedPoint,
-    rate::{Extensions, Hertz},
-};
 
 /// I2C error
 #[derive(Debug)]
@@ -347,12 +343,12 @@ macro_rules! impl_clocks_reset {
                 }
 
                 /// Returns the frequency of the peripheral clock driver
-                fn clock(rcc: &RCC) -> Hertz {
+                fn clock(rcc: &RCC) -> u32 {
                     // NOTE(unsafe) atomic read with no side effects
                     match rcc.ccipr.read().$i2cXsel().variant().unwrap() {
-                        I2C3SEL_A::HSI16 => Hertz(16_000_000),
-                        I2C3SEL_A::SYSCLK => Hertz(sysclk_hz(rcc)), // TODO move the HAL to embedded-time?
-                        I2C3SEL_A::PCLK => Hertz(pclk1_hz(rcc)),
+                        I2C3SEL_A::HSI16 => 16_000_000,
+                        I2C3SEL_A::SYSCLK => sysclk_hz(rcc),
+                        I2C3SEL_A::PCLK => pclk1_hz(rcc),
                     }
                 }
             }
@@ -373,12 +369,12 @@ macro_rules! impl_new_free {
                 ///
                 /// * Frequency is greater than 1 MHz
                 /// * Resulting TIMINGR fields PRESC, SCLDEL, SCADEL, SCLH, SCLL are out of range
-                pub fn new(i2c: $I2CX, mut pins: (SCL, SDA), freq: Hertz, rcc: &mut RCC, pullup: bool, cs: &CriticalSection) -> Self
+                pub fn new(i2c: $I2CX, mut pins: (SCL, SDA), freq_hz: u32, rcc: &mut RCC, pullup: bool, cs: &CriticalSection) -> Self
                     where
                     SCL: crate::gpio::sealed::$I2cXScl + crate::gpio::sealed::PinOps,
                     SDA: crate::gpio::sealed::$I2cXSda + crate::gpio::sealed::PinOps,
                     {
-                        assert!(freq.integer() <= 1_000_000); // TODO Return Error instead of panic
+                        assert!(freq_hz <= 1_000_000); // TODO Return Error instead of panic
 
                         Self::enable_clock(rcc);
                         Self::pulse_reset(rcc);
@@ -395,7 +391,7 @@ macro_rules! impl_new_free {
                             pins.1.set_pull(cs, Pull::None);
                         }
 
-                        let (presc, scll, sclh, sdadel, scldel) = i2c_clocks(Self::clock(rcc), freq);
+                        let (presc, scll, sclh, sdadel, scldel) = i2c_clocks(Self::clock(rcc), freq_hz);
 
                         // Configure for "fast mode" (400 KHz)
                         // NOTE(write): writes all non-reserved bits.
@@ -505,10 +501,10 @@ i2c!([1, 2, 3]);
 /// * SCLH
 /// * SDADEL
 /// * SCLDEL
-fn i2c_clocks(clock: Hertz, freq: Hertz) -> (u8, u8, u8, u8, u8) {
-    let i2cclk = clock.integer();
-    let ratio = i2cclk / freq.integer() - 4;
-    let (presc, scll, sclh, sdadel, scldel) = if freq >= 100.kHz() {
+fn i2c_clocks(clock_hz: u32, freq_hz: u32) -> (u8, u8, u8, u8, u8) {
+    let i2cclk = clock_hz;
+    let ratio = i2cclk / freq_hz - 4;
+    let (presc, scll, sclh, sdadel, scldel) = if freq_hz >= 100_000 {
         // fast-mode or fast-mode plus
         // here we pick SCLL + 1 = 2 * (SCLH + 1)
         let presc = ratio / 387;
@@ -516,7 +512,7 @@ fn i2c_clocks(clock: Hertz, freq: Hertz) -> (u8, u8, u8, u8, u8) {
         let sclh = ((ratio / (presc + 1)) - 3) / 3;
         let scll = 2 * (sclh + 1) - 1;
 
-        let (sdadel, scldel) = if freq > 400.kHz() {
+        let (sdadel, scldel) = if freq_hz > 400_000 {
             // fast-mode plus
             let sdadel = 0;
             let scldel = i2cclk / 4_000_000 / (presc + 1) - 1;

@@ -74,4 +74,6 @@ pub use cortex_m_rt;
 pub use chrono;
 pub use cortex_m;
 pub use embedded_hal;
+
+#[cfg(feature = "embedded_time")]
 pub use embedded_time;

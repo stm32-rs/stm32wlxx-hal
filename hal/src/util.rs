@@ -1,6 +1,5 @@
 //! Miscellaneous utilities
 use crate::pac;
-use core::ptr::write_volatile;
 use cortex_m::{delay::Delay, peripheral::syst::SystClkSource};
 
 /// Create a new [`cortex_m::delay::Delay`] from the current CPU systick
@@ -15,6 +14,7 @@ use cortex_m::{delay::Delay, peripheral::syst::SystClkSource};
 /// let cp = pac::CorePeripherals::take().unwrap();
 /// let delay = new_delay(cp.SYST, &dp.RCC);
 /// ```
+#[inline]
 pub fn new_delay(syst: pac::SYST, rcc: &pac::RCC) -> Delay {
     Delay::new(
         syst,
@@ -41,7 +41,8 @@ pub fn new_delay(syst: pac::SYST, rcc: &pac::RCC) -> Delay {
 ///
 /// [#347]: https://github.com/rust-embedded/cortex-m/pull/347
 #[allow(unused_variables)]
+#[inline]
 pub fn reset_cycle_count(dwt: &mut pac::DWT) {
-    const DWT_CYCCNT: usize = 0xE0001004;
-    unsafe { write_volatile(DWT_CYCCNT as *mut u32, 0) };
+    const DWT_CYCCNT: *mut u32 = 0xE0001004 as *mut u32;
+    unsafe { DWT_CYCCNT.write_volatile(0) };
 }

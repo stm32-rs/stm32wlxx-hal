@@ -15,10 +15,7 @@
 
 mod cr;
 
-use core::{
-    ops::Mul,
-    ptr::{read_volatile, write_volatile},
-};
+use core::ops::Mul;
 
 use super::pac;
 
@@ -79,53 +76,53 @@ impl<const BASE: usize, const CH: u8> Dma<BASE, CH> {
 
     #[inline]
     pub fn flags(&self) -> u8 {
-        let raw: u32 = unsafe { read_volatile(Self::ISR) };
+        let raw: u32 = unsafe { Self::ISR.read_volatile() };
         ((raw >> CH.mul(4)) & 0xF) as u8
     }
 
     #[inline]
     pub fn clear_flags(&mut self, flags: u8) {
         let val: u32 = u32::from(flags & 0xF) << CH.mul(4);
-        unsafe { write_volatile(Self::IFCR, val) }
+        unsafe { Self::IFCR.write_volatile(val) }
     }
 
     #[inline]
     pub fn set_periph_addr(&mut self, pa: u32) {
-        unsafe { write_volatile(Self::PA, pa) }
+        unsafe { Self::PA.write_volatile(pa) }
     }
 
     #[inline]
     pub fn set_mem_addr(&mut self, ma: u32) {
-        unsafe { write_volatile(Self::MA, ma) }
+        unsafe { Self::MA.write_volatile(ma) }
     }
 
     #[inline]
     pub fn set_num_data_xfer(&mut self, ndt: u32) {
-        unsafe { write_volatile(Self::NDT, ndt) }
+        unsafe { Self::NDT.write_volatile(ndt) }
     }
 
     #[inline]
     pub fn set_cr(&mut self, cr: Cr) {
-        unsafe { write_volatile(Self::CR, cr.raw()) }
+        unsafe { Self::CR.write_volatile(cr.raw()) }
     }
 
     #[inline]
     pub fn set_mux_cr_reqid(&mut self, req_id: u8) {
-        unsafe { write_volatile(Self::MUX_CR, req_id as u32) }
+        unsafe { Self::MUX_CR.write_volatile(req_id as u32) }
     }
 
     /// Returns `true` if the DMA MUX synchronization overrun bit is set for
     /// this channel.
     #[inline]
     pub fn sync_ovr(&self) -> bool {
-        let csr: u32 = unsafe { read_volatile(MUX_CSR_ADDR as *const u32) };
+        let csr: u32 = unsafe { (MUX_CSR_ADDR as *const u32).read_volatile() };
         csr >> Self::MUX_CH & 0b1 == 0b1
     }
 
     #[inline]
     #[allow(dead_code)]
     pub fn clr_sync_ovr(&mut self) {
-        unsafe { write_volatile(MUX_CCFR_ADDR as *mut u32, 1 << Self::MUX_CH) };
+        unsafe { (MUX_CCFR_ADDR as *mut u32).write_volatile(1 << Self::MUX_CH) };
     }
 }
 

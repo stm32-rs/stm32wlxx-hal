@@ -1,7 +1,6 @@
 //! General purpose input-output pins
 
 use crate::{adc, pac};
-use core::ptr::{read_volatile, write_volatile};
 use cortex_m::interrupt::CriticalSection;
 
 pub use embedded_hal::digital::v2::PinState;
@@ -55,7 +54,6 @@ pub enum Speed {
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-
 pub enum Pull {
     /// No pull-up, no pull-down.
     None = 0b00,
@@ -65,6 +63,10 @@ pub enum Pull {
     Down = 0b10,
 }
 
+const GPIOA_BASE: usize = 0x4800_0000;
+const GPIOB_BASE: usize = 0x4800_0400;
+const GPIOC_BASE: usize = 0x4800_0800;
+
 #[derive(Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 struct Pin<const BASE: usize, const N: u8> {}
@@ -72,6 +74,10 @@ struct Pin<const BASE: usize, const N: u8> {}
 impl<const BASE: usize, const N: u8> Pin<BASE, N> {
     const _NPANIC: () = if N > 15 {
         core::panic!("Pin index is out of range")
+    };
+    const _BASEPANIC: () = match BASE {
+        GPIOA_BASE | GPIOB_BASE | GPIOC_BASE => (),
+        _ => core::panic!("Base address is invalid"),
     };
 
     const MODER_R: *const u32 = BASE as *const u32;
@@ -97,41 +103,41 @@ impl<const BASE: usize, const N: u8> Pin<BASE, N> {
 
     #[inline(always)]
     pub(crate) fn set_mode(&mut self, _cs: &CriticalSection, mode: sealed::Mode) {
-        let mut val: u32 = unsafe { read_volatile(Self::MODER_R) };
+        let mut val: u32 = unsafe { Self::MODER_R.read_volatile() };
         val &= !(0b11 << (N * 2));
         val |= (mode as u8 as u32) << (N * 2);
-        unsafe { write_volatile(Self::MODER_W, val) };
+        unsafe { Self::MODER_W.write_volatile(val) };
     }
 
     #[inline(always)]
     pub(crate) fn set_output_type(&mut self, _cs: &CriticalSection, ot: OutputType) {
-        let mut val: u32 = unsafe { read_volatile(Self::OTYPER_R) };
+        let mut val: u32 = unsafe { Self::OTYPER_R.read_volatile() };
         match ot {
             OutputType::PushPull => val &= !(1 << N),
             OutputType::OpenDrain => val |= 1 << N,
         }
-        unsafe { write_volatile(Self::OTYPER_W, val) };
+        unsafe { Self::OTYPER_W.write_volatile(val) };
     }
 
     #[inline(always)]
     pub(crate) fn set_speed(&mut self, _cs: &CriticalSection, speed: Speed) {
-        let mut val: u32 = unsafe { read_volatile(Self::OSPEEDR_R) };
+        let mut val: u32 = unsafe { Self::OSPEEDR_R.read_volatile() };
         val &= !(0b11 << (N * 2));
         val |= (speed as u8 as u32) << (N * 2);
-        unsafe { write_volatile(Self::OSPEEDR_W, val) };
+        unsafe { Self::OSPEEDR_W.write_volatile(val) };
     }
 
     #[inline(always)]
     pub(crate) fn set_pull(&mut self, _cs: &CriticalSection, pull: Pull) {
-        let mut val: u32 = unsafe { read_volatile(Self::PUPDR_R) };
+        let mut val: u32 = unsafe { Self::PUPDR_R.read_volatile() };
         val &= !(0b11 << (N * 2));
         val |= (pull as u8 as u32) << (N * 2);
-        unsafe { write_volatile(Self::PUPDR_W, val) };
+        unsafe { Self::PUPDR_W.write_volatile(val) };
     }
 
     #[inline(always)]
     pub(crate) fn input_level(&self) -> PinState {
-        if unsafe { read_volatile(Self::IDR) } & (1 << N) == 0 {
+        if unsafe { Self::IDR.read_volatile() } & (1 << N) == 0 {
             PinState::Low
         } else {
             PinState::High
@@ -140,7 +146,7 @@ impl<const BASE: usize, const N: u8> Pin<BASE, N> {
 
     #[inline(always)]
     pub(crate) fn output_level(&self) -> PinState {
-        if unsafe { read_volatile(Self::ODR) } & (1 << N) == 0 {
+        if unsafe { Self::ODR.read_volatile() } & (1 << N) == 0 {
             PinState::Low
         } else {
             PinState::High
@@ -153,16 +159,16 @@ impl<const BASE: usize, const N: u8> Pin<BASE, N> {
             PinState::Low => 1 << (N + 16),
             PinState::High => 1 << N,
         };
-        unsafe { write_volatile(Self::BSRR, val) }
+        unsafe { Self::BSRR.write_volatile(val) }
     }
 
     #[inline(always)]
     pub(crate) fn set_alternate_function(&mut self, cs: &CriticalSection, af: u8) {
         self.set_mode(cs, sealed::Mode::Alternate);
-        let mut val: u32 = unsafe { read_volatile(Self::AF_R) };
+        let mut val: u32 = unsafe { Self::AF_R.read_volatile() };
         val &= !(0b1111 << Self::AF_SHIFT);
         val |= (af as u8 as u32) << Self::AF_SHIFT;
-        unsafe { write_volatile(Self::AF_W, val) };
+        unsafe { Self::AF_W.write_volatile(val) };
     }
 }
 
@@ -442,17 +448,10 @@ pub trait Exti {
 
 /// GPIO pins
 pub mod pins {
-    // Switch to this when avaliable on stable
-    // https://github.com/rust-lang/rust/issues/51910
-    // const GPIOA_BASE: usize = pac::GPIOA::PTR as *const _ as usize;
-    // const GPIOB_BASE: usize = pac::GPIOB::PTR as *const _ as usize;
-    // const GPIOC_BASE: usize = pac::GPIOC::PTR as *const _ as usize;
-
-    const GPIOA_BASE: usize = 0x4800_0000;
-    const GPIOB_BASE: usize = 0x4800_0400;
-    const GPIOC_BASE: usize = 0x4800_0800;
-
-    use super::{adc, pac, CriticalSection, OutputType, Pin, PinState, Pull, Speed};
+    use super::{
+        adc, pac, CriticalSection, OutputType, Pin, PinState, Pull, Speed, GPIOA_BASE, GPIOB_BASE,
+        GPIOC_BASE,
+    };
 
     macro_rules! gpio_struct {
         ($name:ident, $base:expr, $n:expr, $doc:expr) => {

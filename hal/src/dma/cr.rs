@@ -379,14 +379,13 @@ impl Cr {
     }
 
     /// Get the priority level.
+    #[allow(clippy::wildcard_in_or_patterns)]
     pub const fn priority(&self) -> Priority {
         match (self.val >> 12) & 0b11 {
             0b00 => Priority::Low,
             0b01 => Priority::Medium,
             0b10 => Priority::High,
-            0b11 => Priority::VeryHigh,
-            // TODO: convert to `unreachable` when const panic is stabilized
-            _ => Priority::Low,
+            0b11 | _ => Priority::VeryHigh,
         }
     }
 

@@ -38,5 +38,5 @@ static_assertions = "1"
 
 [package.metadata.docs.rs]
 all-features = false
-features = ["stm32wl5x_cm4", "rt"]
+features = ["stm32wl5x_cm4", "rt", "embedded-time"]
 rustdoc-args = ["--cfg", "docsrs"]

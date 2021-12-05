@@ -26,3 +26,8 @@ features = ["stm32wle5"]
 package = "defmt"
 version = "0.3"
 optional = true
+
+[package.metadata.docs.rs]
+all-features = false
+features = ["rt", "embedded-time"]
+rustdoc-args = ["--cfg", "docsrs"]

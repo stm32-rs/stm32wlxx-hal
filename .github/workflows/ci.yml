@@ -148,8 +148,7 @@ jobs:
 
       - name: Test LoRa E5 BSP
         if: ${{ matrix.mcu == 'stm32wle5' }}
-        run: |
-          cargo test -p lora-e5-bsp --features ${{ matrix.mcu }},embedded-time
+        run: cargo test -p lora-e5-bsp --features embedded-time
 
   clippy:
     name: Clippy

@@ -13,6 +13,7 @@ categories = ["embedded", "hardware-support", "no-std"]
 repository = "https://github.com/stm32-rs/stm32wlxx-hal"
 
 [features]
+chrono = ["stm32wlxx-hal/chrono"]
 defmt = ["stm32wlxx-hal/defmt", "dfmt"]
 embedded-time = ["stm32wlxx-hal/embedded-time"]
 rt = ["stm32wlxx-hal/rt"]
@@ -30,5 +31,5 @@ optional = true
 
 [package.metadata.docs.rs]
 all-features = false
-features = ["stm32wl5x_cm4", "rt", "embedded-time"]
+features = ["stm32wl5x_cm4", "rt", "embedded-time", "chrono"]
 rustdoc-args = ["--cfg", "docsrs"]

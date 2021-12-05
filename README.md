@@ -40,6 +40,8 @@ features = [
     "defmt",
     # optional: enable conversions with embedded-time types
     "embedded-time",
+    # optional: use the real time clock (RTC)
+    "chrono",
 ]
 ```
 

@@ -59,6 +59,7 @@ pub mod pka;
 pub mod pwr;
 pub mod rcc;
 pub mod rng;
+#[cfg(feature = "chrono")]
 pub mod rtc;
 pub mod spi;
 pub mod subghz;
@@ -71,6 +72,7 @@ pub use ratio::Ratio;
 #[cfg(feature = "rt")]
 pub use cortex_m_rt;
 
+#[cfg(feature = "chrono")]
 pub use chrono;
 pub use cortex_m;
 pub use embedded_hal;

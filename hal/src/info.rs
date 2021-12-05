@@ -91,8 +91,6 @@ impl core::fmt::Display for Core {
 
 /// 96-bit unique device identifier
 ///
-/// Returned by [`uid`].
-///
 /// **Note:** There are two UIDs, the other is [`Uid64`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
@@ -231,9 +229,7 @@ pub fn flash_size() -> u32 {
     u32::from(flash_size_kibibyte()) << 10
 }
 
-/// Physical package type
-///
-/// Returned by [`package`].
+/// Physical package type.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
@@ -287,9 +283,7 @@ impl Package {
     }
 }
 
-/// IEEE 64-bit unique device ID (UID64)
-///
-/// Returned by [`uid64`].
+/// IEEE 64-bit unique device ID (UID64).
 ///
 /// **Note:** There are two UIDs, the other is [`Uid`].
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]

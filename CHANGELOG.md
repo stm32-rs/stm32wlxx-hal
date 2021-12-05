@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved `info::uid64_devnum` to `info::Uid64::read_devnum`.
 - Moved `info::package` to `info::Package::from_device`.
 - Moved `info::uid` to `info::Uid::from_device`.
+- Added `#[inline]` to `util::new_delay` and `util::reset_cycle_count`.
 
 ## [0.2.1] - 2021-11-20
 ### Fixed

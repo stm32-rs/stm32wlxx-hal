@@ -412,18 +412,21 @@ impl From<Timeout> for [u8; 3] {
     }
 }
 
+#[cfg(feature = "embedded_time")]
 impl From<Timeout> for embedded_time::duration::Seconds {
     fn from(to: Timeout) -> Self {
         embedded_time::duration::Seconds(to.as_secs().into())
     }
 }
 
+#[cfg(feature = "embedded_time")]
 impl From<Timeout> for embedded_time::duration::Milliseconds {
     fn from(to: Timeout) -> Self {
         embedded_time::duration::Milliseconds(to.as_millis())
     }
 }
 
+#[cfg(feature = "embedded_time")]
 impl From<Timeout> for embedded_time::duration::Microseconds {
     fn from(to: Timeout) -> Self {
         embedded_time::duration::Microseconds(to.as_micros())

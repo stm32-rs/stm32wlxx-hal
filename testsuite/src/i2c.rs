@@ -3,7 +3,6 @@
 
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
-use embedded_time::rate::Hertz;
 use nucleo_wl55jc_bsp::hal::{
     cortex_m,
     embedded_hal::blocking::i2c::WriteRead,
@@ -36,7 +35,7 @@ mod tests {
             let i2c2 = I2c2::new(
                 dp.I2C2,
                 (gpioa.a12, gpioa.a11),
-                Hertz(I2C_FREQUENCY),
+                I2C_FREQUENCY,
                 &mut dp.RCC,
                 true,
                 cs,
@@ -72,7 +71,7 @@ mod tests {
             I2c1::new(
                 dp.I2C1,
                 (gpiob.b8, gpiob.b7),
-                Hertz(I2C_FREQUENCY),
+                I2C_FREQUENCY,
                 &mut dp.RCC,
                 false,
                 cs,

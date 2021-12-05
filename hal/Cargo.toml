@@ -25,7 +25,7 @@ cortex-m = "0.7.2"
 cortex-m-rt = { version = "0.7", optional = true }
 defmt = { version = "0.3", optional = true }
 embedded-hal = { version = "0.2.6", features = ["unproven"] }
-embedded-time = "0.12"
+embedded-time = { version = "0.12", optional = true }
 nb = "1"
 num-traits = { version = "0.2", default-features = false }
 paste = "1"

@@ -128,7 +128,7 @@ jobs:
     env: {"RUSTFLAGS": "-D warnings"}
     strategy:
       matrix:
-        feature:
+        mcu:
           - "stm32wl5x_cm0p"
           - "stm32wl5x_cm4"
           - "stm32wle5"
@@ -139,17 +139,17 @@ jobs:
           toolchain: stable
 
       - name: Test HAL
-        run: cargo test --features ${{ matrix.feature }}
+        run: cargo test --features ${{ matrix.mcu }},embedded-time
 
       - name: Test nucleo BSP
         if: ${{ startsWith(matrix.mcu, 'stm32wl5x') }}
         run: |
-          cargo test -p nucleo-wl55jc-bsp --features ${{ matrix.feature }}
+          cargo test -p nucleo-wl55jc-bsp --features ${{ matrix.mcu }},embedded-time
 
       - name: Test LoRa E5 BSP
         if: ${{ matrix.mcu == 'stm32wle5' }}
         run: |
-          cargo test -p lora-e5-bsp --features ${{ matrix.feature }}
+          cargo test -p lora-e5-bsp --features ${{ matrix.mcu }},embedded-time
 
   clippy:
     name: Clippy
@@ -203,7 +203,7 @@ jobs:
         run: |
           cd hal
           cargo +nightly rustdoc \
-          --features rt,stm32wl5x_cm4 \
+          --features embedded-time,rt,stm32wl5x_cm4 \
           -- -Z unstable-options --enable-index-page
       - name: deploy
         if: ${{ github.ref == 'refs/heads/main' }}

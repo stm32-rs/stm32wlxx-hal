@@ -38,8 +38,8 @@ mod tests {
 
     #[test]
     fn core() {
-        defmt::assert_eq!(Core::CORE, Core::Cm4);
-        defmt::assert_eq!(Core::core(), Core::Cm4);
+        defmt::assert_eq!(Core::CT, Core::Cm4);
+        defmt::assert_eq!(Core::from_cpuid(), Core::Cm4);
     }
 
     #[test]

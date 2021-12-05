@@ -5,14 +5,17 @@
 
 use defmt_rtt as _; // global logger
 use panic_probe as _; // panic handler
-use stm32wlxx_hal::{self as hal, info};
+use stm32wlxx_hal::{
+    self as hal,
+    info::{Package, Uid, Uid64},
+};
 
 #[hal::cortex_m_rt::entry]
 fn main() -> ! {
     defmt::info!("Flash size: {} KiB", info::flash_size_kibibyte());
-    defmt::info!("Package: {:?}", info::package());
-    defmt::info!("UID64: {}", info::uid64());
-    defmt::info!("UID: {}", info::uid());
+    defmt::info!("Package: {:?}", Package::from_device());
+    defmt::info!("UID64: {}", Uid64::from_device());
+    defmt::info!("UID: {}", Uid::from_device());
 
     loop {
         hal::cortex_m::asm::bkpt();

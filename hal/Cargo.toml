@@ -20,7 +20,7 @@ rt = ["stm32wl/rt", "cortex-m-rt"]
 
 [dependencies]
 cfg-if = "1"
-chrono = { version = "0.4", default-features = false }
+chrono = { version = "0.4", default-features = false, optional = true }
 cortex-m = "0.7.2"
 cortex-m-rt = { version = "0.7", optional = true }
 defmt = { version = "0.3", optional = true }
@@ -38,5 +38,5 @@ static_assertions = "1"
 
 [package.metadata.docs.rs]
 all-features = false
-features = ["stm32wl5x_cm4", "rt", "embedded-time"]
+features = ["stm32wl5x_cm4", "rt", "embedded-time", "chrono"]
 rustdoc-args = ["--cfg", "docsrs"]

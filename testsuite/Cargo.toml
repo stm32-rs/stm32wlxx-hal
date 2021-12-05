@@ -88,8 +88,11 @@ embedded-time = "0.12"
 hex-literal = "0.3"
 itertools = { version = "0.10", default-features = false }
 nb = "1"
-nucleo-wl55jc-bsp = { path = "../nucleo-wl55jc-bsp", features = ["stm32wl5x_cm4", "defmt", "rt"] }
 panic-probe = { version = "0.3", features = ["print-defmt" ] }
 rand = { version = "0.8", default-features = false }
 rand_chacha = { version = "0.3", default-features = false }
 static_assertions = "1"
+
+[dependencies.nucleo-wl55jc-bsp]
+path = "../nucleo-wl55jc-bsp"
+features = ["stm32wl5x_cm4", "defmt", "rt", "chrono"]

@@ -23,8 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Moved `info::package` to `info::Package::from_device`.
   - Moved `info::uid` to `info::Uid::from_device`.
 - Added `#[inline]` to `util::new_delay` and `util::reset_cycle_count`.
-- `embedded-time` is now an optional feature.
-  - Changed `I2C::new` to use `u32` instead of `embedded_time::Hertz`.
+- Large dependencies are now optional.
+  - `embedded-time` is now an optional feature.
+    - Changed `I2C::new` to use `u32` instead of `embedded_time::Hertz`.
+  - `chrono` is now an optional feature.
 
 ## [0.2.1] - 2021-11-20
 ### Fixed

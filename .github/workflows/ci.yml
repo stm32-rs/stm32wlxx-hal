@@ -139,16 +139,16 @@ jobs:
           toolchain: stable
 
       - name: Test HAL
-        run: cargo test --features ${{ matrix.mcu }},embedded-time
+        run: cargo test --features ${{ matrix.mcu }},embedded-time,chrono
 
       - name: Test nucleo BSP
         if: ${{ startsWith(matrix.mcu, 'stm32wl5x') }}
         run: |
-          cargo test -p nucleo-wl55jc-bsp --features ${{ matrix.mcu }},embedded-time
+          cargo test -p nucleo-wl55jc-bsp --features ${{ matrix.mcu }},embedded-time,chrono
 
       - name: Test LoRa E5 BSP
         if: ${{ matrix.mcu == 'stm32wle5' }}
-        run: cargo test -p lora-e5-bsp --features embedded-time
+        run: cargo test -p lora-e5-bsp --features embedded-time,chrono
 
   clippy:
     name: Clippy
@@ -202,7 +202,7 @@ jobs:
         run: |
           cd hal
           cargo +nightly rustdoc \
-          --features embedded-time,rt,stm32wl5x_cm4 \
+          --features chrono,embedded-time,rt,stm32wl5x_cm4 \
           -- -Z unstable-options --enable-index-page
       - name: deploy
         if: ${{ github.ref == 'refs/heads/main' }}

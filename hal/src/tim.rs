@@ -33,7 +33,7 @@ impl DelayUs<u32> for Tim2 {
         // Write Auto-Reload Register (ARR)
         // Note: Make it impossible to set the ARR value to 0, since this
         // would cause an infinite loop.
-        self.tim2.arr.write(|w| unsafe { w.bits(us.max(1)) });
+        self.tim2.arr.write(|w| w.arr().bits(us.max(1)));
 
         // Trigger update event (UEV) in the event generation register (EGR)
         // in order to immediately apply the config

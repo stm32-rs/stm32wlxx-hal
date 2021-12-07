@@ -3,6 +3,7 @@
 use embedded_hal::blocking::delay::DelayUs;
 
 use crate::pac;
+use crate::rcc::apb1timx;
 
 /// Timer for delays.
 #[derive(Debug)]
@@ -19,7 +20,7 @@ impl Tim2 {
         rcc.apb1rstr1.modify(|_, w| w.tim2rst().clear_bit());
 
         // Prescaler for 1 microsecond delay
-        tim2.psc.write(|w| w.psc().bits(48 - 1));
+        tim2.psc.write(|w| w.psc().bits((apb1timx(rcc) / 1_000_000).to_integer() as u16 - 1));
 
         tim2.cr1.write(|w| w.dir().up().cen().enabled());
         tim2.egr.write(|w| w.ug().set_bit());

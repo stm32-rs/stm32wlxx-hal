@@ -65,7 +65,7 @@ where
             .set_preamble_len(8)
             .set_payload_len(data.len() as u8)
             .set_invert_iq(false)
-            .set_header_type(HeaderType::Fixed);
+            .set_header_type(HeaderType::Variable);
 
         self.sg.set_lora_packet_params(&lora_packet_params)?;
         self.sg.write_buffer(TX_BUF_OFFSET, data)?;

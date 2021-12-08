@@ -42,7 +42,7 @@ pub use smps::SmpsDrv;
 pub use standby_clk::StandbyClk;
 pub use stats::{FskStats, LoRaStats, Stats};
 pub use status::{CmdStatus, Status, StatusMode};
-pub use sx126x::Sx126x;
+pub use sx126x::{Channel, Sx126x, Sx126xError, SxConfig};
 pub use tcxo_mode::{TcxoMode, TcxoTrim};
 pub use timeout::Timeout;
 pub use tx_params::{RampTime, TxParams};

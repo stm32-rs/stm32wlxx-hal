@@ -8,7 +8,7 @@ use hal::{
     gpio::{self, pins, Output, OutputArgs, PinState},
 };
 pub use stm32wlxx_hal as hal;
-use stm32wlxx_hal::subghz::{RfSwRx, RfSwTx};
+use stm32wlxx_hal::subghz::{RampTime, RfSwRx, RfSwTx};
 
 use crate::hal::subghz::{PaConfig, TxParams};
 
@@ -80,8 +80,8 @@ impl RfSwRx for RfSwitch {
 }
 
 impl RfSwTx for RfSwitch {
-    const PA_CONFIG: PaConfig = PaConfig::HP_22;
-    const TX_PARAMS: TxParams = TxParams::HP;
+    const PA_CONFIG: PaConfig = PaConfig::HP_20;
+    const TX_PARAMS: TxParams = TxParams::HP.set_ramp_time(RampTime::Micros40);
 
     /// Set the RF switch to high power transmit.
     ///

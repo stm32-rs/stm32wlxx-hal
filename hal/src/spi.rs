@@ -1122,17 +1122,15 @@ impl Spi3<SgMiso, SgMosi> {
         Self::enable_clock(rcc);
         unsafe { Self::pulse_reset(rcc) };
 
-        #[rustfmt::skip]
         spi.cr1.write(|w| {
-            w
-                .ssi().set_bit()
-                .ssm().set_bit()
-                .spe().set_bit()
-                .br().bits(div as u8)
-                .mstr().set_bit()
-                // hard coded because we know the SPI mode of the radio
-                .cpol().idle_low()
-                .cpha().first_edge()
+            w.ssi().set_bit();
+            w.ssm().set_bit();
+            w.spe().set_bit();
+            w.br().bits(div as u8);
+            w.mstr().set_bit();
+            // hard coded because we know the SPI mode of the radio
+            w.cpol().idle_low();
+            w.cpha().first_edge()
         });
         spi.cr2.write(|w| w.frxth().quarter());
 
@@ -1169,17 +1167,15 @@ impl<MISODMA: DmaCh, MOSIDMA: DmaCh> Spi3<MISODMA, MOSIDMA> {
         Self::enable_clock(rcc);
         unsafe { Self::pulse_reset(rcc) };
 
-        #[rustfmt::skip]
         spi.cr1.write(|w| {
-            w
-                .ssi().set_bit()
-                .ssm().set_bit()
-                .spe().set_bit()
-                .br().bits(div as u8)
-                .mstr().set_bit()
-                // hard coded because we know the SPI mode of the radio
-                .cpol().idle_low()
-                .cpha().first_edge()
+            w.ssi().set_bit();
+            w.ssm().set_bit();
+            w.spe().set_bit();
+            w.br().bits(div as u8);
+            w.mstr().set_bit();
+            // hard coded because we know the SPI mode of the radio
+            w.cpol().idle_low();
+            w.cpha().first_edge()
         });
 
         mosi_dma.set_cr(dma::Cr::DISABLE);

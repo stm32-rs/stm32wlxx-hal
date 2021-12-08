@@ -54,13 +54,11 @@ mod tests {
                     .oa1()
                     .bits((LOOPBACK_ADDR << 1) as u16)
             });
-            #[rustfmt::skip]
             i2c2.cr1.modify(|_, w| {
-                w
-                    .gcen().set_bit() // general call enable
-                    .errie().enabled() // enable error IRQs
-                    .addrie().enabled() // secondary address match IRQ
-                    .pe().enabled() // re-enable peripheral
+                w.gcen().set_bit(); // general call enable
+                w.errie().enabled(); // enable error IRQs
+                w.addrie().enabled(); // secondary address match IRQ
+                w.pe().enabled() // re-enable peripheral
             });
 
             unsafe {

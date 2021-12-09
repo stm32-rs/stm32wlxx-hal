@@ -162,9 +162,9 @@ where
                 let rf_freq = RfFreq::from_frequency(channel.freq_khz * 1000);
                 let lora_mod_params = LoRaModParams::new()
                     .set_bw((channel.bw_khz as u32 * 1000).try_into()?)
-                    .set_cr(channel.cr.into())
+                    .set_cr(channel.cr.try_into()?)
                     .set_ldro_en(true)
-                    .set_sf(channel.sf.into());
+                    .set_sf(channel.sf.try_into()?);
 
                 self.sg.set_standby(StandbyClk::Rc)?;
                 self.sg.set_tcxo_mode(&self.config.tcxo_mode)?;
@@ -285,13 +285,16 @@ impl Default for SxConfig {
 }
 
 /// Errors that can occur during communication with the SX126x.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Sx126xError {
     /// Internal radio error.
     SubGhz(subghz::Error),
     /// Unsupported bandwidth.
     Bandwidth(subghz::BandwidthError),
+    /// Unsupported bandwidth.
+    CodingRate(CodingRateError),
+    /// Unsupported bandwidth.
+    SpreadingFactor(SpreadingFactorError),
     /// A timeout occurred.
     Timeout,
     /// Something went wrong during transmit.
@@ -312,30 +315,54 @@ impl From<subghz::BandwidthError> for Sx126xError {
     }
 }
 
-impl From<lora::CodingRate> for CodingRate {
-    fn from(cr: lora::CodingRate) -> Self {
-        match cr {
-            lora::CodingRate::Cr4_5 => CodingRate::Cr45,
-            lora::CodingRate::Cr4_6 => CodingRate::Cr46,
-            lora::CodingRate::Cr4_7 => CodingRate::Cr47,
-            lora::CodingRate::Cr4_8 => CodingRate::Cr48,
-            _ => todo!("implement CodingRate"),
+impl From<CodingRateError> for Sx126xError {
+    fn from(err: CodingRateError) -> Self {
+        Sx126xError::CodingRate(err)
+    }
+}
+
+impl From<SpreadingFactorError> for Sx126xError {
+    fn from(err: SpreadingFactorError) -> Self {
+        Sx126xError::SpreadingFactor(err)
+    }
+}
+
+impl TryFrom<lora::CodingRate> for CodingRate {
+    type Error = CodingRateError;
+
+    fn try_from(value: lora::CodingRate) -> Result<Self, Self::Error> {
+        match value {
+            lora::CodingRate::Cr4_5 => Ok(CodingRate::Cr45),
+            lora::CodingRate::Cr4_6 => Ok(CodingRate::Cr46),
+            lora::CodingRate::Cr4_7 => Ok(CodingRate::Cr47),
+            lora::CodingRate::Cr4_8 => Ok(CodingRate::Cr48),
+            cr => Err(CodingRateError(cr)),
         }
     }
 }
 
-impl From<lora::SpreadingFactor> for SpreadingFactor {
-    fn from(sf: lora::SpreadingFactor) -> Self {
-        match sf {
-            lora::SpreadingFactor::Sf5 => SpreadingFactor::Sf5,
-            lora::SpreadingFactor::Sf6 => SpreadingFactor::Sf6,
-            lora::SpreadingFactor::Sf7 => SpreadingFactor::Sf7,
-            lora::SpreadingFactor::Sf8 => SpreadingFactor::Sf8,
-            lora::SpreadingFactor::Sf9 => SpreadingFactor::Sf9,
-            lora::SpreadingFactor::Sf10 => SpreadingFactor::Sf10,
-            lora::SpreadingFactor::Sf11 => SpreadingFactor::Sf11,
-            lora::SpreadingFactor::Sf12 => SpreadingFactor::Sf12,
-            _ => todo!("implement SpreadingFactor"),
+/// Error that is returned when a coding rate is not supported.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct CodingRateError(lora::CodingRate);
+
+impl TryFrom<lora::SpreadingFactor> for SpreadingFactor {
+    type Error = SpreadingFactorError;
+
+    fn try_from(value: lora::SpreadingFactor) -> Result<Self, Self::Error> {
+        match value {
+            lora::SpreadingFactor::Sf5 => Ok(SpreadingFactor::Sf5),
+            lora::SpreadingFactor::Sf6 => Ok(SpreadingFactor::Sf6),
+            lora::SpreadingFactor::Sf7 => Ok(SpreadingFactor::Sf7),
+            lora::SpreadingFactor::Sf8 => Ok(SpreadingFactor::Sf8),
+            lora::SpreadingFactor::Sf9 => Ok(SpreadingFactor::Sf9),
+            lora::SpreadingFactor::Sf10 => Ok(SpreadingFactor::Sf10),
+            lora::SpreadingFactor::Sf11 => Ok(SpreadingFactor::Sf11),
+            lora::SpreadingFactor::Sf12 => Ok(SpreadingFactor::Sf12),
+            sf => Err(SpreadingFactorError(sf)),
         }
     }
 }
+
+/// Error that is returned when a spreading factor is not supported.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct SpreadingFactorError(lora::SpreadingFactor);

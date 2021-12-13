@@ -115,7 +115,7 @@ where
         } else if irq_status & Irq::Err.mask() != 0 {
             self.sg.clear_irq_status(irq_status)?;
             Err(Sx126xError::Rx)
-        } else if irq_status & Irq::TxDone.mask() != 0 {
+        } else if irq_status & Irq::RxDone.mask() != 0 {
             self.sg.clear_irq_status(irq_status)?;
             Ok(true)
         } else {
@@ -174,7 +174,7 @@ where
                 self.sg
                     .set_buffer_base_address(TX_BUF_OFFSET, RX_BUF_OFFSET)?;
                 self.sg.set_pa_config(&self.config.pa_config)?;
-                self.sg.set_pa_ocp(Ocp::Max60m)?;
+                self.sg.set_pa_ocp(self.config.pa_ocp)?;
                 self.sg.set_tx_params(&self.config.tx_params)?;
                 self.sg.set_packet_type(PacketType::LoRa)?;
                 self.sg.set_lora_sync_word(LoRaSyncWord::Public)?;
@@ -202,6 +202,7 @@ impl<MISO, MOSI, RFS> Busy for Sx126x<MISO, MOSI, RFS> {
 pub struct SxConfig {
     preamble_len: u16,
     pa_config: PaConfig,
+    pa_ocp: Ocp,
     tx_params: TxParams,
     tcxo_mode: TcxoMode,
     tx_timeout: Timeout,
@@ -225,6 +226,7 @@ impl SxConfig {
         SxConfig {
             preamble_len: 8,
             pa_config: PaConfig::new(),
+            pa_ocp: Ocp::Max60m,
             tx_params: TxParams::new(),
             tcxo_mode: TcxoMode::new()
                 .set_txco_trim(TcxoTrim::Volts1pt7)
@@ -244,6 +246,12 @@ impl SxConfig {
     /// Set the power amplifier configuration.
     pub const fn set_pa_config(mut self, pa_config: PaConfig) -> Self {
         self.pa_config = pa_config;
+        self
+    }
+
+    /// Set the power amplifier over current protection.
+    pub const fn set_pa_ocp(mut self, ocp: Ocp) -> Self {
+        self.pa_ocp = ocp;
         self
     }
 

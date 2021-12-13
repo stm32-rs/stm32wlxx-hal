@@ -403,6 +403,37 @@ impl<'a> Flash<'a> {
         ret
     }
 
+    #[allow(unused_unsafe)]
+    pub unsafe fn standard_program_generic<T>(&mut self, from: *const T, to: *mut T) -> Result<(), Error> {
+        let sr: u32 = self.sr();
+        if sr & flags::BSY != 0 {
+            return Err(Error::Busy);
+        }
+        if sr & flags::PESD != 0 {
+            return Err(Error::Suspend);
+        }
+
+        self.clear_all_err();
+
+        c1_c2!(
+            self.flash.cr.modify(|_, w| w.pg().set_bit()),
+            self.flash.c2cr.modify(|_, w| w.pg().set_bit())
+        );
+
+        unsafe {
+            write_volatile(to as *mut T, (from as *const T).read());
+        }
+
+        let ret: Result<(), Error> = self.wait_for_not_busy();
+
+        c1_c2!(
+            self.flash.cr.modify(|_, w| w.pg().clear_bit()),
+            self.flash.c2cr.modify(|_, w| w.pg().clear_bit())
+        );
+
+        ret
+    }
+
     /// Program 256 bytes.
     ///
     /// # Safety

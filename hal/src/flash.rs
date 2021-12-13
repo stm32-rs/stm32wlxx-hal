@@ -298,35 +298,32 @@ impl<'a> Flash<'a> {
         c1_c2!(self.flash.sr.read().bits(), self.flash.c2sr.read().bits())
     }
 
-    #[rustfmt::skip]
     #[inline(always)]
     fn clear_all_err(&mut self) {
         c1_c2!(
             self.flash.sr.write(|w| {
-                w
-                    .rderr().clear()
-                    .fasterr().clear()
-                    .misserr().clear()
-                    .pgserr().clear()
-                    .sizerr().clear()
-                    .pgaerr().clear()
-                    .wrperr().clear()
-                    .progerr().clear()
-                    .operr().clear()
-                    .eop().clear()
+                w.rderr().clear();
+                w.fasterr().clear();
+                w.misserr().clear();
+                w.pgserr().clear();
+                w.sizerr().clear();
+                w.pgaerr().clear();
+                w.wrperr().clear();
+                w.progerr().clear();
+                w.operr().clear();
+                w.eop().clear()
             }),
             self.flash.c2sr.write(|w| {
-                w
-                    .rderr().clear()
-                    .fasterr().clear()
-                    .misserr().clear()
-                    .pgserr().clear()
-                    .sizerr().clear()
-                    .pgaerr().clear()
-                    .wrperr().clear()
-                    .progerr().clear()
-                    .operr().clear()
-                    .eop().clear()
+                w.rderr().clear();
+                w.fasterr().clear();
+                w.misserr().clear();
+                w.pgserr().clear();
+                w.sizerr().clear();
+                w.pgaerr().clear();
+                w.wrperr().clear();
+                w.progerr().clear();
+                w.operr().clear();
+                w.eop().clear()
             }),
         )
     }

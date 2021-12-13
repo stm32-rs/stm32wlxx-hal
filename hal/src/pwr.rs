@@ -65,19 +65,15 @@ impl WakeupPin {
 /// ```
 #[inline]
 pub fn setup_wakeup_pins(pwr: &mut pac::PWR, wp1: WakeupPin, wp2: WakeupPin, wp3: WakeupPin) {
-    #[rustfmt::skip]
     pwr.cr3.modify(|_, w| {
-        w
-            .ewup1().bit(wp1.en())
-            .ewup2().bit(wp2.en())
-            .ewup3().bit(wp3.en())
+        w.ewup1().bit(wp1.en());
+        w.ewup2().bit(wp2.en());
+        w.ewup3().bit(wp3.en())
     });
-    #[rustfmt::skip]
     pwr.cr4.modify(|_, w| {
-        w
-            .wp1().bit(wp1.edge())
-            .wp2().bit(wp2.edge())
-            .wp3().bit(wp3.edge())
+        w.wp1().bit(wp1.edge());
+        w.wp2().bit(wp2.edge());
+        w.wp3().bit(wp3.edge())
     });
 }
 

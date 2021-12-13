@@ -300,16 +300,14 @@ impl Rtc {
         let st: u8 = second / 10;
         let su: u8 = second % 10;
 
-        #[rustfmt::skip]
         self.rtc.tr.write(|w| {
-            w
-                .pm().clear_bit() // 24h format
-                .ht().bits(ht)
-                .hu().bits(hu)
-                .mnt().bits(mnt)
-                .mnu().bits(mnu)
-                .st().bits(st)
-                .su().bits(su)
+            w.pm().clear_bit(); // 24h format
+            w.ht().bits(ht);
+            w.hu().bits(hu);
+            w.mnt().bits(mnt);
+            w.mnu().bits(mnu);
+            w.st().bits(st);
+            w.su().bits(su)
         });
 
         let year: i32 = date_time.year();
@@ -327,16 +325,14 @@ impl Rtc {
         let dt: u8 = day / 10;
         let du: u8 = day % 10;
 
-        #[rustfmt::skip]
         self.rtc.dr.write(|w| unsafe {
-            w
-                .yt().bits(yt)
-                .yu().bits(yu)
-                .wdu().bits(wdu)
-                .mt().bit(mt)
-                .mu().bits(mu)
-                .dt().bits(dt)
-                .du().bits(du)
+            w.yt().bits(yt);
+            w.yu().bits(yu);
+            w.wdu().bits(wdu);
+            w.mt().bit(mt);
+            w.mu().bits(mu);
+            w.dt().bits(dt);
+            w.du().bits(du)
         });
 
         // exit initialization mode

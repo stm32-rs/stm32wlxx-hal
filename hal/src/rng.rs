@@ -87,32 +87,28 @@ impl Rng {
 
         // RNG configuration A
         // see table 131 "RNG configurations" in the reference manual
-        #[rustfmt::skip]
         rng.cr.write(|w| {
-            w
-                .condrst().set_bit()
-                .nistc().set_bit()
-                .rng_config1().config_a()
-                .clkdiv().bits(0x0)
-                .rng_config2().config_a_b()
-                .rng_config3().config_a()
-                .ced().enabled()
-                .ie().disabled() // interrupt enable
-                .rngen().set_bit()
+            w.condrst().set_bit();
+            w.nistc().set_bit();
+            w.rng_config1().config_a();
+            w.clkdiv().bits(0x0);
+            w.rng_config2().config_a_b();
+            w.rng_config3().config_a();
+            w.ced().enabled();
+            w.ie().disabled(); // interrupt enable
+            w.rngen().set_bit()
         });
 
-        #[rustfmt::skip]
         rng.cr.write(|w| {
-            w
-                .condrst().clear_bit()
-                .nistc().set_bit()
-                .rng_config1().config_a()
-                .clkdiv().bits(0x0)
-                .rng_config2().config_a_b()
-                .rng_config3().config_a()
-                .ced().clear_bit()
-                .ie().disabled() // interrupt enable
-                .rngen().set_bit()
+            w.condrst().clear_bit();
+            w.nistc().set_bit();
+            w.rng_config1().config_a();
+            w.clkdiv().bits(0x0);
+            w.rng_config2().config_a_b();
+            w.rng_config3().config_a();
+            w.ced().clear_bit();
+            w.ie().disabled(); // interrupt enable
+            w.rngen().set_bit()
         });
 
         // when CONDRST is set to 0 by software its value goes to 0 when the

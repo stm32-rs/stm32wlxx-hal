@@ -61,15 +61,13 @@ impl SpiSlave {
             .afrl
             .modify(|_, w| w.afrl2().bits(5).afrl3().bits(5));
 
-        #[rustfmt::skip]
         spi.cr1.write(|w| {
-            w
-                .rxonly().bit(rxonly)
-                .ssi().set_bit()
-                .ssm().set_bit()
-                .spe().set_bit()
-                .cpol().bit(mode.polarity == Polarity::IdleHigh)
-                .cpha().bit(mode.phase == Phase::CaptureOnSecondTransition)
+            w.rxonly().bit(rxonly);
+            w.ssi().set_bit();
+            w.ssm().set_bit();
+            w.spe().set_bit();
+            w.cpol().bit(mode.polarity == Polarity::IdleHigh);
+            w.cpha().bit(mode.phase == Phase::CaptureOnSecondTransition)
         });
 
         spi.cr2.write(|w| w.frxth().quarter());

@@ -442,19 +442,15 @@ impl AllDma {
     /// See [`steal`](Self::steal).
     #[inline]
     pub unsafe fn pulse_resets(rcc: &mut pac::RCC) {
-        #[rustfmt::skip]
         rcc.ahb1rstr.modify(|_, w| {
-            w
-                .dmamux1rst().set_bit()
-                .dma2rst().set_bit()
-                .dma1rst().set_bit()
+            w.dmamux1rst().set_bit();
+            w.dma2rst().set_bit();
+            w.dma1rst().set_bit()
         });
-        #[rustfmt::skip]
         rcc.ahb1rstr.modify(|_, w| {
-            w
-                .dmamux1rst().clear_bit()
-                .dma2rst().clear_bit()
-                .dma1rst().clear_bit()
+            w.dmamux1rst().clear_bit();
+            w.dma2rst().clear_bit();
+            w.dma1rst().clear_bit()
         });
     }
 
@@ -467,12 +463,10 @@ impl AllDma {
     /// See [`steal`](Self::steal).
     #[inline]
     pub fn enable_clocks(rcc: &mut pac::RCC) {
-        #[rustfmt::skip]
         rcc.ahb1enr.modify(|_, w| {
-            w
-                .dmamux1en().enabled()
-                .dma2en().enabled()
-                .dma1en().enabled()
+            w.dmamux1en().enabled();
+            w.dma2en().enabled();
+            w.dma1en().enabled()
         });
         rcc.ahb1enr.read(); // delay after an RCC peripheral clock enabling
     }
@@ -505,12 +499,10 @@ impl AllDma {
     /// ```
     #[inline]
     pub unsafe fn disable_clocks(rcc: &mut pac::RCC) {
-        #[rustfmt::skip]
         rcc.ahb1enr.modify(|_, w| {
-            w
-                .dmamux1en().disabled()
-                .dma2en().disabled()
-                .dma1en().disabled()
+            w.dmamux1en().disabled();
+            w.dma2en().disabled();
+            w.dma1en().disabled()
         });
     }
 

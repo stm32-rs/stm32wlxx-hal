@@ -378,13 +378,11 @@ impl Dac {
     /// dac.setup_soft_trigger();
     /// ```
     pub fn setup_soft_trigger(&mut self) {
-        #[rustfmt::skip]
         self.dac.cr.write(|w| {
-            w
-                .cen1().normal()
-                .tsel1().swtrig()
-                .ten1().enabled()
-                .en1().enabled()
+            w.cen1().normal();
+            w.tsel1().swtrig();
+            w.ten1().enabled();
+            w.en1().enabled()
         });
     }
 

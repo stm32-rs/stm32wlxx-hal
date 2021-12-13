@@ -377,12 +377,10 @@ impl Pka {
 
     #[inline]
     fn clear_all_flags(&mut self) {
-        #[rustfmt::skip]
         self.pka.clrfr.write(|w| {
-            w
-                .addrerrfc().set_bit()
-                .ramerrfc().set_bit()
-                .procendfc().set_bit()
+            w.addrerrfc().set_bit();
+            w.ramerrfc().set_bit();
+            w.procendfc().set_bit()
         });
     }
 
@@ -412,15 +410,13 @@ impl Pka {
 
     #[inline]
     fn start_process(&mut self, mode: MODE_A) {
-        #[rustfmt::skip]
         self.pka.cr.write(|w| {
-            w
-                .addrerrie().enabled()
-                .ramerrie().enabled()
-                .procendie().enabled()
-                .mode().variant(mode)
-                .start().set_bit()
-                .en().set_bit()
+            w.addrerrie().enabled();
+            w.ramerrie().enabled();
+            w.procendie().enabled();
+            w.mode().variant(mode);
+            w.start().set_bit();
+            w.en().set_bit()
         });
     }
 

@@ -2,6 +2,7 @@
 
 use crate::pac;
 use core::{ops::Range, ptr::write_volatile};
+use num_traits::float::FloatCore;
 
 /// Starting address of the flash memory.
 pub const FLASH_START: usize = 0x0800_0000;
@@ -403,6 +404,13 @@ impl<'a> Flash<'a> {
         ret
     }
 
+    /// Program a user-defined type.
+    ///
+    /// # Safety
+    ///
+    /// 1. Do not write to flash memory that is being used for your code.
+    /// 2. The destination address must be within the flash memory region.
+    /// 3. The `from` and `to` pointers must be aligned to the pointee type.
     #[allow(unused_unsafe)]
     pub unsafe fn standard_program_generic<T>(&mut self, from: *const T, to: *mut T) -> Result<(), Error> {
         let sr: u32 = self.sr();
@@ -421,7 +429,16 @@ impl<'a> Flash<'a> {
         );
 
         unsafe {
-            write_volatile(to as *mut T, (from as *const T).read());
+
+            //Get the size of the type T in bits.
+            let size = core::mem::size_of::<T>() * 8;
+
+            //Calculate the amount of double words needed to program the whole type.
+            let blocks = (size as f32 / 64.0).ceil();
+
+            for n in 0 .. blocks as usize {
+                write_volatile((to as *mut u64).offset(n as isize), (from as *const u64).offset(n as isize).read());
+            }
         }
 
         let ret: Result<(), Error> = self.wait_for_not_busy();

@@ -172,6 +172,8 @@ mod tests {
         );
 
         defmt::assert_eq!(unsafe { read_volatile(addr as *const u64) }, data);
+
+        
     }
 
     #[test]
@@ -219,9 +221,11 @@ mod tests {
         let end: u32 = DWT::get_cycle_count();
         let elapsed: u32 = end.wrapping_sub(start);
 
+        let size = core::mem::size_of::<TestStruct>();
+
         defmt::info!(
-            "8B program duration: {=u32:us} seconds",
-            elapsed / CYC_PER_MICRO
+            "{}B program duration: {=u32:us} seconds",
+            size, elapsed / CYC_PER_MICRO
         );
 
         defmt::assert_eq!(unsafe { read_volatile(addr as *const TestStruct) }, data);

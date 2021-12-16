@@ -2,6 +2,8 @@
 
 use crate::pac;
 use core::{ops::Range, ptr::write_volatile};
+
+#[allow(unused_imports)]
 use num_traits::float::FloatCore;
 
 /// Starting address of the flash memory.

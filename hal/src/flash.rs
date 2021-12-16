@@ -430,15 +430,34 @@ impl<'a> Flash<'a> {
 
         unsafe {
 
-            //Get the size of the type T in bits.
-            let size = core::mem::size_of::<T>() * 8;
+            //Get the size of the type T in bytes.
+            let size = core::mem::size_of::<T>() as isize;
+
+            //Amount of bytes that are already written.
+            let mut written_bytes = 0;
 
             //Calculate the amount of double words needed to program the whole type.
-            let blocks = (size as f32 / 64.0).ceil();
+            let double_words = (size as f32 / 8.0).ceil() as isize;
 
-            for n in 0 .. blocks as usize {
-                write_volatile((to as *mut u64).offset(n as isize), (from as *const u64).offset(n as isize).read());
+            //Write the type as double words
+            for n in 0 .. double_words - 1 {
+                write_volatile((to as *mut u64).offset(n), (from as *const u64).offset(n).read());
+                written_bytes += 8;
             }
+
+            //Determine how many bytes are left to write
+            let bytes_left = size - written_bytes;
+
+            let mut last_double_word = 0;
+
+            //Append the left over bytes to a double word, the last few bytes can look random in flash memory since Rust uses memory alignment to make accessing faster.
+            for n in 0 .. bytes_left {
+                let byte = (from as *const u8).offset(written_bytes + n).read();
+                last_double_word |= (byte as u64) << 8 * n;
+            }
+
+            //Write the last double word
+            write_volatile((to as *mut u64).offset(double_words - 1), (&last_double_word as *const u64).read());
         }
 
         let ret: Result<(), Error> = self.wait_for_not_busy();

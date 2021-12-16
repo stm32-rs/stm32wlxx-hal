@@ -173,4 +173,54 @@ mod tests {
 
         defmt::assert_eq!(unsafe { read_volatile(addr as *const u64) }, data);
     }
+
+    #[test]
+    fn standard_program_generic(ta: &mut TestArgs) {
+        let addr: usize = {
+            let unaligned_addr: usize = ta
+                .rng
+                .gen_range(ta.page.addr() + 256..ta.page.addr() + Page::SIZE - 1);
+            unaligned_addr - (unaligned_addr % size_of::<u64>())
+        };
+
+        #[derive(defmt::Format, PartialEq, Eq)]
+        struct Keys {
+            eui: [u8; 8],
+            key: [u8; 16],
+        }
+
+        #[derive(defmt::Format, PartialEq, Eq)]
+        struct TestStruct {
+            connected: bool,
+            keys: Keys,
+            framecount_down: u32,
+            framecount_up: u32,
+        }
+
+        let data = TestStruct {
+            connected: false, 
+            keys: Keys { 
+                eui: [0x01, 0x02, 0x03,0x04,0x05,0x06,0x07,0x08], 
+                key: [0x01, 0x02, 0x03,0x04,0x05,0x06,0x07,0x08, 0x01, 0x02, 0x03,0x04,0x05,0x06,0x07,0x08]
+            },
+            framecount_up: 12, 
+            framecount_down: 120, 
+        };
+
+        defmt::info!("Writing {} to {:#08X}", data, addr);
+
+        let mut flash: Flash = Flash::unlock(&mut ta.flash);
+
+        let start: u32 = DWT::get_cycle_count();
+        unwrap!(unsafe { flash.standard_program_generic(&data, addr as *mut TestStruct) });
+        let end: u32 = DWT::get_cycle_count();
+        let elapsed: u32 = end.wrapping_sub(start);
+
+        defmt::info!(
+            "8B program duration: {=u32:us} seconds",
+            elapsed / CYC_PER_MICRO
+        );
+
+        defmt::assert_eq!(unsafe { read_volatile(addr as *const TestStruct) }, data);
+    }
 }

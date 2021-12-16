@@ -412,7 +412,11 @@ impl<'a> Flash<'a> {
     /// 2. The destination address must be within the flash memory region.
     /// 3. The `from` and `to` pointers must be aligned to the pointee type.
     #[allow(unused_unsafe)]
-    pub unsafe fn standard_program_generic<T>(&mut self, from: *const T, to: *mut T) -> Result<(), Error> {
+    pub unsafe fn standard_program_generic<T>(
+        &mut self,
+        from: *const T,
+        to: *mut T,
+    ) -> Result<(), Error> {
         let sr: u32 = self.sr();
         if sr & flags::BSY != 0 {
             return Err(Error::Busy);
@@ -429,7 +433,6 @@ impl<'a> Flash<'a> {
         );
 
         unsafe {
-
             //Get the size of the type T in bytes.
             let size = core::mem::size_of::<T>() as isize;
 
@@ -440,8 +443,11 @@ impl<'a> Flash<'a> {
             let double_words = (size as f32 / 8.0).ceil() as isize;
 
             //Write the type as double words
-            for n in 0 .. double_words - 1 {
-                write_volatile((to as *mut u64).offset(n), (from as *const u64).offset(n).read());
+            for n in 0..double_words - 1 {
+                write_volatile(
+                    (to as *mut u64).offset(n),
+                    (from as *const u64).offset(n).read(),
+                );
                 written_bytes += 8;
             }
 
@@ -451,13 +457,16 @@ impl<'a> Flash<'a> {
             let mut last_double_word = 0;
 
             //Append the left over bytes to a double word, the last few bytes can look random in flash memory since Rust uses memory alignment to make accessing faster.
-            for n in 0 .. bytes_left {
+            for n in 0..bytes_left {
                 let byte = (from as *const u8).offset(written_bytes + n).read();
-                last_double_word |= (byte as u64) << 8 * n;
+                last_double_word |= (byte as u64) << (8 * n);
             }
 
             //Write the last double word
-            write_volatile((to as *mut u64).offset(double_words - 1), (&last_double_word as *const u64).read());
+            write_volatile(
+                (to as *mut u64).offset(double_words - 1),
+                (&last_double_word as *const u64).read(),
+            );
         }
 
         let ret: Result<(), Error> = self.wait_for_not_busy();

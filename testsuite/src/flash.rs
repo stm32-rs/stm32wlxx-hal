@@ -172,8 +172,6 @@ mod tests {
         );
 
         defmt::assert_eq!(unsafe { read_volatile(addr as *const u64) }, data);
-
-        
     }
 
     #[test]
@@ -225,7 +223,8 @@ mod tests {
 
         defmt::info!(
             "{}B program duration: {=u32:us} seconds",
-            size, elapsed / CYC_PER_MICRO
+            size,
+            elapsed / CYC_PER_MICRO
         );
 
         defmt::assert_eq!(unsafe { read_volatile(addr as *const TestStruct) }, data);

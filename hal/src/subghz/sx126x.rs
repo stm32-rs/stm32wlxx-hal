@@ -17,8 +17,8 @@ const IRQ_CFG: CfgIrq = CfgIrq::new()
     .irq_enable_all(Irq::TxDone)
     .irq_enable_all(Irq::Err);
 
-const TX_BUF_OFFSET: u8 = 128;
-const RX_BUF_OFFSET: u8 = 0;
+const TX_BUF_OFFSET: u8 = 0;
+const RX_BUF_OFFSET: u8 = 128;
 
 /// Sx126x radio.
 #[derive(Debug)]
@@ -35,7 +35,8 @@ where
     RFS: RfSwRx + RfSwTx,
 {
     /// Creates a new Sx126x radio.
-    pub fn new(sg: SubGhz<MISO, MOSI>, rfs: RFS, config: SxConfig) -> Self {
+    pub fn new(sg: SubGhz<MISO, MOSI>, mut rfs: RFS, config: SxConfig) -> Self {
+        rfs.set_rx();
         Sx126x { sg, rfs, config }
     }
 
@@ -77,14 +78,17 @@ where
 
     fn check_transmit(&mut self) -> Result<bool, Self::Error> {
         let (_, irq_status) = self.sg.irq_status()?;
+        self.sg.clear_irq_status(irq_status)?;
         if irq_status & Irq::Timeout.mask() != 0 {
-            self.sg.clear_irq_status(irq_status)?;
+            self.rfs.set_rx();
+            self.sg.set_standby(StandbyClk::Hse)?;
             Err(Sx126xError::Timeout)
         } else if irq_status & Irq::Err.mask() != 0 {
-            self.sg.clear_irq_status(irq_status)?;
+            self.rfs.set_rx();
+            self.sg.set_standby(StandbyClk::Hse)?;
             Err(Sx126xError::Tx)
         } else if irq_status & Irq::TxDone.mask() != 0 {
-            self.sg.clear_irq_status(irq_status)?;
+            self.rfs.set_rx();
             Ok(true)
         } else {
             Ok(false)
@@ -102,21 +106,27 @@ where
     type Info = BasicInfo;
 
     fn start_receive(&mut self) -> Result<(), Self::Error> {
-        self.rfs.set_rx();
+        let lora_packet_params = LoRaPacketParams::new()
+            .set_crc_en(false)
+            .set_preamble_len(8)
+            .set_invert_iq(true)
+            .set_header_type(HeaderType::Variable);
+
+        self.sg.set_lora_packet_params(&lora_packet_params)?;
         self.sg.set_rx(self.config.rx_timeout)?;
         Ok(())
     }
 
     fn check_receive(&mut self, _: bool) -> Result<bool, Self::Error> {
         let (_, irq_status) = self.sg.irq_status()?;
+        self.sg.clear_irq_status(irq_status)?;
         if irq_status & Irq::Timeout.mask() != 0 {
-            self.sg.clear_irq_status(irq_status)?;
+            self.sg.set_standby(StandbyClk::Hse)?;
             Err(Sx126xError::Timeout)
         } else if irq_status & Irq::Err.mask() != 0 {
-            self.sg.clear_irq_status(irq_status)?;
+            self.sg.set_standby(StandbyClk::Hse)?;
             Err(Sx126xError::Rx)
         } else if irq_status & Irq::RxDone.mask() != 0 {
-            self.sg.clear_irq_status(irq_status)?;
             Ok(true)
         } else {
             Ok(false)

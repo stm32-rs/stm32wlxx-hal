@@ -9,7 +9,43 @@
 //!
 //! [link]: https://community.st.com/s/question/0D53W00000hR8kpSAC/stm32wl55-erratum-clairification
 
-use embedded_hal::blocking::spi::{Transfer, Write};
+mod bit_sync;
+mod cad_params;
+mod calibrate;
+mod fallback_mode;
+mod hse_trim;
+mod irq;
+mod lora_sync_word;
+mod mod_params;
+mod ocp;
+mod op_error;
+mod pa_config;
+mod packet_params;
+mod packet_status;
+mod packet_type;
+mod pkt_ctrl;
+mod pmode;
+mod pwr_ctrl;
+mod reg_mode;
+mod rf_frequency;
+mod rfs;
+mod rx_timeout_stop;
+mod sleep_cfg;
+mod smps;
+mod standby_clk;
+mod stats;
+mod status;
+mod sx126x;
+mod tcxo_mode;
+mod timeout;
+mod tx_params;
+mod value_error;
+
+use crate::{
+    dma::DmaCh,
+    pac,
+    spi::{BaudRate, SgMiso, SgMosi, Spi3},
+};
 
 pub use bit_sync::BitSync;
 pub use cad_params::{CadParams, ExitMode, NbCadSymbol};
@@ -49,43 +85,8 @@ pub use tx_params::{RampTime, TxParams};
 pub use value_error::ValueError;
 
 use crate::Ratio;
-use crate::{
-    dma::DmaCh,
-    pac,
-    spi::{BaudRate, SgMiso, SgMosi, Spi3},
-};
 
-mod bit_sync;
-mod cad_params;
-mod calibrate;
-mod fallback_mode;
-mod hse_trim;
-mod irq;
-mod lora_sync_word;
-mod mod_params;
-mod ocp;
-mod op_error;
-mod pa_config;
-mod packet_params;
-mod packet_status;
-mod packet_type;
-mod pkt_ctrl;
-mod pmode;
-mod pwr_ctrl;
-mod reg_mode;
-mod rf_frequency;
-mod rfs;
-mod rx_timeout_stop;
-mod sleep_cfg;
-mod smps;
-mod standby_clk;
-mod stats;
-mod status;
-mod sx126x;
-mod tcxo_mode;
-mod timeout;
-mod tx_params;
-mod value_error;
+use embedded_hal::blocking::spi::{Transfer, Write};
 
 /// Passthrough for SPI errors (for now)
 pub type Error = crate::spi::Error;

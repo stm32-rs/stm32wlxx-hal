@@ -68,7 +68,6 @@ pub mod uart;
 pub mod util;
 
 mod ratio;
-
 pub use ratio::Ratio;
 
 #[cfg(feature = "rt")]

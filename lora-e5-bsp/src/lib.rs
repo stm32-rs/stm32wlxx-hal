@@ -3,17 +3,17 @@
 #![cfg_attr(not(test), no_std)]
 #![warn(missing_docs)]
 
+pub mod led;
+pub mod pb;
+
+pub use stm32wlxx_hal as hal;
+
+use crate::hal::subghz::{PaConfig, TxParams};
 use hal::{
     cortex_m::interrupt::CriticalSection,
     gpio::{self, pins, Output, OutputArgs, PinState},
+    subghz::{RampTime, RfSwRx, RfSwTx},
 };
-pub use stm32wlxx_hal as hal;
-use stm32wlxx_hal::subghz::{RampTime, RfSwRx, RfSwTx};
-
-use crate::hal::subghz::{PaConfig, TxParams};
-
-pub mod led;
-pub mod pb;
 
 #[cfg(feature = "defmt")]
 use dfmt as defmt;

@@ -208,6 +208,7 @@ mod tests {
         }
 
         #[derive(defmt::Format, PartialEq, Eq)]
+        #[repr(align(8))]
         struct TestStruct {
             connected: bool,
             keys: Keys,

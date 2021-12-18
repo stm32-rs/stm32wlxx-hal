@@ -40,6 +40,8 @@ mod tests {
     struct TestArgs {
         flash: pac::FLASH,
         page: Page,
+        // address to use for testing
+        // incremented by the test after the address is programmed
         addr: usize,
         rng: Rng,
     }
@@ -61,7 +63,6 @@ mod tests {
 
         // flash only gets 20k program cycles
         // change the location each time to prevent wearout of CI boards
-        // the fast program test uses the first 256B of the page
         let page: u8 = rng.gen_range(64..127);
         let page: Page = unwrap!(Page::from_index(page));
 
@@ -178,6 +179,25 @@ mod tests {
     }
 
     #[test]
+    fn standard_program_generic_zero_size(ta: &mut TestArgs) {
+        type ZeroSizeType = ();
+
+        sa::assert_eq_size!(ZeroSizeType, [u8; 0]);
+
+        let my_zero_size_type: ZeroSizeType = ();
+
+        let mut flash: Flash = Flash::unlock(&mut ta.flash);
+
+        // check flash is erased
+        defmt::assert_eq!(unsafe { read_volatile(ta.addr as *const u64) }, u64::MAX);
+
+        unwrap!(unsafe {
+            flash.standard_program_generic(&my_zero_size_type, ta.addr as *mut ZeroSizeType)
+        });
+
+        // check flash was not modified
+        defmt::assert_eq!(unsafe { read_volatile(ta.addr as *const u64) }, u64::MAX);
+    }
 
     #[test]
     fn standard_program_generic(ta: &mut TestArgs) {

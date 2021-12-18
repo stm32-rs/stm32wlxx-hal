@@ -215,6 +215,8 @@ mod tests {
             framecount_up: u32,
         }
 
+        sa::assert_eq_align!(TestStruct, u64);
+
         let data = TestStruct {
             connected: false,
             keys: Keys {

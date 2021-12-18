@@ -410,7 +410,8 @@ impl<'a> Flash<'a> {
     ///
     /// 1. Do not write to flash memory that is being used for your code.
     /// 2. The destination address must be within the flash memory region.
-    /// 3. The `from` and `to` pointers must be aligned to the pointee type.
+    /// 3. The `from` and `to` pointers must be aligned to `u64`.
+    ///    Use `#[repr(align(8))]` to align your stucture.
     #[allow(unused_unsafe)]
     pub unsafe fn standard_program_generic<T>(
         &mut self,

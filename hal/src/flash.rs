@@ -2,6 +2,7 @@
 
 use crate::pac;
 use core::{ops::Range, ptr::write_volatile};
+use num_integer::Integer;
 
 /// Starting address of the flash memory.
 pub const FLASH_START: usize = 0x0800_0000;
@@ -392,6 +393,82 @@ impl<'a> Flash<'a> {
                 (from as *const u32).offset(1).read(),
             );
         }
+
+        let ret: Result<(), Error> = self.wait_for_not_busy();
+
+        c1_c2!(
+            self.flash.cr.modify(|_, w| w.pg().clear_bit()),
+            self.flash.c2cr.modify(|_, w| w.pg().clear_bit())
+        );
+
+        ret
+    }
+
+    /// Program a user-defined type.
+    ///
+    /// # Safety
+    ///
+    /// 1. Do not write to flash memory that is being used for your code.
+    /// 2. The destination address must be within the flash memory region.
+    /// 3. The `from` and `to` pointers must be aligned to `u64`.
+    ///    Use `#[repr(align(8))]` to align your stucture.
+    #[allow(unused_unsafe)]
+    pub unsafe fn standard_program_generic<T>(
+        &mut self,
+        from: *const T,
+        to: *mut T,
+    ) -> Result<(), Error> {
+        let size: isize = core::mem::size_of::<T>() as isize;
+        if size == 0 {
+            return Ok(());
+        }
+
+        let sr: u32 = self.sr();
+        if sr & flags::BSY != 0 {
+            return Err(Error::Busy);
+        }
+        if sr & flags::PESD != 0 {
+            return Err(Error::Suspend);
+        }
+
+        self.clear_all_err();
+
+        c1_c2!(
+            self.flash.cr.modify(|_, w| w.pg().set_bit()),
+            self.flash.c2cr.modify(|_, w| w.pg().set_bit())
+        );
+
+        // Calculate the index of the last double word
+        let last_double_word_idx: isize = size.div_ceil(&8) - 1;
+
+        // Write the type as double words and return the number of bytes written
+        let written_bytes: isize = (0..last_double_word_idx).fold(0, |acc, n| {
+            unsafe {
+                write_volatile(
+                    (to as *mut u64).offset(n),
+                    (from as *const u64).offset(n).read(),
+                )
+            };
+            acc + 8
+        });
+
+        // Determine how many bytes are left to write
+        let bytes_left: isize = size - written_bytes;
+
+        // Append the left over bytes to a double word,
+        // the last few bytes can look random in flash memory since Rust uses memory alignment to make accessing faster.
+        let last_double_word: u64 = (0..bytes_left).fold(0, |dw, n| {
+            let byte: u8 = (from as *const u8).offset(written_bytes + n).read();
+            dw | u64::from(byte) << (8 * n)
+        });
+
+        // Write the last double word
+        unsafe {
+            write_volatile(
+                (to as *mut u64).offset(last_double_word_idx),
+                (&last_double_word as *const u64).read(),
+            )
+        };
 
         let ret: Result<(), Error> = self.wait_for_not_busy();
 

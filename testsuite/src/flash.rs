@@ -14,6 +14,7 @@ use nucleo_wl55jc_bsp::hal::{
 };
 use panic_probe as _;
 use rand::Rng as RngTrait;
+use static_assertions as sa;
 
 const FREQ: u32 = 48_000_000;
 const CYC_PER_MICRO: u32 = FREQ / 1000 / 1000;
@@ -39,6 +40,9 @@ mod tests {
     struct TestArgs {
         flash: pac::FLASH,
         page: Page,
+        // address to use for testing
+        // incremented by the test after the address is programmed
+        addr: usize,
         rng: Rng,
     }
 
@@ -71,6 +75,7 @@ mod tests {
         TestArgs {
             flash: dp.FLASH,
             page,
+            addr: page.addr(),
             rng,
         }
     }
@@ -123,7 +128,7 @@ mod tests {
         let mut flash: Flash = Flash::unlock(&mut ta.flash);
 
         let start: u32 = DWT::get_cycle_count();
-        unwrap!(unsafe { flash.fast_program(BUF.as_ptr(), ta.page.addr() as *mut u64) });
+        unwrap!(unsafe { flash.fast_program(BUF.as_ptr(), ta.addr as *mut u64) });
         let end: u32 = DWT::get_cycle_count();
         let elapsed: u32 = end.wrapping_sub(start);
 
@@ -134,35 +139,31 @@ mod tests {
 
         for (idx, &dw) in unsafe { BUF }.iter().enumerate() {
             let expected: u64 = unsafe {
-                (ta.page.addr() as *const u64)
+                (ta.addr as *const u64)
                     .offset(unwrap!(idx.try_into()))
                     .read_volatile()
             };
             defmt::assert_eq!(dw, expected);
         }
+
+        // increment address by program size
+        ta.addr += 256;
     }
 
     #[test]
     fn standard_program(ta: &mut TestArgs) {
-        let addr: usize = {
-            let unaligned_addr: usize = ta
-                .rng
-                .gen_range(ta.page.addr() + 256..ta.page.addr() + Page::SIZE - 1);
-            unaligned_addr - (unaligned_addr % size_of::<u64>())
-        };
-
         let data: u64 = ta.rng.gen_range(1..u64::MAX - 1);
         defmt::assert_ne!(data, u64::MAX);
         defmt::assert_ne!(data, 0);
 
-        defmt::info!("Writing {:#016X} to {:#08X}", data, addr);
+        defmt::info!("Writing {:#016X} to {:#08X}", data, ta.addr);
 
-        defmt::assert_eq!(unsafe { read_volatile(addr as *const u64) }, u64::MAX);
+        defmt::assert_eq!(unsafe { read_volatile(ta.addr as *const u64) }, u64::MAX);
 
         let mut flash: Flash = Flash::unlock(&mut ta.flash);
 
         let start: u32 = DWT::get_cycle_count();
-        unwrap!(unsafe { flash.standard_program(&data, addr as *mut u64) });
+        unwrap!(unsafe { flash.standard_program(&data, ta.addr as *mut u64) });
         let end: u32 = DWT::get_cycle_count();
         let elapsed: u32 = end.wrapping_sub(start);
 
@@ -171,6 +172,82 @@ mod tests {
             elapsed / CYC_PER_MICRO
         );
 
-        defmt::assert_eq!(unsafe { read_volatile(addr as *const u64) }, data);
+        defmt::assert_eq!(unsafe { read_volatile(ta.addr as *const u64) }, data);
+
+        // increment address by program size
+        ta.addr += size_of::<u64>();
+    }
+
+    #[test]
+    fn standard_program_generic_zero_size(ta: &mut TestArgs) {
+        type ZeroSizeType = ();
+
+        sa::assert_eq_size!(ZeroSizeType, [u8; 0]);
+
+        let my_zero_size_type: ZeroSizeType = ();
+
+        let mut flash: Flash = Flash::unlock(&mut ta.flash);
+
+        // check flash is erased
+        defmt::assert_eq!(unsafe { read_volatile(ta.addr as *const u64) }, u64::MAX);
+
+        unwrap!(unsafe {
+            flash.standard_program_generic(&my_zero_size_type, ta.addr as *mut ZeroSizeType)
+        });
+
+        // check flash was not modified
+        defmt::assert_eq!(unsafe { read_volatile(ta.addr as *const u64) }, u64::MAX);
+    }
+
+    #[test]
+    fn standard_program_generic(ta: &mut TestArgs) {
+        #[derive(defmt::Format, PartialEq, Eq)]
+        struct Keys {
+            eui: [u8; 8],
+            key: [u8; 16],
+        }
+
+        #[derive(defmt::Format, PartialEq, Eq)]
+        #[repr(align(8))]
+        struct TestStruct {
+            connected: bool,
+            keys: Keys,
+            framecount_down: u32,
+            framecount_up: u32,
+        }
+
+        sa::assert_eq_align!(TestStruct, u64);
+
+        let data = TestStruct {
+            connected: false,
+            keys: Keys {
+                eui: [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08],
+                key: [
+                    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x01, 0x02, 0x03, 0x04, 0x05,
+                    0x06, 0x07, 0x08,
+                ],
+            },
+            framecount_up: 12,
+            framecount_down: 120,
+        };
+
+        defmt::info!("Writing {} to {:#08X}", data, ta.addr);
+
+        let mut flash: Flash = Flash::unlock(&mut ta.flash);
+
+        let start: u32 = DWT::get_cycle_count();
+        unwrap!(unsafe { flash.standard_program_generic(&data, ta.addr as *mut TestStruct) });
+        let end: u32 = DWT::get_cycle_count();
+        let elapsed: u32 = end.wrapping_sub(start);
+
+        let size = core::mem::size_of::<TestStruct>();
+
+        defmt::info!(
+            "{}B program duration: {=u32:us} seconds",
+            size,
+            elapsed / CYC_PER_MICRO
+        );
+
+        defmt::assert_eq!(unsafe { read_volatile(ta.addr as *const TestStruct) }, data);
     }
 }

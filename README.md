@@ -28,7 +28,7 @@ This is still in development, the code that exists today covers basic usage of:
 
 ```toml
 [dependencies.stm32wlxx-hal]
-version = "0.2.1"
+version = "0.3.0"
 features = [
     # use exactly one to match your target hardware
     "stm32wl5x_cm0p",

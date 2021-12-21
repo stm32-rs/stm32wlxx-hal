@@ -199,7 +199,7 @@ dependencies = [
 
 [[package]]
 name = "lora-e5-bsp"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "defmt",
  "stm32wlxx-hal",
@@ -222,7 +222,7 @@ checksum = "546c37ac5d9e56f55e73b677106873d9d9f5190605e41a856503623648488cae"
 
 [[package]]
 name = "nucleo-wl55jc-bsp"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "defmt",
  "stm32wlxx-hal",
@@ -424,7 +424,7 @@ dependencies = [
 
 [[package]]
 name = "stm32wlxx-hal"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "cfg-if",
  "chrono",

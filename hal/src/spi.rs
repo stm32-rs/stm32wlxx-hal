@@ -19,14 +19,15 @@
 //! | [`new_spi2_mosi_simplex_dma`]       | 2   | MOSI-simplex | Yes |
 //!
 //! [GATs are stablized]: https://blog.rust-lang.org/2021/08/03/GATs-stabilization-push.html
-//! [`new_spi1_full_duplex`]: Spi::new_spi1_full_duplex
+//! [`embedded-hal`]: https://docs.rs/embedded-hal/latest/embedded_hal/
 //! [`new_spi1_full_duplex_dma`]: Spi::new_spi1_full_duplex_dma
-//! [`new_spi1_mosi_simplex`]: Spi::new_spi1_mosi_simplex
+//! [`new_spi1_full_duplex`]: Spi::new_spi1_full_duplex
 //! [`new_spi1_mosi_simplex_dma`]: Spi::new_spi1_mosi_simplex_dma
-//! [`new_spi2_full_duplex`]: Spi::new_spi2_full_duplex
+//! [`new_spi1_mosi_simplex`]: Spi::new_spi1_mosi_simplex
 //! [`new_spi2_full_duplex_dma`]: Spi::new_spi2_full_duplex_dma
-//! [`new_spi2_mosi_simplex`]: Spi::new_spi2_mosi_simplex
+//! [`new_spi2_full_duplex`]: Spi::new_spi2_full_duplex
 //! [`new_spi2_mosi_simplex_dma`]: Spi::new_spi2_mosi_simplex_dma
+//! [`new_spi2_mosi_simplex`]: Spi::new_spi2_mosi_simplex
 
 use crate::{
     dma::{self, DmaCh},

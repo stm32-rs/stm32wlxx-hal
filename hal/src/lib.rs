@@ -63,6 +63,7 @@ pub mod rng;
 pub mod rtc;
 pub mod spi;
 pub mod subghz;
+pub mod tim;
 pub mod uart;
 pub mod util;
 

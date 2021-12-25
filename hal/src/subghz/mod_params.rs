@@ -712,6 +712,31 @@ impl PartialOrd for LoRaBandwidth {
     }
 }
 
+impl TryFrom<u32> for LoRaBandwidth {
+    type Error = BandwidthError;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        match value {
+            7_810 => Ok(LoRaBandwidth::Bw7),
+            10_420 => Ok(LoRaBandwidth::Bw10),
+            15_630 => Ok(LoRaBandwidth::Bw15),
+            20_830 => Ok(LoRaBandwidth::Bw20),
+            31_250 => Ok(LoRaBandwidth::Bw31),
+            41_670 => Ok(LoRaBandwidth::Bw41),
+            62_500 => Ok(LoRaBandwidth::Bw62),
+            125_000 => Ok(LoRaBandwidth::Bw125),
+            250_000 => Ok(LoRaBandwidth::Bw250),
+            500_000 => Ok(LoRaBandwidth::Bw500),
+            bw => Err(BandwidthError(bw)),
+        }
+    }
+}
+
+/// Error that is returned when a bandwidth is not supported.
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct BandwidthError(u32);
+
 /// LoRa forward error correction coding rate.
 ///
 /// Argument of [`LoRaModParams::set_cr`].

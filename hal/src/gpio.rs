@@ -370,6 +370,15 @@ pub trait Exti {
     /// [`gpio-button-irq.rs`]: https://github.com/stm32-rs/stm32wlxx-hal/blob/main/examples/examples/gpio-button-irq.rs
     fn clear_exti();
 
+    /// Returns true if a trigger request occured.
+    ///
+    /// # Example
+    ///
+    /// See [`gpio-button-irq.rs`].
+    ///
+    /// [`gpio-button-irq.rs`]: https://github.com/stm32-rs/stm32wlxx-hal/blob/main/examples/examples/gpio-button-irq.rs
+    fn is_pending() -> bool;
+
     /// Setup an input pin as an EXTI interrupt source on core 1.
     ///
     /// This is a helper function that wraps:
@@ -756,6 +765,12 @@ pub mod pins {
                     fn clear_exti() {
                         // safety: atomic write with no side effects
                         unsafe { (*pac::EXTI::PTR).pr1.write(|w| w.[<pif $n>]().set_bit()) }
+                    }
+
+                    #[inline]
+                    fn is_pending() -> bool {
+                        // safety: atomic read with no side effects
+                        unsafe { (*pac::EXTI::PTR).pr1.read().[<pif $n>]().bit_is_set() }
                     }
                 }
             }

@@ -17,6 +17,7 @@ fn main() -> ! {
 
     let gpioc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
     let _c6: Input<pins::C6> = cortex_m::interrupt::free(|cs| Input::new(gpioc.c6, Pull::Up, cs));
+    defmt::assert!(!pins::C6::is_pending());
 
     pins::C6::setup_exti_c1(&mut dp.EXTI, &mut dp.SYSCFG, ExtiTrg::Both);
     unsafe { pins::C6::unmask() };
@@ -30,5 +31,6 @@ fn main() -> ! {
 #[allow(non_snake_case)]
 fn EXTI9_5() {
     defmt::info!("B3 pressed or released!");
+    defmt::assert!(pins::C6::is_pending());
     pins::C6::clear_exti();
 }

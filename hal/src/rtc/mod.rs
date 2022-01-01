@@ -48,6 +48,9 @@ pub mod stat {
 
     /// All status flags.
     pub const ALL: u32 = SSRU | ITS | TSOV | TS | WUT | ALRB | ALRA;
+
+    /// Alarm A & B flags.
+    pub const ALR_ALL: u32 = ALRA | ALRB;
 }
 
 /// Real-time clock driver.
@@ -519,7 +522,7 @@ impl Rtc {
     /// This will disable the alarm if previously enabled.
     ///
     /// This will not enable the alarm after setup.
-    /// To enable the alarm use [`enable_alarm_a`](Self::enable_alarm_a).
+    /// To enable the alarm use [`set_alarm_a_en`](Self::set_alarm_a_en).
     pub fn set_alarm_a(&mut self, alarm: Alarm) {
         self.rtc.cr.modify(|_, w| w.alrae().clear_bit());
         self.rtc.alrmar.write(|w| unsafe { w.bits(alarm.val) });
@@ -527,9 +530,9 @@ impl Rtc {
         self.rtc.alrabinr.write(|w| w.ss().bits(alarm.ss));
     }
 
-    /// Enable or disable alarm A, and alarm A interrupts.
+    /// Set the alarm A enable, and alarm A interrupt enable.
     #[inline]
-    pub fn enable_alarm_a(&mut self, en: bool, irq_en: bool) {
+    pub fn set_alarm_a_en(&mut self, en: bool, irq_en: bool) {
         self.rtc
             .cr
             .modify(|_, w| w.alrae().bit(en).alraie().bit(irq_en));
@@ -540,7 +543,7 @@ impl Rtc {
     /// This will disable the alarm if previously enabled.
     ///
     /// This will not enable the alarm after setup.
-    /// To enable the alarm use [`enable_alarm_b`](Self::enable_alarm_b).
+    /// To enable the alarm use [`set_alarm_b_en`](Self::set_alarm_b_en).
     pub fn set_alarm_b(&mut self, alarm: Alarm) {
         self.rtc.cr.modify(|_, w| w.alrbe().clear_bit());
         self.rtc.alrmbr.write(|w| unsafe { w.bits(alarm.val) });
@@ -548,9 +551,9 @@ impl Rtc {
         self.rtc.alrbbinr.write(|w| w.ss().bits(alarm.ss));
     }
 
-    /// Enable or disable alarm B, and alarm B interrupts.
+    /// Set the alarm B enable, and alarm B interrupt enable.
     #[inline]
-    pub fn enable_alarm_b(&mut self, en: bool, irq_en: bool) {
+    pub fn set_alarm_b_en(&mut self, en: bool, irq_en: bool) {
         self.rtc
             .cr
             .modify(|_, w| w.alrbe().bit(en).alrbie().bit(irq_en));

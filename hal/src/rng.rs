@@ -15,10 +15,7 @@
 
 use crate::pac;
 
-use core::{
-    num::NonZeroU32,
-    sync::atomic::{compiler_fence, Ordering::SeqCst},
-};
+use core::num::NonZeroU32;
 
 /// RNG trait abstractions
 pub use rand_core;
@@ -114,9 +111,7 @@ impl Rng {
         // when CONDRST is set to 0 by software its value goes to 0 when the
         // reset process is done.
         // It takes about 2 AHB clock cycles + 2 RNG clock cycles
-        while rng.cr.read().condrst().bit_is_set() {
-            compiler_fence(SeqCst);
-        }
+        while rng.cr.read().condrst().bit_is_set() {}
 
         Rng { rng, err_cnt: 0 }
     }
@@ -440,9 +435,7 @@ impl Rng {
         // when CONDRST is set to 0 by software its value goes to 0 when the
         // reset process is done.
         // It takes about 2 AHB clock cycles + 2 RNG clock cycles
-        while self.rng.cr.read().condrst().bit_is_set() {
-            compiler_fence(SeqCst);
-        }
+        while self.rng.cr.read().condrst().bit_is_set() {}
 
         let sr = self.rng.sr.read();
         if sr.secs().bit_is_set() {

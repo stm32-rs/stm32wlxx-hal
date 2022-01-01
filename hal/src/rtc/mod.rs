@@ -1,5 +1,9 @@
 //! Real-time clock.
 
+mod alarm;
+
+pub use alarm::{Alarm, AlarmDay};
+
 use crate::{pac, rcc::lsi_hz};
 use chrono::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
 use pac::{
@@ -44,6 +48,9 @@ pub mod stat {
 
     /// All status flags.
     pub const ALL: u32 = SSRU | ITS | TSOV | TS | WUT | ALRB | ALRA;
+
+    /// Alarm A & B flags.
+    pub const ALR_ALL: u32 = ALRA | ALRB;
 }
 
 /// Real-time clock driver.
@@ -508,6 +515,48 @@ impl Rtc {
     #[inline]
     pub fn disable_wakeup_timer(&mut self) {
         self.rtc.cr.modify(|_, w| w.wute().clear_bit());
+    }
+
+    /// Set alarm A.
+    ///
+    /// This will disable the alarm if previously enabled.
+    ///
+    /// This will not enable the alarm after setup.
+    /// To enable the alarm use [`set_alarm_a_en`](Self::set_alarm_a_en).
+    pub fn set_alarm_a(&mut self, alarm: &Alarm) {
+        self.rtc.cr.modify(|_, w| w.alrae().clear_bit());
+        self.rtc.alrmar.write(|w| unsafe { w.bits(alarm.val) });
+        self.rtc.alrmassr.write(|w| w.maskss().bits(alarm.ss_mask));
+        self.rtc.alrabinr.write(|w| w.ss().bits(alarm.ss));
+    }
+
+    /// Set the alarm A enable, and alarm A interrupt enable.
+    #[inline]
+    pub fn set_alarm_a_en(&mut self, en: bool, irq_en: bool) {
+        self.rtc
+            .cr
+            .modify(|_, w| w.alrae().bit(en).alraie().bit(irq_en));
+    }
+
+    /// Set alarm B.
+    ///
+    /// This will disable the alarm if previously enabled.
+    ///
+    /// This will not enable the alarm after setup.
+    /// To enable the alarm use [`set_alarm_b_en`](Self::set_alarm_b_en).
+    pub fn set_alarm_b(&mut self, alarm: &Alarm) {
+        self.rtc.cr.modify(|_, w| w.alrbe().clear_bit());
+        self.rtc.alrmbr.write(|w| unsafe { w.bits(alarm.val) });
+        self.rtc.alrmbssr.write(|w| w.maskss().bits(alarm.ss_mask));
+        self.rtc.alrbbinr.write(|w| w.ss().bits(alarm.ss));
+    }
+
+    /// Set the alarm B enable, and alarm B interrupt enable.
+    #[inline]
+    pub fn set_alarm_b_en(&mut self, en: bool, irq_en: bool) {
+        self.rtc
+            .cr
+            .modify(|_, w| w.alrbe().bit(en).alrbie().bit(irq_en));
     }
 
     /// Disable the RTC write protection.

@@ -511,6 +511,12 @@ impl Rtc {
         self.rtc.cr.modify(|_, w| w.wute().set_bit());
     }
 
+    /// Returns `true` if the wakeup timer is enabled.
+    #[inline]
+    pub fn is_wakeup_timer_en(&self) -> bool {
+        self.rtc.cr.read().wute().bit_is_set()
+    }
+
     /// Disable the wakeup timer.
     #[inline]
     pub fn disable_wakeup_timer(&mut self) {

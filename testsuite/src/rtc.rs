@@ -4,11 +4,11 @@
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use nucleo_wl55jc_bsp::hal::{
-    chrono::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Timelike},
+    chrono::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Timelike, Duration},
     cortex_m,
     pac::{self, DWT},
     rcc::{self, pulse_reset_backup_domain, setup_lsi, LsiPre},
-    rtc::{self, Rtc},
+    rtc::{self, Rtc, Alarm},
     util::reset_cycle_count,
 };
 use panic_probe as _;
@@ -181,6 +181,34 @@ mod tests {
         loop {
             let elapsed_micros: u32 = DWT::get_cycle_count().wrapping_sub(start) / CYC_PER_MICRO;
             if Rtc::status().wutf().bit_is_set() {
+                defmt::info!("elapsed: {=u32:us}", elapsed_micros);
+                // 100ms tolerance
+                defmt::assert!(elapsed_micros > 900_000 && elapsed_micros < 1_100_000);
+                return;
+            } else if elapsed_micros > 3 * 1000 * 1000 {
+                defmt::panic!(
+                    "this is taking too long, elapsed: {=u32:us}",
+                    elapsed_micros
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn alarm(ta: &mut TestArgs) {
+        unsafe { pulse_reset_backup_domain(&mut ta.rcc, &mut ta.pwr) };
+        ta.pwr.cr1.modify(|_, w| w.dbp().enabled());
+        ta.rcc.bdcr.modify(|_, w| w.lseon().on());
+        while ta.rcc.bdcr.read().lserdy().is_not_ready() {}
+        let mut rtc: Rtc = test_set_date_time_with_clk(rtc::Clk::Lse);
+
+        let alarm: Alarm = Alarm::from(unwrap!(rtc.time()) + Duration::seconds(1)).set_second_mask(true);
+        rtc.set_alarm_a(alarm, false);
+
+        let start: u32 = DWT::get_cycle_count();
+        loop {
+            let elapsed_micros: u32 = DWT::get_cycle_count().wrapping_sub(start) / CYC_PER_MICRO;
+            if Rtc::status().alraf().bit_is_set() {
                 defmt::info!("elapsed: {=u32:us}", elapsed_micros);
                 // 100ms tolerance
                 defmt::assert!(elapsed_micros > 900_000 && elapsed_micros < 1_100_000);

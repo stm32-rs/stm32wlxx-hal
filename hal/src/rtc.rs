@@ -48,7 +48,7 @@ pub mod stat {
 }
 
 /// Alarm day.
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum AlarmDay {
     /// Day of the month.
     Day(u8),
@@ -141,7 +141,7 @@ impl Alarm {
         (st * 10 + su) as u8
     }
 
-    /// Set the alarm second mask.
+    /// Set the alarm seconds mask.
     ///
     /// * `true`: Alarm is set if the seconds match.
     /// * `false`: Seconds are "do not care" in the alarm comparison.
@@ -152,16 +152,16 @@ impl Alarm {
     /// use stm32wlxx_hal::rtc::Alarm;
     ///
     /// let alarm: Alarm = Alarm::ZERO;
-    /// assert_eq!(alarm.second_mask(), false);
+    /// assert_eq!(alarm.seconds_mask(), false);
     ///
-    /// let alarm: Alarm = alarm.set_second_mask(true);
-    /// assert_eq!(alarm.second_mask(), true);
+    /// let alarm: Alarm = alarm.set_seconds_mask(true);
+    /// assert_eq!(alarm.seconds_mask(), true);
     ///
-    /// let alarm: Alarm = alarm.set_second_mask(false);
-    /// assert_eq!(alarm.second_mask(), false);
+    /// let alarm: Alarm = alarm.set_seconds_mask(false);
+    /// assert_eq!(alarm.seconds_mask(), false);
     /// ```
-    #[must_use = "set_second_mask returns a modified Alarm"]
-    pub const fn set_second_mask(mut self, mask: bool) -> Self {
+    #[must_use = "set_seconds_mask returns a modified Alarm"]
+    pub const fn set_seconds_mask(mut self, mask: bool) -> Self {
         if mask {
             self.val |= 1 << 7;
         } else {
@@ -170,9 +170,9 @@ impl Alarm {
         self
     }
 
-    /// Return `true` if the second mask is set.
+    /// Return `true` if the seconds mask is set.
     #[must_use]
-    pub const fn second_mask(&self) -> bool {
+    pub const fn seconds_mask(&self) -> bool {
         self.val & 1 << 7 != 0
     }
 
@@ -214,7 +214,7 @@ impl Alarm {
         (mnt * 10 + mnu) as u8
     }
 
-    /// Set the alarm minute mask.
+    /// Set the alarm minutes mask.
     ///
     /// * `true`: Alarm is set if the minutes match.
     /// * `false`: Minutes are "do not care" in the alarm comparison.
@@ -225,16 +225,16 @@ impl Alarm {
     /// use stm32wlxx_hal::rtc::Alarm;
     ///
     /// let alarm: Alarm = Alarm::ZERO;
-    /// assert_eq!(alarm.minute_mask(), false);
+    /// assert_eq!(alarm.minutes_mask(), false);
     ///
-    /// let alarm: Alarm = alarm.set_minute_mask(true);
-    /// assert_eq!(alarm.minute_mask(), true);
+    /// let alarm: Alarm = alarm.set_minutes_mask(true);
+    /// assert_eq!(alarm.minutes_mask(), true);
     ///
-    /// let alarm: Alarm = alarm.set_minute_mask(false);
-    /// assert_eq!(alarm.minute_mask(), false);
+    /// let alarm: Alarm = alarm.set_minutes_mask(false);
+    /// assert_eq!(alarm.minutes_mask(), false);
     /// ```
-    #[must_use = "set_minute_mask returns a modified Alarm"]
-    pub const fn set_minute_mask(mut self, mask: bool) -> Self {
+    #[must_use = "set_minutes_mask returns a modified Alarm"]
+    pub const fn set_minutes_mask(mut self, mask: bool) -> Self {
         if mask {
             self.val |= 1 << 15;
         } else {
@@ -243,13 +243,13 @@ impl Alarm {
         self
     }
 
-    /// Return `true` if the minute mask is set.
+    /// Return `true` if the minutes mask is set.
     #[must_use]
-    pub const fn minute_mask(&self) -> bool {
+    pub const fn minutes_mask(&self) -> bool {
         self.val & 1 << 15 != 0
     }
 
-    /// Set the alarm hour mask.
+    /// Set the alarm hours mask.
     ///
     /// * `true`: Alarm is set if the hours match.
     /// * `false`: Hours are "do not care" in the alarm comparison.
@@ -260,16 +260,16 @@ impl Alarm {
     /// use stm32wlxx_hal::rtc::Alarm;
     ///
     /// let alarm: Alarm = Alarm::ZERO;
-    /// assert_eq!(alarm.hour_mask(), false);
+    /// assert_eq!(alarm.hours_mask(), false);
     ///
-    /// let alarm: Alarm = alarm.set_hour_mask(true);
-    /// assert_eq!(alarm.hour_mask(), true);
+    /// let alarm: Alarm = alarm.set_hours_mask(true);
+    /// assert_eq!(alarm.hours_mask(), true);
     ///
-    /// let alarm: Alarm = alarm.set_hour_mask(false);
-    /// assert_eq!(alarm.hour_mask(), false);
+    /// let alarm: Alarm = alarm.set_hours_mask(false);
+    /// assert_eq!(alarm.hours_mask(), false);
     /// ```
-    #[must_use = "set_hour_mask returns a modified Alarm"]
-    pub const fn set_hour_mask(mut self, mask: bool) -> Self {
+    #[must_use = "set_hours_mask returns a modified Alarm"]
+    pub const fn set_hours_mask(mut self, mask: bool) -> Self {
         if mask {
             self.val |= 1 << 23;
         } else {
@@ -278,14 +278,34 @@ impl Alarm {
         self
     }
 
-    /// Return `true` if the hour mask is set.
+    /// Return `true` if the hours mask is set.
     #[must_use]
-    pub const fn hour_mask(&self) -> bool {
+    pub const fn hours_mask(&self) -> bool {
         self.val & 1 << 23 != 0
     }
 
-    #[must_use = "set_day returns a modified Alarm"]
-    pub const fn set_day(mut self, day: u8) -> Self {
+    /// Set the day for the alarm.
+    ///
+    /// This is mutually exclusive with [`set_weekday`].
+    ///
+    /// If the day value is greater than 31 it will be truncated.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wlxx_hal::rtc::{Alarm, AlarmDay};
+    ///
+    /// let alarm: Alarm = Alarm::ZERO;
+    /// assert_eq!(alarm.day(), AlarmDay::Day(0));
+    ///
+    /// let alarm: Alarm = alarm.set_days(14);
+    /// assert_eq!(alarm.day(), AlarmDay::Day(14));
+    ///
+    /// let alarm: Alarm = alarm.set_days(32);
+    /// assert_eq!(alarm.day(), AlarmDay::Day(31));
+    /// ```
+    #[must_use = "set_days returns a modified Alarm"]
+    pub const fn set_days(mut self, day: u8) -> Self {
         let day: u32 = const_min(day, 31);
 
         let dt: u32 = day / 10;
@@ -296,6 +316,41 @@ impl Alarm {
         self
     }
 
+    /// Set the weekday for the alarm.
+    ///
+    /// This is mutually exclusive with [`set_day`].
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wlxx_hal::{rtc::{Alarm, AlarmDay}, chrono::Weekday};
+    ///
+    /// let alarm: Alarm = Alarm::ZERO;
+    /// assert_eq!(alarm.day(), AlarmDay::Day(0));
+    ///
+    /// let alarm: Alarm = alarm.set_weekday(Weekday::Mon);
+    /// assert_eq!(alarm.day(), AlarmDay::Weekday(Weekday::Mon));
+    ///
+    /// let alarm: Alarm = alarm.set_weekday(Weekday::Tue);
+    /// assert_eq!(alarm.day(), AlarmDay::Weekday(Weekday::Tue));
+    ///
+    /// let alarm: Alarm = alarm.set_weekday(Weekday::Wed);
+    /// assert_eq!(alarm.day(), AlarmDay::Weekday(Weekday::Wed));
+    ///
+    /// let alarm: Alarm = alarm.set_weekday(Weekday::Thu);
+    /// assert_eq!(alarm.day(), AlarmDay::Weekday(Weekday::Thu));
+    ///
+    /// let alarm: Alarm = alarm.set_weekday(Weekday::Fri);
+    /// assert_eq!(alarm.day(), AlarmDay::Weekday(Weekday::Fri));
+    ///
+    /// let alarm: Alarm = alarm.set_weekday(Weekday::Sat);
+    /// assert_eq!(alarm.day(), AlarmDay::Weekday(Weekday::Sat));
+    ///
+    /// let alarm: Alarm = alarm.set_weekday(Weekday::Sun);
+    /// assert_eq!(alarm.day(), AlarmDay::Weekday(Weekday::Sun));
+    /// # let alarm: Alarm = alarm.set_days(9);
+    /// # assert_eq!(alarm.day(), AlarmDay::Day(9));
+    /// ```
     #[must_use = "set_weekday returns a modified Alarm"]
     pub fn set_weekday(mut self, wd: chrono::Weekday) -> Self {
         self.val &= !(0xF << 24);
@@ -303,9 +358,10 @@ impl Alarm {
         self
     }
 
+    /// Get the weekday or day of the alarm.
     #[must_use]
     pub fn day(&self) -> AlarmDay {
-        if 1 << 30 != 0 {
+        if self.val & 1 << 30 != 0 {
             let wd: u32 = (self.val >> 24) & 0xF;
             AlarmDay::Weekday(chrono::Weekday::from_u32(wd.saturating_sub(1)).unwrap())
         } else {
@@ -316,14 +372,39 @@ impl Alarm {
         }
     }
 
-    #[must_use = "set_day_mask returns a modified Alarm"]
-    pub const fn set_day_mask(mut self, mask: bool) -> Self {
+    /// Set the alarm day / weekday mask.
+    ///
+    /// * `true`: Alarm is set if the days / weekdays match.
+    /// * `false`: Days / weekdays are "do not care" in the alarm comparison.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wlxx_hal::rtc::Alarm;
+    ///
+    /// let alarm: Alarm = Alarm::ZERO;
+    /// assert_eq!(alarm.days_mask(), false);
+    ///
+    /// let alarm: Alarm = alarm.set_days_mask(true);
+    /// assert_eq!(alarm.days_mask(), true);
+    ///
+    /// let alarm: Alarm = alarm.set_days_mask(false);
+    /// assert_eq!(alarm.days_mask(), false);
+    /// ```
+    #[must_use = "set_days_mask returns a modified Alarm"]
+    pub const fn set_days_mask(mut self, mask: bool) -> Self {
         if mask {
             self.val |= 1 << 31;
         } else {
             self.val &= !(1 << 31);
         }
         self
+    }
+
+    /// Return `true` if the day mask is set.
+    #[must_use]
+    pub const fn days_mask(&self) -> bool {
+        self.val & 1 << 31 != 0
     }
 }
 
@@ -785,17 +866,21 @@ impl Rtc {
         self.rtc.cr.modify(|_, w| w.wute().set_bit());
     }
 
+    /// Set alarm A.
     pub fn set_alarm_a(&mut self, alarm: Alarm, irq_en: bool) {
         self.rtc.cr.modify(|_, w| w.alrae().clear_bit());
         self.rtc.alrmar.write(|w| unsafe { w.bits(alarm.val) });
+        // TODO: subseconds
         self.rtc
             .cr
             .modify(|_, w| w.alrae().set_bit().alraie().bit(irq_en));
     }
 
+    /// Set alarm B.
     pub fn set_alarm_b(&mut self, alarm: Alarm, irq_en: bool) {
         self.rtc.cr.modify(|_, w| w.alrbe().clear_bit());
         self.rtc.alrmbr.write(|w| unsafe { w.bits(alarm.val) });
+        // TODO: subseconds
         self.rtc
             .cr
             .modify(|_, w| w.alrbe().set_bit().alrbie().bit(irq_en));

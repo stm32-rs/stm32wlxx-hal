@@ -323,7 +323,10 @@ impl Alarm {
     /// # Example
     ///
     /// ```
-    /// use stm32wlxx_hal::{rtc::{Alarm, AlarmDay}, chrono::Weekday};
+    /// use stm32wlxx_hal::{
+    ///     chrono::Weekday,
+    ///     rtc::{Alarm, AlarmDay},
+    /// };
     ///
     /// let alarm: Alarm = Alarm::ZERO;
     /// assert_eq!(alarm.day(), AlarmDay::Day(0));

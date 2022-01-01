@@ -4,11 +4,11 @@
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use nucleo_wl55jc_bsp::hal::{
-    chrono::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Timelike, Duration},
+    chrono::{Datelike, Duration, NaiveDate, NaiveDateTime, NaiveTime, Timelike},
     cortex_m,
     pac::{self, DWT},
     rcc::{self, pulse_reset_backup_domain, setup_lsi, LsiPre},
-    rtc::{self, Rtc, Alarm},
+    rtc::{self, Alarm, Rtc},
     util::reset_cycle_count,
 };
 use panic_probe as _;
@@ -202,7 +202,8 @@ mod tests {
         while ta.rcc.bdcr.read().lserdy().is_not_ready() {}
         let mut rtc: Rtc = test_set_date_time_with_clk(rtc::Clk::Lse);
 
-        let alarm: Alarm = Alarm::from(unwrap!(rtc.time()) + Duration::seconds(1)).set_second_mask(true);
+        let alarm: Alarm =
+            Alarm::from(unwrap!(rtc.time()) + Duration::seconds(1)).set_second_mask(true);
         rtc.set_alarm_a(alarm, false);
 
         let start: u32 = DWT::get_cycle_count();

@@ -48,7 +48,7 @@ pub mod stat {
 }
 
 /// Alarm day.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub enum AlarmDay {
     /// Day of the month.
     Day(u8),
@@ -64,11 +64,32 @@ impl From<chrono::Weekday> for AlarmDay {
 }
 
 /// Alarm settings.
-#[derive(Debug)]
+///
+/// By default the date, hour, minute, and second are compared, but not the
+/// sub-seconds.
+///
+/// # Example
+///
+/// Compare only seconds:
+///
+/// ```
+/// use stm32wlxx_hal::rtc::Alarm;
+///
+/// const NO_COMPARE: Alarm = Alarm::DEFAULT
+///     .set_days_mask(true)
+///     .set_hours_mask(true)
+///     .set_minutes_mask(true)
+///     .set_seconds_mask(false);
+/// # assert_eq!(NO_COMPARE.hours_mask(), true);
+/// # assert_eq!(NO_COMPARE.minutes_mask(), true);
+/// # assert_eq!(NO_COMPARE.seconds_mask(), false);
+/// ```
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Alarm {
     val: u32,
     ss: u32,
+    ss_mask: u8,
 }
 
 impl From<chrono::NaiveTime> for Alarm {
@@ -88,6 +109,7 @@ impl From<chrono::NaiveTime> for Alarm {
         Self {
             val: ht << 20 | hu << 16 | mnt << 12 | mnu << 8 | st << 4 | su,
             ss: 0,
+            ss_mask: 0,
         }
     }
 }
@@ -100,8 +122,28 @@ const fn const_min(a: u8, b: u8) -> u32 {
     }
 }
 
+impl Default for Alarm {
+    #[inline]
+    fn default() -> Self {
+        Self::DEFAULT
+    }
+}
+
 impl Alarm {
-    pub const ZERO: Self = Self { val: 0, ss: 0 };
+    /// Default alarm settings, as a constant.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wlxx_hal::rtc::Alarm;
+    ///
+    /// assert_eq!(Alarm::DEFAULT, Alarm::default());
+    /// ```
+    pub const DEFAULT: Self = Self {
+        val: 0,
+        ss: 0,
+        ss_mask: 0,
+    };
 
     /// Set the seconds value of the alarm.
     ///
@@ -112,7 +154,7 @@ impl Alarm {
     /// ```
     /// use stm32wlxx_hal::rtc::Alarm;
     ///
-    /// let alarm: Alarm = Alarm::ZERO;
+    /// let alarm: Alarm = Alarm::default();
     /// assert_eq!(alarm.seconds(), 0);
     ///
     /// let alarm: Alarm = alarm.set_seconds(31);
@@ -151,7 +193,7 @@ impl Alarm {
     /// ```
     /// use stm32wlxx_hal::rtc::Alarm;
     ///
-    /// let alarm: Alarm = Alarm::ZERO;
+    /// let alarm: Alarm = Alarm::default();
     /// assert_eq!(alarm.seconds_mask(), false);
     ///
     /// let alarm: Alarm = alarm.set_seconds_mask(true);
@@ -185,7 +227,7 @@ impl Alarm {
     /// ```
     /// use stm32wlxx_hal::rtc::Alarm;
     ///
-    /// let alarm: Alarm = Alarm::ZERO;
+    /// let alarm: Alarm = Alarm::default();
     /// assert_eq!(alarm.minutes(), 0);
     ///
     /// let alarm: Alarm = alarm.set_minutes(31);
@@ -224,7 +266,7 @@ impl Alarm {
     /// ```
     /// use stm32wlxx_hal::rtc::Alarm;
     ///
-    /// let alarm: Alarm = Alarm::ZERO;
+    /// let alarm: Alarm = Alarm::default();
     /// assert_eq!(alarm.minutes_mask(), false);
     ///
     /// let alarm: Alarm = alarm.set_minutes_mask(true);
@@ -259,7 +301,7 @@ impl Alarm {
     /// ```
     /// use stm32wlxx_hal::rtc::Alarm;
     ///
-    /// let alarm: Alarm = Alarm::ZERO;
+    /// let alarm: Alarm = Alarm::default();
     /// assert_eq!(alarm.hours_mask(), false);
     ///
     /// let alarm: Alarm = alarm.set_hours_mask(true);
@@ -295,7 +337,7 @@ impl Alarm {
     /// ```
     /// use stm32wlxx_hal::rtc::{Alarm, AlarmDay};
     ///
-    /// let alarm: Alarm = Alarm::ZERO;
+    /// let alarm: Alarm = Alarm::default();
     /// assert_eq!(alarm.day(), AlarmDay::Day(0));
     ///
     /// let alarm: Alarm = alarm.set_days(14);
@@ -328,7 +370,7 @@ impl Alarm {
     ///     rtc::{Alarm, AlarmDay},
     /// };
     ///
-    /// let alarm: Alarm = Alarm::ZERO;
+    /// let alarm: Alarm = Alarm::default();
     /// assert_eq!(alarm.day(), AlarmDay::Day(0));
     ///
     /// let alarm: Alarm = alarm.set_weekday(Weekday::Mon);
@@ -385,7 +427,7 @@ impl Alarm {
     /// ```
     /// use stm32wlxx_hal::rtc::Alarm;
     ///
-    /// let alarm: Alarm = Alarm::ZERO;
+    /// let alarm: Alarm = Alarm::default();
     /// assert_eq!(alarm.days_mask(), false);
     ///
     /// let alarm: Alarm = alarm.set_days_mask(true);
@@ -408,6 +450,81 @@ impl Alarm {
     #[must_use]
     pub const fn days_mask(&self) -> bool {
         self.val & 1 << 31 != 0
+    }
+
+    /// Set the sub-seconds value.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wlxx_hal::rtc::Alarm;
+    ///
+    /// let alarm: Alarm = Alarm::default();
+    /// assert_eq!(alarm.subseconds(), 0);
+    ///
+    /// let alarm: Alarm = alarm.set_subseconds(1);
+    /// assert_eq!(alarm.subseconds(), 1);
+    ///
+    /// let alarm: Alarm = alarm.set_subseconds(u32::MAX);
+    /// assert_eq!(alarm.subseconds(), u32::MAX);
+    /// ```
+    #[must_use = "set_subseconds returns a modified Alarm"]
+    pub const fn set_subseconds(mut self, ss: u32) -> Self {
+        self.ss = ss;
+        self
+    }
+
+    /// Get the sub-seconds value.
+    #[must_use]
+    pub const fn subseconds(&self) -> u32 {
+        self.ss
+    }
+
+    /// Set the subseconds mask.
+    ///
+    /// * 0: No comparison on sub seconds for the alarm.
+    ///   The alarm is set when the seconds unit is incremented
+    ///   (assuming that the rest of the fields match).
+    /// * 1: SS[31:1] are "do not care" in the alarm comparison.
+    ///   Only SS[0] is compared.
+    /// * 2: SS[31:2] are "do not care" in the alarm comparison.
+    ///   Only SS[1:0] are compared.
+    /// * ...
+    /// * 31: SS[31] is "do not care" in the alarm comparison.
+    ///   Only SS[30:0] are compared.
+    /// * 32 to 63: All 32 SS bits are compared and must match to activate the
+    ///   alarm.
+    ///
+    /// Values greater than 63 will be truncated.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wlxx_hal::rtc::Alarm;
+    ///
+    /// let alarm: Alarm = Alarm::default();
+    /// assert_eq!(alarm.subseconds_mask(), 0);
+    ///
+    /// let alarm: Alarm = alarm.set_subseconds_mask(17);
+    /// assert_eq!(alarm.subseconds_mask(), 17);
+    ///
+    /// let alarm: Alarm = alarm.set_subseconds_mask(128);
+    /// assert_eq!(alarm.subseconds_mask(), 63);
+    /// ```
+    #[must_use = "set_subseconds_mask returns a modified Alarm"]
+    pub const fn set_subseconds_mask(mut self, mask: u8) -> Self {
+        if mask > 0x3F {
+            self.ss_mask = 0x3F
+        } else {
+            self.ss_mask = mask;
+        }
+        self
+    }
+
+    /// Get the subseconds mask.
+    #[must_use]
+    pub const fn subseconds_mask(&self) -> u8 {
+        self.ss_mask
     }
 }
 
@@ -870,23 +987,45 @@ impl Rtc {
     }
 
     /// Set alarm A.
-    pub fn set_alarm_a(&mut self, alarm: Alarm, irq_en: bool) {
+    ///
+    /// This will disable the alarm if previously enabled.
+    ///
+    /// This will not enable the alarm after setup.
+    /// To enable the alarm use [`enable_alarm_a`].
+    pub fn set_alarm_a(&mut self, alarm: Alarm) {
         self.rtc.cr.modify(|_, w| w.alrae().clear_bit());
         self.rtc.alrmar.write(|w| unsafe { w.bits(alarm.val) });
-        // TODO: subseconds
+        self.rtc.alrmassr.write(|w| w.maskss().bits(alarm.ss_mask));
+        self.rtc.alrabinr.write(|w| w.ss().bits(alarm.ss));
+    }
+
+    /// Enable or disable alarm A, and alarm A interrupts.
+    #[inline]
+    pub fn enable_alarm_a(&mut self, en: bool, irq_en: bool) {
         self.rtc
             .cr
-            .modify(|_, w| w.alrae().set_bit().alraie().bit(irq_en));
+            .modify(|_, w| w.alrae().bit(en).alraie().bit(irq_en));
     }
 
     /// Set alarm B.
-    pub fn set_alarm_b(&mut self, alarm: Alarm, irq_en: bool) {
+    ///
+    /// This will disable the alarm if previously enabled.
+    ///
+    /// This will not enable the alarm after setup.
+    /// To enable the alarm use [`enable_alarm_b`].
+    pub fn set_alarm_b(&mut self, alarm: Alarm) {
         self.rtc.cr.modify(|_, w| w.alrbe().clear_bit());
         self.rtc.alrmbr.write(|w| unsafe { w.bits(alarm.val) });
-        // TODO: subseconds
+        self.rtc.alrmbssr.write(|w| w.maskss().bits(alarm.ss_mask));
+        self.rtc.alrbbinr.write(|w| w.ss().bits(alarm.ss));
+    }
+
+    /// Enable or disable alarm B, and alarm B interrupts.
+    #[inline]
+    pub fn enable_alarm_b(&mut self, en: bool, irq_en: bool) {
         self.rtc
             .cr
-            .modify(|_, w| w.alrbe().set_bit().alrbie().bit(irq_en));
+            .modify(|_, w| w.alrbe().bit(en).alrbie().bit(irq_en));
     }
 
     /// Disable the wakeup timer.

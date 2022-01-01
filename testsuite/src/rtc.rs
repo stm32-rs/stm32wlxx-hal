@@ -186,10 +186,7 @@ mod tests {
                 defmt::assert!(elapsed_micros > 900_000 && elapsed_micros < 1_100_000);
                 return;
             } else if elapsed_micros > 3 * 1000 * 1000 {
-                defmt::panic!(
-                    "this is taking too long, elapsed: {=u32:us}",
-                    elapsed_micros
-                );
+                defmt::panic!("Timeout! Elapsed: {=u32:us}", elapsed_micros);
             }
         }
     }
@@ -202,9 +199,14 @@ mod tests {
         while ta.rcc.bdcr.read().lserdy().is_not_ready() {}
         let mut rtc: Rtc = test_set_date_time_with_clk(rtc::Clk::Lse);
 
-        let alarm: Alarm =
-            Alarm::from(unwrap!(rtc.time()) + Duration::seconds(1)).set_second_mask(true);
-        rtc.set_alarm_a(alarm, false);
+        let alarm: Alarm = Alarm::from(unwrap!(rtc.time()) + Duration::seconds(1))
+            .set_days_mask(true)
+            .set_hours_mask(true)
+            .set_minutes_mask(true)
+            .set_seconds_mask(false);
+
+        rtc.set_alarm_a(alarm);
+        rtc.enable_alarm_a(true, false);
 
         let start: u32 = DWT::get_cycle_count();
         loop {
@@ -214,11 +216,9 @@ mod tests {
                 // 100ms tolerance
                 defmt::assert!(elapsed_micros > 900_000 && elapsed_micros < 1_100_000);
                 return;
-            } else if elapsed_micros > 3 * 1000 * 1000 {
-                defmt::panic!(
-                    "this is taking too long, elapsed: {=u32:us}",
-                    elapsed_micros
-                );
+            } else if elapsed_micros > 2 * 1000 * 1000 {
+                defmt::info!("{:08X}", Rtc::status().bits());
+                defmt::panic!("Timeout! Elapsed: {=u32:us}", elapsed_micros);
             }
         }
     }

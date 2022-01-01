@@ -2,6 +2,7 @@
 
 use crate::{pac, rcc::lsi_hz};
 use chrono::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
+use num_traits::FromPrimitive;
 use pac::{
     rcc::{
         bdcr::RTCSEL_A,
@@ -44,6 +45,286 @@ pub mod stat {
 
     /// All status flags.
     pub const ALL: u32 = SSRU | ITS | TSOV | TS | WUT | ALRB | ALRA;
+}
+
+/// Alarm day.
+#[derive(Debug)]
+pub enum AlarmDay {
+    /// Day of the month.
+    Day(u8),
+    /// Weekday.
+    Weekday(chrono::Weekday),
+}
+
+impl From<chrono::Weekday> for AlarmDay {
+    #[inline]
+    fn from(wd: chrono::Weekday) -> Self {
+        Self::Weekday(wd)
+    }
+}
+
+/// Alarm settings.
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct Alarm {
+    val: u32,
+    ss: u32,
+}
+
+impl From<chrono::NaiveTime> for Alarm {
+    fn from(time: chrono::NaiveTime) -> Self {
+        let hour: u32 = time.hour();
+        let ht: u32 = hour / 10;
+        let hu: u32 = hour % 10;
+
+        let minute: u32 = time.minute();
+        let mnt: u32 = minute / 10;
+        let mnu: u32 = minute % 10;
+
+        let second: u32 = time.second();
+        let st: u32 = second / 10;
+        let su: u32 = second % 10;
+
+        Self {
+            val: ht << 20 | hu << 16 | mnt << 12 | mnu << 8 | st << 4 | su,
+            ss: 0,
+        }
+    }
+}
+
+const fn const_min(a: u8, b: u8) -> u32 {
+    if a < b {
+        a as u32
+    } else {
+        b as u32
+    }
+}
+
+impl Alarm {
+    pub const ZERO: Self = Self { val: 0, ss: 0 };
+
+    /// Set the seconds value of the alarm.
+    ///
+    /// If the seconds value is greater than 59 it will be truncated.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wlxx_hal::rtc::Alarm;
+    ///
+    /// let alarm: Alarm = Alarm::ZERO;
+    /// assert_eq!(alarm.seconds(), 0);
+    ///
+    /// let alarm: Alarm = alarm.set_seconds(31);
+    /// assert_eq!(alarm.seconds(), 31);
+    ///
+    /// let alarm: Alarm = alarm.set_seconds(60);
+    /// assert_eq!(alarm.seconds(), 59);
+    /// ```
+    #[must_use = "set_seconds returns a modified Alarm"]
+    pub const fn set_seconds(mut self, seconds: u8) -> Self {
+        let seconds: u32 = const_min(seconds, 59);
+
+        let st: u32 = seconds / 10;
+        let su: u32 = seconds % 10;
+
+        self.val &= !0x7F;
+        self.val |= st << 4 | su;
+        self
+    }
+
+    /// Get the seconds value of the alarm.
+    #[must_use]
+    pub const fn seconds(&self) -> u8 {
+        let st: u32 = self.val >> 4 & 0x7;
+        let su: u32 = self.val & 0xF;
+        (st * 10 + su) as u8
+    }
+
+    /// Set the alarm second mask.
+    ///
+    /// * `true`: Alarm is set if the seconds match.
+    /// * `false`: Seconds are "do not care" in the alarm comparison.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wlxx_hal::rtc::Alarm;
+    ///
+    /// let alarm: Alarm = Alarm::ZERO;
+    /// assert_eq!(alarm.second_mask(), false);
+    ///
+    /// let alarm: Alarm = alarm.set_second_mask(true);
+    /// assert_eq!(alarm.second_mask(), true);
+    ///
+    /// let alarm: Alarm = alarm.set_second_mask(false);
+    /// assert_eq!(alarm.second_mask(), false);
+    /// ```
+    #[must_use = "set_second_mask returns a modified Alarm"]
+    pub const fn set_second_mask(mut self, mask: bool) -> Self {
+        if mask {
+            self.val |= 1 << 7;
+        } else {
+            self.val &= !(1 << 7);
+        }
+        self
+    }
+
+    /// Return `true` if the second mask is set.
+    #[must_use]
+    pub const fn second_mask(&self) -> bool {
+        self.val & 1 << 7 != 0
+    }
+
+    /// Set the minutes value of the alarm.
+    ///
+    /// If the minutes value is greater than 59 it will be truncated.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wlxx_hal::rtc::Alarm;
+    ///
+    /// let alarm: Alarm = Alarm::ZERO;
+    /// assert_eq!(alarm.minutes(), 0);
+    ///
+    /// let alarm: Alarm = alarm.set_minutes(31);
+    /// assert_eq!(alarm.minutes(), 31);
+    ///
+    /// let alarm: Alarm = alarm.set_minutes(60);
+    /// assert_eq!(alarm.minutes(), 59);
+    /// ```
+    #[must_use = "set_minutes returns a modified Alarm"]
+    pub const fn set_minutes(mut self, minutes: u8) -> Self {
+        let minutes: u32 = const_min(minutes, 59);
+
+        let mnt: u32 = minutes / 10;
+        let mnu: u32 = minutes % 10;
+
+        self.val &= !0x7F << 8;
+        self.val |= mnt << 12 | mnu << 8;
+        self
+    }
+
+    /// Get the minutes value of the alarm.
+    #[must_use]
+    pub const fn minutes(&self) -> u8 {
+        let mnt: u32 = self.val >> 12 & 0x7;
+        let mnu: u32 = self.val >> 8 & 0xF;
+        (mnt * 10 + mnu) as u8
+    }
+
+    /// Set the alarm minute mask.
+    ///
+    /// * `true`: Alarm is set if the minutes match.
+    /// * `false`: Minutes are "do not care" in the alarm comparison.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wlxx_hal::rtc::Alarm;
+    ///
+    /// let alarm: Alarm = Alarm::ZERO;
+    /// assert_eq!(alarm.minute_mask(), false);
+    ///
+    /// let alarm: Alarm = alarm.set_minute_mask(true);
+    /// assert_eq!(alarm.minute_mask(), true);
+    ///
+    /// let alarm: Alarm = alarm.set_minute_mask(false);
+    /// assert_eq!(alarm.minute_mask(), false);
+    /// ```
+    #[must_use = "set_minute_mask returns a modified Alarm"]
+    pub const fn set_minute_mask(mut self, mask: bool) -> Self {
+        if mask {
+            self.val |= 1 << 15;
+        } else {
+            self.val &= !(1 << 15);
+        }
+        self
+    }
+
+    /// Return `true` if the minute mask is set.
+    #[must_use]
+    pub const fn minute_mask(&self) -> bool {
+        self.val & 1 << 15 != 0
+    }
+
+    /// Set the alarm hour mask.
+    ///
+    /// * `true`: Alarm is set if the hours match.
+    /// * `false`: Hours are "do not care" in the alarm comparison.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wlxx_hal::rtc::Alarm;
+    ///
+    /// let alarm: Alarm = Alarm::ZERO;
+    /// assert_eq!(alarm.hour_mask(), false);
+    ///
+    /// let alarm: Alarm = alarm.set_hour_mask(true);
+    /// assert_eq!(alarm.hour_mask(), true);
+    ///
+    /// let alarm: Alarm = alarm.set_hour_mask(false);
+    /// assert_eq!(alarm.hour_mask(), false);
+    /// ```
+    #[must_use = "set_hour_mask returns a modified Alarm"]
+    pub const fn set_hour_mask(mut self, mask: bool) -> Self {
+        if mask {
+            self.val |= 1 << 23;
+        } else {
+            self.val &= !(1 << 23);
+        }
+        self
+    }
+
+    /// Return `true` if the hour mask is set.
+    #[must_use]
+    pub const fn hour_mask(&self) -> bool {
+        self.val & 1 << 23 != 0
+    }
+
+    #[must_use = "set_day returns a modified Alarm"]
+    pub const fn set_day(mut self, day: u8) -> Self {
+        let day: u32 = const_min(day, 31);
+
+        let dt: u32 = day / 10;
+        let du: u32 = day % 10;
+
+        self.val &= !(0x7F << 24);
+        self.val |= dt << 28 | du << 24;
+        self
+    }
+
+    #[must_use = "set_weekday returns a modified Alarm"]
+    pub fn set_weekday(mut self, wd: chrono::Weekday) -> Self {
+        self.val &= !(0xF << 24);
+        self.val |= 1 << 30 | wd.number_from_monday() << 24;
+        self
+    }
+
+    #[must_use]
+    pub fn day(&self) -> AlarmDay {
+        if 1 << 30 != 0 {
+            let wd: u32 = (self.val >> 24) & 0xF;
+            AlarmDay::Weekday(chrono::Weekday::from_u32(wd.saturating_sub(1)).unwrap())
+        } else {
+            let dt: u32 = (self.val >> 28) & 0x3;
+            let du: u32 = (self.val >> 24) & 0xF;
+
+            AlarmDay::Day((dt * 10 + du) as u8)
+        }
+    }
+
+    #[must_use = "set_day_mask returns a modified Alarm"]
+    pub const fn set_day_mask(mut self, mask: bool) -> Self {
+        if mask {
+            self.val |= 1 << 31;
+        } else {
+            self.val &= !(1 << 31);
+        }
+        self
+    }
 }
 
 /// Real-time clock driver.
@@ -502,6 +783,22 @@ impl Rtc {
             .modify(|_, w| w.wucksel().variant(wucksel).wutie().bit(irq_en));
         self.rtc.wutr.write(|w| w.wut().bits(sec).wutoclr().bits(0));
         self.rtc.cr.modify(|_, w| w.wute().set_bit());
+    }
+
+    pub fn set_alarm_a(&mut self, alarm: Alarm, irq_en: bool) {
+        self.rtc.cr.modify(|_, w| w.alrae().clear_bit());
+        self.rtc.alrmar.write(|w| unsafe { w.bits(alarm.val) });
+        self.rtc
+            .cr
+            .modify(|_, w| w.alrae().set_bit().alraie().bit(irq_en));
+    }
+
+    pub fn set_alarm_b(&mut self, alarm: Alarm, irq_en: bool) {
+        self.rtc.cr.modify(|_, w| w.alrbe().clear_bit());
+        self.rtc.alrmbr.write(|w| unsafe { w.bits(alarm.val) });
+        self.rtc
+            .cr
+            .modify(|_, w| w.alrbe().set_bit().alrbie().bit(irq_en));
     }
 
     /// Disable the wakeup timer.

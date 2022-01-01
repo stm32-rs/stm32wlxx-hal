@@ -282,7 +282,7 @@ impl Alarm {
 
     /// Set the day for the alarm.
     ///
-    /// This is mutually exclusive with [`set_weekday`].
+    /// This is mutually exclusive with [`set_weekday`](Self::set_weekday).
     ///
     /// If the day value is greater than 31 it will be truncated.
     ///
@@ -314,7 +314,7 @@ impl Alarm {
 
     /// Set the weekday for the alarm.
     ///
-    /// This is mutually exclusive with [`set_day`].
+    /// This is mutually exclusive with [`set_days`](Self::set_days).
     ///
     /// # Example
     ///

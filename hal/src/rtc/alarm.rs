@@ -48,23 +48,10 @@ pub struct Alarm {
 
 impl From<chrono::NaiveTime> for Alarm {
     fn from(time: chrono::NaiveTime) -> Self {
-        let hour: u32 = time.hour();
-        let ht: u32 = hour / 10;
-        let hu: u32 = hour % 10;
-
-        let minute: u32 = time.minute();
-        let mnt: u32 = minute / 10;
-        let mnu: u32 = minute % 10;
-
-        let second: u32 = time.second();
-        let st: u32 = second / 10;
-        let su: u32 = second % 10;
-
-        Self {
-            val: ht << 20 | hu << 16 | mnt << 12 | mnu << 8 | st << 4 | su,
-            ss: 0,
-            ss_mask: 0,
-        }
+        Self::DEFAULT
+            .set_hours(time.hour() as u8)
+            .set_minutes(time.minute() as u8)
+            .set_seconds(time.second() as u8)
     }
 }
 
@@ -243,6 +230,44 @@ impl Alarm {
     #[must_use]
     pub const fn minutes_mask(&self) -> bool {
         self.val & 1 << 15 != 0
+    }
+
+    /// Set the hours value of the alarm.
+    ///
+    /// If the hours value is greater than 23 it will be truncated.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wlxx_hal::rtc::Alarm;
+    ///
+    /// let alarm: Alarm = Alarm::default();
+    /// assert_eq!(alarm.hours(), 0);
+    ///
+    /// let alarm: Alarm = alarm.set_hours(15);
+    /// assert_eq!(alarm.hours(), 15);
+    ///
+    /// let alarm: Alarm = alarm.set_hours(24);
+    /// assert_eq!(alarm.hours(), 23);
+    /// ```
+    #[must_use = "set_hours returns a modified Alarm"]
+    pub const fn set_hours(mut self, hours: u8) -> Self {
+        let hours: u32 = const_min(hours, 23);
+
+        let ht: u32 = hours / 10;
+        let hu: u32 = hours % 10;
+
+        self.val &= !0x3F << 16;
+        self.val |= ht << 20 | hu << 16;
+        self
+    }
+
+    /// Get the hours value of the alarm.
+    #[must_use]
+    pub const fn hours(&self) -> u8 {
+        let ht: u32 = self.val >> 20 & 0x3;
+        let hu: u32 = self.val >> 16 & 0xF;
+        (ht * 10 + hu) as u8
     }
 
     /// Set the alarm hours mask.

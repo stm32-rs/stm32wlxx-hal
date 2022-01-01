@@ -523,7 +523,7 @@ impl Rtc {
     ///
     /// This will not enable the alarm after setup.
     /// To enable the alarm use [`set_alarm_a_en`](Self::set_alarm_a_en).
-    pub fn set_alarm_a(&mut self, alarm: Alarm) {
+    pub fn set_alarm_a(&mut self, alarm: &Alarm) {
         self.rtc.cr.modify(|_, w| w.alrae().clear_bit());
         self.rtc.alrmar.write(|w| unsafe { w.bits(alarm.val) });
         self.rtc.alrmassr.write(|w| w.maskss().bits(alarm.ss_mask));
@@ -544,7 +544,7 @@ impl Rtc {
     ///
     /// This will not enable the alarm after setup.
     /// To enable the alarm use [`set_alarm_b_en`](Self::set_alarm_b_en).
-    pub fn set_alarm_b(&mut self, alarm: Alarm) {
+    pub fn set_alarm_b(&mut self, alarm: &Alarm) {
         self.rtc.cr.modify(|_, w| w.alrbe().clear_bit());
         self.rtc.alrmbr.write(|w| unsafe { w.bits(alarm.val) });
         self.rtc.alrmbssr.write(|w| w.maskss().bits(alarm.ss_mask));

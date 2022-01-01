@@ -205,8 +205,8 @@ mod tests {
             .set_minutes_mask(true)
             .set_seconds_mask(false);
 
-        rtc.set_alarm_a(alarm);
-        rtc.enable_alarm_a(true, false);
+        rtc.set_alarm_a(&alarm);
+        rtc.set_alarm_a_en(true, false);
 
         let start: u32 = DWT::get_cycle_count();
         loop {

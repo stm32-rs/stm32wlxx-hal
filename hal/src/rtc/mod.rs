@@ -508,6 +508,12 @@ impl Rtc {
         self.rtc.cr.modify(|_, w| w.wute().set_bit());
     }
 
+    /// Disable the wakeup timer.
+    #[inline]
+    pub fn disable_wakeup_timer(&mut self) {
+        self.rtc.cr.modify(|_, w| w.wute().clear_bit());
+    }
+
     /// Set alarm A.
     ///
     /// This will disable the alarm if previously enabled.
@@ -548,12 +554,6 @@ impl Rtc {
         self.rtc
             .cr
             .modify(|_, w| w.alrbe().bit(en).alrbie().bit(irq_en));
-    }
-
-    /// Disable the wakeup timer.
-    #[inline]
-    pub fn disable_wakeup_timer(&mut self) {
-        self.rtc.cr.modify(|_, w| w.wute().clear_bit());
     }
 
     /// Disable the RTC write protection.

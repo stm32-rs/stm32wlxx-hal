@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added a `is_pending` method to the `gpio::Exti` trait.
 - Added alarm functionality to the RTC.
+- Added `Rtc.is_wakeup_timer_en`.
 
 ## [0.3.0] - 2021-12-20
 ### Added

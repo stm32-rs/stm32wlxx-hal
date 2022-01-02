@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `subghz::Stats`
   - `subghz::Status`
 
+### Removed
+- Removed `util::reset_cycle_count`; this functionality is now in `cortex-m`.
+
 ## [0.3.0] - 2021-12-20
 ### Added
 - Added `info::Core::CT` to get the CPU core at compile time.

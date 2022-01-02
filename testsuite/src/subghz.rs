@@ -25,7 +25,7 @@ use bsp::{
             SleepCfg, SpreadingFactor, StandbyClk, Startup, Status, StatusMode, SubGhz, TcxoMode,
             TcxoTrim, Timeout, TxParams,
         },
-        util::{new_delay, reset_cycle_count},
+        util::new_delay,
     },
     RfSwitch,
 };
@@ -95,12 +95,12 @@ const TCXO_MODE: TcxoMode = TcxoMode::new()
     .set_timeout(Timeout::from_duration_sat(Duration::from_millis(10)));
 
 // WARNING will wrap-around eventually, use this for relative timing only
-defmt::timestamp!("{=u32:us}", DWT::get_cycle_count() / CYC_PER_US);
+defmt::timestamp!("{=u32:us}", DWT::cycle_count() / CYC_PER_US);
 
 fn tx_or_panic(sg: &mut MySubghz, rfs: &mut RfSwitch) {
     rfs.set_tx_lp();
     unwrap!(sg.set_tx(Timeout::DISABLED));
-    let start_cc: u32 = DWT::get_cycle_count();
+    let start_cc: u32 = DWT::cycle_count();
     loop {
         let status: Status = unwrap!(sg.status());
         if status.cmd() == Ok(CmdStatus::Complete) {
@@ -109,7 +109,7 @@ fn tx_or_panic(sg: &mut MySubghz, rfs: &mut RfSwitch) {
             break;
         }
 
-        let elapsed_s: u32 = DWT::get_cycle_count().wrapping_sub(start_cc) / CYC_PER_SEC;
+        let elapsed_s: u32 = DWT::cycle_count().wrapping_sub(start_cc) / CYC_PER_SEC;
         defmt::assert!(
             elapsed_s < 1,
             "Timeout waiting for TX completion status={}",
@@ -186,11 +186,11 @@ fn ping_pong(sg: &mut MySubghz, rng: &mut Rng, rfs: &mut RfSwitch, pkt: PacketTy
         defmt::debug!("RX with timeout {:?} ms", rx_timeout_ms);
         unwrap!(sg.set_rx(rx_timeout));
 
-        let start_cc: u32 = DWT::get_cycle_count();
+        let start_cc: u32 = DWT::cycle_count();
         loop {
             let (status, irq_status) = unwrap!(sg.irq_status());
 
-            let elapsed_ms: u32 = DWT::get_cycle_count().wrapping_sub(start_cc) / CYC_PER_MS;
+            let elapsed_ms: u32 = DWT::cycle_count().wrapping_sub(start_cc) / CYC_PER_MS;
 
             if irq_status & Irq::Timeout.mask() != 0 {
                 let elapsed_ms: i32 = elapsed_ms as i32;
@@ -309,7 +309,7 @@ mod tests {
 
             cp.DCB.enable_trace();
             cp.DWT.enable_cycle_counter();
-            reset_cycle_count(&mut cp.DWT);
+            cp.DWT.set_cycle_count(0);
 
             TestArgs {
                 sg,
@@ -324,19 +324,19 @@ mod tests {
     fn buffer_io(ta: &mut TestArgs) {
         const DATA: [u8; 255] = [0x5A; 255];
         while rfbusys() {}
-        let start: u32 = DWT::get_cycle_count();
+        let start: u32 = DWT::cycle_count();
         unwrap!(ta.sg.write_buffer(0, &DATA));
         unwrap!(ta.sg.read_buffer(0, unsafe { &mut BUF }));
-        let end: u32 = DWT::get_cycle_count();
+        let end: u32 = DWT::cycle_count();
         defmt::info!("Cycles 255B: {}", end - start);
         defmt::assert_eq!(DATA.as_ref(), unsafe { BUF }.as_ref());
 
         let mut buf: [u8; 0] = [];
         while rfbusys() {}
-        let start: u32 = DWT::get_cycle_count();
+        let start: u32 = DWT::cycle_count();
         unwrap!(ta.sg.write_buffer(0, &buf));
         unwrap!(ta.sg.read_buffer(0, &mut buf));
-        let end: u32 = DWT::get_cycle_count();
+        let end: u32 = DWT::cycle_count();
         defmt::info!("Cycles 0B: {}", end - start);
     }
 
@@ -346,19 +346,19 @@ mod tests {
 
         const DATA: [u8; 255] = [0x45; 255];
         while rfbusys() {}
-        let start: u32 = DWT::get_cycle_count();
+        let start: u32 = DWT::cycle_count();
         unwrap!(sg.write_buffer(0, &DATA));
         unwrap!(sg.read_buffer(0, unsafe { &mut BUF }));
-        let end: u32 = DWT::get_cycle_count();
+        let end: u32 = DWT::cycle_count();
         defmt::info!("Cycles 255B: {}", end - start);
         defmt::assert_eq!(DATA.as_ref(), unsafe { BUF }.as_ref());
 
         let mut buf: [u8; 0] = [];
         while rfbusys() {}
-        let start: u32 = DWT::get_cycle_count();
+        let start: u32 = DWT::cycle_count();
         unwrap!(sg.write_buffer(0, &buf));
         unwrap!(sg.read_buffer(0, &mut buf));
-        let end: u32 = DWT::get_cycle_count();
+        let end: u32 = DWT::cycle_count();
         defmt::info!("Cycles 0B: {}", end - start);
     }
 
@@ -371,9 +371,9 @@ mod tests {
         unwrap!(unsafe { ta.sg.set_sleep(SLEEP_CFG) });
         ta.delay.delay_us(500);
 
-        let start: u32 = DWT::get_cycle_count();
+        let start: u32 = DWT::cycle_count();
         unsafe { wakeup() }
-        let end: u32 = DWT::get_cycle_count();
+        let end: u32 = DWT::cycle_count();
         defmt::info!("{} cycles to wake radio", end - start);
 
         let status: Status = unwrap!(ta.sg.status());

@@ -66,27 +66,27 @@ mod tests {
         const BUF_SIZE: usize = NUM_BLK * 4 * 4;
         static mut BUF: [u8; BUF_SIZE] = [0; BUF_SIZE];
 
-        let start: u32 = pac::DWT::get_cycle_count();
+        let start: u32 = pac::DWT::cycle_count();
         let ret = cha20.try_fill_bytes(unsafe { &mut BUF });
-        let end: u32 = pac::DWT::get_cycle_count();
+        let end: u32 = pac::DWT::cycle_count();
         defmt::assert!(ret.is_ok());
         let cha20cyc: u32 = end.wrapping_sub(start);
 
-        let start: u32 = pac::DWT::get_cycle_count();
+        let start: u32 = pac::DWT::cycle_count();
         let ret = cha12.try_fill_bytes(unsafe { &mut BUF });
-        let end: u32 = pac::DWT::get_cycle_count();
+        let end: u32 = pac::DWT::cycle_count();
         defmt::assert!(ret.is_ok());
         let cha12cyc: u32 = end.wrapping_sub(start);
 
-        let start: u32 = pac::DWT::get_cycle_count();
+        let start: u32 = pac::DWT::cycle_count();
         let ret = cha8.try_fill_bytes(unsafe { &mut BUF });
-        let end: u32 = pac::DWT::get_cycle_count();
+        let end: u32 = pac::DWT::cycle_count();
         defmt::assert!(ret.is_ok());
         let cha8cyc: u32 = end.wrapping_sub(start);
 
-        let start: u32 = pac::DWT::get_cycle_count();
+        let start: u32 = pac::DWT::cycle_count();
         let ret = rng.try_fill_bytes(unsafe { &mut BUF });
-        let end: u32 = pac::DWT::get_cycle_count();
+        let end: u32 = pac::DWT::cycle_count();
         defmt::assert!(ret.is_ok());
         let rngcyc: u32 = end.wrapping_sub(start);
 

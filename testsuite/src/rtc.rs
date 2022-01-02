@@ -9,7 +9,6 @@ use nucleo_wl55jc_bsp::hal::{
     pac::{self, DWT},
     rcc::{self, pulse_reset_backup_domain, setup_lsi, LsiPre},
     rtc::{self, Alarm, Rtc},
-    util::reset_cycle_count,
 };
 use panic_probe as _;
 
@@ -18,7 +17,7 @@ const CYC_PER_MILLI: u32 = FREQ / 1000;
 const CYC_PER_MICRO: u32 = FREQ / 1000 / 1000;
 
 // WARNING will wrap-around eventually, use this for relative timing only
-defmt::timestamp!("{=u32:us}", DWT::get_cycle_count() / CYC_PER_MICRO);
+defmt::timestamp!("{=u32:us}", DWT::cycle_count() / CYC_PER_MICRO);
 
 fn test_set_date_time_with_clk(clk: rtc::Clk) -> Rtc {
     let mut dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
@@ -42,11 +41,11 @@ fn test_set_date_time_with_clk(clk: rtc::Clk) -> Rtc {
     let date: NaiveDate = NaiveDate::from_ymd(2021, 10, 20);
     let set_dt: NaiveDateTime = date.and_hms(12, 02, 05);
     rtc.set_date_time(set_dt);
-    let start: u32 = DWT::get_cycle_count();
+    let start: u32 = DWT::cycle_count();
 
     // wait 4 RTC clock cycles for the datetime to apply
     loop {
-        let elapsed: u32 = DWT::get_cycle_count() - start;
+        let elapsed: u32 = DWT::cycle_count() - start;
         if elapsed >= four_rtc_clk_cycles {
             break;
         }
@@ -64,9 +63,9 @@ fn test_set_date_time_with_clk(clk: rtc::Clk) -> Rtc {
 
     // delay 10ms
     const TEN_MILLIS: u32 = CYC_PER_MILLI * 10;
-    let start: u32 = DWT::get_cycle_count();
+    let start: u32 = DWT::cycle_count();
     loop {
-        let elapsed: u32 = DWT::get_cycle_count() - start;
+        let elapsed: u32 = DWT::cycle_count() - start;
         if elapsed > TEN_MILLIS {
             break;
         }
@@ -112,7 +111,7 @@ mod tests {
         });
         cp.DCB.enable_trace();
         cp.DWT.enable_cycle_counter();
-        reset_cycle_count(&mut cp.DWT);
+        cp.DWT.set_cycle_count(0);
         defmt::assert_eq!(rcc::sysclk_hz(&dp.RCC), FREQ);
 
         TestArgs {
@@ -177,9 +176,9 @@ mod tests {
 
         rtc.setup_wakeup_timer(0, false);
 
-        let start: u32 = DWT::get_cycle_count();
+        let start: u32 = DWT::cycle_count();
         loop {
-            let elapsed_micros: u32 = DWT::get_cycle_count().wrapping_sub(start) / CYC_PER_MICRO;
+            let elapsed_micros: u32 = DWT::cycle_count().wrapping_sub(start) / CYC_PER_MICRO;
             if Rtc::status().wutf().bit_is_set() {
                 defmt::info!("elapsed: {=u32:us}", elapsed_micros);
                 // 100ms tolerance
@@ -208,9 +207,9 @@ mod tests {
         rtc.set_alarm_a(&alarm);
         rtc.set_alarm_a_en(true, false);
 
-        let start: u32 = DWT::get_cycle_count();
+        let start: u32 = DWT::cycle_count();
         loop {
-            let elapsed_micros: u32 = DWT::get_cycle_count().wrapping_sub(start) / CYC_PER_MICRO;
+            let elapsed_micros: u32 = DWT::cycle_count().wrapping_sub(start) / CYC_PER_MICRO;
             if Rtc::status().alraf().bit_is_set() {
                 defmt::info!("elapsed: {=u32:us}", elapsed_micros);
                 // 100ms tolerance

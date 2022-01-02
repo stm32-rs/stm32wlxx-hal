@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added alarm functionality to the RTC.
 - Added `Rtc.is_wakeup_timer_en`.
 
+### Changed
+- Replaced `Debug` implementation with `Display` implementation for:
+  - `subghz::FskPacketStatus`
+  - `subghz::LoRaPacketStatus`
+  - `subghz::Stats`
+  - `subghz::Status`
+
 ## [0.3.0] - 2021-12-20
 ### Added
 - Added `info::Core::CT` to get the CPU core at compile time.

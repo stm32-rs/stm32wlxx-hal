@@ -7,7 +7,7 @@ use super::Status;
 /// Returned by [`fsk_packet_status`].
 ///
 /// [`fsk_packet_status`]: super::SubGhz::fsk_packet_status
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct FskPacketStatus {
     buf: [u8; 4],
 }
@@ -149,7 +149,7 @@ impl defmt::Format for FskPacketStatus {
     }
 }
 
-impl core::fmt::Display for FskPacketStatus {
+impl core::fmt::Debug for FskPacketStatus {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("FskPacketStatus")
             .field("status", &self.status())
@@ -172,7 +172,7 @@ impl core::fmt::Display for FskPacketStatus {
 /// Returned by [`lora_packet_status`].
 ///
 /// [`lora_packet_status`]: super::SubGhz::lora_packet_status
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct LoRaPacketStatus {
     buf: [u8; 4],
 }
@@ -272,7 +272,7 @@ impl defmt::Format for LoRaPacketStatus {
     }
 }
 
-impl core::fmt::Display for LoRaPacketStatus {
+impl core::fmt::Debug for LoRaPacketStatus {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("LoRaPacketStatus")
             .field("status", &self.status())

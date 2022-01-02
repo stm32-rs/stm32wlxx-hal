@@ -116,7 +116,7 @@ impl CmdStatus {
 /// This is returned by [`status`].
 ///
 /// [`status`]: super::SubGhz::status
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub struct Status(u8);
 
 impl From<u8> for Status {
@@ -180,7 +180,7 @@ impl Status {
     }
 }
 
-impl core::fmt::Display for Status {
+impl core::fmt::Debug for Status {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("Status")
             .field("mode", &self.mode())

@@ -9,7 +9,7 @@ typestate!(FskStats, "FSK stats");
 ///
 /// [`fsk_stats`]: super::SubGhz::fsk_stats
 /// [`lora_stats`]: super::SubGhz::lora_stats
-#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+#[derive(Eq, PartialEq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Stats<ModType> {
     status: Status,
@@ -139,7 +139,7 @@ impl Stats<LoRaStats> {
     }
 }
 
-impl core::fmt::Display for Stats<FskStats> {
+impl core::fmt::Debug for Stats<FskStats> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("Stats")
             .field("status", &self.status())

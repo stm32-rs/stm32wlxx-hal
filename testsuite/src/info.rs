@@ -8,7 +8,6 @@ use nucleo_wl55jc_bsp::hal::{
     info::{self, Core, Uid64},
     pac::{self, DWT},
     rcc,
-    util::reset_cycle_count,
 };
 use panic_probe as _;
 
@@ -16,7 +15,7 @@ const FREQ: u32 = 48_000_000;
 const CYC_PER_MICRO: u32 = FREQ / 1000 / 1000;
 
 // WARNING will wrap-around eventually, use this for relative timing only
-defmt::timestamp!("{=u32:us}", DWT::get_cycle_count() / CYC_PER_MICRO);
+defmt::timestamp!("{=u32:us}", DWT::cycle_count() / CYC_PER_MICRO);
 
 #[defmt_test::tests]
 mod tests {
@@ -33,7 +32,7 @@ mod tests {
 
         cp.DCB.enable_trace();
         cp.DWT.enable_cycle_counter();
-        reset_cycle_count(&mut cp.DWT);
+        cp.DWT.set_cycle_count(0);
     }
 
     #[test]

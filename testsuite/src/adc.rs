@@ -9,7 +9,7 @@ use nucleo_wl55jc_bsp::hal::{
     cortex_m::{self, delay::Delay},
     pac::{self, DWT},
     rcc,
-    util::{new_delay, reset_cycle_count},
+    util::new_delay,
 };
 use panic_probe as _;
 
@@ -19,7 +19,7 @@ const FREQ_RATIO: u32 = FREQ / ADC_FREQ;
 const CYC_PER_US: u32 = FREQ / 1000 / 1000;
 
 // WARNING will wrap-around eventually, use this for relative timing only
-defmt::timestamp!("{=u32:us}", DWT::get_cycle_count() / CYC_PER_US);
+defmt::timestamp!("{=u32:us}", DWT::cycle_count() / CYC_PER_US);
 
 fn validate_vbat(sample: u16) {
     const EXPECTED: i16 = 4096 / 3;
@@ -56,7 +56,7 @@ mod tests {
 
         cp.DCB.enable_trace();
         cp.DWT.enable_cycle_counter();
-        reset_cycle_count(&mut cp.DWT);
+        cp.DWT.set_cycle_count(0);
 
         TestArgs {
             adc,
@@ -71,9 +71,9 @@ mod tests {
         defmt::assert!(!ta.adc.is_enabled());
 
         // disable -> enable
-        let start: u32 = DWT::get_cycle_count();
+        let start: u32 = DWT::cycle_count();
         ta.adc.enable();
-        let end: u32 = DWT::get_cycle_count();
+        let end: u32 = DWT::cycle_count();
         compiler_fence(SeqCst);
         let elapsed: u32 = end - start;
         defmt::info!(
@@ -90,9 +90,9 @@ mod tests {
         defmt::assert!(ta.adc.is_enabled());
 
         // enable -> disable
-        let start: u32 = DWT::get_cycle_count();
+        let start: u32 = DWT::cycle_count();
         ta.adc.disable();
-        let end: u32 = DWT::get_cycle_count();
+        let end: u32 = DWT::cycle_count();
         compiler_fence(SeqCst);
         let elapsed: u32 = end - start;
         defmt::info!(
@@ -260,9 +260,9 @@ mod tests {
         ta.adc.enable_vreg();
         ta.delay.delay_us(u32::from(adc::T_ADCVREG_SETUP_MICROS));
         ta.adc.start_calibrate();
-        let start: u32 = DWT::get_cycle_count();
+        let start: u32 = DWT::cycle_count();
         while Adc::isr().eocal().is_not_complete() {}
-        let end: u32 = DWT::get_cycle_count();
+        let end: u32 = DWT::cycle_count();
         compiler_fence(SeqCst);
         let elapsed: u32 = end - start;
         defmt::info!(
@@ -272,9 +272,9 @@ mod tests {
         );
 
         let _: bool = ta.adc.start_enable();
-        let start: u32 = DWT::get_cycle_count();
+        let start: u32 = DWT::cycle_count();
         while Adc::isr().adrdy().is_not_ready() {}
-        let end: u32 = DWT::get_cycle_count();
+        let end: u32 = DWT::cycle_count();
         let elapsed: u32 = end - start;
         defmt::info!(
             "Enable cycles: CPU {} ADC {}",
@@ -283,9 +283,9 @@ mod tests {
         );
 
         ta.adc.start_chsel(adc::Ch::Vbat.mask());
-        let start: u32 = DWT::get_cycle_count();
+        let start: u32 = DWT::cycle_count();
         while Adc::isr().ccrdy().is_not_complete() {}
-        let end: u32 = DWT::get_cycle_count();
+        let end: u32 = DWT::cycle_count();
         compiler_fence(SeqCst);
         let elapsed: u32 = end - start;
         defmt::info!(
@@ -296,9 +296,9 @@ mod tests {
 
         ta.adc.set_max_sample_time();
         ta.adc.start_conversion();
-        let start: u32 = DWT::get_cycle_count();
+        let start: u32 = DWT::cycle_count();
         while Adc::isr().eoc().is_not_complete() {}
-        let end: u32 = DWT::get_cycle_count();
+        let end: u32 = DWT::cycle_count();
         compiler_fence(SeqCst);
         let elapsed: u32 = end - start;
         defmt::info!(
@@ -324,9 +324,9 @@ mod tests {
         ta.adc.stop_conversion();
 
         // wait 161 ADC cycles (maximum sample time) before checking
-        let start: u32 = DWT::get_cycle_count();
+        let start: u32 = DWT::cycle_count();
         loop {
-            let elapsed: u32 = (DWT::get_cycle_count() - start) * FREQ_RATIO;
+            let elapsed: u32 = (DWT::cycle_count() - start) * FREQ_RATIO;
             if elapsed > u32::from(adc::Ts::MAX.cycles().to_integer()) + 1 {
                 break;
             }

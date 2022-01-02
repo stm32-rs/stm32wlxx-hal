@@ -11,7 +11,6 @@ use nucleo_wl55jc_bsp::hal::{
     lptim::{self, Filter, LpTim, LpTim1, LpTim2, LpTim3, Prescaler, TrgPol},
     pac::{self, DWT},
     rcc,
-    util::reset_cycle_count,
 };
 use panic_probe as _;
 
@@ -19,7 +18,7 @@ const FREQ: u32 = 48_000_000;
 const CYC_PER_US: u32 = FREQ / 1000 / 1000;
 
 // WARNING will wrap-around eventually, use this for relative timing only
-defmt::timestamp!("{=u32:us}", DWT::get_cycle_count() / CYC_PER_US);
+defmt::timestamp!("{=u32:us}", DWT::cycle_count() / CYC_PER_US);
 
 fn test_clk_src<LPTIM>(lptim: &mut LPTIM, src: lptim::Clk, rcc: &pac::RCC)
 where
@@ -30,10 +29,10 @@ where
     let lptim_freq: u32 = lptim.hz().to_integer();
 
     let cycles: u16 = u16::try_from(lptim_freq / 32).unwrap_or(u16::MAX);
-    let start: u32 = DWT::get_cycle_count();
+    let start: u32 = DWT::cycle_count();
     lptim.start(cycles);
     unwrap!(nb::block!(lptim.wait()).ok());
-    let end: u32 = DWT::get_cycle_count();
+    let end: u32 = DWT::cycle_count();
 
     // compare elapsed lptim cycles to elapsed CPU cycles
     let elapsed: u32 = end.wrapping_sub(start);
@@ -84,7 +83,7 @@ mod tests {
 
             cp.DCB.enable_trace();
             cp.DWT.enable_cycle_counter();
-            reset_cycle_count(&mut cp.DWT);
+            cp.DWT.set_cycle_count(0);
 
             // enable HSI
             dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
@@ -129,9 +128,9 @@ mod tests {
         ta.lptim3.start(u16::MAX);
 
         // wait 10 LPTIM3 cycles
-        let start: u32 = DWT::get_cycle_count();
+        let start: u32 = DWT::cycle_count();
         loop {
-            let elapsed: u32 = DWT::get_cycle_count() - start;
+            let elapsed: u32 = DWT::cycle_count() - start;
             if elapsed > (FREQ / lptim3_freq) * 10 {
                 break;
             }
@@ -144,9 +143,9 @@ mod tests {
         unwrap!(ta.b7.toggle());
 
         // wait 10 LPTIM3 cycles
-        let start: u32 = DWT::get_cycle_count();
+        let start: u32 = DWT::cycle_count();
         loop {
-            let elapsed: u32 = DWT::get_cycle_count() - start;
+            let elapsed: u32 = DWT::cycle_count() - start;
             if elapsed > (FREQ / lptim3_freq) * 10 {
                 break;
             }

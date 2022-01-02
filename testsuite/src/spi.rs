@@ -17,7 +17,6 @@ use nucleo_wl55jc_bsp::hal::{
     spi::{
         BaudRate, Mode, NoMiso, NoMosi, NoSck, Phase, Polarity, Spi, MODE_0, MODE_1, MODE_2, MODE_3,
     },
-    util::reset_cycle_count,
 };
 use panic_probe as _;
 
@@ -25,7 +24,7 @@ const FREQ: u32 = 48_000_000;
 const CYC_PER_MICRO: u32 = FREQ / 1000 / 1000;
 
 // WARNING will wrap-around eventually, use this for relative timing only
-defmt::timestamp!("{=u32:us}", DWT::get_cycle_count() / CYC_PER_MICRO);
+defmt::timestamp!("{=u32:us}", DWT::cycle_count() / CYC_PER_MICRO);
 
 pub struct TestArgs {
     dma: AllDma,
@@ -158,7 +157,7 @@ mod tests {
         });
         cp.DCB.enable_trace();
         cp.DWT.enable_cycle_counter();
-        reset_cycle_count(&mut cp.DWT);
+        cp.DWT.set_cycle_count(0);
         defmt::assert_eq!(rcc::sysclk_hz(&dp.RCC), FREQ);
 
         defmt::warn!(

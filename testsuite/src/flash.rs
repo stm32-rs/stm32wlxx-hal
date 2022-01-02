@@ -10,7 +10,6 @@ use nucleo_wl55jc_bsp::hal::{
     pac::{self, DWT},
     rcc,
     rng::{self, Rng},
-    util::reset_cycle_count,
 };
 use panic_probe as _;
 use rand::Rng as RngTrait;
@@ -20,7 +19,7 @@ const FREQ: u32 = 48_000_000;
 const CYC_PER_MICRO: u32 = FREQ / 1000 / 1000;
 
 // WARNING will wrap-around eventually, use this for relative timing only
-defmt::timestamp!("{=u32:us}", DWT::get_cycle_count() / CYC_PER_MICRO);
+defmt::timestamp!("{=u32:us}", DWT::cycle_count() / CYC_PER_MICRO);
 
 #[cortex_m_rt::exception]
 #[allow(non_snake_case)]
@@ -57,7 +56,7 @@ mod tests {
 
         cp.DCB.enable_trace();
         cp.DWT.enable_cycle_counter();
-        reset_cycle_count(&mut cp.DWT);
+        cp.DWT.set_cycle_count(0);
 
         let mut rng: Rng = Rng::new(dp.RNG, rng::Clk::MSI, &mut dp.RCC);
 
@@ -101,9 +100,9 @@ mod tests {
 
         let mut flash: Flash = Flash::unlock(&mut ta.flash);
 
-        let start: u32 = DWT::get_cycle_count();
+        let start: u32 = DWT::cycle_count();
         unwrap!(unsafe { flash.page_erase(ta.page.clone()) });
-        let end: u32 = DWT::get_cycle_count();
+        let end: u32 = DWT::cycle_count();
         let elapsed: u32 = end.wrapping_sub(start);
 
         defmt::info!(
@@ -127,9 +126,9 @@ mod tests {
 
         let mut flash: Flash = Flash::unlock(&mut ta.flash);
 
-        let start: u32 = DWT::get_cycle_count();
+        let start: u32 = DWT::cycle_count();
         unwrap!(unsafe { flash.fast_program(BUF.as_ptr(), ta.addr as *mut u64) });
-        let end: u32 = DWT::get_cycle_count();
+        let end: u32 = DWT::cycle_count();
         let elapsed: u32 = end.wrapping_sub(start);
 
         defmt::info!(
@@ -162,9 +161,9 @@ mod tests {
 
         let mut flash: Flash = Flash::unlock(&mut ta.flash);
 
-        let start: u32 = DWT::get_cycle_count();
+        let start: u32 = DWT::cycle_count();
         unwrap!(unsafe { flash.standard_program(&data, ta.addr as *mut u64) });
-        let end: u32 = DWT::get_cycle_count();
+        let end: u32 = DWT::cycle_count();
         let elapsed: u32 = end.wrapping_sub(start);
 
         defmt::info!(
@@ -235,9 +234,9 @@ mod tests {
 
         let mut flash: Flash = Flash::unlock(&mut ta.flash);
 
-        let start: u32 = DWT::get_cycle_count();
+        let start: u32 = DWT::cycle_count();
         unwrap!(unsafe { flash.standard_program_generic(&data, ta.addr as *mut TestStruct) });
-        let end: u32 = DWT::get_cycle_count();
+        let end: u32 = DWT::cycle_count();
         let elapsed: u32 = end.wrapping_sub(start);
 
         let size = core::mem::size_of::<TestStruct>();

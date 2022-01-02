@@ -608,6 +608,9 @@ impl Default for FskModParams {
 /// LoRa spreading factor.
 ///
 /// Argument of [`LoRaModParams::set_sf`].
+///
+/// Higher spreading factors improve receiver sensitivity, but reduce bit rate
+/// and increase power consumption.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
@@ -715,19 +718,34 @@ impl PartialOrd for LoRaBandwidth {
 /// LoRa forward error correction coding rate.
 ///
 /// Argument of [`LoRaModParams::set_cr`].
+///
+/// A higher coding rate provides better immunity to interference at the expense
+/// of longer transmission time.
+/// In normal conditions [`CodingRate::Cr45`] provides the best trade off.
+/// In case of strong interference, a higher coding rate may be used.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, PartialOrd, Ord)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum CodingRate {
     /// No forward error correction coding rate 4/4
+    ///
+    /// Overhead ratio of 1
     Cr44 = 0x00,
     /// Forward error correction coding rate 4/5
+    ///
+    /// Overhead ratio of 1.25
     Cr45 = 0x1,
     /// Forward error correction coding rate 4/6
+    ///
+    /// Overhead ratio of 1.5
     Cr46 = 0x2,
     /// Forward error correction coding rate 4/7
+    ///
+    /// Overhead ratio of 1.75
     Cr47 = 0x3,
     /// Forward error correction coding rate 4/8
+    ///
+    /// Overhead ratio of 2
     Cr48 = 0x4,
 }
 
@@ -798,6 +816,8 @@ impl LoRaModParams {
 
     /// Set the forward error correction coding rate.
     ///
+    /// See [`CodingRate`] for more information.
+    ///
     /// # Example
     ///
     /// ```
@@ -813,6 +833,25 @@ impl LoRaModParams {
     }
 
     /// Set low data rate optimization enable.
+    ///
+    /// For low data rates (typically high SF or low BW) and very long payloads
+    /// (may last several seconds), the low data rate optimization (LDRO) can be
+    /// enabled.
+    /// This reduces the number of bits per symbol to the given SF minus 2,
+    /// to allow the receiver to have a better tracking of the LoRa receive
+    /// signal.
+    /// Depending on the payload length, the low data rate optimization is
+    /// usually recommended when the LoRa symbol time is equal or above
+    /// 16.38 ms.
+    /// When using LoRa modulation, the total frequency drift over the packet
+    /// time must be kept lower than Freq_drift_max:
+    ///
+    /// Freq_drift_max = BW / (3 × 2SF)
+    ///
+    /// When possible, enabling the low data rate optimization, relaxes the
+    /// total frequency drift over the packet time by 16:
+    ///
+    /// Freq_drift_optimise_max = 16 × Freq_drift_max
     ///
     /// # Example
     ///

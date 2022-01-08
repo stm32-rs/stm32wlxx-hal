@@ -1,15 +1,15 @@
 #![no_std]
 #![no_main]
 
-use core::{mem::size_of, ptr::read_volatile};
+use core::{mem::size_of, ops::Range, ptr::read_volatile};
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use nucleo_wl55jc_bsp::hal::{
     cortex_m,
-    flash::{self, Flash, Page},
+    flash::{self, flash_range, AlignedAddr, Error, Flash, Page},
     pac::{self, DWT},
     rcc,
-    rng::{self, Rng},
+    rng::{self, rand_core::RngCore, Rng},
 };
 use panic_probe as _;
 use rand::Rng as RngTrait;
@@ -30,6 +30,17 @@ unsafe fn HardFault(ef: &cortex_m_rt::ExceptionFrame) -> ! {
     loop {
         cortex_m::asm::udf()
     }
+}
+
+#[inline(always)]
+fn stopwatch<F>(f: F) -> u32
+where
+    F: FnOnce() -> (),
+{
+    let start: u32 = DWT::cycle_count();
+    f();
+    let end: u32 = DWT::cycle_count();
+    end.wrapping_sub(start) / CYC_PER_MICRO
 }
 
 #[defmt_test::tests]
@@ -84,6 +95,13 @@ mod tests {
         defmt::debug!("FLASH_START={:#08X}", flash::FLASH_START);
         defmt::debug!("flash_end()={:#08X}", flash::flash_end());
         defmt::assert_eq!(flash::FLASH_START, 0x0800_0000);
+        defmt::assert_eq!(
+            flash::flash_range(),
+            Range {
+                start: 0x0800_0000,
+                end: 0x0804_0000
+            }
+        );
         defmt::assert_eq!(flash::flash_end(), 0x0803_FFFF);
         defmt::assert_eq!(flash::num_pages(), 0x80);
 
@@ -100,15 +118,9 @@ mod tests {
 
         let mut flash: Flash = Flash::unlock(&mut ta.flash);
 
-        let start: u32 = DWT::cycle_count();
-        unwrap!(unsafe { flash.page_erase(ta.page.clone()) });
-        let end: u32 = DWT::cycle_count();
-        let elapsed: u32 = end.wrapping_sub(start);
+        let elapsed: u32 = stopwatch(|| unwrap!(unsafe { flash.page_erase(ta.page.clone()) }));
 
-        defmt::info!(
-            "2048B page erase duration: {=u32:us} seconds",
-            elapsed / CYC_PER_MICRO
-        );
+        defmt::info!("2048B page erase duration: {=u32:us} seconds", elapsed);
 
         defmt::assert_eq!(
             unsafe { read_volatile(ta.page.addr() as *const u64) },
@@ -126,15 +138,10 @@ mod tests {
 
         let mut flash: Flash = Flash::unlock(&mut ta.flash);
 
-        let start: u32 = DWT::cycle_count();
-        unwrap!(unsafe { flash.fast_program(BUF.as_ptr(), ta.addr as *mut u64) });
-        let end: u32 = DWT::cycle_count();
-        let elapsed: u32 = end.wrapping_sub(start);
+        let elapsed: u32 =
+            stopwatch(|| unwrap!(unsafe { flash.fast_program(BUF.as_ptr(), ta.addr as *mut u64) }));
 
-        defmt::info!(
-            "256B program duration: {=u32:us} seconds",
-            elapsed / CYC_PER_MICRO
-        );
+        defmt::info!("256B program duration: {=u32:us} seconds", elapsed);
 
         for (idx, &dw) in unsafe { BUF }.iter().enumerate() {
             let expected: u64 = unsafe {
@@ -161,20 +168,62 @@ mod tests {
 
         let mut flash: Flash = Flash::unlock(&mut ta.flash);
 
-        let start: u32 = DWT::cycle_count();
-        unwrap!(unsafe { flash.standard_program(&data, ta.addr as *mut u64) });
-        let end: u32 = DWT::cycle_count();
-        let elapsed: u32 = end.wrapping_sub(start);
+        let elapsed: u32 =
+            stopwatch(|| unwrap!(unsafe { flash.standard_program(&data, ta.addr as *mut u64) }));
 
-        defmt::info!(
-            "8B program duration: {=u32:us} seconds",
-            elapsed / CYC_PER_MICRO
-        );
+        defmt::info!("8B program duration: {=u32:us} seconds", elapsed);
 
         defmt::assert_eq!(unsafe { read_volatile(ta.addr as *const u64) }, data);
 
         // increment address by program size
         ta.addr += size_of::<u64>();
+    }
+
+    #[test]
+    fn program_bytes_overflow(ta: &mut TestArgs) {
+        const DATA: [u8; 9] = [0x55; 9];
+
+        let last_addr: AlignedAddr =
+            unwrap!(AlignedAddr::try_from(flash_range().end - size_of::<u64>()));
+
+        let mut flash: Flash = Flash::unlock(&mut ta.flash);
+
+        defmt::assert_eq!(
+            unsafe { flash.program_bytes(&DATA, last_addr) },
+            Err(Error::Overflow)
+        );
+    }
+
+    #[test]
+    fn program_bytes_zero_size(ta: &mut TestArgs) {
+        // this will fail if a program is attempted because we store code here
+        let first_addr: AlignedAddr = unwrap!(AlignedAddr::try_from(flash_range().start));
+
+        let mut flash: Flash = Flash::unlock(&mut ta.flash);
+        unwrap!(unsafe { flash.program_bytes(&[], first_addr) });
+    }
+
+    #[test]
+    fn program_bytes(ta: &mut TestArgs) {
+        let mut data: [u8; 17] = [0; 17];
+        ta.rng.fill_bytes(&mut data);
+
+        defmt::trace!("data={}", data);
+
+        let addr: AlignedAddr = unwrap!(AlignedAddr::try_from(ta.addr));
+
+        let mut flash: Flash = Flash::unlock(&mut ta.flash);
+
+        unwrap!(unsafe { flash.program_bytes(&data, addr) });
+
+        // check data is correct when we read it back from flash
+        data.iter().enumerate().for_each(|(n, byte)| {
+            let flash_byte: u8 = unsafe { ((usize::from(addr) + n) as *const u8).read_volatile() };
+            defmt::assert_eq!(flash_byte, *byte)
+        });
+
+        // increment address by program size
+        ta.addr += size_of::<u64>() * 3;
     }
 
     #[test]
@@ -234,18 +283,13 @@ mod tests {
 
         let mut flash: Flash = Flash::unlock(&mut ta.flash);
 
-        let start: u32 = DWT::cycle_count();
-        unwrap!(unsafe { flash.standard_program_generic(&data, ta.addr as *mut TestStruct) });
-        let end: u32 = DWT::cycle_count();
-        let elapsed: u32 = end.wrapping_sub(start);
+        let elapsed: u32 = stopwatch(|| unsafe {
+            unwrap!(flash.standard_program_generic(&data, ta.addr as *mut TestStruct))
+        });
 
         let size = core::mem::size_of::<TestStruct>();
 
-        defmt::info!(
-            "{}B program duration: {=u32:us} seconds",
-            size,
-            elapsed / CYC_PER_MICRO
-        );
+        defmt::info!("{}B program duration: {=u32:us} seconds", size, elapsed);
 
         defmt::assert_eq!(unsafe { read_volatile(ta.addr as *const TestStruct) }, data);
     }

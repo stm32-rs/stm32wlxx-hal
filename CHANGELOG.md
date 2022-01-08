@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.0] - 2022-01-08
 ### Added
 - Added a `is_pending` method to the `gpio::Exti` trait.
 - Added alarm functionality to the RTC.
@@ -70,7 +70,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [tweedegolf]: https://github.com/tweedegolf
 [stm32-rs]: https://github.com/stm32-rs
-[Unreleased]: https://github.com/stm32-rs/stm32wlxx-hal/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32wlxx-hal/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/stm32-rs/stm32wlxx-hal/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/stm32-rs/stm32wlxx-hal/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/stm32-rs/stm32wlxx-hal/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/stm32-rs/stm32wlxx-hal/releases/tag/v0.2.0

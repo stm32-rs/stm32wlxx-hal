@@ -3,7 +3,13 @@ name = "stm32wlxx-hal"
 description = "Hardware abstraction layer for the STM32WL series microcontrollers."
 readme = "../README.md"
 
-version = "0.3.0"  # update BSP versions, BSP HAL depdendency version, README, and BSP READMEs
+# To update version change:
+# * BSP versions
+# * BSP HAL dependency versions
+# * README
+# * BSP READMES
+# * lock file
+version = "0.4.0"
 authors = ["Alex Martens <alexmgit@protonmail.com>"]
 edition = "2021"
 rust-version = "1.57"  # update MSRV in CI, BSPs, and shield in README

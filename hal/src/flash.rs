@@ -578,7 +578,7 @@ impl<'a> Flash<'a> {
     /// # Ok::<(), stm32wlxx_hal::flash::Error>(())
     /// ```
     pub unsafe fn program_bytes(&mut self, from: &[u8], to: AlignedAddr) -> Result<(), Error> {
-        if from.len() == 0 {
+        if from.is_empty() {
             return Ok(());
         }
 

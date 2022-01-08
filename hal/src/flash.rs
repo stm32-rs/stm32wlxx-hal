@@ -189,14 +189,14 @@ impl Page {
     ///     page0.addr_range(),
     ///     Range {
     ///         start: 0x0800_0000,
-    ///         end: 0x0800_07FF
+    ///         end: 0x0800_0800
     ///     }
     /// );
     /// ```
     pub const fn addr_range(&self) -> Range<usize> {
         Range {
             start: self.addr(),
-            end: self.addr() + (Page::SIZE - 1),
+            end: self.addr() + Page::SIZE,
         }
     }
 }

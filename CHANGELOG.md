@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `subghz::Stats`
   - `subghz::Status`
 
+### Fixed
+- Fixed an off-by-one error in `flash::Page::addr_range`.
+
 ### Removed
 - Removed `util::reset_cycle_count`; this functionality is now in `cortex-m`.
 

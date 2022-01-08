@@ -1,7 +1,13 @@
 //! Flash memory
+//!
+//! Quickstart:
+//!
+//! 1. [`Flash::unlock`]
+//! 2. [`Flash::page_erase`]
+//! 3. [`Flash::program_bytes`]
 
 use crate::pac;
-use core::{ops::Range, ptr::write_volatile};
+use core::{mem::size_of, ops::Range, ptr::write_volatile, slice::ChunksExact};
 use num_integer::Integer;
 
 /// Starting address of the flash memory.
@@ -23,6 +29,36 @@ pub const FLASH_START: usize = 0x0800_0000;
 pub fn flash_end() -> usize {
     const OFFSET: usize = FLASH_START - 1;
     OFFSET + crate::info::flash_size() as usize
+}
+
+/// Range of flash memory.
+///
+/// This is calculated at runtime using the info registers.
+///
+/// # Example
+///
+/// ```no_run
+/// use core::ops::Range;
+/// use stm32wlxx_hal::flash::flash_range;
+///
+/// // valid for the nucleo-wl55jc with 256k flash
+/// assert_eq!(
+///     flash_range(),
+///     Range {
+///         start: 0x0800_0000,
+///         end: 0x0804_0000
+///     }
+/// );
+/// assert!(flash_range().contains(&0x0800_0000));
+/// assert!(flash_range().contains(&0x0803_FFFF));
+/// assert!(!flash_range().contains(&0x0804_0000));
+/// ```
+#[inline]
+pub fn flash_range() -> Range<usize> {
+    Range {
+        start: FLASH_START,
+        end: FLASH_START + crate::info::flash_size() as usize,
+    }
 }
 
 /// Number of flash pages.
@@ -68,7 +104,16 @@ impl Page {
     ///
     /// # Safety
     ///
-    /// 1. The `idx` argument must point to a valid flash page.
+    /// 1. The `idx` argument must be a valid page number, less than the value
+    ///    returned by [`num_pages`].
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wlxx_hal::flash::Page;
+    ///
+    /// let page0 = unsafe { Page::from_index_unchecked(0) };
+    /// ```
     #[inline]
     pub const unsafe fn from_index_unchecked(idx: u8) -> Self {
         Page { idx }
@@ -150,9 +195,9 @@ impl Page {
     /// # Example
     ///
     /// ```
-    /// # let page7 = unsafe { Page::from_index_unchecked(7) };
     /// use stm32wlxx_hal::flash::Page;
     ///
+    /// let page7 = unsafe { Page::from_index_unchecked(7) };
     /// assert_eq!(page7.to_index(), 7);
     /// ```
     #[inline]
@@ -164,10 +209,11 @@ impl Page {
     ///
     /// # Example
     ///
-    /// ```no_run
-    /// # let page127 = unsafe { Page::from_index_unchecked(127) };
-    /// # let page0 = unsafe { Page::from_index_unchecked(0) };
+    /// ```
     /// use stm32wlxx_hal::flash::Page;
+    ///
+    /// let page127 = unsafe { Page::from_index_unchecked(127) };
+    /// let page0 = unsafe { Page::from_index_unchecked(0) };
     ///
     /// assert_eq!(page0.addr(), 0x0800_0000);
     /// assert_eq!(page127.addr(), 0x0803_F800);
@@ -180,11 +226,11 @@ impl Page {
     ///
     /// # Example
     ///
-    /// ```no_run
-    /// # let page0 = unsafe { Page::from_index_unchecked(0) };
+    /// ```
     /// use core::ops::Range;
     /// use stm32wlxx_hal::flash::Page;
     ///
+    /// let page0 = unsafe { Page::from_index_unchecked(0) };
     /// assert_eq!(
     ///     page0.addr_range(),
     ///     Range {
@@ -201,11 +247,104 @@ impl Page {
     }
 }
 
+impl From<Page> for AlignedAddr {
+    #[inline]
+    fn from(page: Page) -> Self {
+        AlignedAddr { addr: page.addr() }
+    }
+}
+
+/// Error for conversions to [`AlignedAddr`].
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct AlignedAddrError(pub(crate) ());
+
+impl AlignedAddrError {
+    pub(crate) const fn new() -> Self {
+        Self(())
+    }
+}
+
+/// A `u64` aligned flash address.
+///
+/// An argument of [`Flash::program_bytes`].
+///
+/// # Example
+///
+/// Create an aligned flash address by converting from `usize`.
+///
+/// ```no_run
+/// use stm32wlxx_hal::flash::AlignedAddr;
+///
+/// let addr: AlignedAddr = AlignedAddr::try_from(0x0803_F800_usize)?;
+/// # Ok::<(), stm32wlxx_hal::flash::AlignedAddrError>(())
+/// ```
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct AlignedAddr {
+    addr: usize,
+}
+
+impl AlignedAddr {
+    /// Create a page address from an index without checking bounds.
+    ///
+    /// # Safety
+    ///
+    /// 1. The `addr` argument must be a multiple of 8.
+    /// 2. The `addr` argument must be a valid flash address, within the range
+    ///    returned by [`flash_range`].
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wlxx_hal::flash::Page;
+    ///
+    /// let page0 = unsafe { Page::from_index_unchecked(0) };
+    /// ```
+    pub const unsafe fn new_unchecked(addr: usize) -> Self {
+        Self { addr }
+    }
+}
+
+impl From<AlignedAddr> for usize {
+    #[inline]
+    fn from(addr: AlignedAddr) -> Self {
+        addr.addr
+    }
+}
+
+impl From<AlignedAddr> for u32 {
+    #[inline]
+    fn from(addr: AlignedAddr) -> Self {
+        addr.addr as u32
+    }
+}
+
+impl TryFrom<u32> for AlignedAddr {
+    type Error = AlignedAddrError;
+
+    fn try_from(addr: u32) -> Result<Self, Self::Error> {
+        Self::try_from(addr as usize)
+    }
+}
+
+impl TryFrom<usize> for AlignedAddr {
+    type Error = AlignedAddrError;
+
+    fn try_from(addr: usize) -> Result<Self, Self::Error> {
+        if addr % size_of::<u64>() != 0 || !flash_range().contains(&addr) {
+            Err(AlignedAddrError::new())
+        } else {
+            Ok(AlignedAddr { addr })
+        }
+    }
+}
+
 /// Flash errors.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error {
-    /// Busy Error.
+    /// Busy error.
     ///
     /// A flash programming sequence was started while the previous sequence
     /// was still in-progress.
@@ -215,6 +354,11 @@ pub enum Error {
     /// A flash programming sequence was started with a program erase suspend
     /// bit set.
     Suspend,
+    /// Overflow error.
+    ///
+    /// Returned by [`Flash::standard_program_generic`], or [`Flash::program_bytes`]
+    /// when the target data and address would exceed the end of flash memory.
+    Overflow,
     /// Fast programming data miss error.
     ///
     /// In Fast programming mode, 32 double-words (256 bytes) must be sent to
@@ -404,6 +548,69 @@ impl<'a> Flash<'a> {
         ret
     }
 
+    /// Program any number of bytes.
+    ///
+    /// This is the safest possible method for programming.
+    ///
+    /// # Safety
+    ///
+    /// 1. Do not write to flash memory that is being used for your code.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wlxx_hal::{
+    ///     flash::{Flash, Page},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let my_data: [u8; 3] = [0x14, 0x15, 0x16];
+    ///
+    /// let last_page: Page = Page::from_index(127).unwrap();
+    ///
+    /// let mut flash: Flash = Flash::unlock(&mut dp.FLASH);
+    /// unsafe {
+    ///     flash.page_erase(last_page)?;
+    ///     flash.program_bytes(&my_data, last_page.into())?;
+    /// }
+    /// # Ok::<(), stm32wlxx_hal::flash::Error>(())
+    /// ```
+    pub unsafe fn program_bytes(&mut self, from: &[u8], to: AlignedAddr) -> Result<(), Error> {
+        if from.is_empty() {
+            return Ok(());
+        }
+
+        if !flash_range().contains(&usize::from(to).saturating_add(from.len())) {
+            return Err(Error::Overflow);
+        }
+
+        let chunks_exact: ChunksExact<u8> = from.chunks_exact(8);
+        let remainder: &[u8] = chunks_exact.remainder();
+        let remainder_len: usize = remainder.len();
+
+        let last_u64: u64 = chunks_exact
+            .remainder()
+            .iter()
+            .enumerate()
+            .fold(0, |acc, (n, byte)| acc | u64::from(*byte) << (8 * n));
+
+        for (n, chunk) in chunks_exact.enumerate() {
+            let chunk_u64: u64 = u64::from_le_bytes(chunk.try_into().unwrap());
+            let addr: usize = n * size_of::<u64>() + usize::from(to);
+
+            self.standard_program(&chunk_u64, addr as *mut u64)?;
+        }
+
+        if remainder_len != 0 {
+            let last_addr: usize = (usize::from(to) + from.len()).prev_multiple_of(&8);
+            self.standard_program(&last_u64, last_addr as *mut u64)?;
+        }
+
+        Ok(())
+    }
+
     /// Program a user-defined type.
     ///
     /// # Safety
@@ -418,9 +625,13 @@ impl<'a> Flash<'a> {
         from: *const T,
         to: *mut T,
     ) -> Result<(), Error> {
-        let size: isize = core::mem::size_of::<T>() as isize;
+        let size: isize = size_of::<T>() as isize;
         if size == 0 {
             return Ok(());
+        }
+
+        if !flash_range().contains(&(size_of::<T>() + to as usize)) {
+            return Err(Error::Overflow);
         }
 
         let sr: u32 = self.sr();
@@ -533,6 +744,25 @@ impl<'a> Flash<'a> {
     /// # Safety
     ///
     /// 1. Do not erase flash memory that is being used for your code.
+    ///
+    /// # Example
+    ///
+    /// Erase the last page.
+    ///
+    /// ```no_run
+    /// use stm32wlxx_hal::{
+    ///     flash::{Flash, Page},
+    ///     pac,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let last_page: Page = Page::from_index(127).unwrap();
+    ///
+    /// let mut flash: Flash = Flash::unlock(&mut dp.FLASH);
+    /// unsafe { flash.page_erase(last_page)? };
+    /// # Ok::<(), stm32wlxx_hal::flash::Error>(())
+    /// ```
     pub unsafe fn page_erase(&mut self, page: Page) -> Result<(), Error> {
         let sr: u32 = self.sr();
         if sr & flags::BSY != 0 {

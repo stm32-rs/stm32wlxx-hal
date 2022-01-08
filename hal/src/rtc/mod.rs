@@ -1,4 +1,4 @@
-//! Real-time clock.
+//! Real-time clock
 
 mod alarm;
 

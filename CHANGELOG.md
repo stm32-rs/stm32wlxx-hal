@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a `is_pending` method to the `gpio::Exti` trait.
 - Added alarm functionality to the RTC.
 - Added `Rtc.is_wakeup_timer_en`.
+- Added `flash::flash_range`.
+- Added `Flash.program_bytes` for safer flash programming.
 
 ### Changed
 - Replaced `Debug` implementation with `Display` implementation for:
@@ -16,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `subghz::LoRaPacketStatus`
   - `subghz::Stats`
   - `subghz::Status`
+- `Flash::standard_program_generic` now checks for overflow.
 
 ### Fixed
 - Fixed an off-by-one error in `flash::Page::addr_range`.

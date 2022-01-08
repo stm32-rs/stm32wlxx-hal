@@ -254,7 +254,7 @@ impl From<Page> for AlignedAddr {
     }
 }
 
-/// Errors from converting to [`Addr`].
+/// Error for conversions to [`AlignedAddr`].
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct AlignedAddrError(pub(crate) ());
@@ -268,6 +268,17 @@ impl AlignedAddrError {
 /// A `u64` aligned flash address.
 ///
 /// An argument of [`Flash::program_bytes`].
+///
+/// # Example
+///
+/// Create an aligned flash address by converting from `usize`.
+///
+/// ```no_run
+/// use stm32wlxx_hal::flash::AlignedAddr;
+///
+/// let addr: AlignedAddr = AlignedAddr::try_from(0x0803_F800_usize)?;
+/// # Ok::<(), stm32wlxx_hal::flash::AlignedAddrError>(())
+/// ```
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct AlignedAddr {

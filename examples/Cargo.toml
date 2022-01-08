@@ -12,4 +12,3 @@ defmt-rtt = "0.3"
 cortex-m-rt = "0.7"
 panic-probe = { version = "0.3", features = ["print-defmt" ] }
 stm32wlxx-hal = { path = "../hal", features = ["stm32wl5x_cm4", "rt", "defmt"] }
-nucleo-wl55jc-bsp = { path = "../nucleo-wl55jc-bsp" }

@@ -1,6 +1,6 @@
 [package]
 authors = [
-    "Alex Martens <alexmgit@protonmail.com>",
+    "Alex Martens <alex@thinglab.org>",
     "Jorge I. <jorge@jorgeig.com>"
 ]
 name = "testsuite"

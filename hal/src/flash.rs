@@ -650,6 +650,7 @@ impl<'a> Flash<'a> {
         );
 
         // Calculate the index of the last double word
+        #[allow(unstable_name_collisions)]
         let last_double_word_idx: isize = size.div_ceil(&8) - 1;
 
         // Write the type as double words and return the number of bytes written

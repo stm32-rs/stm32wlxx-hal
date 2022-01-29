@@ -134,6 +134,7 @@ impl Rng {
     /// // ... use rng
     /// let rng_dp: pac::RNG = rng.free();
     /// ```
+    #[inline]
     pub fn free(self) -> pac::RNG {
         self.rng
     }
@@ -164,6 +165,7 @@ impl Rng {
     /// ```
     ///
     /// [`new`]: Rng::new
+    #[inline]
     pub unsafe fn steal() -> Rng {
         let dp: pac::Peripherals = pac::Peripherals::steal();
         Rng {
@@ -185,6 +187,7 @@ impl Rng {
     /// unsafe { stm32wlxx_hal::rng::Rng::unmask_irq() };
     /// ```
     #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
+    #[inline]
     pub unsafe fn unmask_irq() {
         pac::NVIC::unmask(pac::Interrupt::TRUE_RNG)
     }
@@ -200,11 +203,13 @@ impl Rng {
     ///    of the RNG.
     /// 4. You are reponsible for setting up anything that may have lost state
     ///    while the clock was disabled.
+    #[inline]
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
         rcc.ahb3enr.modify(|_, w| w.rngen().disabled());
     }
 
     /// Enable the RNG clock.
+    #[inline]
     pub fn enable_clock(rcc: &mut pac::RCC) {
         rcc.ahb3enr.modify(|_, w| w.rngen().enabled());
         rcc.ahb3enr.read(); // delay after an RCC peripheral clock enabling
@@ -213,11 +218,13 @@ impl Rng {
     /// Returns the number of correctable seed errors that have occured.
     ///
     /// This counter will saturate when it hits the maximum value.
+    #[inline]
     pub fn seed_error_stat(&self) -> u32 {
         self.err_cnt
     }
 
     /// Reset the correctable seed error counter to zero.
+    #[inline]
     pub fn reset_seed_error_stat(&mut self) {
         self.err_cnt = 0
     }

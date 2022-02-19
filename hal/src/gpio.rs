@@ -259,6 +259,12 @@ pub(crate) mod sealed {
     af_trait!(LpTim3Out, set_lptim3_out_af);
     af_trait!(LpTim3Etr, set_lptim3_etr_af);
     af_trait!(LpTim3In1, set_lptim3_in1_af);
+    af_trait!(Tim16Ch1, set_tim16_ch1_af);
+    af_trait!(Tim16Bkin, set_tim16_bkin_af);
+    af_trait!(Tim16Ch1n, set_tim16_ch1n_af);
+    af_trait!(Tim17Ch1, set_tim17_ch1_af);
+    af_trait!(Tim17Bkin, set_tim17_bkin_af);
+    af_trait!(Tim17Ch1n, set_tim17_ch1n_af);
 
     /// Indicate a GPIO pin can be sampled by the ADC.
     pub trait AdcCh {
@@ -701,6 +707,16 @@ pub mod pins {
     impl_af!(LpTim2In1, B1, set_lptim2_in1_af, 14);
     impl_af!(LpTim2In1, C0, set_lptim2_in1_af, 14);
     impl_af!(LpTim2Etr, C3, set_lptim2_etr_af, 14);
+
+    impl_af!(Tim16Ch1, A6, set_tim16_ch1_af, 14);
+    impl_af!(Tim17Ch1, A7, set_tim17_ch1_af, 14);
+    impl_af!(Tim17Bkin, A10, set_tim17_bkin_af, 14);
+    impl_af!(Tim17Bkin, B4, set_tim17_bkin_af, 14);
+    impl_af!(Tim16Bkin, B5, set_tim16_bkin_af, 14);
+    impl_af!(Tim16Ch1n, B6, set_tim16_ch1n_af, 14);
+    impl_af!(Tim17Ch1n, B7, set_tim17_ch1n_af, 14);
+    impl_af!(Tim16Ch1, B8, set_tim16_ch1_af, 14);
+    impl_af!(Tim17Ch1, B9, set_tim17_ch1_af, 14);
 
     // keep the trait separate from the pin so that users cant use the ADC_CH
     // but are unable to implement the sealed trait themselves

@@ -712,7 +712,7 @@ pub mod pins {
     impl_af!(Tim17Ch1, A7, set_tim17_ch1_af, 14);
     impl_af!(Tim17Bkin, A10, set_tim17_bkin_af, 14);
     impl_af!(Tim17Bkin, B4, set_tim17_bkin_af, 14);
-    impl_af!(Tim16Bkin, B5, set_tim17_bkin_af, 14);
+    impl_af!(Tim16Bkin, B5, set_tim16_bkin_af, 14);
     impl_af!(Tim16Ch1n, B6, set_tim16_ch1n_af, 14);
     impl_af!(Tim17Ch1n, B7, set_tim17_ch1n_af, 14);
     impl_af!(Tim16Ch1, B8, set_tim16_ch1_af, 14);

@@ -41,6 +41,7 @@ use crate::{
     },
     pac, Ratio,
 };
+use core::cmp::min;
 use paste::paste;
 use void::Void;
 
@@ -104,6 +105,7 @@ pub(crate) mod sealed {
         fn set_cr(&mut self, cr: Cr);
         fn cmp(&self) -> u16;
         fn set_cmp(&mut self, cmp: u16);
+        fn autoreload(&self) -> u16;
         fn set_autoreload(&mut self, ar: u16);
         unsafe fn cnt() -> u16;
         fn set_or(&mut self, or: u32);
@@ -175,6 +177,11 @@ macro_rules! impl_lptim_base_for {
             #[inline(always)]
             fn set_cmp(&mut self, cmp: u16) {
                 self.cmp.write(|w| w.cmp().bits(cmp));
+            }
+
+            #[inline(always)]
+            fn autoreload(&self) -> u16 {
+                self.arr.read().arr().bits()
             }
 
             #[inline(always)]
@@ -497,6 +504,63 @@ pub trait LpTim: sealed::LpTim {
                 .set_trg_filter(filter)
         })
     }
+
+    /// Set the maximum duty cycle (autoreload value).
+    ///
+    /// This is used to control the frequency of the PWM output.
+    ///
+    /// This function does not poll for completion, use [`isr`](Self::isr)
+    /// and [`ARROK`](irq::ARROK) to determine when the value has been updated.
+    ///
+    /// # Example
+    ///
+    /// Set the frequency to 50Hz (20ms period) for servo motor control.
+    ///
+    /// ```no_run
+    /// use stm32wlxx_hal::{
+    ///     lptim::{self, LpTim, LpTim1},
+    ///     pac,
+    ///     gpio,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // enable the HSI16 source clock
+    /// dp.RCC.cr.modify(|_, w| w.hsion().set_bit());
+    /// while dp.RCC.cr.read().hsirdy().is_not_ready() {}
+    ///
+    /// let pc: gpio::PortC = gpio::PortC::split(dp.GPIOC, &mut dp.RCC);
+    ///
+    /// let mut lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, lptim::Prescaler::Div8, &mut dp.RCC);
+    /// cortex_m::interrupt::free(|cs| lptim1.new_output_pin(pc.c1, cs));
+    ///
+    /// // 20ms period to control PWM servo motors
+    /// const SERVO_FREQ_HZ: u32 = 50;
+    ///
+    /// // source_freq / prescaler = 16_000_000 MHz / 8 = 2 Mhz
+    /// let lptim1_freq_hz = lptim1.hz().to_integer();
+    ///
+    /// // 2MHz / 50Hz = 40_000
+    /// let max_duty: u32 = lptim1_freq_hz / SERVO_FREQ_HZ;
+    ///
+    /// lptim1.set_max_duty(max_duty.try_into().unwrap());
+    /// ```
+    #[inline]
+    fn set_max_duty(&mut self, duty: u16) {
+        if !self.is_enabled() {
+            const CR: Cr = Cr::RESET.enable();
+            self.as_mut_tim().set_cr(CR);
+
+            // RM0461 Rev 4 "Timer enable":
+            // After setting the ENABLE bit, a delay of two counter
+            // clock is needed before the LPTIM is actually enabled.
+            const MAX_SYS_FREQ: u32 = 48_000_000;
+            let delay: u32 = (MAX_SYS_FREQ * 2) / self.hz().to_integer();
+            cortex_m::asm::delay(delay);
+        }
+
+        self.as_mut_tim().set_autoreload(duty);
+    }
 }
 
 impl LpTim for LpTim1 {
@@ -712,7 +776,7 @@ macro_rules! impl_eh_pwmpin_for {
             }
 
             fn get_max_duty(&self) -> Self::Duty {
-                u16::MAX
+                self.as_tim().autoreload()
             }
 
             fn set_duty(&mut self, duty: Self::Duty) {
@@ -729,10 +793,8 @@ macro_rules! impl_eh_pwmpin_for {
                 }
 
                 // can only be modified when enabled
-                self.as_mut_tim().set_autoreload(u16::MAX);
-                self.as_mut_tim().set_cmp(duty);
-                while Self::isr() & (irq::ARROK | irq::CMPOK) == 0 {}
-                unsafe { self.set_icr(irq::ARROK | irq::CMPOK) };
+                let max_duty: u16 = self.get_max_duty();
+                self.as_mut_tim().set_cmp(min(max_duty, duty));
             }
         }
     };

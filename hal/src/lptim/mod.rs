@@ -518,9 +518,9 @@ pub trait LpTim: sealed::LpTim {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
+    ///     gpio,
     ///     lptim::{self, LpTim, LpTim1},
     ///     pac,
-    ///     gpio,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -531,7 +531,12 @@ pub trait LpTim: sealed::LpTim {
     ///
     /// let pc: gpio::PortC = gpio::PortC::split(dp.GPIOC, &mut dp.RCC);
     ///
-    /// let mut lptim1: LpTim1 = LpTim1::new(dp.LPTIM1, lptim::Clk::Hsi16, lptim::Prescaler::Div8, &mut dp.RCC);
+    /// let mut lptim1: LpTim1 = LpTim1::new(
+    ///     dp.LPTIM1,
+    ///     lptim::Clk::Hsi16,
+    ///     lptim::Prescaler::Div8,
+    ///     &mut dp.RCC,
+    /// );
     /// cortex_m::interrupt::free(|cs| lptim1.new_output_pin(pc.c1, cs));
     ///
     /// // 20ms period to control PWM servo motors

@@ -162,6 +162,7 @@ impl Cfgr {
     /// use stm32wlxx_hal::lptim::Cfgr;
     /// const CFGR: Cfgr = Cfgr::new(0);
     /// ```
+    #[must_use]
     pub const fn new(val: u32) -> Cfgr {
         Cfgr { val }
     }
@@ -175,14 +176,49 @@ impl Cfgr {
     /// const CFGR: Cfgr = Cfgr::new(0x1234_5678);
     /// assert_eq!(CFGR.raw(), 0x1234_5678);
     /// ```
+    #[must_use]
     pub const fn raw(self) -> u32 {
         self.val
+    }
+
+    /// Set the waveform polarity.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wlxx_hal::lptim::Cfgr;
+    ///
+    /// let cfgr: Cfgr = Cfgr::RESET;
+    /// assert_eq!(cfgr.wavepol(), false);
+    ///
+    /// let cfgr: Cfgr = cfgr.set_wavepol(true);
+    /// assert_eq!(cfgr.wavepol(), true);
+    ///
+    /// let cfgr: Cfgr = cfgr.set_wavepol(false);
+    /// assert_eq!(cfgr.wavepol(), false);
+    /// ```
+    #[inline]
+    #[must_use = "set_wavepol returns a modified Cfgr"]
+    pub const fn set_wavepol(mut self, wavepol: bool) -> Self {
+        if wavepol {
+            self.val |= 1 << 21;
+        } else {
+            self.val &= !(1 << 21);
+        }
+        self
+    }
+
+    /// Get the waveform polarity.
+    #[inline]
+    #[must_use]
+    pub const fn wavepol(&self) -> bool {
+        self.val & (1 << 21) != 0
     }
 
     /// Set the trigger polarity.
     #[inline]
     #[must_use = "set_trg_pol returns a modified Cfgr"]
-    pub fn set_trg_pol(mut self, trg_pol: TrgPol) -> Self {
+    pub const fn set_trg_pol(mut self, trg_pol: TrgPol) -> Self {
         self.val &= !(0b11 << 17);
         self.val |= (trg_pol as u32) << 17;
         self
@@ -216,6 +252,7 @@ impl Cfgr {
     /// assert_eq!(Cfgr::default().prescaler(), Prescaler::default());
     /// ```
     #[inline]
+    #[must_use]
     pub const fn prescaler(&self) -> Prescaler {
         match (self.val >> 9) & 0b111 {
             0b000 => Prescaler::Div1,

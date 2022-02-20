@@ -1,7 +1,8 @@
 //! Low-power timers
 //!
-//! Unlike other modules most functionality is exposed via a single trait shared
-//! for all timers, [`LpTim`].
+//! The low power timers implements the `embedded-hal`
+//! [`PwmPin`](embedded_hal::PwmPin) and
+//! [`CountDown`](embedded_hal::timer::CountDown) traits.
 //!
 //! # Example
 //!
@@ -36,7 +37,7 @@ pub use cr::Cr;
 use crate::{
     gpio::{
         pins,
-        sealed::{LpTim1Etr, LpTim2Etr, LpTim3Etr},
+        sealed::{LpTim1Etr, LpTim1Out, LpTim2Etr, LpTim2Out, LpTim3Etr, LpTim3Out},
     },
     pac, Ratio,
 };
@@ -101,6 +102,7 @@ pub(crate) mod sealed {
         fn modify_cfgr<F: FnOnce(Cfgr) -> Cfgr>(&mut self, f: F);
         fn cr(&self) -> Cr;
         fn set_cr(&mut self, cr: Cr);
+        fn cmp(&self) -> u16;
         fn set_cmp(&mut self, cmp: u16);
         fn set_autoreload(&mut self, ar: u16);
         unsafe fn cnt() -> u16;
@@ -163,6 +165,11 @@ macro_rules! impl_lptim_base_for {
             fn set_cr(&mut self, cr: Cr) {
                 // safety: reserved bits are masked
                 self.cr.write(|w| unsafe { w.bits(u32::from(cr) & 0x1F) })
+            }
+
+            #[inline(always)]
+            fn cmp(&self) -> u16 {
+                self.cmp.read().cmp().bits()
             }
 
             #[inline(always)]
@@ -472,6 +479,7 @@ pub trait LpTim: sealed::LpTim {
     }
 
     /// Returns `true` if the timer is enabled.
+    #[inline]
     fn is_enabled(&self) -> bool {
         self.as_tim().cr().enabled()
     }
@@ -498,7 +506,7 @@ impl LpTim for LpTim1 {
         rcc.ccipr.modify(|_, w| w.lptim1sel().bits(clk as u8));
         unsafe { Self::pulse_reset(rcc) }
         Self::enable_clock(rcc);
-        tim.set_cfgr(Cfgr::RESET.set_prescaler(pre));
+        tim.set_cfgr(Cfgr::RESET.set_prescaler(pre).set_wavepol(true));
 
         let src: Ratio<u32> = match clk {
             Clk::Pclk => crate::rcc::apb1timx(rcc),
@@ -546,7 +554,7 @@ impl LpTim for LpTim2 {
         rcc.ccipr.modify(|_, w| w.lptim2sel().bits(clk as u8));
         unsafe { Self::pulse_reset(rcc) }
         Self::enable_clock(rcc);
-        tim.set_cfgr(Cfgr::RESET.set_prescaler(pre));
+        tim.set_cfgr(Cfgr::RESET.set_prescaler(pre).set_wavepol(true));
 
         let src: Ratio<u32> = match clk {
             Clk::Pclk => crate::rcc::apb1timx(rcc),
@@ -594,7 +602,7 @@ impl LpTim for LpTim3 {
         rcc.ccipr.modify(|_, w| w.lptim3sel().bits(clk as u8));
         unsafe { Self::pulse_reset(rcc) }
         Self::enable_clock(rcc);
-        tim.set_cfgr(Cfgr::RESET.set_prescaler(pre));
+        tim.set_cfgr(Cfgr::RESET.set_prescaler(pre).set_wavepol(true));
 
         let src: Ratio<u32> = match clk {
             Clk::Pclk => crate::rcc::apb1timx(rcc),
@@ -635,7 +643,7 @@ impl LpTim for LpTim3 {
     }
 }
 
-macro_rules! impl_eh_for {
+macro_rules! impl_eh_countdown_for {
     ($tim:ident) => {
         impl embedded_hal::timer::CountDown for $tim {
             type Time = u16;
@@ -681,9 +689,58 @@ macro_rules! impl_eh_for {
     };
 }
 
-impl_eh_for!(LpTim1);
-impl_eh_for!(LpTim2);
-impl_eh_for!(LpTim3);
+impl_eh_countdown_for!(LpTim1);
+impl_eh_countdown_for!(LpTim2);
+impl_eh_countdown_for!(LpTim3);
+
+macro_rules! impl_eh_pwmpin_for {
+    ($tim:ident) => {
+        impl embedded_hal::PwmPin for $tim {
+            type Duty = u16;
+
+            fn disable(&mut self) {
+                self.as_mut_tim().set_cr(Cr::DISABLE);
+            }
+
+            fn enable(&mut self) {
+                const CR: Cr = Cr::RESET.enable().set_continuous();
+                self.as_mut_tim().set_cr(CR);
+            }
+
+            fn get_duty(&self) -> Self::Duty {
+                self.as_tim().cmp()
+            }
+
+            fn get_max_duty(&self) -> Self::Duty {
+                u16::MAX
+            }
+
+            fn set_duty(&mut self, duty: Self::Duty) {
+                if !self.is_enabled() {
+                    const CR: Cr = Cr::RESET.enable();
+                    self.as_mut_tim().set_cr(CR);
+
+                    // RM0461 Rev 4 "Timer enable":
+                    // After setting the ENABLE bit, a delay of two counter
+                    // clock is needed before the LPTIM is actually enabled.
+                    const MAX_SYS_FREQ: u32 = 48_000_000;
+                    let delay: u32 = (MAX_SYS_FREQ * 2) / self.hz().to_integer();
+                    cortex_m::asm::delay(delay);
+                }
+
+                // can only be modified when enabled
+                self.as_mut_tim().set_autoreload(u16::MAX);
+                self.as_mut_tim().set_cmp(duty);
+                while Self::isr() & (irq::ARROK | irq::CMPOK) == 0 {}
+                unsafe { self.set_icr(irq::ARROK | irq::CMPOK) };
+            }
+        }
+    };
+}
+
+impl_eh_pwmpin_for!(LpTim1);
+impl_eh_pwmpin_for!(LpTim2);
+impl_eh_pwmpin_for!(LpTim3);
 
 /// Low-power timer 1 trigger pin.
 ///
@@ -914,6 +971,110 @@ impl LpTim3 {
         debug_assert!(!self.is_enabled());
         self.as_mut_tim()
             .modify_cfgr(|w| w.set_trg_pol(TrgPol::Soft));
+        pin.free()
+    }
+}
+
+/// Low-power timer 1 output pin.
+///
+/// Constructed with [`new_output_pin`](LpTim1::new_output_pin).
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct LpTim1OutPin<P> {
+    pin: P,
+}
+
+impl<P> LpTim1OutPin<P> {
+    fn free(self) -> P {
+        self.pin
+    }
+}
+
+// TODO: move to LpTim trait when GATs are stablized
+impl LpTim1 {
+    /// Setup a new output pin.
+    #[inline]
+    pub fn new_output_pin<P: LpTim1Out>(
+        &mut self,
+        mut pin: P,
+        cs: &CriticalSection,
+    ) -> LpTim1OutPin<P> {
+        pin.set_lptim1_out_af(cs);
+        LpTim1OutPin { pin }
+    }
+
+    /// Free the output pin previously created with
+    /// [`new_output_pin`](Self::new_output_pin).
+    #[inline]
+    pub fn free_output_pin<P: LpTim1Out>(&mut self, pin: LpTim1OutPin<P>) -> P {
+        pin.free()
+    }
+}
+
+/// Low-power timer 2 output pin.
+///
+/// Constructed with [`new_output_pin`](LpTim2::new_output_pin).
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct LpTim2OutPin<P> {
+    pin: P,
+}
+
+impl<P> LpTim2OutPin<P> {
+    fn free(self) -> P {
+        self.pin
+    }
+}
+
+// TODO: move to LpTim trait when GATs are stablized
+impl LpTim2 {
+    /// Setup a new output pin.
+    #[inline]
+    pub fn new_output_pin<P: LpTim2Out>(
+        &mut self,
+        mut pin: P,
+        cs: &CriticalSection,
+    ) -> LpTim2OutPin<P> {
+        pin.set_lptim2_out_af(cs);
+        LpTim2OutPin { pin }
+    }
+
+    /// Free the output pin previously created with
+    /// [`new_output_pin`](Self::new_output_pin).
+    #[inline]
+    pub fn free_output_pin<P: LpTim2Out>(&mut self, pin: LpTim2OutPin<P>) -> P {
+        pin.free()
+    }
+}
+
+/// Low-power timer 3 output pin.
+///
+/// Constructed with [`new_output_pin`](LpTim3::new_output_pin).
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct LpTim3OutPin {
+    pin: pins::A1,
+}
+
+impl LpTim3OutPin {
+    fn free(self) -> pins::A1 {
+        self.pin
+    }
+}
+
+// TODO: move to LpTim trait when GATs are stablized
+impl LpTim3 {
+    /// Setup a new output pin.
+    #[inline]
+    pub fn new_output_pin(&mut self, mut pin: pins::A1, cs: &CriticalSection) -> LpTim3OutPin {
+        pin.set_lptim3_out_af(cs);
+        LpTim3OutPin { pin }
+    }
+
+    /// Free the output pin previously created with
+    /// [`new_output_pin`](Self::new_output_pin).
+    #[inline]
+    pub fn free_output_pin(&mut self, pin: LpTim3OutPin) -> pins::A1 {
         pin.free()
     }
 }

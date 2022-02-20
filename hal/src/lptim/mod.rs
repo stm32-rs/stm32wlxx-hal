@@ -506,7 +506,7 @@ impl LpTim for LpTim1 {
         rcc.ccipr.modify(|_, w| w.lptim1sel().bits(clk as u8));
         unsafe { Self::pulse_reset(rcc) }
         Self::enable_clock(rcc);
-        tim.set_cfgr(Cfgr::RESET.set_prescaler(pre));
+        tim.set_cfgr(Cfgr::RESET.set_prescaler(pre).set_wavepol(true));
 
         let src: Ratio<u32> = match clk {
             Clk::Pclk => crate::rcc::apb1timx(rcc),
@@ -554,7 +554,7 @@ impl LpTim for LpTim2 {
         rcc.ccipr.modify(|_, w| w.lptim2sel().bits(clk as u8));
         unsafe { Self::pulse_reset(rcc) }
         Self::enable_clock(rcc);
-        tim.set_cfgr(Cfgr::RESET.set_prescaler(pre));
+        tim.set_cfgr(Cfgr::RESET.set_prescaler(pre).set_wavepol(true));
 
         let src: Ratio<u32> = match clk {
             Clk::Pclk => crate::rcc::apb1timx(rcc),
@@ -602,7 +602,7 @@ impl LpTim for LpTim3 {
         rcc.ccipr.modify(|_, w| w.lptim3sel().bits(clk as u8));
         unsafe { Self::pulse_reset(rcc) }
         Self::enable_clock(rcc);
-        tim.set_cfgr(Cfgr::RESET.set_prescaler(pre));
+        tim.set_cfgr(Cfgr::RESET.set_prescaler(pre).set_wavepol(true));
 
         let src: Ratio<u32> = match clk {
             Clk::Pclk => crate::rcc::apb1timx(rcc),

@@ -12,10 +12,10 @@ use stm32wlxx_hal::{
 
 #[hal::cortex_m_rt::entry]
 fn main() -> ! {
-    defmt::info!("Flash size: {} KiB", info::flash_size_kibibyte());
-    defmt::info!("Package: {:?}", Package::from_device());
-    defmt::info!("UID64: {}", Uid64::from_device());
-    defmt::info!("UID: {}", Uid::from_device());
+    defmt::println!("Flash size: {} KiB", info::flash_size_kibibyte());
+    defmt::println!("Package: {:?}", Package::from_device());
+    defmt::println!("UID64: {}", Uid64::from_device());
+    defmt::println!("UID: {}", Uid::from_device());
 
     loop {
         hal::cortex_m::asm::bkpt();

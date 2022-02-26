@@ -524,7 +524,7 @@ impl Rtc {
     }
 
     /// Returns the value of the wakeup timer as calculated by the RTC logic in RTC cycles
-    fn get_wakeup_period_cycles(&self) -> u32 {
+    pub fn get_wakeup_period_cycles(&self) -> u32 {
         let wutr = self.rtc.wutr.read().wut().bits();
         let wucksel_extension = self.rtc.cr.read().wucksel().is_clock_spare_with_offset();
         if wucksel_extension {

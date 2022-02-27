@@ -523,6 +523,17 @@ impl Rtc {
         self.rtc.cr.modify(|_, w| w.wute().clear_bit());
     }
 
+    /// Returns the value of the wakeup timer as calculated by the RTC logic in RTC cycles
+    pub fn wakeup_period_cycles(&self) -> u32 {
+        let wutr = self.rtc.wutr.read().wut().bits();
+        let wucksel_extension = self.rtc.cr.read().wucksel().is_clock_spare_with_offset();
+        if wucksel_extension {
+            u32::from(wutr) + 0x1_0000
+        } else {
+            u32::from(wutr)
+        }
+    }
+
     /// Set alarm A.
     ///
     /// This will disable the alarm if previously enabled.

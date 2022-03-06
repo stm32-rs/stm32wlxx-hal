@@ -5,6 +5,8 @@ on:
     tags:
       - 'v*'
   pull_request:
+  # allows manual triggering
+  workflow_dispatch:
 
 name: CI
 

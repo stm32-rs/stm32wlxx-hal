@@ -692,7 +692,7 @@ fn cpu1_systick(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R, src: SystClkSource) ->
     }
 }
 
-fn pclk1(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
+pub(crate) fn pclk1(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
     let div: u32 = ppre_div(cfgr.ppre1().bits()).into();
     hclk1(rcc, cfgr) / div
 }

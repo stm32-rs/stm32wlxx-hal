@@ -232,7 +232,7 @@ impl_consts!(Uart1, 17, 18, UART1_BASE);
 impl_consts!(Uart2, 19, 20, UART2_BASE);
 
 macro_rules! impl_clock_hz {
-    ($uart:ident, $sel:ident, $presc:ident, $method:ident) => {
+    ($uart:ident, $sel:ident, $presc:ident, $method:ident, $pclk_method:ident) => {
         impl<RX, TX> $uart<RX, TX> {
             /// Calculate the clock frequency.
             ///
@@ -242,7 +242,7 @@ macro_rules! impl_clock_hz {
                 let src: Ratio<u32> = match rcc.ccipr.read().$method().variant() {
                     $sel::PCLK => {
                         let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
-                        rcc::hclk3(rcc, &cfgr)
+                        rcc::$pclk_method(rcc, &cfgr)
                     }
                     $sel::SYSCLK => {
                         let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
@@ -274,9 +274,9 @@ macro_rules! impl_clock_hz {
     };
 }
 
-impl_clock_hz!(LpUart, LPUART1SEL_A, lpuart, lpuart1sel);
-impl_clock_hz!(Uart1, USART1SEL_A, usart1, usart1sel);
-impl_clock_hz!(Uart2, USART1SEL_A, usart1, usart2sel);
+impl_clock_hz!(LpUart, LPUART1SEL_A, lpuart, lpuart1sel, pclk1);
+impl_clock_hz!(Uart1, USART1SEL_A, usart1, usart1sel, pclk2);
+impl_clock_hz!(Uart2, USART1SEL_A, usart1, usart2sel, pclk1);
 
 macro_rules! impl_pulse_reset {
     ($uart:ident, $reg:ident, $method:ident) => {

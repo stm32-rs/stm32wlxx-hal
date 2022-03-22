@@ -4,12 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.1] - 2022-03-22
 ### Added
 - Implement `embedded_hal::PwmPin` for `LpTim`.
 
 ### Changed
 - Inlined trivial `Rng` methods.
+
+### Fixed
+- Fixed UART `clock_hz` methods returning the wrong frequency.
 
 ## [0.4.0] - 2022-01-08
 ### Added
@@ -77,7 +80,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [tweedegolf]: https://github.com/tweedegolf
 [stm32-rs]: https://github.com/stm32-rs
-[Unreleased]: https://github.com/stm32-rs/stm32wlxx-hal/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/stm32-rs/stm32wlxx-hal/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/stm32-rs/stm32wlxx-hal/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/stm32-rs/stm32wlxx-hal/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/stm32-rs/stm32wlxx-hal/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/stm32-rs/stm32wlxx-hal/compare/v0.2.0...v0.2.1

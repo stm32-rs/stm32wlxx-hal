@@ -9,7 +9,7 @@ readme = "../README.md"
 # * README
 # * BSP READMES
 # * lock file
-version = "0.4.0"
+version = "0.4.1"
 authors = ["Alex Martens <alex@thinglab.org>"]
 edition = "2021"
 rust-version = "1.57"  # update MSRV in CI, BSPs, and shield in README

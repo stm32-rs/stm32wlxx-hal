@@ -344,7 +344,7 @@ pub trait Exti {
     /// C6::set_port(&mut dp.SYSCFG);
     /// C6::set_falling_trggier(&mut dp.EXTI, true);
     /// ```
-    fn set_falling_trggier(exti: &mut pac::EXTI, en: bool);
+    fn set_falling_trigger(exti: &mut pac::EXTI, en: bool);
 
     /// Set the core 1 interrupt mask in the EXTI.
     ///
@@ -768,7 +768,7 @@ pub mod pins {
                     }
 
                     #[inline]
-                    fn set_falling_trggier(exti: &mut pac::EXTI, en: bool) {
+                    fn set_falling_trigger(exti: &mut pac::EXTI, en: bool) {
                         exti.ftsr1.modify(|_, w| w.[<ft $n>]().bit(en));
                     }
 

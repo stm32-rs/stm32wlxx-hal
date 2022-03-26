@@ -342,9 +342,9 @@ pub trait Exti {
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// C6::set_port(&mut dp.SYSCFG);
-    /// C6::set_falling_trggier(&mut dp.EXTI, true);
+    /// C6::set_falling_trigger(&mut dp.EXTI, true);
     /// ```
-    fn set_falling_trggier(exti: &mut pac::EXTI, en: bool);
+    fn set_falling_trigger(exti: &mut pac::EXTI, en: bool);
 
     /// Set the core 1 interrupt mask in the EXTI.
     ///
@@ -390,7 +390,7 @@ pub trait Exti {
     /// This is a helper function that wraps:
     /// 1. [`set_port`](Self::set_port)
     /// 2. [`set_rising_trigger`](Self::set_rising_trigger)
-    /// 3. [`set_falling_trggier`](Self::set_falling_trggier)
+    /// 3. [`set_falling_trigger`](Self::set_falling_trigger)
     /// 4. Unmask with [`set_c1_mask`](Self::set_c1_mask)
     ///
     /// # Example
@@ -409,7 +409,7 @@ pub trait Exti {
     fn setup_exti_c1(exti: &mut pac::EXTI, syscfg: &mut pac::SYSCFG, trg: ExtiTrg) {
         Self::set_port(syscfg);
         Self::set_rising_trigger(exti, matches!(trg, ExtiTrg::Rising | ExtiTrg::Both));
-        Self::set_falling_trggier(exti, matches!(trg, ExtiTrg::Falling | ExtiTrg::Both));
+        Self::set_falling_trigger(exti, matches!(trg, ExtiTrg::Falling | ExtiTrg::Both));
         Self::set_c1_mask(exti, true);
     }
 
@@ -768,7 +768,7 @@ pub mod pins {
                     }
 
                     #[inline]
-                    fn set_falling_trggier(exti: &mut pac::EXTI, en: bool) {
+                    fn set_falling_trigger(exti: &mut pac::EXTI, en: bool) {
                         exti.ftsr1.modify(|_, w| w.[<ft $n>]().bit(en));
                     }
 

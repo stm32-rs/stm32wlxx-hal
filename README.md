@@ -4,7 +4,7 @@
 [![stable-docs](https://img.shields.io/badge/docs-stable-blue)](https://docs.rs/stm32wlxx-hal/)
 [![nightly-docs](https://img.shields.io/badge/docs-nightly-black)](https://stm32-rs.github.io/stm32wlxx-hal/stm32wlxx_hal/index.html)
 [![crates.io](https://img.shields.io/crates/v/stm32wlxx-hal.svg)](https://crates.io/crates/stm32wlxx-hal)
-[![rustc](https://img.shields.io/badge/rustc-1.57+-blue.svg)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field)
+[![rustc](https://img.shields.io/badge/rustc-1.60+-blue.svg)](https://doc.rust-lang.org/cargo/reference/manifest.html#the-rust-version-field)
 
 Embedded rust HAL (hardware abstraction layer) for the STM32WL series.
 

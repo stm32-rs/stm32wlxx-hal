@@ -6,7 +6,7 @@ readme = "README.md"
 version = "0.4.1"
 authors = ["Alex Martens <alex@thinglab.org>"]
 edition = "2021"
-rust-version = "1.57"
+rust-version = "1.60"
 license = "MIT OR Apache-2.0"
 keywords = ["arm", "cortex-m", "stm32", "bsp", "seeed"]
 categories = ["embedded", "hardware-support", "no-std"]
@@ -14,7 +14,7 @@ repository = "https://github.com/stm32-rs/stm32wlxx-hal"
 
 [features]
 chrono = ["stm32wlxx-hal/chrono"]
-defmt = ["stm32wlxx-hal/defmt", "dfmt"]
+defmt = ["stm32wlxx-hal/defmt", "dep:defmt"]
 embedded-time = ["stm32wlxx-hal/embedded-time"]
 rt = ["stm32wlxx-hal/rt"]
 
@@ -23,8 +23,7 @@ version = "=0.4.1"
 path = "../hal"
 features = ["stm32wle5"]
 
-[dependencies.dfmt]
-package = "defmt"
+[dependencies.defmt]
 version = "0.3"
 optional = true
 

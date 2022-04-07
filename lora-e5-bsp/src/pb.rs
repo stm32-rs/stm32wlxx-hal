@@ -5,9 +5,6 @@ use stm32wlxx_hal::{
     gpio::{pins, Exti, Input, PinState, Pull},
 };
 
-#[cfg(feature = "defmt")]
-use dfmt as defmt;
-
 const PULL: Pull = Pull::Up;
 
 /// Push-button D0.

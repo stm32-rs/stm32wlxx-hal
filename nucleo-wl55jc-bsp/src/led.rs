@@ -8,9 +8,6 @@ use hal::{
     gpio::{self, pins, Output, OutputArgs},
 };
 
-#[cfg(feature = "defmt")]
-use dfmt as defmt;
-
 const LED_ARGS: OutputArgs = OutputArgs {
     speed: gpio::Speed::Fast,
     level: gpio::PinState::Low,

@@ -13,9 +13,6 @@ use hal::{
     gpio::{self, pins, Output, OutputArgs, PinState},
 };
 
-#[cfg(feature = "defmt")]
-use dfmt as defmt;
-
 /// RF switch.
 #[derive(Debug)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]

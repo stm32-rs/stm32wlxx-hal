@@ -80,6 +80,7 @@ path = "src/uart.rs"
 harness = false
 
 [dependencies]
+aes-gcm = { version = "0.9", default-features = false, features = ["aes"] }
 cortex-m-rt = "0.7"
 defmt = "0.3"
 defmt-rtt = "0.3"

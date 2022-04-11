@@ -1700,6 +1700,56 @@ mod tests {
         );
     }
 
+    // included for benchmarking reference
+    #[test]
+    fn soft_encrypt_gcm_inplace_128() {
+        use aes_gcm::{AeadInPlace, NewAead, Nonce};
+
+        let mut total_elapsed: u32 = 0;
+
+        for gcm in GCM_128.iter() {
+            let mut buf: [u8; 16] = [0; 16];
+            defmt::assert!(buf.len() >= gcm.pt.len());
+            gcm.pt
+                .iter()
+                .enumerate()
+                .for_each(|(idx, &byte)| buf[idx] = byte);
+
+            let mut key: [u8; 16] = [0; 16];
+            let mut iv: [u8; 12] = [0; 12];
+            let mut tag: [u8; 16] = [0; 16];
+
+            gcm.key.iter().enumerate().for_each(|(idx, dw)| {
+                key[(idx * 4)..((idx + 1) * 4)].copy_from_slice(&dw.to_be_bytes())
+            });
+            gcm.iv.iter().enumerate().for_each(|(idx, dw)| {
+                iv[(idx * 4)..((idx + 1) * 4)].copy_from_slice(&dw.to_be_bytes())
+            });
+            gcm.tag.iter().enumerate().for_each(|(idx, dw)| {
+                tag[(idx * 4)..((idx + 1) * 4)].copy_from_slice(&dw.to_be_bytes())
+            });
+
+            let start: u32 = DWT::cycle_count();
+            let cipher = aes_gcm::Aes128Gcm::new(key.as_ref().into());
+            let nonce = Nonce::from_slice(iv.as_ref().into());
+            let result_tag = cipher
+                .encrypt_in_place_detached(nonce, &gcm.aad, &mut buf[..gcm.pt.len()])
+                .unwrap();
+            total_elapsed += DWT::cycle_count().wrapping_sub(start);
+
+            let result_tag: [u8; 16] = unwrap!(result_tag.try_into());
+
+            defmt::assert_eq!(result_tag, tag);
+
+            defmt::assert_eq!(&buf[..gcm.pt.len()], gcm.ct);
+        }
+
+        defmt::info!(
+            "Approximate cycles per 128-bit encrypt: {}",
+            total_elapsed / NUM_GCM_128
+        );
+    }
+
     #[test]
     fn encrypt_gcm_inplace_u32_128(aes: &mut Aes) {
         let mut total_elapsed: u32 = 0;

@@ -84,7 +84,7 @@ jobs:
       - run: |
           cargo test -p testsuite --target thumbv7em-none-eabi --bins --locked --no-run
       - name: Upload test binaries
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: test-bins
           if-no-files-found: error

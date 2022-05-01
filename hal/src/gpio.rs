@@ -959,6 +959,15 @@ impl PortA {
         rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
     }
 
+    /// Set the IO port clock enable during sleep mode.
+    ///
+    /// * `false`: Clock disabled during Sleep and Stop modes
+    /// * `true`: Clock enabled during Sleep mode, disabled during Stop mode
+    #[inline]
+    pub fn set_sleep_clock(rcc: &mut pac::RCC, enable: bool) {
+        rcc.ahb2smenr.modify(|_, w| w.gpioasmen().bit(enable));
+    }
+
     /// Get the input level of all pins on this port.
     #[inline]
     pub fn input_level() -> u16 {
@@ -1094,6 +1103,15 @@ impl PortB {
         rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
     }
 
+    /// Set the IO port clock enable during sleep mode.
+    ///
+    /// * `false`: Clock disabled during Sleep and Stop modes
+    /// * `true`: Clock enabled during Sleep mode, disabled during Stop mode
+    #[inline]
+    pub fn set_sleep_clock(rcc: &mut pac::RCC, enable: bool) {
+        rcc.ahb2smenr.modify(|_, w| w.gpiobsmen().bit(enable));
+    }
+
     /// Get the input level of all pins on this port.
     #[inline]
     pub fn input_level() -> u16 {
@@ -1215,6 +1233,15 @@ impl PortC {
     pub fn enable_clock(rcc: &mut pac::RCC) {
         rcc.ahb2enr.modify(|_, w| w.gpiocen().enabled());
         rcc.ahb2enr.read(); // delay after an RCC peripheral clock enabling
+    }
+
+    /// Set the IO port clock enable during sleep mode.
+    ///
+    /// * `false`: Clock disabled during Sleep and Stop modes
+    /// * `true`: Clock enabled during Sleep mode, disabled during Stop mode
+    #[inline]
+    pub fn set_sleep_clock(rcc: &mut pac::RCC, enable: bool) {
+        rcc.ahb2smenr.modify(|_, w| w.gpiocsmen().bit(enable));
     }
 
     /// Get the input level of all pins on this port.

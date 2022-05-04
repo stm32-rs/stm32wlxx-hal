@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed a typo in the `Exti::set_falling_trigger` function name.
+- Fixed endianness in `SubGhz.op_error`.
 
 ## [0.4.1] - 2022-03-22
 ### Added

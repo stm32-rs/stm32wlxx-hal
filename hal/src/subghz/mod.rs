@@ -1151,7 +1151,7 @@ where
     /// Get the radio operational errors.
     pub fn op_error(&mut self) -> Result<(Status, u16), Error> {
         let data: [u8; 3] = self.read_n(OpCode::GetError)?;
-        Ok((data[0].into(), u16::from_le_bytes([data[1], data[2]])))
+        Ok((data[0].into(), u16::from_be_bytes([data[1], data[2]])))
     }
 
     /// Clear all errors as reported by [`op_error`](SubGhz::op_error).

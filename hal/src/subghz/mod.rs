@@ -916,7 +916,9 @@ where
     /// # let mut sg = unsafe { stm32wlxx_hal::subghz::SubGhz::steal() };
     /// use stm32wlxx_hal::subghz::Timeout;
     ///
-    /// let period: Timeout = rx_period.saturating_add(rx_period).saturating_add(sleep_period);
+    /// let period: Timeout = rx_period
+    ///     .saturating_add(rx_period)
+    ///     .saturating_add(sleep_period);
     ///
     /// sg.set_rtc_period(period)?;
     /// sg.restart_rtc()?;

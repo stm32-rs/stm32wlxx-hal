@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Added `set_sleep_clock` to GPIO ports to enable and disable clocks during sleep.
+- Added `subghz::Timeout::saturating_add`.
+- Added `SubGhz.set_rtc_period` and `SubGhz.restart_rtc` methods required to workaround an erratum with `SubGhz.set_rx_duty_cycle`.
 
 ### Changed
 - Changed minimum supported rust version from 1.57 to 1.60.

@@ -690,6 +690,30 @@ where
         self.write(wr_reg![PAOCP, ocp as u8])
     }
 
+    /// Restart the radio RTC.
+    ///
+    /// This is used to workaround an erratum for [`set_rx_duty_cycle`].
+    ///
+    /// [`set_rx_duty_cycle`]: crate::subghz::SubGhz::set_rx_duty_cycle
+    pub fn restart_rtc(&mut self) -> Result<(), Error> {
+        self.write(wr_reg![RTCCTLR, 0b1])
+    }
+
+    /// Set the radio real-time-clock period.
+    ///
+    /// This is used to workaround an erratum for [`set_rx_duty_cycle`].
+    ///
+    /// [`set_rx_duty_cycle`]: crate::subghz::SubGhz::set_rx_duty_cycle
+    pub fn set_rtc_period(&mut self, period: Timeout) -> Result<(), Error> {
+        let tobits: u32 = period.into_bits();
+        self.write(wr_reg![
+            RTCPRDR2,
+            (tobits >> 16) as u8,
+            (tobits >> 8) as u8,
+            tobits as u8
+        ])
+    }
+
     /// Set the HSE32 crystal OSC_IN load capaitor trimming.
     pub fn set_hse_in_trim(&mut self, trim: HseTrim) -> Result<(), Error> {
         self.write(wr_reg![HSEINTRIM, trim.into()])
@@ -875,8 +899,37 @@ where
     /// * if [`set_standby`] is sent during the listening period or after the
     ///   sub-GHz has been requested to exit sleep mode by sub-GHz radio SPI NSS
     ///
+    /// # Erratum
+    ///
+    /// When a preamble is detected the radio should restart the RX timeout
+    /// with a value of 2 × `rx_period` + `sleep_period`.
+    /// Instead the radio erroneously uses `sleep_period`.
+    ///
+    /// To workaround this use [`restart_rtc`] and [`set_rtc_period`] to
+    /// reprogram the radio timeout to  2 × `rx_period` + `sleep_period`.
+    ///
+    /// Use code similar to this in the [`PreambleDetected`] interrupt handler.
+    ///
+    /// ```no_run
+    /// # let rx_period: Timeout = Timeout::from_millis_sat(100);
+    /// # let sleep_period: Timeout = Timeout::from_millis_sat(100);
+    /// # let mut sg = unsafe { stm32wlxx_hal::subghz::SubGhz::steal() };
+    /// use stm32wlxx_hal::subghz::Timeout;
+    ///
+    /// let period: Timeout = rx_period.saturating_add(rx_period).saturating_add(sleep_period);
+    ///
+    /// sg.set_rtc_period(period)?;
+    /// sg.restart_rtc()?;
+    /// # Ok::<(), stm32wlxx_hal::subghz::Error>(())
+    /// ```
+    ///
+    /// Please read the erratum for more details.
+    ///
+    /// [`PreambleDetected`]: crate::subghz::Irq::PreambleDetected
+    /// [`restart_rtc`]: crate::subghz::SubGhz::restart_rtc
     /// [`RxDone`]: crate::subghz::Irq::RxDone
     /// [`set_rf_frequency`]: crate::subghz::SubGhz::set_rf_frequency
+    /// [`set_rtc_period`]: crate::subghz::SubGhz::set_rtc_period
     /// [`set_standby`]: crate::subghz::SubGhz::set_standby
     pub fn set_rx_duty_cycle(
         &mut self,
@@ -1049,7 +1102,6 @@ where
     /// Get the RX buffer status.
     ///
     /// The return tuple is (status, payload_length, buffer_pointer).
-
     pub fn rx_buffer_status(&mut self) -> Result<(Status, u8, u8), Error> {
         let data: [u8; 3] = self.read_n(OpCode::GetRxBufferStatus)?;
         Ok((data[0].into(), data[1], data[2]))
@@ -1256,6 +1308,16 @@ pub(crate) enum Register {
     RXGAINC = 0x08AC,
     /// PA over current protection.
     PAOCP = 0x08E7,
+    /// RTC control.
+    RTCCTLR = 0x0902,
+    /// RTC period MSB.
+    RTCPRDR2 = 0x0906,
+    /// RTC period mid-byte.
+    #[allow(dead_code)]
+    RTCPRDR1 = 0x0907,
+    /// RTC period LSB.
+    #[allow(dead_code)]
+    RTCPRDR0 = 0x0908,
     /// HSE32 OSC_IN capacitor trim.
     HSEINTRIM = 0x0911,
     /// HSE32 OSC_OUT capacitor trim.

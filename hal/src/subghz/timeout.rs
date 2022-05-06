@@ -398,6 +398,34 @@ impl Timeout {
             (self.bits & 0xFF) as u8,
         ]
     }
+
+    /// Saturating timeout addition.  Computes `self + rhs`, saturating at the
+    /// numeric bounds instead of overflowing.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use stm32wlxx_hal::subghz::Timeout;
+    ///
+    /// assert_eq!(
+    ///     Timeout::from_raw(0xFF_FF_F0).saturating_add(Timeout::from_raw(0xFF)),
+    ///     Timeout::from_raw(0xFF_FF_FF)
+    /// );
+    /// assert_eq!(
+    ///     Timeout::from_raw(100).saturating_add(Timeout::from_raw(23)),
+    ///     Timeout::from_raw(123)
+    /// );
+    /// ```
+    #[must_use = "saturating_add returns a new Timeout"]
+    pub const fn saturating_add(self, rhs: Self) -> Self {
+        // TODO: use core::cmp::min when it is const
+        let bits: u32 = self.bits.saturating_add(rhs.bits);
+        if bits > Self::MAX.bits {
+            Self::MAX
+        } else {
+            Self { bits }
+        }
+    }
 }
 
 impl From<Timeout> for Duration {

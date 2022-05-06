@@ -113,7 +113,7 @@ impl Rtc {
     /// let rtc: Rtc = Rtc::new(dp.RTC, Clk::Lsi, &mut dp.PWR, &mut dp.RCC);
     /// ```
     ///
-    /// HSE clock source (this depends on HW, example valid for NUCLEO board):
+    /// HSE clock source (this depends on your hardware):
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{

@@ -202,6 +202,22 @@ pub fn rfbusyms() -> bool {
     unsafe { (*pac::PWR::PTR).sr2.read().rfbusyms().is_busy() }
 }
 
+#[inline]
+fn hold_reset(rcc: &mut pac::RCC) {
+    rcc.csr.modify(|_, w| w.rfrst().set_bit());
+}
+
+#[inline]
+fn release_reset(rcc: &mut pac::RCC) {
+    rcc.csr.modify(|_, w| w.rfrst().clear_bit());
+}
+
+#[inline]
+fn pulse_reset(rcc: &mut pac::RCC) {
+    hold_reset(rcc);
+    release_reset(rcc);
+}
+
 /// Sub-GHz radio peripheral.
 ///
 /// # Example
@@ -363,11 +379,6 @@ impl<MISO, MOSI> SubGhz<MISO, MOSI> {
         Spi3::<SgMiso, SgMosi>::enable_clock(rcc)
     }
 
-    fn pulse_radio_reset(rcc: &mut pac::RCC) {
-        rcc.csr.modify(|_, w| w.rfrst().set_bit());
-        rcc.csr.modify(|_, w| w.rfrst().clear_bit());
-    }
-
     fn poll_not_busy(&self) {
         // TODO: this is a terrible timeout
         let mut count: u32 = 1_000_000;
@@ -457,13 +468,35 @@ impl SubGhz<SgMiso, SgMosi> {
     /// let sg = SubGhz::new(dp.SPI3, &mut dp.RCC);
     /// ```
     pub fn new(spi: pac::SPI3, rcc: &mut pac::RCC) -> SubGhz<SgMiso, SgMosi> {
-        Self::pulse_radio_reset(rcc);
+        pulse_reset(rcc);
+        // safety: radio has been reset
+        unsafe { Self::new_no_reset(spi, rcc) }
+    }
 
+    /// Create a new sub-GHz radio driver from a peripheral.
+    ///
+    /// Same as `new`, but without a reset.
+    /// This is useful when waking up from standby to handle a radio interrupt.
+    ///
+    /// # Safety
+    ///
+    /// This will not reset the radio, the radio will be in an unknown state
+    /// when constructed with this method.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wlxx_hal::{pac, subghz::SubGhz};
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let sg = unsafe { SubGhz::new_no_reset(dp.SPI3, &mut dp.RCC) };
+    /// ```
+    #[allow(unused_unsafe)]
+    pub unsafe fn new_no_reset(spi: pac::SPI3, rcc: &mut pac::RCC) -> SubGhz<SgMiso, SgMosi> {
         let spi: Spi3<SgMiso, SgMosi> = Spi3::new(spi, baud_rate(rcc), rcc);
-
         unsafe { wakeup() };
-
-        SubGhz { spi }
+        Self { spi }
     }
 
     /// Steal the SubGHz peripheral from whatever is currently using it.
@@ -517,13 +550,44 @@ impl<MISO: DmaCh, MOSI: DmaCh> SubGhz<MISO, MOSI> {
         mosi_dma: MOSI,
         rcc: &mut pac::RCC,
     ) -> Self {
-        Self::pulse_radio_reset(rcc);
+        pulse_reset(rcc);
+        // safety: radio has been reset
+        unsafe { Self::new_with_dma_no_reset(spi, miso_dma, mosi_dma, rcc) }
+    }
 
+    /// Create a new sub-GHz radio driver from a peripheral and two DMA
+    /// channels.
+    ///
+    /// Same as `new_with_dma`, but without a reset.
+    /// This is useful when waking up from standby to handle a radio interrupt.
+    ///
+    /// # Safety
+    ///
+    /// This will not reset the radio, the radio will be in an unknown state
+    /// when constructed with this method.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wlxx_hal::{dma::AllDma, pac, subghz::SubGhz};
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
+    ///
+    /// let sg = unsafe { SubGhz::new_with_dma_no_reset(dp.SPI3, dma.d1.c1, dma.d2.c1, &mut dp.RCC) };
+    /// ```
+    #[allow(unused_unsafe)]
+    pub unsafe fn new_with_dma_no_reset(
+        spi: pac::SPI3,
+        miso_dma: MISO,
+        mosi_dma: MOSI,
+        rcc: &mut pac::RCC,
+    ) -> Self {
+        release_reset(rcc);
         let spi: Spi3<MISO, MOSI> =
             Spi3::new_with_dma(spi, miso_dma, mosi_dma, baud_rate(rcc), rcc);
-
         unsafe { wakeup() };
-
         SubGhz { spi }
     }
 

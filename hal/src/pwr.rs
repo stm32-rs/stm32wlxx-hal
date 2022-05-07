@@ -85,8 +85,8 @@ pub fn setup_wakeup_pins(pwr: &mut pac::PWR, wp1: WakeupPin, wp2: WakeupPin, wp3
 /// This will:
 ///
 /// 1. Disable interrupts.
-/// 2. Set PWR.CR1.LPMS to shutdown.
-/// 3. Set SCB.SCR.SLEEPDEEP.
+/// 2. Set `PWR.CR1.LPMS` to shutdown.
+/// 3. Set `SCB.SCR.SLEEPDEEP`.
 /// 4. Enter WFI.
 ///
 /// # Example

@@ -159,7 +159,7 @@ impl PktCtrl {
         }
     }
 
-    /// Enable infinute sequence generation.
+    /// Enable infinite sequence generation.
     ///
     /// # Example
     ///
@@ -178,7 +178,7 @@ impl PktCtrl {
         self
     }
 
-    /// Returns `true` if infinute sequence generation is enabled.
+    /// Returns `true` if infinite sequence generation is enabled.
     ///
     /// # Example
     ///

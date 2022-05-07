@@ -122,7 +122,7 @@ fn tx_or_panic(sg: &mut MySubghz, rfs: &mut RfSwitch) {
 ///
 /// Both radios transmit `b"PING"`.
 ///
-/// The first radio to recieve `b"PING"` transmits `b"PONG"` in reply.
+/// The first radio to receive `b"PING"` transmits `b"PONG"` in reply.
 fn ping_pong(sg: &mut MySubghz, rng: &mut Rng, rfs: &mut RfSwitch, pkt: PacketType) {
     unwrap!(sg.set_standby(StandbyClk::Rc));
     let status: Status = unwrap!(sg.status());

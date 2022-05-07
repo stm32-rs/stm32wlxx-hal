@@ -549,7 +549,7 @@ impl Dma1 {
     /// This will enable clocks and reset the DMA1 and DMAMUX peripherals.
     ///
     /// Most of the time you will want to use [`AllDma::split`].
-    /// This is provided for low-power usecases where you do not need
+    /// This is provided for low-power use cases where you do not need
     /// both DMA controllers.
     ///
     /// # Example

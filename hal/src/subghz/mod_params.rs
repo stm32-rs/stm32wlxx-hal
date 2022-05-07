@@ -348,7 +348,7 @@ impl FskFdev {
     }
 }
 
-/// (G)FSK modulation paramters.
+/// (G)FSK modulation parameters.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct FskModParams {
@@ -749,7 +749,7 @@ pub enum CodingRate {
     Cr48 = 0x4,
 }
 
-/// LoRa modulation paramters.
+/// LoRa modulation parameters.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 
@@ -893,7 +893,7 @@ impl Default for LoRaModParams {
     }
 }
 
-/// BPSK modulation paramters.
+/// BPSK modulation parameters.
 ///
 /// **Note:** There is no method to set the pulse shape because there is only
 /// one valid pulse shape (Gaussian BT 0.5).

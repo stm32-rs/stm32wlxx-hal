@@ -286,7 +286,7 @@ paste_lptim!(3);
 
 /// Low-power timer trait.
 pub trait LpTim: sealed::LpTim {
-    /// Tigger selection options.
+    /// Trigger selection options.
     type TrgSel: Into<u32>;
 
     /// Create a new LPTIM driver.

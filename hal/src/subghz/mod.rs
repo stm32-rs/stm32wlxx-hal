@@ -368,7 +368,7 @@ impl<MISO, MOSI> SubGhz<MISO, MOSI> {
     /// 2. You cannot use the SPI bus while the clock is disabled.
     /// 3. You are responsible for re-enabling the clock before resuming use
     ///    of the SPI bus.
-    /// 4. You are reponsible for setting up anything that may have lost state
+    /// 4. You are responsible for setting up anything that may have lost state
     ///    while the clock was disabled.
     pub unsafe fn disable_spi_clock(rcc: &mut pac::RCC) {
         Spi3::<SgMiso, SgMosi>::disable_clock(rcc)
@@ -1080,7 +1080,7 @@ where
         self.write(params.as_slice())
     }
 
-    /// Power amplifier configuation.
+    /// Power amplifier configuration.
     ///
     /// Used to customize the maximum output power and efficiency.
     pub fn set_pa_config(&mut self, pa_config: &PaConfig) -> Result<(), Error> {

@@ -92,9 +92,9 @@ impl PaConfig {
     /// # Caution
     ///
     /// The following restrictions must be observed to avoid over-stress on the PA:
-    /// * LP PA mode with synthesis frequency > 400 MHz, PaDutyCycle must be < 0x7.
-    /// * LP PA mode with synthesis frequency < 400 MHz, PaDutyCycle must be < 0x4.
-    /// * HP PA mode, PaDutyCycle must be < 0x4
+    /// * LP PA mode with synthesis frequency > 400 MHz, `pa_duty_cycle` must be < 0x7.
+    /// * LP PA mode with synthesis frequency < 400 MHz, `pa_duty_cycle` must be < 0x4.
+    /// * HP PA mode, `pa_duty_cycle` must be < 0x4
     ///
     /// # Example
     ///

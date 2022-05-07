@@ -78,7 +78,7 @@ impl LpUart<NoRx, NoTx> {
     ///
     /// # Panics
     ///
-    /// * Source frequency is not bewteen 3× and 4096× the baud rate
+    /// * Source frequency is not between 3× and 4096× the baud rate
     /// * The derived baud rate register value is less than `0x300`
     ///
     /// # Example
@@ -286,7 +286,7 @@ macro_rules! impl_pulse_reset {
             /// # Safety
             ///
             /// 1. The UART must not be in-use.
-            /// 2. You are reponsible for setting up the UART after a reset.
+            /// 2. You are responsible for setting up the UART after a reset.
             ///
             /// # Example
             ///
@@ -331,7 +331,7 @@ macro_rules! impl_clock_en_dis {
             /// 2. You cannot use the UART while the clock is disabled.
             /// 3. You are responsible for re-enabling the clock before resuming
             ///    use of the UART.
-            /// 4. You are reponsible for setting up anything that may have lost
+            /// 4. You are responsible for setting up anything that may have lost
             ///    state while the clock was disabled.
             pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
                 rcc.$reg.modify(|_, w| w.$method().disabled())

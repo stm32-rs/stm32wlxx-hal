@@ -1,0 +1,9 @@
+# see https://github.com/drahnr/cargo-spellcheck
+[Hunspell]
+lang = "en_US"
+
+search_dirs = ["."]
+extra_dictionaries = ["lingo.dic"]
+
+skip_os_lookups = true
+use_builtin = true

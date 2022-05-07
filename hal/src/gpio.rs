@@ -376,7 +376,7 @@ pub trait Exti {
     /// [`gpio-button-irq.rs`]: https://github.com/stm32-rs/stm32wlxx-hal/blob/main/examples/examples/gpio-button-irq.rs
     fn clear_exti();
 
-    /// Returns true if a trigger request occured.
+    /// Returns true if a trigger request occurred.
     ///
     /// # Example
     ///

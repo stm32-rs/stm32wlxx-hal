@@ -36,32 +36,32 @@ impl FskPacketStatus {
         Status::from_raw(self.buf[0])
     }
 
-    /// Returns `true` if a preabmle error occured.
+    /// Returns `true` if a preamble error occurred.
     pub const fn preamble_err(&self) -> bool {
         (self.buf[1] & (1 << 7)) != 0
     }
 
-    /// Returns `true` if a synchronization error occured.
+    /// Returns `true` if a synchronization error occurred.
     pub const fn sync_err(&self) -> bool {
         (self.buf[1] & (1 << 6)) != 0
     }
 
-    /// Returns `true` if an address error occured.
+    /// Returns `true` if an address error occurred.
     pub const fn addr_err(&self) -> bool {
         (self.buf[1] & (1 << 5)) != 0
     }
 
-    /// Returns `true` if an crc error occured.
+    /// Returns `true` if an CRC error occurred.
     pub const fn crc_err(&self) -> bool {
         (self.buf[1] & (1 << 4)) != 0
     }
 
-    /// Returns `true` if a length error occured.
+    /// Returns `true` if a length error occurred.
     pub const fn length_err(&self) -> bool {
         (self.buf[1] & (1 << 3)) != 0
     }
 
-    /// Returns `true` if an abort error occured.
+    /// Returns `true` if an abort error occurred.
     pub const fn abort_err(&self) -> bool {
         (self.buf[1] & (1 << 2)) != 0
     }
@@ -76,7 +76,7 @@ impl FskPacketStatus {
         (self.buf[1] & 1) != 0
     }
 
-    /// Returns `true` if any error occured.
+    /// Returns `true` if any error occurred.
     pub const fn any_err(&self) -> bool {
         (self.buf[1] & 0xFC) != 0
     }

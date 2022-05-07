@@ -24,7 +24,7 @@ pub use rand_core;
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error {
-    /// A seed error (noise error) occured.
+    /// A seed error (noise error) occurred.
     ///
     /// **Note:** There is automatic correction for seed errors included.
     /// This error means that automatic correction was attempted, but failed.
@@ -201,7 +201,7 @@ impl Rng {
     /// 2. You cannot use the RNG bus while the clock is disabled.
     /// 3. You are responsible for re-enabling the clock before resuming use
     ///    of the RNG.
-    /// 4. You are reponsible for setting up anything that may have lost state
+    /// 4. You are responsible for setting up anything that may have lost state
     ///    while the clock was disabled.
     #[inline]
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
@@ -215,7 +215,7 @@ impl Rng {
         rcc.ahb3enr.read(); // delay after an RCC peripheral clock enabling
     }
 
-    /// Returns the number of correctable seed errors that have occured.
+    /// Returns the number of correctable seed errors that have occurred.
     ///
     /// This counter will saturate when it hits the maximum value.
     #[inline]

@@ -5,7 +5,7 @@
 //! # Constructors
 //!
 //! There was a minor cartesian explosion when writing this module.
-//! This will get a lot nicer when [GATs are stablized].
+//! This will get a lot nicer when [GATs are stabilized].
 //!
 //! | Function                            | Bus | plex         | DMA |
 //! |-------------------------------------|-----|--------------|-----|
@@ -18,7 +18,7 @@
 //! | [`new_spi2_mosi_simplex`]           | 2   | MOSI-simplex | No  |
 //! | [`new_spi2_mosi_simplex_dma`]       | 2   | MOSI-simplex | Yes |
 //!
-//! [GATs are stablized]: https://blog.rust-lang.org/2021/08/03/GATs-stabilization-push.html
+//! [GATs are stabilized]: https://blog.rust-lang.org/2021/08/03/GATs-stabilization-push.html
 //! [`embedded-hal`]: https://docs.rs/embedded-hal/latest/embedded_hal/
 //! [`new_spi1_full_duplex_dma`]: Spi::new_spi1_full_duplex_dma
 //! [`new_spi1_full_duplex`]: Spi::new_spi1_full_duplex
@@ -456,7 +456,7 @@ impl<SCK, MISO, MOSI> Spi<pac::SPI1, SCK, MISO, MOSI> {
     /// # Safety
     ///
     /// 1. The SPI must not be in-use.
-    /// 2. You are reponsible for setting up the SPI after a reset.
+    /// 2. You are responsible for setting up the SPI after a reset.
     ///
     /// # Example
     ///
@@ -484,7 +484,7 @@ impl<SCK, MISO, MOSI> Spi<pac::SPI1, SCK, MISO, MOSI> {
     /// 2. You cannot use the SPI while the clock is disabled.
     /// 3. You are responsible for re-enabling the clock before resuming
     ///    use of the SPI.
-    /// 4. You are reponsible for setting up anything that may have lost
+    /// 4. You are responsible for setting up anything that may have lost
     ///    state while the clock was disabled.
     ///
     /// # Example
@@ -531,7 +531,7 @@ impl<SCK, MISO, MOSI> Spi<pac::SPI2, SCK, MISO, MOSI> {
     /// # Safety
     ///
     /// 1. The SPI must not be in-use.
-    /// 2. You are reponsible for setting up the SPI after a reset.
+    /// 2. You are responsible for setting up the SPI after a reset.
     ///
     /// # Example
     ///
@@ -559,7 +559,7 @@ impl<SCK, MISO, MOSI> Spi<pac::SPI2, SCK, MISO, MOSI> {
     /// 2. You cannot use the SPI while the clock is disabled.
     /// 3. You are responsible for re-enabling the clock before resuming
     ///    use of the SPI.
-    /// 4. You are reponsible for setting up anything that may have lost
+    /// 4. You are responsible for setting up anything that may have lost
     ///    state while the clock was disabled.
     ///
     /// # Example

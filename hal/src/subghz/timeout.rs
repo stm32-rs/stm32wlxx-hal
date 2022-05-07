@@ -97,7 +97,7 @@ impl Timeout {
     /// Use [`from_millis_sat`](Self::from_millis_sat) for runtime timeout
     /// construction.
     /// This is not _that_ useful right now, it is simply future proofing for a
-    /// time when `Result::unwrap` is avaliable for `const fn`.
+    /// time when `Result::unwrap` is available for `const fn`.
     ///
     /// # Example
     ///

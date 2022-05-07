@@ -63,7 +63,7 @@ impl Cr {
 
     /// Reset value + DMA disabled.
     ///
-    /// This is eqivalent to the reset value, it is provided to make the code
+    /// This is equivalent to the reset value, it is provided to make the code
     /// more expressive.
     ///
     /// # Example
@@ -100,7 +100,7 @@ impl Cr {
         self.val
     }
 
-    /// Set the priviledged mode bit.
+    /// Set the privileged mode bit.
     ///
     /// This bit can only be set and cleared by a privileged software.
     ///
@@ -302,7 +302,7 @@ impl Cr {
     ///
     /// Note: The memory-to-memory mode must not be used in circular mode.
     /// Before enabling a channel in memory-to-memory mode, the software must
-    /// clear the CIRC bit of the DMA_CCRx register.
+    /// clear the `CIRC` bit of the `DMA_CCRx` register.
     ///
     /// **Note:** This field is set and cleared by software
     /// (privileged/secure software if the channel is in privileged/secure mode).
@@ -592,10 +592,10 @@ impl Cr {
 
     /// Set the circular mode bit.
     ///
-    /// In circular mode, after the last data transfer, the DMA_CNDTRx register
+    /// In circular mode, after the last data transfer, the `DMA_CNDTRx` register
     /// is automatically reloaded with the initially programmed value.
     /// The current internal address registers are reloaded with the base
-    /// address values from the DMA_CPARx and DMA_CMARx registers.
+    /// address values from the `DMA_CPARx` and `DMA_CMARx` registers.
     ///
     /// # Example
     ///
@@ -644,7 +644,7 @@ impl Cr {
         self.set_dir(Dir::FromMem)
     }
 
-    /// Set the transfer direction from peipheral.
+    /// Set the transfer direction from peripheral.
     ///
     /// # Example
     ///

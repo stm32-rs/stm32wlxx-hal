@@ -132,10 +132,10 @@ impl From<Aes> for AesWrapClk {
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error {
-    /// Unexpected read operation from the AES_DOUTR register
+    /// Unexpected read operation from the `AES_DOUTR` register
     /// during computation or data input phase.
     Read,
-    /// Unexpected write operation to the AES_DINR register
+    /// Unexpected write operation to the `AES_DINR` register
     /// during computation or data output phase.
     Write,
 }

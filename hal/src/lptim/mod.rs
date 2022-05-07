@@ -52,7 +52,7 @@ pub mod irq {
     /// Set by hardware when the APB bus write to the RCR register has been
     /// successfully completed.
     pub const REPOK: u32 = 1 << 8;
-    /// Update event occured.
+    /// Update event occurred.
     pub const UE: u32 = 1 << 7;
     /// Counter direction change up to down.
     ///
@@ -286,7 +286,7 @@ paste_lptim!(3);
 
 /// Low-power timer trait.
 pub trait LpTim: sealed::LpTim {
-    /// Tigger selection options.
+    /// Trigger selection options.
     type TrgSel: Into<u32>;
 
     /// Create a new LPTIM driver.

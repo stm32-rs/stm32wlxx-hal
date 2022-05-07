@@ -331,7 +331,7 @@ impl Pka {
     /// 2. You cannot use the PKA bus while the clock is disabled.
     /// 3. You are responsible for re-enabling the clock before resuming use
     ///    of the PKA bus.
-    /// 4. You are reponsible for setting up anything that may have lost state
+    /// 4. You are responsible for setting up anything that may have lost state
     ///    while the clock was disabled.
     #[inline]
     pub unsafe fn disable_clock(rcc: &mut pac::RCC) {
@@ -350,7 +350,7 @@ impl Pka {
     /// # Safety
     ///
     /// 1. The PKA must not be in-use.
-    /// 2. You are reponsible for setting up the PKA after a reset.
+    /// 2. You are responsible for setting up the PKA after a reset.
     #[inline]
     pub unsafe fn pulse_reset(rcc: &mut pac::RCC) {
         rcc.ahb3rstr.modify(|_, w| w.pkarst().set_bit());
@@ -420,7 +420,7 @@ impl Pka {
         });
     }
 
-    /// ECDSA (Ellipctic Curve Digital Signature Algorithm) signing.
+    /// ECDSA (Elliptic Curve Digital Signature Algorithm) signing.
     ///
     /// This is the blocking ECDSA sign method, equivalent to calling
     /// [`ecdsa_sign_start`](Self::ecdsa_sign_start) then polling
@@ -552,7 +552,7 @@ impl Pka {
         }
     }
 
-    /// ECDSA (Ellipctic Curve Digital Signature Algorithm) verification.
+    /// ECDSA (Elliptic Curve Digital Signature Algorithm) verification.
     ///
     /// This is the blocking ECDSA verify method, equivalent to calling
     /// [`ecdsa_verify_start`](Self::ecdsa_verify_start) then polling

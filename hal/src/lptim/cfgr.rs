@@ -154,7 +154,7 @@ impl Cfgr {
     /// ```
     pub const RESET: Cfgr = Cfgr::new(0);
 
-    /// Cfgreate a new Cfgr register from a raw value.
+    /// Create a new `Cfgr` register from a raw value.
     ///
     /// # Example
     ///

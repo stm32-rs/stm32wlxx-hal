@@ -778,12 +778,12 @@ where
         ])
     }
 
-    /// Set the HSE32 crystal OSC_IN load capaitor trimming.
+    /// Set the HSE32 crystal OSC_IN load capacitor trimming.
     pub fn set_hse_in_trim(&mut self, trim: HseTrim) -> Result<(), Error> {
         self.write(wr_reg![HSEINTRIM, trim.into()])
     }
 
-    /// Set the HSE32 crystal OSC_OUT load capaitor trimming.
+    /// Set the HSE32 crystal OSC_OUT load capacitor trimming.
     pub fn set_hse_out_trim(&mut self, trim: HseTrim) -> Result<(), Error> {
         self.write(wr_reg![HSEOUTTRIM, trim.into()])
     }

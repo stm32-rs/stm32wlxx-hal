@@ -24,7 +24,7 @@ pub use rand_core;
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum Error {
-    /// A seed error (noise error) occured.
+    /// A seed error (noise error) occurred.
     ///
     /// **Note:** There is automatic correction for seed errors included.
     /// This error means that automatic correction was attempted, but failed.

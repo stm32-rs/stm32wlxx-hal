@@ -52,7 +52,7 @@ pub mod irq {
     /// Set by hardware when the APB bus write to the RCR register has been
     /// successfully completed.
     pub const REPOK: u32 = 1 << 8;
-    /// Update event occured.
+    /// Update event occurred.
     pub const UE: u32 = 1 << 7;
     /// Counter direction change up to down.
     ///

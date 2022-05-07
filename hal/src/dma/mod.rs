@@ -27,7 +27,7 @@ pub mod flags {
     pub const GLOBAL: u8 = 1 << 0;
     /// Transfer complete.
     pub const XFER_CPL: u8 = 1 << 1;
-    /// Transfer hald complete.
+    /// Transfer half complete.
     pub const XFER_HLF: u8 = 1 << 2;
     /// Transfer error.
     pub const XFER_ERR: u8 = 1 << 3;

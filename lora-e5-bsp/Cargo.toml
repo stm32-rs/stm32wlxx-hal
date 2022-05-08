@@ -3,7 +3,7 @@ name = "lora-e5-bsp"
 description = "Board support package for the seeed LoRa-E5 development kit"
 readme = "README.md"
 
-version = "0.4.1"
+version = "0.5.0"
 authors = ["Alex Martens <alex@thinglab.org>"]
 edition = "2021"
 rust-version = "1.60"
@@ -19,7 +19,7 @@ embedded-time = ["stm32wlxx-hal/embedded-time"]
 rt = ["stm32wlxx-hal/rt"]
 
 [dependencies.stm32wlxx-hal]
-version = "=0.4.1"
+version = "=0.5.0"
 path = "../hal"
 features = ["stm32wle5"]
 

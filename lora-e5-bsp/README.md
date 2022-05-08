@@ -8,7 +8,7 @@ This crate extends the [stm32wlxx-hal] with board specific hardware, see that cr
 
 ```toml
 [dependencies.lora-e5-bsp]
-version = "0.4.0"
+version = "0.5.0"
 features = [
     # optional: use the cortex-m-rt interrupt interface
     "rt",
@@ -29,6 +29,7 @@ Check these resources to unlock the board for programming:
 
 * [How to program a LoRa-E5](https://forum.seeedstudio.com/t/how-to-program-a-lora-e5/257491)
 * [seeed-lora/LoRa-E5-LoRaWAN-End-Node](https://github.com/seeed-lora/LoRa-E5-LoRaWAN-End-Node#getting-started)
+* [stm32wl-unlock](https://github.com/newAM/stm32wl-unlock/)
 
 To flash this board with various rust utilities such as `probe-run`, `cargo-embed`, and `cargo-flash` remove the `--connected-under-reset` flag. This flag is required for the NUCLEO board, but will cause timeout errors with the LoRa-E5 development board.
 

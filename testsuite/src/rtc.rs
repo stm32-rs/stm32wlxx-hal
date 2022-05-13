@@ -198,6 +198,8 @@ mod tests {
         while ta.rcc.bdcr.read().lserdy().is_not_ready() {}
         let mut rtc: Rtc = test_set_date_time_with_clk(rtc::Clk::Lse);
 
+        defmt::assert_eq!(rtc.alarm_a(), None);
+
         let alarm: Alarm = Alarm::from(unwrap!(rtc.time()) + Duration::seconds(1))
             .set_days_mask(true)
             .set_hours_mask(true)
@@ -214,11 +216,13 @@ mod tests {
                 defmt::info!("elapsed: {=u32:us}", elapsed_micros);
                 // 100ms tolerance
                 defmt::assert!(elapsed_micros > 900_000 && elapsed_micros < 1_100_000);
-                return;
+                break;
             } else if elapsed_micros > 2 * 1000 * 1000 {
                 defmt::info!("{:08X}", Rtc::status().bits());
                 defmt::panic!("Timeout! Elapsed: {=u32:us}", elapsed_micros);
             }
         }
+
+        defmt::assert_eq!(rtc.alarm_a(), Some(alarm));
     }
 }

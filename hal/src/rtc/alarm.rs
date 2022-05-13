@@ -55,6 +55,16 @@ impl From<chrono::NaiveTime> for Alarm {
     }
 }
 
+impl From<Alarm> for chrono::NaiveTime {
+    fn from(alarm: Alarm) -> Self {
+        Self::from_hms(
+            alarm.hours().into(),
+            alarm.minutes().into(),
+            alarm.seconds().into(),
+        )
+    }
+}
+
 const fn const_min(a: u8, b: u8) -> u32 {
     if a < b {
         a as u32
@@ -504,5 +514,21 @@ impl Alarm {
     #[must_use]
     pub const fn subseconds_mask(&self) -> u8 {
         self.ss_mask
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Alarm;
+    use chrono::NaiveTime;
+
+    #[test]
+    fn chrono_convert() {
+        let ndt: NaiveTime = NaiveTime::from_hms(12, 34, 56);
+        let alarm: Alarm = ndt.into();
+        assert_eq!(alarm.hours(), 12);
+        assert_eq!(alarm.minutes(), 34);
+        assert_eq!(alarm.seconds(), 56);
+        assert_eq!(NaiveTime::from(alarm), ndt);
     }
 }

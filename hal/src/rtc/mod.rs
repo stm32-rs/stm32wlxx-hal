@@ -547,6 +547,21 @@ impl Rtc {
         self.rtc.alrabinr.write(|w| w.ss().bits(alarm.ss));
     }
 
+    /// Get the value of alarm A.
+    ///
+    /// Returns `None` if the alarm is not set.
+    pub fn alarm_a(&self) -> Option<Alarm> {
+        if self.rtc.cr.read().alrae().is_disabled() {
+            None
+        } else {
+            Some(Alarm {
+                val: self.rtc.alrmar.read().bits(),
+                ss: self.rtc.alrabinr.read().ss().bits(),
+                ss_mask: self.rtc.alrmassr.read().maskss().bits(),
+            })
+        }
+    }
+
     /// Set the alarm A enable, and alarm A interrupt enable.
     #[inline]
     pub fn set_alarm_a_en(&mut self, en: bool, irq_en: bool) {
@@ -566,6 +581,21 @@ impl Rtc {
         self.rtc.alrmbr.write(|w| unsafe { w.bits(alarm.val) });
         self.rtc.alrmbssr.write(|w| w.maskss().bits(alarm.ss_mask));
         self.rtc.alrbbinr.write(|w| w.ss().bits(alarm.ss));
+    }
+
+    /// Get the value of alarm B.
+    ///
+    /// Returns `None` if the alarm is not set.
+    pub fn alarm_b(&self) -> Option<Alarm> {
+        if self.rtc.cr.read().alrbe().is_disabled() {
+            None
+        } else {
+            Some(Alarm {
+                val: self.rtc.alrmbr.read().bits(),
+                ss: self.rtc.alrbbinr.read().ss().bits(),
+                ss_mask: self.rtc.alrmbssr.read().maskss().bits(),
+            })
+        }
     }
 
     /// Set the alarm B enable, and alarm B interrupt enable.

@@ -53,6 +53,45 @@ impl RfSwitch {
         }
     }
 
+    /// Steal the RF switch from whatever is currently using it.
+    ///
+    /// # Safety
+    ///
+    /// 1. Ensure that the code stealing the RF switch has exclusive access.
+    ///    Singleton checks are bypassed with this method.
+    /// 2. You must set up the RF switch pins.
+    ///    No setup will occur when using this method.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use nucleo_wl55jc_bsp::{
+    ///     hal::{cortex_m, gpio::{PortC, Output, pins}, pac},
+    ///     RfSwitch,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let pc: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);
+    /// cortex_m::interrupt::free(|cs| {
+    ///     let _: Output<pins::C3> = Output::default(pc.c3, cs);
+    ///     let _: Output<pins::C4> = Output::default(pc.c4, cs);
+    ///     let _: Output<pins::C5> = Output::default(pc.c5, cs);
+    /// });
+    ///
+    /// // safety:
+    /// // 1. we have exclusive access to the underlying pins
+    /// // 2. the pins have been setup
+    /// let rfs: RfSwitch = unsafe { RfSwitch::steal() };
+    /// ```
+    pub unsafe fn steal() -> Self {
+        RfSwitch {
+            fe_ctrl1: Output::steal(),
+            fe_ctrl2: Output::steal(),
+            fe_ctrl3: Output::steal(),
+        }
+    }
+
     /// Set the RF switch to receive.
     ///
     /// # Example

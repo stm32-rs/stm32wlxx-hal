@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added `Rtc::alarm_{a,b}` to get the alarm value.
 - Added `impl From<Alarm> for chrono::NaiveTime`.
+- Added `RfSwitch::steal()` to all BSPs.
 
 ## [0.5.0] - 2022-05-08
 ### Added

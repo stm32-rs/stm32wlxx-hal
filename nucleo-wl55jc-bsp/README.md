@@ -8,7 +8,7 @@ This crate extends the [stm32wlxx-hal] with board specific hardware, see that cr
 
 ```toml
 [dependencies.nucleo-wl55jc-bsp]
-version = "0.5.0"
+version = "0.5.1"
 features = [
     # required: build for core 1
     # This is future proofing for when the HAL has APIs for core 2

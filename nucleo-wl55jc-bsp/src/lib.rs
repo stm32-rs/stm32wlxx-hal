@@ -88,6 +88,7 @@ impl RfSwitch {
     /// // 2. the pins have been setup
     /// let rfs: RfSwitch = unsafe { RfSwitch::steal() };
     /// ```
+    #[inline]
     pub unsafe fn steal() -> Self {
         RfSwitch {
             fe_ctrl1: Output::steal(),
@@ -113,6 +114,7 @@ impl RfSwitch {
     ///     cortex_m::interrupt::free(|cs| RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5, cs));
     /// rfs.set_rx()
     /// ```
+    #[inline]
     pub fn set_rx(&mut self) {
         self.fe_ctrl1.set_level(PinState::High);
         self.fe_ctrl2.set_level(PinState::Low);
@@ -136,6 +138,7 @@ impl RfSwitch {
     ///     cortex_m::interrupt::free(|cs| RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5, cs));
     /// rfs.set_tx_lp()
     /// ```
+    #[inline]
     pub fn set_tx_lp(&mut self) {
         self.fe_ctrl1.set_level(PinState::High);
         self.fe_ctrl2.set_level(PinState::High);
@@ -159,6 +162,7 @@ impl RfSwitch {
     ///     cortex_m::interrupt::free(|cs| RfSwitch::new(gpioc.c3, gpioc.c4, gpioc.c5, cs));
     /// rfs.set_tx_hp()
     /// ```
+    #[inline]
     pub fn set_tx_hp(&mut self) {
         self.fe_ctrl2.set_level(PinState::High);
         self.fe_ctrl1.set_level(PinState::Low);

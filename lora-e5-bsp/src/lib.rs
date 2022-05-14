@@ -50,6 +50,47 @@ impl RfSwitch {
         }
     }
 
+    /// Steal the RF switch from whatever is currently using it.
+    ///
+    /// # Safety
+    ///
+    /// 1. Ensure that the code stealing the RF switch has exclusive access.
+    ///    Singleton checks are bypassed with this method.
+    /// 2. You must set up the RF switch pins.
+    ///    No setup will occur when using this method.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use lora_e5_bsp::{
+    ///     hal::{
+    ///         cortex_m,
+    ///         gpio::{pins, Output, PortA},
+    ///         pac,
+    ///     },
+    ///     RfSwitch,
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// cortex_m::interrupt::free(|cs| {
+    ///     let _: Output<pins::A4> = Output::default(pa.a4, cs);
+    ///     let _: Output<pins::A5> = Output::default(pa.a5, cs);
+    /// });
+    ///
+    /// // safety:
+    /// // 1. we have exclusive access to the underlying pins
+    /// // 2. the pins have been setup
+    /// let rfs: RfSwitch = unsafe { RfSwitch::steal() };
+    /// ```
+    pub unsafe fn steal() -> Self {
+        RfSwitch {
+            a4: Output::steal(),
+            a5: Output::steal(),
+        }
+    }
+
     /// Set the RF switch to receive.
     ///
     /// # Example

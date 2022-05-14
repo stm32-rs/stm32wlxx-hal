@@ -62,7 +62,7 @@ impl RfSwitch {
     /// # Example
     ///
     /// ```no_run
-    /// use nucleo_wl55jc_bsp::{
+    /// use lora_e5_bsp::{
     ///     hal::{
     ///         cortex_m,
     ///         gpio::{pins, Output, PortA},

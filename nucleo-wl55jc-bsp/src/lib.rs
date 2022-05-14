@@ -66,7 +66,11 @@ impl RfSwitch {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{cortex_m, gpio::{PortC, Output, pins}, pac},
+    ///     hal::{
+    ///         cortex_m,
+    ///         gpio::{pins, Output, PortC},
+    ///         pac,
+    ///     },
     ///     RfSwitch,
     /// };
     ///

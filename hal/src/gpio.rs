@@ -265,6 +265,7 @@ pub(crate) mod sealed {
     af_trait!(Tim17Ch1, set_tim17_ch1_af);
     af_trait!(Tim17Bkin, set_tim17_bkin_af);
     af_trait!(Tim17Ch1n, set_tim17_ch1n_af);
+    af_trait!(Lsco, set_lsco_af);
 
     /// Indicate a GPIO pin can be sampled by the ADC.
     pub trait AdcCh {
@@ -591,6 +592,8 @@ pub mod pins {
             impl super::sealed::$common for $gpio {}
         };
     }
+
+    impl_af!(Lsco, A2, set_lsco_af, 0);
 
     impl_af!(LpTim1Out, A4, set_lptim1_out_af, 1);
     impl_af!(LpTim1Out, A14, set_lptim1_out_af, 1);

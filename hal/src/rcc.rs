@@ -10,6 +10,7 @@ use crate::{pac, Ratio};
 use cortex_m::{interrupt::CriticalSection, peripheral::syst::SystClkSource};
 
 use pac::flash::acr::LATENCY_A;
+pub use pac::rcc::bdcr::LSCOSEL_A as LscoSel;
 pub use pac::rcc::csr::LSIPRE_A as LsiPre;
 
 fn hclk3_prescaler_div(rcc: &pac::RCC) -> u16 {
@@ -958,4 +959,102 @@ pub unsafe fn pulse_reset_backup_domain(rcc: &mut pac::RCC, pwr: &mut pac::PWR) 
     pwr.cr1.modify(|_, w| w.dbp().enabled());
     rcc.bdcr.modify(|_, w| w.bdrst().set_bit());
     rcc.bdcr.modify(|_, w| w.bdrst().clear_bit());
+}
+
+/// Low-speed oscillator output pin.
+#[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
+pub struct Lsco {
+    pin: crate::gpio::pins::A2,
+}
+
+impl Lsco {
+    /// Enable the low-speed oscillator output.
+    ///
+    /// # Safety
+    ///
+    /// 1. Backup domain write protect must be disabled.
+    /// 2. The selected clock must be enabled for system use.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wlxx_hal::{
+    ///     gpio::PortA,
+    ///     pac,
+    ///     rcc::{Lsco, LscoSel},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // disable backup domain write protect
+    /// dp.PWR.cr1.modify(|_, w| w.dbp().enabled());
+    ///
+    /// // enable the LSE clock
+    /// dp.RCC
+    ///     .bdcr
+    ///     .modify(|_, w| w.lseon().on().lsesysen().enabled());
+    /// while dp.RCC.bdcr.read().lserdy().is_not_ready() {}
+    /// while dp.RCC.bdcr.read().lsesysrdy().is_not_ready() {}
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let a2: Lsco = cortex_m::interrupt::free(|cs| unsafe {
+    ///     Lsco::enable(gpioa.a2, LscoSel::LSE, &mut dp.RCC, cs)
+    /// });
+    /// ```
+    #[inline]
+    pub unsafe fn enable(
+        mut a2: crate::gpio::pins::A2,
+        sel: LscoSel,
+        rcc: &mut pac::RCC,
+        cs: &CriticalSection,
+    ) -> Self {
+        use crate::gpio::sealed::Lsco;
+        a2.set_lsco_af(cs);
+        rcc.bdcr
+            .modify(|_, w| w.lscoen().enabled().lscosel().variant(sel));
+        Self { pin: a2 }
+    }
+
+    /// Disable the low-speed oscillator output.
+    ///
+    /// # Safety
+    ///
+    /// 1. Backup domain write protect must be disabled.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use stm32wlxx_hal::{
+    ///     gpio::{pins, PortA},
+    ///     pac,
+    ///     rcc::{Lsco, LscoSel},
+    /// };
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    ///
+    /// // disable backup domain write protect
+    /// dp.PWR.cr1.modify(|_, w| w.dbp().enabled());
+    ///
+    /// // enable the LSE clock
+    /// dp.RCC
+    ///     .bdcr
+    ///     .modify(|_, w| w.lseon().on().lsesysen().enabled());
+    /// while dp.RCC.bdcr.read().lserdy().is_not_ready() {}
+    /// while dp.RCC.bdcr.read().lsesysrdy().is_not_ready() {}
+    ///
+    /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
+    /// let lsco: Lsco = cortex_m::interrupt::free(|cs| unsafe {
+    ///     Lsco::enable(gpioa.a2, LscoSel::LSE, &mut dp.RCC, cs)
+    /// });
+    ///
+    /// // ... use LSCO
+    ///
+    /// let a2: pins::A2 = unsafe { lsco.disable(&mut dp.RCC) };
+    /// ```
+    #[inline]
+    pub unsafe fn disable(self, rcc: &mut pac::RCC) -> crate::gpio::pins::A2 {
+        rcc.bdcr.modify(|_, w| w.lscoen().disabled());
+        self.pin
+    }
 }

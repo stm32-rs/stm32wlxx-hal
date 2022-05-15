@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Added
+- Added `rcc::Lsco` to use the low-speed oscillator output.
+
 ## [0.5.1] - 2022-05-14
 ### Added
 - Added `Rtc::alarm_{a,b}` to get the alarm value.

@@ -6,6 +6,7 @@ pub use alarm::{Alarm, AlarmDay};
 
 use crate::{pac, rcc::lsi_hz};
 use chrono::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
+use core::cmp::min;
 use pac::{
     rcc::{
         bdcr::RTCSEL_A,
@@ -354,6 +355,34 @@ impl Rtc {
             INITS_A::NOTINITALIZED => None,
             INITS_A::INITALIZED => Some(()),
         }
+    }
+
+    /// Calibrate the RTC using the low-power mode.
+    ///
+    /// This does not poll for completion, use [`recalibration_pending`] if you
+    /// need to wait for completion.
+    ///
+    /// The calibration argument is in units of 0.9537 ppm.
+    /// The calibration range is -487.1 ppm to +488.5 ppm (-511 to 512), values
+    /// outside of this range will saturate.
+    ///
+    /// [`recalibration_pending`]: Self::recalibration_pending
+    pub fn calibrate_lp(&mut self, calibration: i16) {
+        while self.recalibration_pending() {}
+        let (calp, calm): (bool, u16) = if let Ok(calibration_pos) = u16::try_from(calibration) {
+            (true, 512_u16.saturating_sub(calibration_pos))
+        } else {
+            (false, min(calibration.abs_diff(0), 511))
+        };
+        self.rtc
+            .calr
+            .write(|w| w.calp().bit(calp).lpcal().set_bit().calm().bits(calm))
+    }
+
+    /// Returns `true` if recalibration is pending.
+    #[inline]
+    pub fn recalibration_pending(&self) -> bool {
+        self.rtc.icsr.read().recalpf().is_pending()
     }
 
     /// Calendar Date

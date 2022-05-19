@@ -1,4 +1,5 @@
 #![macro_use]
+#![allow(unknown_lints, unused_macro_rules)]
 
 macro_rules! typestate {
     ($name:ident, $doc:expr) => {

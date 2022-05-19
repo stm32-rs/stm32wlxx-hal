@@ -3,7 +3,7 @@
 //
 // This enables the optional use of defmt
 #![macro_use]
-#![allow(unused_macros)]
+#![allow(unused_macros, unknown_lints, unused_macro_rules)]
 
 macro_rules! assert {
     ($($x:tt)*) => {

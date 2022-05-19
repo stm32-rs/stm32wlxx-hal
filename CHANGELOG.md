@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Added `rcc::Lsco` to use the low-speed oscillator output.
+- Added `Rtc::calibrate_lp` to calibrate the RTC.
+- Added `Rtc::recalibration_pending`.
 
 ## [0.5.1] - 2022-05-14
 ### Added

@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `Rtc::calibrate_lp` to calibrate the RTC.
 - Added `Rtc::recalibration_pending`.
 
+### Fixed
+- Fixed a documentation bug in `rtc::Alarm`.  Values are masked if `true`, but the documentation indicated they are masked if `false`.
+
 ## [0.5.1] - 2022-05-14
 ### Added
 - Added `Rtc::alarm_{a,b}` to get the alarm value.

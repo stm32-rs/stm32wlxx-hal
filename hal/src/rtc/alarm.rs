@@ -136,8 +136,8 @@ impl Alarm {
 
     /// Set the alarm seconds mask.
     ///
-    /// * `true`: Alarm is set if the seconds match.
-    /// * `false`: Seconds are "do not care" in the alarm comparison.
+    /// * `false`: Alarm is set if the seconds match.
+    /// * `true`: Seconds are "do not care" in the alarm comparison.
     ///
     /// # Example
     ///
@@ -209,8 +209,8 @@ impl Alarm {
 
     /// Set the alarm minutes mask.
     ///
-    /// * `true`: Alarm is set if the minutes match.
-    /// * `false`: Minutes are "do not care" in the alarm comparison.
+    /// * `false`: Alarm is set if the minutes match.
+    /// * `true`: Minutes are "do not care" in the alarm comparison.
     ///
     /// # Example
     ///
@@ -282,8 +282,8 @@ impl Alarm {
 
     /// Set the alarm hours mask.
     ///
-    /// * `true`: Alarm is set if the hours match.
-    /// * `false`: Hours are "do not care" in the alarm comparison.
+    /// * `false`: Alarm is set if the hours match.
+    /// * `true`: Hours are "do not care" in the alarm comparison.
     ///
     /// # Example
     ///
@@ -408,8 +408,8 @@ impl Alarm {
 
     /// Set the alarm day / weekday mask.
     ///
-    /// * `true`: Alarm is set if the days / weekdays match.
-    /// * `false`: Days / weekdays are "do not care" in the alarm comparison.
+    /// * `false`: Alarm is set if the days / weekdays match.
+    /// * `true`: Days / weekdays are "do not care" in the alarm comparison.
     ///
     /// # Example
     ///

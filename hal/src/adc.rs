@@ -9,9 +9,11 @@
 #![cfg_attr(feature = "stm32wl5x_cm0p", allow(dead_code))]
 #![cfg_attr(feature = "stm32wl5x_cm0p", allow(unused_imports))]
 
-use crate::Ratio;
+#[cfg(not(feature = "stm32wl5x_cm0p"))]
+pub use pac::adc::cfgr2::{OVSR_A as OversampleRatio, OVSS_A as OversampleShift};
 
 use crate::gpio;
+use crate::Ratio;
 
 use super::pac;
 use core::{ptr::read_volatile, time::Duration};
@@ -1057,7 +1059,7 @@ impl Adc {
 
     /// Returns `true` if the temperature sensor is enabled.
     #[inline]
-    #[must_use = "no reason to call this function if you are not using the result"]
+    #[must_use]
     pub fn is_tsen_enabled(&mut self) -> bool {
         self.adc.ccr.read().tsen().is_enabled()
     }
@@ -1145,9 +1147,46 @@ impl Adc {
 
     /// Returns `true` if the internal voltage reference is enabled.
     #[inline]
-    #[must_use = "no reason to call this function if you are not using the result"]
+    #[must_use]
     pub fn is_vref_enabled(&mut self) -> bool {
         self.adc.ccr.read().vrefen().is_enabled()
+    }
+
+    /// Enable oversampling.
+    ///
+    /// # Panics
+    ///
+    /// * (debug) ADC is enabled
+    #[inline]
+    #[cfg(not(feature = "stm32wl5x_cm0p"))]
+    pub fn enable_oversampling(&mut self, ratio: OversampleRatio, shift: OversampleShift) {
+        debug_assert!(!self.is_enabled());
+        self.adc.cfgr2.modify(|_, w| {
+            w.ovse()
+                .enabled()
+                .ovsr()
+                .variant(ratio)
+                .ovss()
+                .variant(shift)
+        })
+    }
+
+    /// Disables oversampling.
+    ///
+    /// # Panics
+    ///
+    /// * (debug) ADC is enabled
+    #[inline]
+    pub fn disable_oversampling(&mut self) {
+        debug_assert!(!self.is_enabled());
+        self.adc.cfgr2.modify(|_, w| w.ovse().disabled())
+    }
+
+    /// Returns `true` if oversampling is enabled.
+    #[inline]
+    #[must_use]
+    pub fn is_oversampling_enabled(&mut self) -> bool {
+        self.adc.cfgr2.read().ovse().is_enabled()
     }
 
     /// Read the internal voltage reference.
@@ -1304,7 +1343,7 @@ impl Adc {
 
     /// Returns `true` if V<sub>BAT</sub> is enabled.
     #[inline]
-    #[must_use = "no reason to call this function if you are not using the result"]
+    #[must_use]
     pub fn is_vbat_enabled(&self) -> bool {
         self.adc.ccr.read().vbaten().is_enabled()
     }
@@ -1381,14 +1420,14 @@ impl Adc {
     /// assert_eq!(adc.is_enabled(), false);
     /// ```
     #[inline]
-    #[must_use = "no reason to call this function if you are not using the result"]
+    #[must_use]
     pub fn is_enabled(&self) -> bool {
         self.adc.cr.read().aden().bit_is_set()
     }
 
     /// Returns `true` if an ADC disable command is in-progress.
     #[inline]
-    #[must_use = "no reason to call this function if you are not using the result"]
+    #[must_use]
     pub fn disable_in_progress(&self) -> bool {
         self.adc.cr.read().addis().bit_is_set()
     }
@@ -1414,7 +1453,7 @@ impl Adc {
     /// assert_eq!(adc.is_disabled(), true);
     /// ```
     #[inline]
-    #[must_use = "no reason to call this function if you are not using the result"]
+    #[must_use]
     pub fn is_disabled(&self) -> bool {
         let cr = self.adc.cr.read();
         cr.aden().bit_is_clear() && cr.addis().bit_is_clear()

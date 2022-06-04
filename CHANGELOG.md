@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `Rtc::calibrate_lp` to calibrate the RTC.
 - Added `Rtc::recalibration_pending`.
 - Added `Rtc::is_alarm_{a,b}_en`.
+- Added methods to utilize ADC oversampling.
 
 ## Changed
 - `Rtc.alarm_{a,b}` returns `Alarm` instead of `Option<Alarm>`.

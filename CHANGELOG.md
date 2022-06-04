@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `rcc::Lsco` to use the low-speed oscillator output.
 - Added `Rtc::calibrate_lp` to calibrate the RTC.
 - Added `Rtc::recalibration_pending`.
+- Added `Rtc::is_alarm_{a,b}_en`.
+
+## Changed
+- `Rtc.alarm_{a,b}` returns `Alarm` instead of `Option<Alarm>`.
 
 ### Fixed
 - Fixed a documentation bug in `rtc::Alarm`.  Values are masked if `true`, but the documentation indicated they are masked if `false`.

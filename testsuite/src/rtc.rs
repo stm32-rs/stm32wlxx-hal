@@ -198,7 +198,7 @@ mod tests {
         while ta.rcc.bdcr.read().lserdy().is_not_ready() {}
         let mut rtc: Rtc = test_set_date_time_with_clk(rtc::Clk::Lse);
 
-        defmt::assert_eq!(rtc.alarm_a(), None);
+        defmt::assert!(!rtc.is_alarm_a_en());
 
         let alarm: Alarm = Alarm::from(unwrap!(rtc.time()) + Duration::seconds(1))
             .set_days_mask(true)
@@ -223,6 +223,7 @@ mod tests {
             }
         }
 
-        defmt::assert_eq!(rtc.alarm_a(), Some(alarm));
+        defmt::assert!(rtc.is_alarm_a_en());
+        defmt::assert_eq!(rtc.alarm_a(), alarm);
     }
 }

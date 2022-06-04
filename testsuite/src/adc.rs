@@ -5,7 +5,7 @@ use core::sync::atomic::{compiler_fence, Ordering::SeqCst};
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use nucleo_wl55jc_bsp::hal::{
-    adc::{self, Adc, Clk},
+    adc::{self, Adc, Clk, OversampleRatio, OversampleShift},
     cortex_m::{self, delay::Delay},
     pac::{self, DWT},
     rcc,
@@ -21,12 +21,14 @@ const CYC_PER_US: u32 = FREQ / 1000 / 1000;
 // WARNING will wrap-around eventually, use this for relative timing only
 defmt::timestamp!("{=u32:us}", DWT::cycle_count() / CYC_PER_US);
 
-fn validate_vbat(sample: u16) {
+fn validate_vbat(sample: u16, oversample: i16) {
     const EXPECTED: i16 = 4096 / 3;
-    let delta: i16 = unwrap!(i16::try_from(sample).ok()) - EXPECTED;
+    let expected: i16 = EXPECTED * oversample;
+    let delta: i16 = unwrap!(i16::try_from(sample).ok()) - expected;
 
     defmt::info!("VBAT={} Δ {}", sample, delta);
-    defmt::assert!(delta < 20);
+    let tolerance: i16 = 20 * oversample;
+    defmt::assert!(delta < tolerance);
 }
 
 #[defmt_test::tests]
@@ -250,7 +252,21 @@ mod tests {
         ta.adc.set_max_sample_time();
         let sample: u16 = ta.adc.vbat();
 
-        validate_vbat(sample);
+        validate_vbat(sample, 1);
+    }
+
+    #[test]
+    fn vbat_oversample(ta: &mut TestArgs) {
+        ta.adc.disable();
+        ta.adc.enable_oversampling(OversampleRatio::MUL2, OversampleShift::NOSHIFT);
+        ta.adc.enable();
+        let sample: u16 = ta.adc.vbat();
+        validate_vbat(sample / 2, 2);
+
+        ta.adc.disable();
+        defmt::assert!(ta.adc.is_oversampling_enabled());
+        ta.adc.disable_oversampling();
+        defmt::assert!(!ta.adc.is_oversampling_enabled());
     }
 
     #[test]
@@ -312,8 +328,8 @@ mod tests {
         // instead of &mut self
         let vbat1: u16 = ta.adc.data();
         let vbat2: u16 = ta.adc.data();
-        validate_vbat(vbat1);
-        validate_vbat(vbat2);
+        validate_vbat(vbat1, 1);
+        validate_vbat(vbat2, 1);
         defmt::assert_eq!(vbat1, vbat2);
     }
 

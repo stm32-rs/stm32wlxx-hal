@@ -9,6 +9,7 @@
 #![cfg_attr(feature = "stm32wl5x_cm0p", allow(dead_code))]
 #![cfg_attr(feature = "stm32wl5x_cm0p", allow(unused_imports))]
 
+#[cfg(not(feature = "stm32wl5x_cm0p"))]
 pub use pac::adc::cfgr2::{OVSR_A as OversampleRatio, OVSS_A as OversampleShift};
 
 use crate::Ratio;
@@ -1157,6 +1158,7 @@ impl Adc {
     ///
     /// * (debug) ADC is enabled
     #[inline]
+    #[cfg(not(feature = "stm32wl5x_cm0p"))]
     pub fn enable_oversampling(&mut self, ratio: OversampleRatio, shift: OversampleShift) {
         debug_assert!(!self.is_enabled());
         self.adc.cfgr2.modify(|_, w| w.ovse().enabled().ovsr().variant(ratio).ovss().variant(shift))

@@ -12,8 +12,8 @@
 #[cfg(not(feature = "stm32wl5x_cm0p"))]
 pub use pac::adc::cfgr2::{OVSR_A as OversampleRatio, OVSS_A as OversampleShift};
 
-use crate::Ratio;
 use crate::gpio;
+use crate::Ratio;
 
 use super::pac;
 use core::{ptr::read_volatile, time::Duration};
@@ -1161,7 +1161,14 @@ impl Adc {
     #[cfg(not(feature = "stm32wl5x_cm0p"))]
     pub fn enable_oversampling(&mut self, ratio: OversampleRatio, shift: OversampleShift) {
         debug_assert!(!self.is_enabled());
-        self.adc.cfgr2.modify(|_, w| w.ovse().enabled().ovsr().variant(ratio).ovss().variant(shift))
+        self.adc.cfgr2.modify(|_, w| {
+            w.ovse()
+                .enabled()
+                .ovsr()
+                .variant(ratio)
+                .ovss()
+                .variant(shift)
+        })
     }
 
     /// Disables oversampling.

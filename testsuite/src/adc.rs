@@ -258,7 +258,8 @@ mod tests {
     #[test]
     fn vbat_oversample(ta: &mut TestArgs) {
         ta.adc.disable();
-        ta.adc.enable_oversampling(OversampleRatio::MUL2, OversampleShift::NOSHIFT);
+        ta.adc
+            .enable_oversampling(OversampleRatio::MUL2, OversampleShift::NOSHIFT);
         ta.adc.enable();
         let sample: u16 = ta.adc.vbat();
         validate_vbat(sample / 2, 2);

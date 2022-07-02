@@ -9,7 +9,7 @@ These tests will run automatically as part of CI for every pull-request.
 
 ## Quickstart
 
-* `rustup target add --toolchain stable thumbv7m-none-eabi` ([rustup])
+* `rustup target add --toolchain stable thumbv7em-none-eabi` ([rustup])
 * `cargo install probe-run` ([probe-run])
   * ⚠️ You must use version >=0.3.1 to avoid bugs with the STM32WL ⚠️
 * Linux users: Add udev rules

@@ -38,7 +38,7 @@ num-traits = { version = "0.2", default-features = false }
 num-integer = { version = "0.1", default-features = false }
 paste = "1"
 rand_core = "0.6"
-stm32wl = { version = "0.15", default-features = false }
+stm32wl = { version = "0.15.1", default-features = false }
 void = { version = "1", default-features = false }
 
 [dev-dependencies]

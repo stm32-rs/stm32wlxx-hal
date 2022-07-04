@@ -2168,7 +2168,7 @@ mod tests {
         let pt: [u32; 4] = half_word_swap(ECB_PT_CT_128[0].0);
         let ct: [u32; 4] = half_word_swap(ECB_PT_CT_128[0].1);
 
-        aes.set_dataswap(SwapMode::HALFWORD);
+        aes.set_dataswap(SwapMode::HalfWord);
 
         let mut output_ciphertext: [u32; 4] = [0; 4];
         unwrap!(aes.encrypt_ecb(&ZERO_16B, &pt, &mut output_ciphertext));
@@ -2181,7 +2181,7 @@ mod tests {
         let pt: [u32; 4] = byte_swap(ECB_PT_CT_128[0].0);
         let ct: [u32; 4] = byte_swap(ECB_PT_CT_128[0].1);
 
-        aes.set_dataswap(SwapMode::BYTE);
+        aes.set_dataswap(SwapMode::Byte);
 
         let mut output_ciphertext: [u32; 4] = [0; 4];
         unwrap!(aes.encrypt_ecb(&ZERO_16B, &pt, &mut output_ciphertext));
@@ -2194,7 +2194,7 @@ mod tests {
         let pt: [u32; 4] = bit_swap(ECB_PT_CT_128[0].0);
         let ct: [u32; 4] = bit_swap(ECB_PT_CT_128[0].1);
 
-        aes.set_dataswap(SwapMode::BIT);
+        aes.set_dataswap(SwapMode::Bit);
 
         let mut output_ciphertext: [u32; 4] = [0; 4];
         unwrap!(aes.encrypt_ecb(&ZERO_16B, &pt, &mut output_ciphertext));

@@ -53,7 +53,7 @@ mod tests {
 
         let delay = new_delay(cp.SYST, &dp.RCC);
 
-        let adc: Adc = Adc::new(dp.ADC, Clk::PclkDiv4, &mut dp.RCC);
+        let adc: Adc = Adc::new(dp.ADC, Clk::PClkDiv4, &mut dp.RCC);
         defmt::assert_eq!(adc.clock_hz(&dp.RCC), ADC_FREQ);
 
         cp.DCB.enable_trace();
@@ -259,7 +259,7 @@ mod tests {
     fn vbat_oversample(ta: &mut TestArgs) {
         ta.adc.disable();
         ta.adc
-            .enable_oversampling(OversampleRatio::MUL2, OversampleShift::NOSHIFT);
+            .enable_oversampling(OversampleRatio::Mul2, OversampleShift::NoShift);
         ta.adc.enable();
         let sample: u16 = ta.adc.vbat();
         validate_vbat(sample / 2, 2);

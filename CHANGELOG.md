@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Changed
 - `Rtc.alarm_{a,b}` returns `Alarm` instead of `Option<Alarm>`.
-- Updated `stm32-rs` from `0.14` to `0.15`.
+- Updated `stm32-rs` from `0.14.0` to `0.15.1`.
 
 ### Fixed
 - Fixed a documentation bug in `rtc::Alarm`.  Values are masked if `true`, but the documentation indicated they are masked if `false`.

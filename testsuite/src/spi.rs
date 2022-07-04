@@ -188,6 +188,7 @@ mod tests {
             });
 
             for _ in 0..8 {
+                cortex_m::asm::delay(21);
                 s.set_ssi(false);
                 unwrap!(m.write(DATA));
                 let mut buf: [u8; 3] = [0; 3];
@@ -197,6 +198,7 @@ mod tests {
             }
 
             for _ in 0..8 {
+                cortex_m::asm::delay(21);
                 s.set_ssi(false);
                 s.write(DATA);
                 let mut buf: [u8; 3] = [0x12, 0x34, 0x56];

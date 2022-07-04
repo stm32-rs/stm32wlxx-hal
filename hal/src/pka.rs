@@ -505,7 +505,7 @@ impl Pka {
             self.clear_all_flags();
             Err(EcdsaSignError::Ram)
         } else {
-            self.start_process(MODE_A::ECDSASIGN);
+            self.start_process(MODE_A::Ecdsasign);
             Ok(())
         }
     }
@@ -639,7 +639,7 @@ impl Pka {
             self.clear_all_flags();
             Err(EcdsaVerifyError::Ram)
         } else {
-            self.start_process(MODE_A::ECDSAVERIF);
+            self.start_process(MODE_A::Ecdsaverif);
             Ok(())
         }
     }

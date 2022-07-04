@@ -346,9 +346,9 @@ macro_rules! impl_clocks_reset {
                 fn clock(rcc: &RCC) -> u32 {
                     // NOTE(unsafe) atomic read with no side effects
                     match rcc.ccipr.read().$i2cXsel().variant().unwrap() {
-                        I2C3SEL_A::HSI16 => 16_000_000,
-                        I2C3SEL_A::SYSCLK => sysclk_hz(rcc),
-                        I2C3SEL_A::PCLK => pclk1_hz(rcc),
+                        I2C3SEL_A::Hsi16 => 16_000_000,
+                        I2C3SEL_A::Sysclk => sysclk_hz(rcc),
+                        I2C3SEL_A::Pclk => pclk1_hz(rcc),
                     }
                 }
             }

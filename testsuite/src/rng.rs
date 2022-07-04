@@ -40,7 +40,7 @@ mod tests {
             rcc::set_sysclk_msi_max(&mut dp.FLASH, &mut dp.PWR, &mut dp.RCC, cs)
         });
 
-        Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC)
+        Rng::new(dp.RNG, Clk::Msi, &mut dp.RCC)
     }
 
     /// Not really a test, just a benchmark

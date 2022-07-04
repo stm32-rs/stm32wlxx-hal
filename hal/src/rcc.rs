@@ -23,14 +23,14 @@ fn set_flash_latency(flash: &pac::FLASH, rcc: &pac::RCC, target_sysclk_hz: u32, 
 
     let ws: LATENCY_A = match vos {
         Vos::V1_2 => match flash_clk_src_freq {
-            0..=18_000_000 => LATENCY_A::WS0,
-            18_000_001..=36_000_000 => LATENCY_A::WS1,
-            _ => LATENCY_A::WS2,
+            0..=18_000_000 => LATENCY_A::Ws0,
+            18_000_001..=36_000_000 => LATENCY_A::Ws1,
+            _ => LATENCY_A::Ws2,
         },
         Vos::V1_0 => match flash_clk_src_freq {
-            0..=6_000_000 => LATENCY_A::WS0,
-            6_000_001..=12_000_000 => LATENCY_A::WS1,
-            _ => LATENCY_A::WS2,
+            0..=6_000_000 => LATENCY_A::Ws0,
+            6_000_001..=12_000_000 => LATENCY_A::Ws1,
+            _ => LATENCY_A::Ws2,
         },
     };
 
@@ -114,12 +114,12 @@ impl MsiRange {
     /// The unwraps in this function are desired because the other values are
     /// impossible to set in hardware.
     fn from_rcc(rcc: &pac::RCC) -> MsiRange {
-        use pac::rcc::cr::MSIRGSEL_A::{CR, CSR};
+        use pac::rcc::cr::MSIRGSEL_A::{Cr, Csr};
 
         let cr = rcc.cr.read();
         match cr.msirgsel().variant() {
-            CSR => unwrap!(rcc.csr.read().msisrange().bits().try_into()),
-            CR => unwrap!(cr.msirange().bits().try_into()),
+            Csr => unwrap!(rcc.csr.read().msisrange().bits().try_into()),
+            Cr => unwrap!(cr.msirange().bits().try_into()),
         }
     }
 
@@ -168,18 +168,18 @@ impl TryFrom<u8> for MsiRange {
 impl From<MsiRange> for pac::rcc::cr::MSIRANGE_A {
     fn from(mr: MsiRange) -> Self {
         match mr {
-            MsiRange::Range100k => pac::rcc::cr::MSIRANGE_A::RANGE100K,
-            MsiRange::Range200k => pac::rcc::cr::MSIRANGE_A::RANGE200K,
-            MsiRange::Range400k => pac::rcc::cr::MSIRANGE_A::RANGE400K,
-            MsiRange::Range800k => pac::rcc::cr::MSIRANGE_A::RANGE800K,
-            MsiRange::Range1M => pac::rcc::cr::MSIRANGE_A::RANGE1M,
-            MsiRange::Range2M => pac::rcc::cr::MSIRANGE_A::RANGE2M,
-            MsiRange::Range4M => pac::rcc::cr::MSIRANGE_A::RANGE4M,
-            MsiRange::Range8M => pac::rcc::cr::MSIRANGE_A::RANGE8M,
-            MsiRange::Range16M => pac::rcc::cr::MSIRANGE_A::RANGE16M,
-            MsiRange::Range24M => pac::rcc::cr::MSIRANGE_A::RANGE24M,
-            MsiRange::Range32M => pac::rcc::cr::MSIRANGE_A::RANGE32M,
-            MsiRange::Range48M => pac::rcc::cr::MSIRANGE_A::RANGE48M,
+            MsiRange::Range100k => pac::rcc::cr::MSIRANGE_A::Range100k,
+            MsiRange::Range200k => pac::rcc::cr::MSIRANGE_A::Range200k,
+            MsiRange::Range400k => pac::rcc::cr::MSIRANGE_A::Range400k,
+            MsiRange::Range800k => pac::rcc::cr::MSIRANGE_A::Range800k,
+            MsiRange::Range1M => pac::rcc::cr::MSIRANGE_A::Range1m,
+            MsiRange::Range2M => pac::rcc::cr::MSIRANGE_A::Range2m,
+            MsiRange::Range4M => pac::rcc::cr::MSIRANGE_A::Range4m,
+            MsiRange::Range8M => pac::rcc::cr::MSIRANGE_A::Range8m,
+            MsiRange::Range16M => pac::rcc::cr::MSIRANGE_A::Range16m,
+            MsiRange::Range24M => pac::rcc::cr::MSIRANGE_A::Range24m,
+            MsiRange::Range32M => pac::rcc::cr::MSIRANGE_A::Range32m,
+            MsiRange::Range48M => pac::rcc::cr::MSIRANGE_A::Range48m,
         }
     }
 }
@@ -274,8 +274,8 @@ pub unsafe fn set_sysclk_hse(
 ) {
     use pac::rcc::cr::HSEPRE_A;
     let (pre, target_sysclk_hz): (HSEPRE_A, u32) = match vos {
-        Vos::V1_2 => (HSEPRE_A::DIV1, 32_000_000),
-        Vos::V1_0 => (HSEPRE_A::DIV2, 16_000_000),
+        Vos::V1_2 => (HSEPRE_A::Div1, 32_000_000),
+        Vos::V1_0 => (HSEPRE_A::Div2, 16_000_000),
     };
 
     // increase VOS range
@@ -519,17 +519,17 @@ pub unsafe fn set_sysclk_msi_max(
 #[cfg_attr(feature = "stm32wl5x_cm0p", allow(dead_code))]
 fn pllclk(rcc: &pac::RCC, pllcfgr: &pac::rcc::pllcfgr::R) -> Ratio<u32> {
     use pac::rcc::{
-        cr::HSEPRE_A::{DIV1, DIV2},
+        cr::HSEPRE_A::{Div1, Div2},
         pllcfgr::PLLSRC_A as PLLSRC,
     };
 
     let src_freq: u32 = match pllcfgr.pllsrc().variant() {
-        PLLSRC::NOCLOCK => 0,
-        PLLSRC::MSI => MsiRange::from_rcc(rcc).to_hz(),
-        PLLSRC::HSI16 => 16_000_000,
-        PLLSRC::HSE32 => match rcc.cr.read().hsepre().variant() {
-            DIV1 => 32_000_000,
-            DIV2 => 16_000_000,
+        PLLSRC::NoClock => 0,
+        PLLSRC::Msi => MsiRange::from_rcc(rcc).to_hz(),
+        PLLSRC::Hsi16 => 16_000_000,
+        PLLSRC::Hse32 => match rcc.cr.read().hsepre().variant() {
+            Div1 => 32_000_000,
+            Div2 => 16_000_000,
         },
     };
 
@@ -549,28 +549,28 @@ pub(crate) fn pllpclk(rcc: &pac::RCC, pllcfgr: &pac::rcc::pllcfgr::R) -> Ratio<u
 
 pub(crate) fn sysclk(rcc: &pac::RCC, cfgr: &pac::rcc::cfgr::R) -> Ratio<u32> {
     use pac::rcc::{
-        cfgr::SWS_A::{HSE32, HSI16, MSI, PLLR},
-        cr::HSEPRE_A::{DIV1, DIV2},
+        cfgr::SWS_A::{Hse32, Hsi16, Msi, Pllr},
+        cr::HSEPRE_A::{Div1, Div2},
         pllcfgr::PLLSRC_A as PLLSRC,
     };
 
     match cfgr.sws().variant() {
-        MSI => Ratio::new_raw(MsiRange::from_rcc(rcc).to_hz(), 1),
-        HSI16 => Ratio::new_raw(16_000_000, 1),
-        HSE32 => match rcc.cr.read().hsepre().variant() {
-            DIV1 => Ratio::new_raw(32_000_000, 1),
-            DIV2 => Ratio::new_raw(16_000_000, 1),
+        Msi => Ratio::new_raw(MsiRange::from_rcc(rcc).to_hz(), 1),
+        Hsi16 => Ratio::new_raw(16_000_000, 1),
+        Hse32 => match rcc.cr.read().hsepre().variant() {
+            Div1 => Ratio::new_raw(32_000_000, 1),
+            Div2 => Ratio::new_raw(16_000_000, 1),
         },
-        PLLR => {
+        Pllr => {
             let pllcfgr = rcc.pllcfgr.read();
             let src_freq: u32 = match pllcfgr.pllsrc().variant() {
                 // cannot be executing this code if there is no clock
-                PLLSRC::NOCLOCK => unreachable!(),
-                PLLSRC::MSI => MsiRange::from_rcc(rcc).to_hz(),
-                PLLSRC::HSI16 => 16_000_000,
-                PLLSRC::HSE32 => match rcc.cr.read().hsepre().variant() {
-                    DIV1 => 32_000_000,
-                    DIV2 => 16_000_000,
+                PLLSRC::NoClock => unreachable!(),
+                PLLSRC::Msi => MsiRange::from_rcc(rcc).to_hz(),
+                PLLSRC::Hsi16 => 16_000_000,
+                PLLSRC::Hse32 => match rcc.cr.read().hsepre().variant() {
+                    Div1 => 32_000_000,
+                    Div2 => 16_000_000,
                 },
             };
 
@@ -876,14 +876,14 @@ pub fn cpu_systick_hz(rcc: &pac::RCC, src: SystClkSource) -> u32 {
 /// ```
 #[inline]
 pub fn lsi_hz(rcc: &pac::RCC) -> u16 {
-    use pac::rcc::csr::LSIPRE_A::{DIV1, DIV128};
+    use pac::rcc::csr::LSIPRE_A::{Div1, Div128};
     const LSI_BASE_HZ: u16 = 32_000;
     const LSI_DIV_HZ: u16 = 32_000 / 128;
 
     // safety: volatile read with no side effects to an always-on domain
     match rcc.csr.read().lsipre().variant() {
-        DIV1 => LSI_BASE_HZ,
-        DIV128 => LSI_DIV_HZ,
+        Div1 => LSI_BASE_HZ,
+        Div128 => LSI_DIV_HZ,
     }
 }
 
@@ -906,7 +906,7 @@ pub fn lsi_hz(rcc: &pac::RCC) -> u16 {
 /// };
 ///
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-/// unsafe { setup_lsi(&mut dp.RCC, LsiPre::DIV1) };
+/// unsafe { setup_lsi(&mut dp.RCC, LsiPre::Div1) };
 /// ```
 #[inline]
 pub unsafe fn setup_lsi(rcc: &mut pac::RCC, pre: LsiPre) {
@@ -999,7 +999,7 @@ impl Lsco {
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
     /// let a2: Lsco = cortex_m::interrupt::free(|cs| unsafe {
-    ///     Lsco::enable(gpioa.a2, LscoSel::LSE, &mut dp.RCC, cs)
+    ///     Lsco::enable(gpioa.a2, LscoSel::Lse, &mut dp.RCC, cs)
     /// });
     /// ```
     #[inline]
@@ -1045,7 +1045,7 @@ impl Lsco {
     ///
     /// let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
     /// let lsco: Lsco = cortex_m::interrupt::free(|cs| unsafe {
-    ///     Lsco::enable(gpioa.a2, LscoSel::LSE, &mut dp.RCC, cs)
+    ///     Lsco::enable(gpioa.a2, LscoSel::Lse, &mut dp.RCC, cs)
     /// });
     ///
     /// // ... use LSCO

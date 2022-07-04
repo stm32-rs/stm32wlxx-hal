@@ -167,7 +167,7 @@ impl Aes {
 
         Aes {
             aes,
-            swap_mode: SwapMode::NONE,
+            swap_mode: SwapMode::None,
         }
     }
 
@@ -275,7 +275,7 @@ impl Aes {
     pub const unsafe fn new_no_init(aes: pac::AES) -> Aes {
         Aes {
             aes,
-            swap_mode: SwapMode::NONE,
+            swap_mode: SwapMode::None,
         }
     }
 
@@ -316,7 +316,7 @@ impl Aes {
         let dp: pac::Peripherals = pac::Peripherals::steal();
         Aes {
             aes: dp.AES,
-            swap_mode: SwapMode::NONE,
+            swap_mode: SwapMode::None,
         }
     }
 
@@ -346,7 +346,7 @@ impl Aes {
                 self.aes.keyr2.write(|w| w.key().bits(key[1]));
                 self.aes.keyr1.write(|w| w.key().bits(key[2]));
                 self.aes.keyr0.write(|w| w.key().bits(key[3]));
-                KeySize::BITS128
+                KeySize::Bits128
             }
             8 => {
                 self.aes.cr.write(|w| w.en().disabled().keysize().bits256());
@@ -358,7 +358,7 @@ impl Aes {
                 self.aes.keyr2.write(|w| w.key().bits(key[5]));
                 self.aes.keyr1.write(|w| w.key().bits(key[6]));
                 self.aes.keyr0.write(|w| w.key().bits(key[7]));
-                KeySize::BITS256
+                KeySize::Bits256
             }
             _ => panic!("Key must be 128-bit or 256-bit not {}-bit", key.len() * 32),
         }
@@ -793,7 +793,7 @@ impl Aes {
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
-    /// let mut rng = Rng::new(dp.RNG, rng::Clk::MSI, &mut dp.RCC);
+    /// let mut rng = Rng::new(dp.RNG, rng::Clk::Msi, &mut dp.RCC);
     ///
     /// const KEY: [u32; 4] = [0; 4];
     ///
@@ -840,7 +840,7 @@ impl Aes {
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
-    /// let mut rng = Rng::new(dp.RNG, rng::Clk::MSI, &mut dp.RCC);
+    /// let mut rng = Rng::new(dp.RNG, rng::Clk::Msi, &mut dp.RCC);
     ///
     /// const KEY: [u32; 4] = [0; 4];
     ///

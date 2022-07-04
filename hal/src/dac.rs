@@ -32,12 +32,12 @@ pub enum ModePin {
 impl From<ModePin> for MODE1_A {
     fn from(mp: ModePin) -> Self {
         match mp {
-            ModePin::NormBuf => MODE1_A::NORMALPINBUFFER,
-            ModePin::NormChipBuf => MODE1_A::NORMALPINCHIPBUFFER,
-            ModePin::NormNoBuf => MODE1_A::NORMALPINNOBUFFER,
-            ModePin::SampleHoldBuf => MODE1_A::SHPINBUFFER,
-            ModePin::SampleHoldChipBuf => MODE1_A::SHPINCHIPBUFFER,
-            ModePin::SampleHoldNoBuf => MODE1_A::SHPINNOBUFFER,
+            ModePin::NormBuf => MODE1_A::NormalPinBuffer,
+            ModePin::NormChipBuf => MODE1_A::NormalPinChipBuffer,
+            ModePin::NormNoBuf => MODE1_A::NormalPinNoBuffer,
+            ModePin::SampleHoldBuf => MODE1_A::ShpinBuffer,
+            ModePin::SampleHoldChipBuf => MODE1_A::ShpinChipBuffer,
+            ModePin::SampleHoldNoBuf => MODE1_A::ShpinNoBuffer,
         }
     }
 }
@@ -60,8 +60,8 @@ pub enum ModeChip {
 impl From<ModeChip> for MODE1_A {
     fn from(mc: ModeChip) -> Self {
         match mc {
-            ModeChip::SampleHold => MODE1_A::SHCHIPNOBUFFER,
-            ModeChip::Norm => MODE1_A::NORMALCHIPNOBUFFER,
+            ModeChip::SampleHold => MODE1_A::ShchipNoBuffer,
+            ModeChip::Norm => MODE1_A::NormalChipNoBuffer,
         }
     }
 }

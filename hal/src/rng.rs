@@ -74,7 +74,7 @@ impl Rng {
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
     ///
-    /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
+    /// let mut rng = Rng::new(dp.RNG, Clk::Msi, &mut dp.RCC);
     /// ```
     pub fn new(rng: pac::RNG, clk: Clk, rcc: &mut pac::RCC) -> Rng {
         rcc.ccipr.modify(|_, w| w.rngsel().variant(clk));
@@ -130,7 +130,7 @@ impl Rng {
     /// let mut rcc: pac::RCC = dp.RCC;
     /// let rng_dp: pac::RNG = dp.RNG;
     ///
-    /// let mut rng = Rng::new(rng_dp, Clk::MSI, &mut rcc);
+    /// let mut rng = Rng::new(rng_dp, Clk::Msi, &mut rcc);
     /// // ... use rng
     /// let rng_dp: pac::RNG = rng.free();
     /// ```
@@ -255,7 +255,7 @@ impl Rng {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
+    /// let mut rng = Rng::new(dp.RNG, Clk::Msi, &mut dp.RCC);
     ///
     /// let mut nonce: [u32; 4] = [0; 4];
     /// rng.try_fill_u32(&mut nonce)?;
@@ -279,7 +279,7 @@ impl Rng {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
+    /// let mut rng = Rng::new(dp.RNG, Clk::Msi, &mut dp.RCC);
     ///
     /// let mut nonce: [u8; 16] = [0; 16];
     /// rng.try_fill_u8(&mut nonce)?;
@@ -315,7 +315,7 @@ impl Rng {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
+    /// let mut rng = Rng::new(dp.RNG, Clk::Msi, &mut dp.RCC);
     ///
     /// let rand_value: u8 = rng.try_u8()?;
     /// # Ok::<(), stm32wlxx_hal::rng::Error>(())
@@ -340,7 +340,7 @@ impl Rng {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
+    /// let mut rng = Rng::new(dp.RNG, Clk::Msi, &mut dp.RCC);
     ///
     /// let rand_value: u16 = rng.try_u16()?;
     /// # Ok::<(), stm32wlxx_hal::rng::Error>(())
@@ -365,7 +365,7 @@ impl Rng {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
+    /// let mut rng = Rng::new(dp.RNG, Clk::Msi, &mut dp.RCC);
     ///
     /// let rand_value: u32 = rng.try_u32()?;
     /// # Ok::<(), stm32wlxx_hal::rng::Error>(())
@@ -394,7 +394,7 @@ impl Rng {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
+    /// let mut rng = Rng::new(dp.RNG, Clk::Msi, &mut dp.RCC);
     ///
     /// let rand_value: u64 = rng.try_u64()?;
     /// # Ok::<(), stm32wlxx_hal::rng::Error>(())
@@ -421,7 +421,7 @@ impl Rng {
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
-    /// let mut rng = Rng::new(dp.RNG, Clk::MSI, &mut dp.RCC);
+    /// let mut rng = Rng::new(dp.RNG, Clk::Msi, &mut dp.RCC);
     ///
     /// let rand_value: u128 = rng.try_u128()?;
     /// # Ok::<(), stm32wlxx_hal::rng::Error>(())

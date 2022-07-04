@@ -69,7 +69,7 @@ mod tests {
         cp.DWT.enable_cycle_counter();
         cp.DWT.set_cycle_count(0);
 
-        let mut rng: Rng = Rng::new(dp.RNG, rng::Clk::MSI, &mut dp.RCC);
+        let mut rng: Rng = Rng::new(dp.RNG, rng::Clk::Msi, &mut dp.RCC);
 
         // flash only gets 20k program cycles
         // change the location each time to prevent wearout of CI boards

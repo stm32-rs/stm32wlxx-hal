@@ -53,7 +53,7 @@ mod tests {
 
         let delay = new_delay(cp.SYST, &dp.RCC);
 
-        let adc: Adc = Adc::new(dp.ADC, Clk::PClkDiv4, &mut dp.RCC);
+        let adc: Adc = Adc::new(dp.ADC, Clk::PclkDiv4, &mut dp.RCC);
         defmt::assert_eq!(adc.clock_hz(&dp.RCC), ADC_FREQ);
 
         cp.DCB.enable_trace();

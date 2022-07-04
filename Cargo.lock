@@ -595,8 +595,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 [[package]]
 name = "stm32wl"
 version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "613879c88488cbc0b7d3a3cda5893d163971119c88960d1afe5f45186644e51b"
+source = "git+https://github.com/newam/stm32wl#ac0cf6bd013ce2dd0b9bb25846e4c1ff72fb236e"
 dependencies = [
  "bare-metal 1.0.0",
  "cortex-m",

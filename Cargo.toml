@@ -43,3 +43,6 @@ incremental = false
 lto = false
 opt-level = 3 
 overflow-checks = false
+
+[patch.crates-io]
+stm32wl.git = "https://github.com/newam/stm32wl"

@@ -149,19 +149,19 @@ pub enum Clk {
 impl Clk {
     const fn ckmode(&self) -> pac::adc::cfgr2::CKMODE_A {
         match self {
-            Clk::RccHsi | Clk::RccPllP | Clk::RccSysClk => pac::adc::cfgr2::CKMODE_A::ADCLK,
-            Clk::PClkDiv2 => pac::adc::cfgr2::CKMODE_A::PCLK_DIV2,
-            Clk::PClkDiv4 => pac::adc::cfgr2::CKMODE_A::PCLK_DIV4,
-            Clk::PClk => pac::adc::cfgr2::CKMODE_A::PCLK,
+            Clk::RccHsi | Clk::RccPllP | Clk::RccSysClk => pac::adc::cfgr2::CKMODE_A::Adclk,
+            Clk::PClkDiv2 => pac::adc::cfgr2::CKMODE_A::PclkDiv2,
+            Clk::PClkDiv4 => pac::adc::cfgr2::CKMODE_A::PclkDiv4,
+            Clk::PClk => pac::adc::cfgr2::CKMODE_A::Pclk,
         }
     }
 
     const fn adcsel(&self) -> pac::rcc::ccipr::ADCSEL_A {
         match self {
-            Clk::RccHsi => pac::rcc::ccipr::ADCSEL_A::HSI16,
-            Clk::RccPllP => pac::rcc::ccipr::ADCSEL_A::PLLP,
-            Clk::RccSysClk => pac::rcc::ccipr::ADCSEL_A::SYSCLK,
-            _ => pac::rcc::ccipr::ADCSEL_A::NOCLOCK,
+            Clk::RccHsi => pac::rcc::ccipr::ADCSEL_A::Hsi16,
+            Clk::RccPllP => pac::rcc::ccipr::ADCSEL_A::Pllp,
+            Clk::RccSysClk => pac::rcc::ccipr::ADCSEL_A::Sysclk,
+            _ => pac::rcc::ccipr::ADCSEL_A::NoClock,
         }
     }
 }
@@ -579,15 +579,15 @@ impl Adc {
         use pac::{adc::cfgr2::CKMODE_A, rcc::ccipr::ADCSEL_A};
 
         match self.adc.cfgr2.read().ckmode().variant() {
-            CKMODE_A::ADCLK => match rcc.ccipr.read().adcsel().variant() {
-                ADCSEL_A::NOCLOCK => None,
-                ADCSEL_A::HSI16 => Some(Clk::RccHsi),
-                ADCSEL_A::PLLP => Some(Clk::RccPllP),
-                ADCSEL_A::SYSCLK => Some(Clk::RccSysClk),
+            CKMODE_A::Adclk => match rcc.ccipr.read().adcsel().variant() {
+                ADCSEL_A::NoClock => None,
+                ADCSEL_A::Hsi16 => Some(Clk::RccHsi),
+                ADCSEL_A::Pllp => Some(Clk::RccPllP),
+                ADCSEL_A::Sysclk => Some(Clk::RccSysClk),
             },
-            CKMODE_A::PCLK_DIV2 => Some(Clk::PClkDiv2),
-            CKMODE_A::PCLK_DIV4 => Some(Clk::PClkDiv4),
-            CKMODE_A::PCLK => Some(Clk::PClk),
+            CKMODE_A::PclkDiv2 => Some(Clk::PClkDiv2),
+            CKMODE_A::PclkDiv4 => Some(Clk::PClkDiv4),
+            CKMODE_A::Pclk => Some(Clk::PClk),
         }
     }
 
@@ -656,30 +656,30 @@ impl Adc {
         };
 
         let source_freq: Ratio<u32> = match self.adc.cfgr2.read().ckmode().variant() {
-            CKMODE_A::ADCLK => {
+            CKMODE_A::Adclk => {
                 let src: Ratio<u32> = match rcc.ccipr.read().adcsel().variant() {
-                    ADCSEL_A::NOCLOCK => Ratio::new_raw(0, 1),
-                    ADCSEL_A::HSI16 => Ratio::new_raw(16_000_000, 1),
-                    ADCSEL_A::PLLP => crate::rcc::pllpclk(rcc, &rcc.pllcfgr.read()),
-                    ADCSEL_A::SYSCLK => crate::rcc::sysclk(rcc, &rcc.cfgr.read()),
+                    ADCSEL_A::NoClock => Ratio::new_raw(0, 1),
+                    ADCSEL_A::Hsi16 => Ratio::new_raw(16_000_000, 1),
+                    ADCSEL_A::Pllp => crate::rcc::pllpclk(rcc, &rcc.pllcfgr.read()),
+                    ADCSEL_A::Sysclk => crate::rcc::sysclk(rcc, &rcc.cfgr.read()),
                 };
 
                 // only the asynchronous clocks have the prescaler applied
                 let ccr = self.adc.ccr.read();
                 let prescaler: u32 = match ccr.presc().variant() {
                     Some(p) => match p {
-                        PRESC_A::DIV1 => 1,
-                        PRESC_A::DIV2 => 2,
-                        PRESC_A::DIV4 => 4,
-                        PRESC_A::DIV6 => 6,
-                        PRESC_A::DIV8 => 8,
-                        PRESC_A::DIV10 => 10,
-                        PRESC_A::DIV12 => 12,
-                        PRESC_A::DIV16 => 16,
-                        PRESC_A::DIV32 => 32,
-                        PRESC_A::DIV64 => 64,
-                        PRESC_A::DIV128 => 128,
-                        PRESC_A::DIV256 => 256,
+                        PRESC_A::Div1 => 1,
+                        PRESC_A::Div2 => 2,
+                        PRESC_A::Div4 => 4,
+                        PRESC_A::Div6 => 6,
+                        PRESC_A::Div8 => 8,
+                        PRESC_A::Div10 => 10,
+                        PRESC_A::Div12 => 12,
+                        PRESC_A::Div16 => 16,
+                        PRESC_A::Div32 => 32,
+                        PRESC_A::Div64 => 64,
+                        PRESC_A::Div128 => 128,
+                        PRESC_A::Div256 => 256,
                     },
                     None => {
                         error!("Reserved ADC prescaler value {:#X}", ccr.presc().bits());
@@ -689,9 +689,9 @@ impl Adc {
 
                 src / prescaler
             }
-            CKMODE_A::PCLK_DIV2 => crate::rcc::pclk2(rcc, &rcc.cfgr.read()) / 2,
-            CKMODE_A::PCLK_DIV4 => crate::rcc::pclk2(rcc, &rcc.cfgr.read()) / 4,
-            CKMODE_A::PCLK => crate::rcc::pclk2(rcc, &rcc.cfgr.read()),
+            CKMODE_A::PclkDiv2 => crate::rcc::pclk2(rcc, &rcc.cfgr.read()) / 2,
+            CKMODE_A::PclkDiv4 => crate::rcc::pclk2(rcc, &rcc.cfgr.read()) / 4,
+            CKMODE_A::Pclk => crate::rcc::pclk2(rcc, &rcc.cfgr.read()),
         };
 
         source_freq.to_integer()

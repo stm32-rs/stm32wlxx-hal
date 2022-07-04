@@ -240,31 +240,31 @@ macro_rules! impl_clock_hz {
             pub fn clock_hz(&self, rcc: &pac::RCC) -> u32 {
                 use pac::{rcc::ccipr::$sel, $presc::presc::PRESCALER_A};
                 let src: Ratio<u32> = match rcc.ccipr.read().$method().variant() {
-                    $sel::PCLK => {
+                    $sel::Pclk => {
                         let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
                         rcc::$pclk_method(rcc, &cfgr)
                     }
-                    $sel::SYSCLK => {
+                    $sel::Sysclk => {
                         let cfgr: pac::rcc::cfgr::R = rcc.cfgr.read();
                         rcc::sysclk(rcc, &cfgr)
                     }
-                    $sel::HSI16 => Ratio::new_raw(16_000_000, 1),
-                    $sel::LSE => Ratio::new_raw(32_768, 1),
+                    $sel::Hsi16 => Ratio::new_raw(16_000_000, 1),
+                    $sel::Lse => Ratio::new_raw(32_768, 1),
                 };
                 let pre: u32 = match self.uart.presc.read().prescaler().variant() {
                     Some(p) => match p {
-                        PRESCALER_A::DIV1 => 1,
-                        PRESCALER_A::DIV2 => 2,
-                        PRESCALER_A::DIV4 => 4,
-                        PRESCALER_A::DIV6 => 6,
-                        PRESCALER_A::DIV8 => 8,
-                        PRESCALER_A::DIV10 => 10,
-                        PRESCALER_A::DIV12 => 12,
-                        PRESCALER_A::DIV16 => 16,
-                        PRESCALER_A::DIV32 => 32,
-                        PRESCALER_A::DIV64 => 64,
-                        PRESCALER_A::DIV128 => 128,
-                        PRESCALER_A::DIV256 => 256,
+                        PRESCALER_A::Div1 => 1,
+                        PRESCALER_A::Div2 => 2,
+                        PRESCALER_A::Div4 => 4,
+                        PRESCALER_A::Div6 => 6,
+                        PRESCALER_A::Div8 => 8,
+                        PRESCALER_A::Div10 => 10,
+                        PRESCALER_A::Div12 => 12,
+                        PRESCALER_A::Div16 => 16,
+                        PRESCALER_A::Div32 => 32,
+                        PRESCALER_A::Div64 => 64,
+                        PRESCALER_A::Div128 => 128,
+                        PRESCALER_A::Div256 => 256,
                     },
                     None => 256,
                 };

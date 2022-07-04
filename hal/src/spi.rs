@@ -64,21 +64,21 @@ use pac::spi1::cr1::BR_A;
 #[repr(u8)]
 pub enum BaudRate {
     /// Source clock / 256
-    Div256 = BR_A::DIV256 as u8,
+    Div256 = BR_A::Div256 as u8,
     /// Source clock / 128
-    Div128 = BR_A::DIV128 as u8,
+    Div128 = BR_A::Div128 as u8,
     /// Source clock / 64
-    Div64 = BR_A::DIV64 as u8,
+    Div64 = BR_A::Div64 as u8,
     /// Source clock / 32
-    Div32 = BR_A::DIV32 as u8,
+    Div32 = BR_A::Div32 as u8,
     /// Source clock / 16
-    Div16 = BR_A::DIV16 as u8,
+    Div16 = BR_A::Div16 as u8,
     /// Source clock / 8
-    Div8 = BR_A::DIV8 as u8,
+    Div8 = BR_A::Div8 as u8,
     /// Source clock / 4
-    Div4 = BR_A::DIV4 as u8,
+    Div4 = BR_A::Div4 as u8,
     /// Source clock / 2
-    Div2 = BR_A::DIV2 as u8,
+    Div2 = BR_A::Div2 as u8,
 }
 
 impl BaudRate {
@@ -161,7 +161,7 @@ pub(crate) mod sealed {
     };
 
     use pac::dmamux::c0cr::DMAREQ_ID_A::{
-        SPI1_RX_DMA, SPI1_TX_DMA, SPI2_RX_DMA, SPI2_TX_DMA, SUBGHZSPI_RX, SUBGHZSPI_TX,
+        Spi1RxDma, Spi1TxDma, Spi2RxDma, Spi2TxDma, SubghzspiRx, SubghzspiTx,
     };
 
     const SPI1_BASE: usize = 0x4001_3000;
@@ -415,20 +415,20 @@ pub(crate) mod sealed {
 
     impl SpiRegs for pac::SPI1 {
         const DR: usize = SPI1_BASE + DR_OFFSET;
-        const DMA_TX_ID: u8 = SPI1_TX_DMA as u8;
-        const DMA_RX_ID: u8 = SPI1_RX_DMA as u8;
+        const DMA_TX_ID: u8 = Spi1TxDma as u8;
+        const DMA_RX_ID: u8 = Spi1RxDma as u8;
     }
 
     impl SpiRegs for pac::SPI2 {
         const DR: usize = SPI2_BASE + DR_OFFSET;
-        const DMA_TX_ID: u8 = SPI2_TX_DMA as u8;
-        const DMA_RX_ID: u8 = SPI2_RX_DMA as u8;
+        const DMA_TX_ID: u8 = Spi2TxDma as u8;
+        const DMA_RX_ID: u8 = Spi2RxDma as u8;
     }
 
     impl SpiRegs for pac::SPI3 {
         const DR: usize = SPI3_BASE + DR_OFFSET;
-        const DMA_TX_ID: u8 = SUBGHZSPI_TX as u8;
-        const DMA_RX_ID: u8 = SUBGHZSPI_RX as u8;
+        const DMA_TX_ID: u8 = SubghzspiTx as u8;
+        const DMA_RX_ID: u8 = SubghzspiRx as u8;
     }
 }
 

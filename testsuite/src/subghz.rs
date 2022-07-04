@@ -298,7 +298,7 @@ mod tests {
 
             let dma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
 
-            let rng: Rng = Rng::new(dp.RNG, rng::Clk::MSI, &mut dp.RCC);
+            let rng: Rng = Rng::new(dp.RNG, rng::Clk::Msi, &mut dp.RCC);
             let delay: Delay = new_delay(cp.SYST, &dp.RCC);
 
             let sg: MySubghz = MySubghz::new_with_dma(dp.SPI3, dma.d1.c1, dma.d2.c1, &mut dp.RCC);

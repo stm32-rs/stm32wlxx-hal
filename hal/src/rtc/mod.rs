@@ -10,7 +10,7 @@ use core::cmp::min;
 use pac::{
     rcc::{
         bdcr::RTCSEL_A,
-        csr::LSIPRE_A::{DIV1, DIV128},
+        csr::LSIPRE_A::{Div1, Div128},
     },
     rtc::cr::WUCKSEL_A,
 };
@@ -21,11 +21,11 @@ use pac::{
 #[repr(u8)]
 pub enum Clk {
     /// LSE oscillator clock selected.
-    Lse = RTCSEL_A::LSE as u8,
+    Lse = RTCSEL_A::Lse as u8,
     /// LSI oscillator clock selected.
-    Lsi = RTCSEL_A::LSI as u8,
+    Lsi = RTCSEL_A::Lsi as u8,
     /// HSE32 oscillator clock divided by 32 selected.
-    Hse = RTCSEL_A::HSE32 as u8,
+    Hse = RTCSEL_A::Hse32 as u8,
 }
 
 /// Status (interrupt) masks.
@@ -208,10 +208,10 @@ impl Rtc {
     #[inline]
     pub fn hz(rcc: &pac::RCC) -> u32 {
         match rcc.bdcr.read().rtcsel().variant() {
-            RTCSEL_A::NOCLOCK => 0,
-            RTCSEL_A::LSE => 32_768,
-            RTCSEL_A::LSI => lsi_hz(rcc).into(),
-            RTCSEL_A::HSE32 => 1_000_000,
+            RTCSEL_A::NoClock => 0,
+            RTCSEL_A::Lse => 32_768,
+            RTCSEL_A::Lsi => lsi_hz(rcc).into(),
+            RTCSEL_A::Hse32 => 1_000_000,
         }
     }
 
@@ -248,17 +248,17 @@ impl Rtc {
     // sync is 15-bit (32_768 max)
     fn configure_prescaler(&mut self, rcc: &mut pac::RCC) {
         let (a_pre, s_pre): (u8, u16) = match rcc.bdcr.read().rtcsel().variant() {
-            RTCSEL_A::NOCLOCK => unreachable!(),
+            RTCSEL_A::NoClock => unreachable!(),
             // (127 + 1) × (255 + 1) = 32_768 Hz
-            RTCSEL_A::LSE => (127, 255),
-            RTCSEL_A::LSI => match rcc.csr.read().lsipre().variant() {
+            RTCSEL_A::Lse => (127, 255),
+            RTCSEL_A::Lsi => match rcc.csr.read().lsipre().variant() {
                 // (99 + 1) × (319 + 1) = 32_000 Hz
-                DIV1 => (99, 319),
+                Div1 => (99, 319),
                 // (124 + 1) × (1 + 1) = 250 Hz
-                DIV128 => (124, 1),
+                Div128 => (124, 1),
             },
             // (99 + 1) × (9_999 + 1) = 1_000_000 Hz
-            RTCSEL_A::HSE32 => (99, 9_999),
+            RTCSEL_A::Hse32 => (99, 9_999),
         };
 
         // enter initialization mode
@@ -352,8 +352,8 @@ impl Rtc {
     pub fn calendar_initialized(&self) -> Option<()> {
         use pac::rtc::icsr::INITS_A;
         match self.rtc.icsr.read().inits().variant() {
-            INITS_A::NOTINITALIZED => None,
-            INITS_A::INITALIZED => Some(()),
+            INITS_A::NotInitalized => None,
+            INITS_A::Initalized => Some(()),
         }
     }
 
@@ -392,7 +392,7 @@ impl Rtc {
         self.calendar_initialized()?;
         let data = self.rtc.dr.read();
         let year: i32 = 2000 + (data.yt().bits() as i32) * 10 + (data.yu().bits() as i32);
-        let month: u8 = data.mt().bits() as u8 * 10 + data.mu().bits();
+        let month: u8 = data.mt().bit() as u8 * 10 + data.mu().bits();
         let day: u8 = data.dt().bits() * 10 + data.du().bits();
         NaiveDate::from_ymd_opt(year, month.into(), day.into())
     }
@@ -463,7 +463,7 @@ impl Rtc {
             let ss_after: u32 = self.rtc.ssr.read().ss().bits();
             if ss == ss_after {
                 let year: i32 = 2000 + (dr.yt().bits() as i32) * 10 + (dr.yu().bits() as i32);
-                let month: u8 = dr.mt().bits() as u8 * 10 + dr.mu().bits();
+                let month: u8 = dr.mt().bit() as u8 * 10 + dr.mu().bits();
                 let day: u8 = dr.dt().bits() * 10 + dr.du().bits();
 
                 let date: NaiveDate = NaiveDate::from_ymd_opt(year, month as u32, day as u32)?;
@@ -526,9 +526,9 @@ impl Rtc {
         // If WUCKSEL[2] = 1:
         //  WUTWF is cleared up to 1 ck_apre + 1 RTCCLK cycles after WUTE bit is set.
         let (wucksel, sec): (WUCKSEL_A, u16) = match u16::try_from(sec) {
-            Ok(sec) => (WUCKSEL_A::CLOCKSPARE, sec),
+            Ok(sec) => (WUCKSEL_A::ClockSpare, sec),
             Err(_) => (
-                WUCKSEL_A::CLOCKSPAREWITHOFFSET,
+                WUCKSEL_A::ClockSpareWithOffset,
                 u16::try_from(sec - (1 << 16) - 1).unwrap_or(u16::MAX),
             ),
         };
@@ -573,7 +573,7 @@ impl Rtc {
         self.rtc.cr.modify(|_, w| w.alrae().clear_bit());
         self.rtc.alrmar.write(|w| unsafe { w.bits(alarm.val) });
         self.rtc.alrmassr.write(|w| w.maskss().bits(alarm.ss_mask));
-        self.rtc.alrabinr.write(|w| w.ss().bits(alarm.ss));
+        self.rtc.alrabinr().write(|w| w.ss().bits(alarm.ss));
     }
 
     /// Returns `true` if alarm A is enabled.
@@ -589,7 +589,7 @@ impl Rtc {
     pub fn alarm_a(&self) -> Alarm {
         Alarm {
             val: self.rtc.alrmar.read().bits(),
-            ss: self.rtc.alrabinr.read().ss().bits(),
+            ss: self.rtc.alrabinr().read().ss().bits(),
             ss_mask: self.rtc.alrmassr.read().maskss().bits(),
         }
     }
@@ -612,7 +612,7 @@ impl Rtc {
         self.rtc.cr.modify(|_, w| w.alrbe().clear_bit());
         self.rtc.alrmbr.write(|w| unsafe { w.bits(alarm.val) });
         self.rtc.alrmbssr.write(|w| w.maskss().bits(alarm.ss_mask));
-        self.rtc.alrbbinr.write(|w| w.ss().bits(alarm.ss));
+        self.rtc.alrbbinr().write(|w| w.ss().bits(alarm.ss));
     }
 
     /// Returns `true` if alarm B is enabled.
@@ -628,7 +628,7 @@ impl Rtc {
     pub fn alarm_b(&self) -> Alarm {
         Alarm {
             val: self.rtc.alrmbr.read().bits(),
-            ss: self.rtc.alrbbinr.read().ss().bits(),
+            ss: self.rtc.alrbbinr().read().ss().bits(),
             ss_mask: self.rtc.alrmbssr.read().maskss().bits(),
         }
     }

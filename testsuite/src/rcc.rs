@@ -172,8 +172,8 @@ mod tests {
         impl From<&TestPre> for LsiPre {
             fn from(tp: &TestPre) -> Self {
                 match tp {
-                    TestPre::Div1 => LsiPre::DIV1,
-                    TestPre::Div128 => LsiPre::DIV128,
+                    TestPre::Div1 => LsiPre::Div1,
+                    TestPre::Div128 => LsiPre::Div128,
                 }
             }
         }

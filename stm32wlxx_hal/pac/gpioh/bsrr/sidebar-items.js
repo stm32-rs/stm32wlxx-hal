@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["BR3_AW","Port x reset bit y (y = 0..15)"],["BS3_AW","Port x set bit y (y= 0..15)"]],"struct":[["BSRR_SPEC","GPIO port bit set/reset register"],["W","Register `BSRR` writer"]],"type":[["BR3_W","Field `BR3` writer - Port x reset bit y (y = 0..15)"],["BS3_W","Field `BS3` writer - Port x set bit y (y= 0..15)"]]};

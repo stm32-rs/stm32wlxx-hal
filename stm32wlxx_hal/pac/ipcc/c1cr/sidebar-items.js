@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["RXOIE_A","RXOIE"],["TXFIE_A","TXFIE"]],"struct":[["C1CR_SPEC","IPCC Processor 1 control register"],["R","Register `C1CR` reader"],["W","Register `C1CR` writer"]],"type":[["RXOIE_R","Field `RXOIE` reader - RXOIE"],["RXOIE_W","Field `RXOIE` writer - RXOIE"],["TXFIE_R","Field `TXFIE` reader - TXFIE"],["TXFIE_W","Field `TXFIE` writer - TXFIE"]]};

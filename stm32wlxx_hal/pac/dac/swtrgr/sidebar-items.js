@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["SWTRIG1_AW","DAC channel1 software trigger"]],"struct":[["SWTRGR_SPEC","software trigger register"],["W","Register `SWTRGR` writer"]],"type":[["SWTRIG1_W","Field `SWTRIG1` writer - DAC channel1 software trigger"]]};

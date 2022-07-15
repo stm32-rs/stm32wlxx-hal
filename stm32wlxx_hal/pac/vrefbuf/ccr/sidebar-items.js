@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["CCR_SPEC","calibration control register"],["R","Register `CCR` reader"],["W","Register `CCR` writer"]],"type":[["TRIM_R","Field `TRIM` reader - Trimming code"],["TRIM_W","Field `TRIM` writer - Trimming code"]]};

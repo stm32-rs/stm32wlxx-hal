@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":[["comp1_csr","COMP1_CSR"],["comp2_csr","COMP2_CSR"]],"struct":[["RegisterBlock","Register block"]],"type":[["COMP1_CSR","COMP1_CSR register accessor: an alias for `Reg<COMP1_CSR_SPEC>`"],["COMP2_CSR","COMP2_CSR register accessor: an alias for `Reg<COMP2_CSR_SPEC>`"]]};

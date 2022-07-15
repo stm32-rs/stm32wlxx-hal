@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["ODR3_A","Port output data (y = 0..15)"]],"struct":[["ODR_SPEC","GPIO port output data register"],["R","Register `ODR` reader"],["W","Register `ODR` writer"]],"type":[["ODR3_R","Field `ODR3` reader - Port output data (y = 0..15)"],["ODR3_W","Field `ODR3` writer - Port output data (y = 0..15)"]]};

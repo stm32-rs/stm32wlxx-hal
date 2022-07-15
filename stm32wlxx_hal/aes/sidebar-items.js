@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Error","AES errors."],["SwapMode","Data type selection (for data in and data out to/from the cryptographic block)"]],"struct":[["Aes","AES driver."],["AesWrapClk","Wrapper around [`Aes`] for safely disabling the peripheral clock."]]};

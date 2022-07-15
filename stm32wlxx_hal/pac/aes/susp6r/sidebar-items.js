@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["R","Register `SUSP6R` reader"],["SUSP6R_SPEC","AES suspend register 6"],["W","Register `SUSP6R` writer"]],"type":[["SUSP_R","Field `SUSP` reader - AES suspend register 6"],["SUSP_W","Field `SUSP` writer - AES suspend register 6"]]};

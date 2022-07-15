@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["POL_SPEC","polynomial"],["R","Register `POL` reader"],["W","Register `POL` writer"]],"type":[["POL_R","Field `POL` reader - Programmable polynomial"],["POL_W","Field `POL` writer - Programmable polynomial"]]};

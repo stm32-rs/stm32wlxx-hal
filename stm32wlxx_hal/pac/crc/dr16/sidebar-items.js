@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["DR16_SPEC","Data register - half-word sized"],["R","Register `DR16` reader"],["W","Register `DR16` writer"]],"type":[["DR16_R","Field `DR16` reader - Data register bits"],["DR16_W","Field `DR16` writer - Data register bits"]]};

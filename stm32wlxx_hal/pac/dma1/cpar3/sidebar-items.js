@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["CPAR3_SPEC","channel x peripheral address register"],["R","Register `CPAR3` reader"],["W","Register `CPAR3` writer"]],"type":[["PA_R","Field `PA` reader - peripheral address"],["PA_W","Field `PA` writer - peripheral address"]]};

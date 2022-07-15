@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["DHR12LD_SPEC","Dual DAC 12-bit left aligned data holding register"],["R","Register `DHR12LD` reader"],["W","Register `DHR12LD` writer"]],"type":[["DACC1DHR_R","Field `DACC1DHR` reader - DAC channel1 12-bit left-aligned data"],["DACC1DHR_W","Field `DACC1DHR` writer - DAC channel1 12-bit left-aligned data"]]};

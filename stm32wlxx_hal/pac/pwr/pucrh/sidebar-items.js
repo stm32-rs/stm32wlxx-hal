@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["PU3_A","pull-up"]],"struct":[["PUCRH_SPEC","Power Port H pull-up control register"],["R","Register `PUCRH` reader"],["W","Register `PUCRH` writer"]],"type":[["PU3_R","Field `PU3` reader - pull-up"],["PU3_W","Field `PU3` writer - pull-up"]]};

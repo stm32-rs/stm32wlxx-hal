@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["OPTKEYR_SPEC","Option byte key register"],["W","Register `OPTKEYR` writer"]],"type":[["OPTKEY_W","Field `OPTKEY` writer - Option byte key"]]};

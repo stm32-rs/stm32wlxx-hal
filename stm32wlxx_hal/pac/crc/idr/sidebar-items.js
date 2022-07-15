@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["IDR_SPEC","Independent data register"],["R","Register `IDR` reader"],["W","Register `IDR` writer"]],"type":[["IDR_R","Field `IDR` reader - General-purpose 32-bit data register bits"],["IDR_W","Field `IDR` writer - General-purpose 32-bit data register bits"]]};

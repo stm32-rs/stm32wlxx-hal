@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Clk","UART clock selection."],["Error","UART errors."]],"struct":[["LpUart","Low-power UART driver."],["NoRx","Typestate for no RX on a generic UART structure."],["NoTx","Typestate for no TX on a generic UART structure."],["Uart1","UART1 driver."],["Uart2","UART2 driver."]]};

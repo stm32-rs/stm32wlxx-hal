@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["IM_A","wakeup with interrupt Mask on Event input"]],"struct":[["C2IMR1_SPEC","interrupt mask register"],["R","Register `C2IMR1` reader"],["W","Register `C2IMR1` writer"]],"type":[["IM_R","Field `IM` reader - wakeup with interrupt Mask on Event input"],["IM_W","Field `IM` writer - wakeup with interrupt Mask on Event input"]]};

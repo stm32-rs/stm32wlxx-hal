@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["IPIDR_SPEC","IPCC IP Identification register"],["R","Register `IPIDR` reader"]],"type":[["ID_R","Field `ID` reader - ID"]]};

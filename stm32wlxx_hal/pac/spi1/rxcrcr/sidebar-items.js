@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["R","Register `RXCRCR` reader"],["RXCRCR_SPEC","RX CRC register"]],"type":[["RXCRC_R","Field `RxCRC` reader - Rx CRC register"]]};

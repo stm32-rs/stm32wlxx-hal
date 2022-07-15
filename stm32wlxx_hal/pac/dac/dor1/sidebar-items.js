@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["DOR1_SPEC","DAC channel1 data output register"],["R","Register `DOR1` reader"]],"type":[["DACC1DOR_R","Field `DACC1DOR` reader - DACC1DOR"]]};

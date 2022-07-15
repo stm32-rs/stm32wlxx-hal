@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["KEY_AW","SRAM2 write protection key for software erase"]],"struct":[["SKR_SPEC","SKR"],["W","Register `SKR` writer"]],"type":[["KEY_W","Field `KEY` writer - SRAM2 write protection key for software erase"]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["CCR_SPEC","calibration control register"],["R","Register `CCR` reader"],["W","Register `CCR` writer"]],"type":[["OTRIM1_R","Field `OTRIM1` reader - DAC Channel 1 offset trimming value"],["OTRIM1_W","Field `OTRIM1` writer - DAC Channel 1 offset trimming value"]]};

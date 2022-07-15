@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["ALRBINR_SPEC","RTC alarm A binary mode register"],["R","Register `ALR%sBINR` reader"],["W","Register `ALR%sBINR` writer"]],"type":[["SS_R","Field `SS` reader - Synchronous counter alarm value in Binary mode"],["SS_W","Field `SS` writer - Synchronous counter alarm value in Binary mode"]]};

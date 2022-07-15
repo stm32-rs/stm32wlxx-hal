@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["APB3RSTR_SPEC","APB3 peripheral reset register"],["R","Register `APB3RSTR` reader"],["W","Register `APB3RSTR` writer"]],"type":[["SUBGHZSPIRST_R","Field `SUBGHZSPIRST` reader - Sub-GHz radio SPI reset"],["SUBGHZSPIRST_W","Field `SUBGHZSPIRST` writer - Sub-GHz radio SPI reset"]]};

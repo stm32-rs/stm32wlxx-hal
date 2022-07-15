@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Core","CPU core."],["Package","Physical package type."]],"fn":[["flash_size","Flash size in bytes"],["flash_size_kibibyte","Flash size in kibibytes"]],"struct":[["Uid","96-bit unique device identifier"],["Uid64","IEEE 64-bit unique device ID (UID64)."]]};

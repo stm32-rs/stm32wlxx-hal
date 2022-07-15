@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":[["ALL","All status flags."],["ALRA","Alarm A flag"],["ALRB","Alarm B flag"],["ALR_ALL","Alarm A & B flags."],["ITS","Internal timestamp flag"],["SSRU","SSR underflow flag"],["TS","Timestamp flag"],["TSOV","Timestamp overflow flag"],["WUT","Wakeup timer flag"]]};

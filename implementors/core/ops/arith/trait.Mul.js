@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["stm32wlxx_hal"] = [{"text":"impl&lt;T:&nbsp;<a class=\"trait\" href=\"https://docs.rs/num-traits/0.2/num_traits/ops/checked/trait.CheckedMul.html\" title=\"trait num_traits::ops::checked::CheckedMul\">CheckedMul</a>&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/ops/arith/trait.Mul.html\" title=\"trait core::ops::arith::Mul\">Mul</a>&lt;T&gt; for <a class=\"struct\" href=\"stm32wlxx_hal/struct.Ratio.html\" title=\"struct stm32wlxx_hal::Ratio\">Ratio</a>&lt;T&gt;","synthetic":false,"types":["stm32wlxx_hal::ratio::Ratio"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["R","Register `RXDR` reader"],["RXDR_SPEC","Receive data register"]],"type":[["RXDATA_R","Field `RXDATA` reader - 8-bit receive data"]]};

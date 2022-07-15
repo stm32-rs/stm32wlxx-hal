@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["TISEL_A","TISEL"]],"struct":[["R","Register `TISEL` reader"],["TISEL_SPEC","TIM16 input selection register"],["W","Register `TISEL` writer"]],"type":[["TISEL_R","Field `TISEL` reader - TISEL"],["TISEL_W","Field `TISEL` writer - TISEL"]]};

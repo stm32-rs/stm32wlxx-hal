@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["IPCCBR_SPEC","Flash IPCC data buffer address register"],["R","Register `IPCCBR` reader"],["W","Register `IPCCBR` writer"]],"type":[["IPCCDBA_R","Field `IPCCDBA` reader - IPCCDBA"],["IPCCDBA_W","Field `IPCCDBA` writer - IPCCDBA"]]};

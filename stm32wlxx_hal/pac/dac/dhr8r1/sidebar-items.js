@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["DHR8R1_SPEC","channel1 8-bit right aligned data holding register"],["R","Register `DHR8R1` reader"],["W","Register `DHR8R1` writer"]],"type":[["DACC1DHR_R","Field `DACC1DHR` reader - DAC channel1 8-bit right-aligned data"],["DACC1DHR_W","Field `DACC1DHR` writer - DAC channel1 8-bit right-aligned data"]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["IDCODER_SPEC","DBGMCU Identity Code Register"],["R","Register `IDCODER` reader"]],"type":[["DEV_ID_R","Field `DEV_ID` reader - Device ID"],["REV_ID_R","Field `REV_ID` reader - Revision"]]};

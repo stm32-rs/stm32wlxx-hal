@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["KEY_AW","Write protection key"]],"struct":[["W","Register `WPR` writer"],["WPR_SPEC","Write protection register"]],"type":[["KEY_W","Field `KEY` writer - Write protection key"]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["LOCK_A","Lock indication"]],"struct":[["R","Register `RLR%s` reader"],["RLR_SPEC","HSEM Read lock register"]],"type":[["COREID_R","Field `COREID` reader - COREID"],["LOCK_R","Field `LOCK` reader - Lock indication"],["PROCID_R","Field `PROCID` reader - Semaphore ProcessID"]]};

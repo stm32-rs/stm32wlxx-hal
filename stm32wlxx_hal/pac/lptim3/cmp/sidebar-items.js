@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["CMP_SPEC","compare register"],["R","Register `CMP` reader"],["W","Register `CMP` writer"]],"type":[["CMP_R","Field `CMP` reader - CMP"],["CMP_W","Field `CMP` writer - CMP"]]};

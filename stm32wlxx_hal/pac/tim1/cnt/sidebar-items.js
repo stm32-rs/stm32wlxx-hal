@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["CNT_SPEC","counter"],["R","Register `CNT` reader"],["W","Register `CNT` writer"]],"type":[["CNT_R","Field `CNT` reader - CNT"],["CNT_W","Field `CNT` writer - CNT"],["UIFCPY_R","Field `UIFCPY` reader - UIF copy"]]};

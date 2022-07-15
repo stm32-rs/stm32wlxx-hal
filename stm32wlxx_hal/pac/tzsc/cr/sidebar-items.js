@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["CR_SPEC","TZSC control register"],["R","Register `CR` reader"],["W","Register `CR` writer"]],"type":[["LCK_R","Field `LCK` reader - LCK"],["LCK_W","Field `LCK` writer - LCK"]]};

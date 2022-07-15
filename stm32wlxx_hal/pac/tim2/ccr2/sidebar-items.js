@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["CCR2_SPEC","capture/compare register 2"],["R","Register `CCR2` reader"],["W","Register `CCR2` writer"]],"type":[["CCR2_R","Field `CCR2` reader - Capture/Compare 2 value"],["CCR2_W","Field `CCR2` writer - Capture/Compare 2 value"]]};

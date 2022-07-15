@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["ModeChip","DAC modes with output to chip peripherals"],["ModePin","ADC modes that use the A10 output pin"]],"struct":[["Dac","Digital to analog converter driver"]]};

@@ -1,0 +1,201 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Low-power timer trait."><meta name="keywords" content="rust, rustlang, rust-lang, LpTim"><title>LpTim in stm32wlxx_hal::lptim - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc trait"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../stm32wlxx_hal/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
+        </a><h2 class="location"></h2>
+    </nav>
+    <nav class="sidebar"><a class="sidebar-logo" href="../../stm32wlxx_hal/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
+        </a><h2 class="location"><a href="#">LpTim</a></h2><div class="sidebar-elems"><section><div class="block"><h3 class="sidebar-title"><a href="#required-associated-types">Required Associated Types</a></h3><ul><li><a href="#associatedtype.TrgSel">TrgSel</a></li></ul></div><div class="block"><h3 class="sidebar-title"><a href="#required-methods">Required Methods</a></h3><ul><li><a href="#tymethod.clk">clk</a></li><li><a href="#tymethod.disable_clock">disable_clock</a></li><li><a href="#tymethod.enable_clock">enable_clock</a></li><li><a href="#tymethod.free">free</a></li><li><a href="#tymethod.new">new</a></li><li><a href="#tymethod.pulse_reset">pulse_reset</a></li></ul></div><div class="block"><h3 class="sidebar-title"><a href="#provided-methods">Provided Methods</a></h3><ul><li><a href="#method.cnt">cnt</a></li><li><a href="#method.hz">hz</a></li><li><a href="#method.is_enabled">is_enabled</a></li><li><a href="#method.isr">isr</a></li><li><a href="#method.set_icr">set_icr</a></li><li><a href="#method.set_ier">set_ier</a></li><li><a href="#method.set_max_duty">set_max_duty</a></li><li><a href="#method.setup_trigger">setup_trigger</a></li></ul></div><div class="block"><h3 class="sidebar-title"><a href="#implementors">Implementors</a></h3></div></section><h2 class="location"><a href="index.html">In stm32wlxx_hal::lptim</a></h2></div></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../stm32wlxx_hal/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
+                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
+                        </div></form></nav></div><section id="main-content" class="content"><div class="main-heading">
+    <h1 class="fqn"><span class="in-band">Trait <a href="../index.html">stm32wlxx_hal</a>::<wbr><a href="index.html">lptim</a>::<wbr><a class="trait" href="#">LpTim</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span></h1><span class="out-of-band"><a class="srclink" href="../../src/stm32wlxx_hal/lptim/mod.rs.html#288-569">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><div class="docblock item-decl"><pre class="rust trait"><code>pub trait LpTim: LpTim {
+    type <a href="#associatedtype.TrgSel" class="associatedtype">TrgSel</a>: <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html" title="trait core::convert::Into">Into</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u32.html">u32</a>&gt;;
+
+<details class="rustdoc-toggle type-contents-toggle"><summary class="hideme"><span>Show 14 methods</span></summary>    fn <a href="#tymethod.new" class="fnname">new</a>(tim: Self::Pac, clk: <a class="enum" href="enum.Clk.html" title="enum stm32wlxx_hal::lptim::Clk">Clk</a>, pre: <a class="enum" href="enum.Prescaler.html" title="enum stm32wlxx_hal::lptim::Prescaler">Prescaler</a>, rcc: &amp;mut <a class="struct" href="../pac/struct.RCC.html" title="struct stm32wlxx_hal::pac::RCC">RCC</a>) -&gt; Self;
+<span class="item-spacer"></span>    fn <a href="#tymethod.free" class="fnname">free</a>(self) -&gt; Self::Pac;
+<span class="item-spacer"></span>    unsafe fn <a href="#tymethod.pulse_reset" class="fnname">pulse_reset</a>(rcc: &amp;mut <a class="struct" href="../pac/struct.RCC.html" title="struct stm32wlxx_hal::pac::RCC">RCC</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.enable_clock" class="fnname">enable_clock</a>(rcc: &amp;mut <a class="struct" href="../pac/struct.RCC.html" title="struct stm32wlxx_hal::pac::RCC">RCC</a>);
+<span class="item-spacer"></span>    unsafe fn <a href="#tymethod.disable_clock" class="fnname">disable_clock</a>(rcc: &amp;mut <a class="struct" href="../pac/struct.RCC.html" title="struct stm32wlxx_hal::pac::RCC">RCC</a>);
+<span class="item-spacer"></span>    fn <a href="#tymethod.clk" class="fnname">clk</a>(rcc: &amp;<a class="struct" href="../pac/struct.RCC.html" title="struct stm32wlxx_hal::pac::RCC">RCC</a>) -&gt; <a class="enum" href="enum.Clk.html" title="enum stm32wlxx_hal::lptim::Clk">Clk</a>;
+
+    fn <a href="#method.hz" class="fnname">hz</a>(&amp;self) -&gt; &amp;<a class="struct" href="../struct.Ratio.html" title="struct stm32wlxx_hal::Ratio">Ratio</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u32.html">u32</a>&gt; { ... }
+<span class="item-spacer"></span>    fn <a href="#method.cnt" class="fnname">cnt</a>() -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u16.html">u16</a> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.isr" class="fnname">isr</a>() -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u32.html">u32</a> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.set_ier" class="fnname">set_ier</a>(&amp;mut self, ier: <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u32.html">u32</a>) { ... }
+<span class="item-spacer"></span>    unsafe fn <a href="#method.set_icr" class="fnname">set_icr</a>(&amp;mut self, icr: <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u32.html">u32</a>) { ... }
+<span class="item-spacer"></span>    fn <a href="#method.is_enabled" class="fnname">is_enabled</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a> { ... }
+<span class="item-spacer"></span>    fn <a href="#method.setup_trigger" class="fnname">setup_trigger</a>(&amp;mut self, filter: <a class="enum" href="enum.Filter.html" title="enum stm32wlxx_hal::lptim::Filter">Filter</a>, pol: <a class="enum" href="enum.TrgPol.html" title="enum stm32wlxx_hal::lptim::TrgPol">TrgPol</a>, sel: Self::<a class="associatedtype" href="trait.LpTim.html#associatedtype.TrgSel" title="type stm32wlxx_hal::lptim::LpTim::TrgSel">TrgSel</a>) { ... }
+<span class="item-spacer"></span>    fn <a href="#method.set_max_duty" class="fnname">set_max_duty</a>(&amp;mut self, duty: <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u16.html">u16</a>) { ... }
+</details>}</code></pre></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Low-power timer trait.</p>
+</div></details><h2 id="required-associated-types" class="small-section-header">Required Associated Types<a href="#required-associated-types" class="anchor"></a></h2><div class="methods"><details class="rustdoc-toggle" open><summary><div id="associatedtype.TrgSel" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/lptim/mod.rs.html#290">source</a></div><h4 class="code-header">type <a href="#associatedtype.TrgSel" class="associatedtype">TrgSel</a>: <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html" title="trait core::convert::Into">Into</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u32.html">u32</a>&gt;</h4></div></summary><div class="docblock"><p>Trigger selection options.</p>
+</div></details></div><h2 id="required-methods" class="small-section-header">Required Methods<a href="#required-methods" class="anchor"></a></h2><div class="methods"><details class="rustdoc-toggle" open><summary><div id="tymethod.new" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/lptim/mod.rs.html#315">source</a></div><h4 class="code-header">fn <a href="#tymethod.new" class="fnname">new</a>(tim: Self::Pac, clk: <a class="enum" href="enum.Clk.html" title="enum stm32wlxx_hal::lptim::Clk">Clk</a>, pre: <a class="enum" href="enum.Prescaler.html" title="enum stm32wlxx_hal::lptim::Prescaler">Prescaler</a>, rcc: &amp;mut <a class="struct" href="../pac/struct.RCC.html" title="struct stm32wlxx_hal::pac::RCC">RCC</a>) -&gt; Self</h4></div></summary><div class="docblock"><p>Create a new LPTIM driver.</p>
+<p>This will enable the ADC clock and reset the ADC peripheral.</p>
+<p><strong>Note:</strong> This will select the clock source, but you are responsible
+for enabling that clock source.</p>
+<h5 id="example"><a href="#example">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">lptim</span>::{<span class="self">self</span>, <span class="ident">LpTim</span>, <span class="ident">LpTim1</span>, <span class="ident">Prescaler::Div1</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// enable the HSI16 source clock</span>
+<span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">modify</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">hsion</span>().<span class="ident">set_bit</span>());
+<span class="kw">while</span> <span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">read</span>().<span class="ident">hsirdy</span>().<span class="ident">is_not_ready</span>() {}
+
+<span class="kw">let</span> <span class="ident">lptim1</span>: <span class="ident">LpTim1</span> <span class="op">=</span> <span class="ident">LpTim1::new</span>(<span class="ident">dp</span>.<span class="ident">LPTIM1</span>, <span class="ident">lptim::Clk::Hsi16</span>, <span class="ident">Div1</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);</code></pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="tymethod.free" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/lptim/mod.rs.html#337">source</a></div><h4 class="code-header">fn <a href="#tymethod.free" class="fnname">free</a>(self) -&gt; Self::Pac</h4></div></summary><div class="docblock"><p>Free the LPTIM registers from the driver.</p>
+<h5 id="example-1"><a href="#example-1">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">lptim</span>::{<span class="self">self</span>, <span class="ident">LpTim</span>, <span class="ident">LpTim1</span>, <span class="ident">Prescaler::Div1</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// enable the HSI16 source clock</span>
+<span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">modify</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">hsion</span>().<span class="ident">set_bit</span>());
+<span class="kw">while</span> <span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">read</span>().<span class="ident">hsirdy</span>().<span class="ident">is_not_ready</span>() {}
+
+<span class="kw">let</span> <span class="ident">lptim1</span>: <span class="ident">LpTim1</span> <span class="op">=</span> <span class="ident">LpTim1::new</span>(<span class="ident">dp</span>.<span class="ident">LPTIM1</span>, <span class="ident">lptim::Clk::Hsi16</span>, <span class="ident">Div1</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="comment">// ... use lptim</span>
+<span class="kw">let</span> <span class="ident">lptim1</span>: <span class="ident">pac::LPTIM1</span> <span class="op">=</span> <span class="ident">lptim1</span>.<span class="ident">free</span>();</code></pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="tymethod.pulse_reset" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/lptim/mod.rs.html#347">source</a></div><h4 class="code-header">unsafe fn <a href="#tymethod.pulse_reset" class="fnname">pulse_reset</a>(rcc: &amp;mut <a class="struct" href="../pac/struct.RCC.html" title="struct stm32wlxx_hal::pac::RCC">RCC</a>)</h4></div></summary><div class="docblock"><p>Reset the LPTIM peripheral.</p>
+<p><a href="trait.LpTim.html#tymethod.new"><code>new</code></a> will pulse reset for you.</p>
+<h5 id="safety"><a href="#safety">Safety</a></h5>
+<ol>
+<li>Ensure nothing is using the timer before calling this function.</li>
+<li>You are responsible for setting up the timer after a reset.</li>
+</ol>
+</div></details><details class="rustdoc-toggle" open><summary><div id="tymethod.enable_clock" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/lptim/mod.rs.html#352">source</a></div><h4 class="code-header">fn <a href="#tymethod.enable_clock" class="fnname">enable_clock</a>(rcc: &amp;mut <a class="struct" href="../pac/struct.RCC.html" title="struct stm32wlxx_hal::pac::RCC">RCC</a>)</h4></div></summary><div class="docblock"><p>Enable clocks for the LPTIM peripheral.</p>
+<p><a href="trait.LpTim.html#tymethod.new"><code>new</code></a> will enable clocks for you.</p>
+</div></details><details class="rustdoc-toggle" open><summary><div id="tymethod.disable_clock" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/lptim/mod.rs.html#360">source</a></div><h4 class="code-header">unsafe fn <a href="#tymethod.disable_clock" class="fnname">disable_clock</a>(rcc: &amp;mut <a class="struct" href="../pac/struct.RCC.html" title="struct stm32wlxx_hal::pac::RCC">RCC</a>)</h4></div></summary><div class="docblock"><p>Disable the LPTIM peripheral clock.</p>
+<h5 id="safety-1"><a href="#safety-1">Safety</a></h5>
+<ol>
+<li>Ensure nothing is using the timer before disabling the clock.</li>
+<li>You are responsible for re-enabling the clock before using the timer.</li>
+</ol>
+</div></details><details class="rustdoc-toggle" open><summary><div id="tymethod.clk" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/lptim/mod.rs.html#376">source</a></div><h4 class="code-header">fn <a href="#tymethod.clk" class="fnname">clk</a>(rcc: &amp;<a class="struct" href="../pac/struct.RCC.html" title="struct stm32wlxx_hal::pac::RCC">RCC</a>) -&gt; <a class="enum" href="enum.Clk.html" title="enum stm32wlxx_hal::lptim::Clk">Clk</a></h4></div></summary><div class="docblock"><p>Get the clock source.</p>
+<h5 id="example-2"><a href="#example-2">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">lptim</span>::{<span class="self">self</span>, <span class="ident">LpTim</span>, <span class="ident">LpTim1</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="comment">// PCLK is the power-on-reset value</span>
+<span class="macro">assert_eq!</span>(<span class="ident">LpTim1::clk</span>(<span class="kw-2">&amp;</span><span class="ident">dp</span>.<span class="ident">RCC</span>), <span class="ident">lptim::Clk::Pclk</span>);</code></pre></div>
+</div></details></div><h2 id="provided-methods" class="small-section-header">Provided Methods<a href="#provided-methods" class="anchor"></a></h2><div class="methods"><details class="rustdoc-toggle" open><summary><div id="method.hz" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/lptim/mod.rs.html#397-399">source</a></div><h4 class="code-header">fn <a href="#method.hz" class="fnname">hz</a>(&amp;self) -&gt; &amp;<a class="struct" href="../struct.Ratio.html" title="struct stm32wlxx_hal::Ratio">Ratio</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u32.html">u32</a>&gt;</h4></div></summary><div class="docblock"><p>Get the clock speed in hertz.</p>
+<h5 id="example-3"><a href="#example-3">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">lptim</span>::{<span class="self">self</span>, <span class="ident">LpTim</span>, <span class="ident">LpTim1</span>, <span class="ident">Prescaler::Div1</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// enable the HSI16 source clock</span>
+<span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">modify</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">hsion</span>().<span class="ident">set_bit</span>());
+<span class="kw">while</span> <span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">read</span>().<span class="ident">hsirdy</span>().<span class="ident">is_not_ready</span>() {}
+
+<span class="kw">let</span> <span class="ident">lptim1</span>: <span class="ident">LpTim1</span> <span class="op">=</span> <span class="ident">LpTim1::new</span>(<span class="ident">dp</span>.<span class="ident">LPTIM1</span>, <span class="ident">lptim::Clk::Hsi16</span>, <span class="ident">Div1</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="macro">assert_eq!</span>(<span class="ident">lptim1</span>.<span class="ident">hz</span>().<span class="ident">to_integer</span>(), <span class="number">16_000_000</span>);</code></pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.cnt" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/lptim/mod.rs.html#403-406">source</a></div><h4 class="code-header">fn <a href="#method.cnt" class="fnname">cnt</a>() -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u16.html">u16</a></h4></div></summary><div class="docblock"><p>Get the timer count.</p>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.isr" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/lptim/mod.rs.html#410-412">source</a></div><h4 class="code-header">fn <a href="#method.isr" class="fnname">isr</a>() -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u32.html">u32</a></h4></div></summary><div class="docblock"><p>Get the interrupt status.</p>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.set_ier" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/lptim/mod.rs.html#440-443">source</a></div><h4 class="code-header">fn <a href="#method.set_ier" class="fnname">set_ier</a>(&amp;mut self, ier: <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u32.html">u32</a>)</h4></div></summary><div class="docblock"><p>Enable and disable interrupts.</p>
+<h5 id="panics"><a href="#panics">Panics</a></h5>
+<ul>
+<li>(debug) timer is enabled.</li>
+</ul>
+<h5 id="example-4"><a href="#example-4">Example</a></h5>
+<p>Enable all IRQs.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">lptim</span>::{<span class="self">self</span>, <span class="ident">LpTim</span>, <span class="ident">LpTim1</span>, <span class="ident">Prescaler::Div1</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// enable the HSI16 source clock</span>
+<span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">modify</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">hsion</span>().<span class="ident">set_bit</span>());
+<span class="kw">while</span> <span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">read</span>().<span class="ident">hsirdy</span>().<span class="ident">is_not_ready</span>() {}
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lptim1</span>: <span class="ident">LpTim1</span> <span class="op">=</span> <span class="ident">LpTim1::new</span>(<span class="ident">dp</span>.<span class="ident">LPTIM1</span>, <span class="ident">lptim::Clk::Hsi16</span>, <span class="ident">Div1</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="ident">lptim1</span>.<span class="ident">set_ier</span>(<span class="ident">lptim::irq::ALL</span>);</code></pre></div>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.set_icr" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/lptim/mod.rs.html#484-486">source</a></div><h4 class="code-header">unsafe fn <a href="#method.set_icr" class="fnname">set_icr</a>(&amp;mut self, icr: <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u32.html">u32</a>)</h4></div></summary><div class="docblock"><p>Clear interrupts.</p>
+<h5 id="safety-2"><a href="#safety-2">Safety</a></h5>
+<p>There is a big erratum entry for interrupts getting stuck, and the
+interrupts should only be cleared under certain circumstances
+(see workaround).</p>
+<h6 id="device-may-remain-stuck-in-lptim-interrupt-when-clearing-event-flag"><a href="#device-may-remain-stuck-in-lptim-interrupt-when-clearing-event-flag">Device may remain stuck in LPTIM interrupt when clearing event flag</a></h6><h6 id="description"><a href="#description">Description</a></h6>
+<p>This limitation occurs when the LPTIM is configured in interrupt mode
+(at least one interrupt is enabled) and the software clears any flag in
+LPTIM_ISR register by writing its corresponding bit in LPTIM_ICR register.
+If the interrupt status flag corresponding to a disabled interrupt is
+cleared simultaneously with a new event detection,
+the set and clear commands might reach the APB domain at the same time,
+leading to an asynchronous interrupt signal permanently stuck high.
+This issue can occur either during an interrupt subroutine execution
+(where the flag clearing is usually done),
+or outside an interrupt subroutine.
+Consequently, the firmware remains stuck in the LPTIM interrupt routine,
+and the device cannot enter Stop mode.</p>
+<h6 id="workaround"><a href="#workaround">Workaround</a></h6>
+<p>To avoid this issue, it is strongly advised to follow the recommendations
+listed below:</p>
+<ul>
+<li>Clear the flag only when its corresponding interrupt is enabled in the
+interrupt enable register.</li>
+<li>If for specific reasons, it is required to clear some flags that have
+corresponding interrupt lines disabled in the interrupt enable register,
+it is recommended to clear them during the current subroutine prior to
+those which have corresponding interrupt line enabled in the interrupt
+enable register.</li>
+<li>Flags must not be cleared outside the interrupt subroutine.</li>
+</ul>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.is_enabled" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/lptim/mod.rs.html#490-492">source</a></div><h4 class="code-header">fn <a href="#method.is_enabled" class="fnname">is_enabled</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a></h4></div></summary><div class="docblock"><p>Returns <code>true</code> if the timer is enabled.</p>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.setup_trigger" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/lptim/mod.rs.html#499-506">source</a></div><h4 class="code-header">fn <a href="#method.setup_trigger" class="fnname">setup_trigger</a>(&amp;mut self, filter: <a class="enum" href="enum.Filter.html" title="enum stm32wlxx_hal::lptim::Filter">Filter</a>, pol: <a class="enum" href="enum.TrgPol.html" title="enum stm32wlxx_hal::lptim::TrgPol">TrgPol</a>, sel: Self::<a class="associatedtype" href="trait.LpTim.html#associatedtype.TrgSel" title="type stm32wlxx_hal::lptim::LpTim::TrgSel">TrgSel</a>)</h4></div></summary><div class="docblock"><p>Setup a non-pin trigger.</p>
+<h5 id="panics-1"><a href="#panics-1">Panics</a></h5>
+<ul>
+<li>(debug) timer is enabled.</li>
+</ul>
+</div></details><details class="rustdoc-toggle" open><summary><div id="method.set_max_duty" class="method has-srclink"><div class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/lptim/mod.rs.html#554-568">source</a></div><h4 class="code-header">fn <a href="#method.set_max_duty" class="fnname">set_max_duty</a>(&amp;mut self, duty: <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u16.html">u16</a>)</h4></div></summary><div class="docblock"><p>Set the maximum duty cycle (autoreload value).</p>
+<p>This is used to control the frequency of the PWM output.</p>
+<p>This function does not poll for completion, use <a href="trait.LpTim.html#method.isr"><code>isr</code></a>
+and <a href="irq/constant.ARROK.html"><code>ARROK</code></a> to determine when the value has been updated.</p>
+<h5 id="example-5"><a href="#example-5">Example</a></h5>
+<p>Set the frequency to 50Hz (20ms period) for servo motor control.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">gpio</span>,
+    <span class="ident">lptim</span>::{<span class="self">self</span>, <span class="ident">LpTim</span>, <span class="ident">LpTim1</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// enable the HSI16 source clock</span>
+<span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">modify</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">hsion</span>().<span class="ident">set_bit</span>());
+<span class="kw">while</span> <span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">read</span>().<span class="ident">hsirdy</span>().<span class="ident">is_not_ready</span>() {}
+
+<span class="kw">let</span> <span class="ident">pc</span>: <span class="ident">gpio::PortC</span> <span class="op">=</span> <span class="ident">gpio::PortC::split</span>(<span class="ident">dp</span>.<span class="ident">GPIOC</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">lptim1</span>: <span class="ident">LpTim1</span> <span class="op">=</span> <span class="ident">LpTim1::new</span>(
+    <span class="ident">dp</span>.<span class="ident">LPTIM1</span>,
+    <span class="ident">lptim::Clk::Hsi16</span>,
+    <span class="ident">lptim::Prescaler::Div8</span>,
+    <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>,
+);
+<span class="ident">cortex_m::interrupt::free</span>(<span class="op">|</span><span class="ident">cs</span><span class="op">|</span> <span class="ident">lptim1</span>.<span class="ident">new_output_pin</span>(<span class="ident">pc</span>.<span class="ident">c1</span>, <span class="ident">cs</span>));
+
+<span class="comment">// 20ms period to control PWM servo motors</span>
+<span class="kw">const</span> <span class="ident">SERVO_FREQ_HZ</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">50</span>;
+
+<span class="comment">// source_freq / prescaler = 16_000_000 MHz / 8 = 2 Mhz</span>
+<span class="kw">let</span> <span class="ident">lptim1_freq_hz</span> <span class="op">=</span> <span class="ident">lptim1</span>.<span class="ident">hz</span>().<span class="ident">to_integer</span>();
+
+<span class="comment">// 2MHz / 50Hz = 40_000</span>
+<span class="kw">let</span> <span class="ident">max_duty</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="ident">lptim1_freq_hz</span> <span class="op">/</span> <span class="ident">SERVO_FREQ_HZ</span>;
+
+<span class="ident">lptim1</span>.<span class="ident">set_max_duty</span>(<span class="ident">max_duty</span>.<span class="ident">try_into</span>().<span class="ident">unwrap</span>());</code></pre></div>
+</div></details></div><h2 id="implementors" class="small-section-header">Implementors<a href="#implementors" class="anchor"></a></h2><div class="item-list" id="implementors-list"><details class="rustdoc-toggle implementors-toggle"><summary><section id="impl-LpTim-for-LpTim1" class="impl has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/lptim/mod.rs.html#571-617">source</a></span><a href="#impl-LpTim-for-LpTim1" class="anchor"></a><h3 class="code-header in-band">impl <a class="trait" href="trait.LpTim.html" title="trait stm32wlxx_hal::lptim::LpTim">LpTim</a> for <a class="struct" href="struct.LpTim1.html" title="struct stm32wlxx_hal::lptim::LpTim1">LpTim1</a></h3></section></summary><div class="impl-items"><section id="associatedtype.TrgSel-1" class="associatedtype trait-impl has-srclink"><a href="#associatedtype.TrgSel-1" class="anchor"></a><h4 class="code-header">type <a href="#associatedtype.TrgSel" class="associatedtype">TrgSel</a> = <a class="enum" href="enum.TrgSel.html" title="enum stm32wlxx_hal::lptim::TrgSel">TrgSel</a></h4></section></div></details><details class="rustdoc-toggle implementors-toggle"><summary><section id="impl-LpTim-for-LpTim2" class="impl has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/lptim/mod.rs.html#619-665">source</a></span><a href="#impl-LpTim-for-LpTim2" class="anchor"></a><h3 class="code-header in-band">impl <a class="trait" href="trait.LpTim.html" title="trait stm32wlxx_hal::lptim::LpTim">LpTim</a> for <a class="struct" href="struct.LpTim2.html" title="struct stm32wlxx_hal::lptim::LpTim2">LpTim2</a></h3></section></summary><div class="impl-items"><section id="associatedtype.TrgSel-2" class="associatedtype trait-impl has-srclink"><a href="#associatedtype.TrgSel-2" class="anchor"></a><h4 class="code-header">type <a href="#associatedtype.TrgSel" class="associatedtype">TrgSel</a> = <a class="enum" href="enum.TrgSel.html" title="enum stm32wlxx_hal::lptim::TrgSel">TrgSel</a></h4></section></div></details><details class="rustdoc-toggle implementors-toggle"><summary><section id="impl-LpTim-for-LpTim3" class="impl has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/lptim/mod.rs.html#667-713">source</a></span><a href="#impl-LpTim-for-LpTim3" class="anchor"></a><h3 class="code-header in-band">impl <a class="trait" href="trait.LpTim.html" title="trait stm32wlxx_hal::lptim::LpTim">LpTim</a> for <a class="struct" href="struct.LpTim3.html" title="struct stm32wlxx_hal::lptim::LpTim3">LpTim3</a></h3></section></summary><div class="impl-items"><section id="associatedtype.TrgSel-3" class="associatedtype trait-impl has-srclink"><a href="#associatedtype.TrgSel-3" class="anchor"></a><h4 class="code-header">type <a href="#associatedtype.TrgSel" class="associatedtype">TrgSel</a> = <a class="enum" href="enum.TrgSel3.html" title="enum stm32wlxx_hal::lptim::TrgSel3">TrgSel3</a></h4></section></div></details></div><script type="text/javascript" src="../../implementors/stm32wlxx_hal/lptim/trait.LpTim.js" data-ignore-extern-crates="" async></script></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="stm32wlxx_hal" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (c2f428d2f 2022-07-14)" ></div>
+</body></html>

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["HWCFGR_SPEC","IPCC Hardware configuration register"],["R","Register `HWCFGR` reader"]],"type":[["CHANNELS_R","Field `CHANNELS` reader - CHANNELS"]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["CR_SPEC","HSEM Clear register"],["W","Register `CR` writer"]],"type":[["COREID_W","Field `COREID` writer - COREID"],["KEY_W","Field `KEY` writer - Semaphore clear Key"]]};

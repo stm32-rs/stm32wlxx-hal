@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["MPCWM1_UPWMR_SPEC","Unprivileged Water Mark 1 register"],["R","Register `MPCWM1_UPWMR` reader"],["W","Register `MPCWM1_UPWMR` writer"]],"type":[["LGTH_R","Field `LGTH` reader - LGTH"],["LGTH_W","Field `LGTH` writer - LGTH"]]};

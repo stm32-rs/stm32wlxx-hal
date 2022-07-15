@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["INIT_SPEC","Initial CRC value"],["R","Register `INIT` reader"],["W","Register `INIT` writer"]],"type":[["INIT_R","Field `INIT` reader - Programmable initial CRC value"],["INIT_W","Field `INIT` writer - Programmable initial CRC value"]]};

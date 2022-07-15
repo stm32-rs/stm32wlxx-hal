@@ -1,0 +1,813 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Analog to digital converter driver."><meta name="keywords" content="rust, rustlang, rust-lang, Adc"><title>Adc in stm32wlxx_hal::adc - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc struct"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../stm32wlxx_hal/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
+        </a><h2 class="location"></h2>
+    </nav>
+    <nav class="sidebar"><a class="sidebar-logo" href="../../stm32wlxx_hal/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
+        </a><h2 class="location"><a href="#">Adc</a></h2><div class="sidebar-elems"><section><div class="block"><h3 class="sidebar-title"><a href="#implementations">Methods</a></h3><ul><li><a href="#method.calfact">calfact</a></li><li><a href="#method.calibrate">calibrate</a></li><li><a href="#method.clock_hz">clock_hz</a></li><li><a href="#method.clock_source">clock_source</a></li><li><a href="#method.dac">dac</a></li><li><a href="#method.data">data</a></li><li><a href="#method.disable">disable</a></li><li><a href="#method.disable_clock">disable_clock</a></li><li><a href="#method.disable_in_progress">disable_in_progress</a></li><li><a href="#method.disable_oversampling">disable_oversampling</a></li><li><a href="#method.disable_tsen">disable_tsen</a></li><li><a href="#method.disable_vbat">disable_vbat</a></li><li><a href="#method.disable_vref">disable_vref</a></li><li><a href="#method.disable_vreg">disable_vreg</a></li><li><a href="#method.enable">enable</a></li><li><a href="#method.enable_clock">enable_clock</a></li><li><a href="#method.enable_oversampling">enable_oversampling</a></li><li><a href="#method.enable_tsen">enable_tsen</a></li><li><a href="#method.enable_vbat">enable_vbat</a></li><li><a href="#method.enable_vref">enable_vref</a></li><li><a href="#method.enable_vreg">enable_vreg</a></li><li><a href="#method.force_cal">force_cal</a></li><li><a href="#method.free">free</a></li><li><a href="#method.is_disabled">is_disabled</a></li><li><a href="#method.is_enabled">is_enabled</a></li><li><a href="#method.is_oversampling_enabled">is_oversampling_enabled</a></li><li><a href="#method.is_tsen_enabled">is_tsen_enabled</a></li><li><a href="#method.is_vbat_enabled">is_vbat_enabled</a></li><li><a href="#method.is_vref_enabled">is_vref_enabled</a></li><li><a href="#method.isr">isr</a></li><li><a href="#method.mask_irq">mask_irq</a></li><li><a href="#method.new">new</a></li><li><a href="#method.new_no_init">new_no_init</a></li><li><a href="#method.pin">pin</a></li><li><a href="#method.pulse_reset">pulse_reset</a></li><li><a href="#method.set_clock_source">set_clock_source</a></li><li><a href="#method.set_ier">set_ier</a></li><li><a href="#method.set_isr">set_isr</a></li><li><a href="#method.set_max_sample_time">set_max_sample_time</a></li><li><a href="#method.set_sample_times">set_sample_times</a></li><li><a href="#method.start_calibrate">start_calibrate</a></li><li><a href="#method.start_chsel">start_chsel</a></li><li><a href="#method.start_conversion">start_conversion</a></li><li><a href="#method.start_disable">start_disable</a></li><li><a href="#method.start_enable">start_enable</a></li><li><a href="#method.steal">steal</a></li><li><a href="#method.stop_conversion">stop_conversion</a></li><li><a href="#method.temperature">temperature</a></li><li><a href="#method.unmask_irq">unmask_irq</a></li><li><a href="#method.vbat">vbat</a></li><li><a href="#method.vref">vref</a></li></ul></div><div class="block"><h3 class="sidebar-title"><a href="#trait-implementations">Trait Implementations</a></h3><ul><li><a href="#impl-Debug-for-Adc">Debug</a></li></ul></div><div class="block"><h3 class="sidebar-title"><a href="#synthetic-implementations">Auto Trait Implementations</a></h3><ul><li><a href="#impl-RefUnwindSafe-for-Adc">RefUnwindSafe</a></li><li><a href="#impl-Send-for-Adc">Send</a></li><li><a href="#impl-Sync-for-Adc">!Sync</a></li><li><a href="#impl-Unpin-for-Adc">Unpin</a></li><li><a href="#impl-UnwindSafe-for-Adc">UnwindSafe</a></li></ul></div><div class="block"><h3 class="sidebar-title"><a href="#blanket-implementations">Blanket Implementations</a></h3><ul><li><a href="#impl-Any-for-Adc">Any</a></li><li><a href="#impl-Borrow%3CT%3E-for-Adc">Borrow&lt;T&gt;</a></li><li><a href="#impl-BorrowMut%3CT%3E-for-Adc">BorrowMut&lt;T&gt;</a></li><li><a href="#impl-From%3CT%3E-for-Adc">From&lt;T&gt;</a></li><li><a href="#impl-Into%3CU%3E-for-Adc">Into&lt;U&gt;</a></li><li><a href="#impl-TryFrom%3CU%3E-for-Adc">TryFrom&lt;U&gt;</a></li><li><a href="#impl-TryInto%3CU%3E-for-Adc">TryInto&lt;U&gt;</a></li></ul></div></section><h2 class="location"><a href="index.html">In stm32wlxx_hal::adc</a></h2></div></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../stm32wlxx_hal/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
+                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
+                        </div></form></nav></div><section id="main-content" class="content"><div class="main-heading">
+    <h1 class="fqn"><span class="in-band">Struct <a href="../index.html">stm32wlxx_hal</a>::<wbr><a href="index.html">adc</a>::<wbr><a class="struct" href="#">Adc</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span></h1><span class="out-of-band"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#381-383">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><div class="docblock item-decl"><pre class="rust struct"><code>pub struct Adc { /* private fields */ }</code></pre></div><span class="item-info"><div class="stab portability">Available on <strong>non-crate feature <code>stm32wl5x_cm0p</code></strong> only.</div></span><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Analog to digital converter driver.</p>
+</div></details><h2 id="implementations" class="small-section-header">Implementations<a href="#implementations" class="anchor"></a></h2><div id="implementations-list"><details class="rustdoc-toggle implementors-toggle" open><summary><section id="impl-Adc" class="impl has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#386-1397">source</a></span><a href="#impl-Adc" class="anchor"></a><h3 class="code-header in-band">impl <a class="struct" href="struct.Adc.html" title="struct stm32wlxx_hal::adc::Adc">Adc</a></h3></section></summary><div class="impl-items"><details class="rustdoc-toggle method-toggle" open><summary><section id="method.new" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#425-431">source</a></span><h4 class="code-header">pub fn <a href="#method.new" class="fnname">new</a>(adc: <a class="struct" href="../pac/struct.ADC.html" title="struct stm32wlxx_hal::pac::ADC">ADC</a>, clk: <a class="enum" href="enum.Clk.html" title="enum stm32wlxx_hal::adc::Clk">Clk</a>, rcc: &amp;mut <a class="struct" href="../pac/struct.RCC.html" title="struct stm32wlxx_hal::pac::RCC">RCC</a>) -&gt; Self</h4></section></summary><div class="docblock"><p>Create a new ADC driver from a ADC peripheral.</p>
+<p>This will enable the ADC clock and reset the ADC peripheral.</p>
+<p><strong>Note:</strong> This will select the clock source, but you are responsible
+for enabling that clock source.</p>
+<h5 id="example"><a href="#example">Example</a></h5>
+<p>Initialize the ADC with HSI16.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// enable the HSI16 source clock</span>
+<span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">modify</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">hsion</span>().<span class="ident">set_bit</span>());
+<span class="kw">while</span> <span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">read</span>().<span class="ident">hsirdy</span>().<span class="ident">is_not_ready</span>() {}
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::RccHsi</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);</code></pre></div>
+<p>Initialize the ADC with PCLK/4.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::PClkDiv4</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.new_no_init" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#465-467">source</a></span><h4 class="code-header">pub const unsafe fn <a href="#method.new_no_init" class="fnname">new_no_init</a>(adc: <a class="struct" href="../pac/struct.ADC.html" title="struct stm32wlxx_hal::pac::ADC">ADC</a>) -&gt; Self</h4></section></summary><div class="docblock"><p>Create a new ADC driver from an ADC peripheral without initialization.</p>
+<p>This is a slightly safer version of <a href="struct.Adc.html#method.steal"><code>steal</code></a>.</p>
+<h5 id="safety"><a href="#safety">Safety</a></h5>
+<ol>
+<li>Reset the ADC peripheral if determinism is required.</li>
+<li>Enable the ADC peripheral clock before using the ADC.</li>
+<li>Select the clock source if a non-default clock is required.</li>
+</ol>
+<h5 id="example-1"><a href="#example-1">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// safety: nothing is using the peripheral</span>
+<span class="kw">unsafe</span> { <span class="ident">Adc::pulse_reset</span>(<span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>) };
+
+<span class="ident">Adc::enable_clock</span>(<span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+
+<span class="comment">// safety: ADC peripheral has been reset and clocks are enabled</span>
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span>: <span class="ident">Adc</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">Adc::new_no_init</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>) };
+
+<span class="comment">// select the ADC clock, optional</span>
+<span class="ident">adc</span>.<span class="ident">set_clock_source</span>(<span class="ident">adc::Clk::PClkDiv4</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.free" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#485-487">source</a></span><h4 class="code-header">pub fn <a href="#method.free" class="fnname">free</a>(self) -&gt; <a class="struct" href="../pac/struct.ADC.html" title="struct stm32wlxx_hal::pac::ADC">ADC</a></h4></section></summary><div class="docblock"><p>Free the ADC peripheral from the driver.</p>
+<h5 id="example-2"><a href="#example-2">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::PClkDiv4</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="comment">// ... use ADC</span>
+<span class="kw">let</span> <span class="ident">adc</span>: <span class="ident">pac::ADC</span> <span class="op">=</span> <span class="ident">adc</span>.<span class="ident">free</span>();</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.steal" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#524-528">source</a></span><h4 class="code-header">pub unsafe fn <a href="#method.steal" class="fnname">steal</a>() -&gt; <a class="struct" href="struct.Adc.html" title="struct stm32wlxx_hal::adc::Adc">Adc</a></h4></section></summary><div class="docblock"><p>Steal the ADC peripheral from whatever is currently using it.</p>
+<p>This will <strong>not</strong> initialize the ADC (unlike <a href="struct.Adc.html#method.new"><code>new</code></a>).</p>
+<h5 id="safety-1"><a href="#safety-1">Safety</a></h5>
+<ol>
+<li>Ensure that the code stealing the ADC has exclusive access to the
+peripheral. Singleton checks are bypassed with this method.</li>
+<li>Reset the ADC peripheral if determinism is required.</li>
+<li>Enable the ADC peripheral clock before using the ADC.</li>
+<li>Select the clock source if a non-default clock is required.</li>
+</ol>
+<h5 id="example-3"><a href="#example-3">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="kw">_</span>: <span class="ident">pac::ADC</span> <span class="op">=</span> <span class="ident">dp</span>.<span class="ident">ADC</span>;
+
+<span class="kw">unsafe</span> { <span class="ident">Adc::pulse_reset</span>(<span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>) };
+
+<span class="ident">Adc::enable_clock</span>(<span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span>: <span class="ident">Adc</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">Adc::steal</span>() };
+
+<span class="comment">// select the ADC clock, optional</span>
+<span class="ident">adc</span>.<span class="ident">set_clock_source</span>(<span class="ident">adc::Clk::PClkDiv4</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.set_clock_source" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#552-558">source</a></span><h4 class="code-header">pub fn <a href="#method.set_clock_source" class="fnname">set_clock_source</a>(&amp;mut self, clk: <a class="enum" href="enum.Clk.html" title="enum stm32wlxx_hal::adc::Clk">Clk</a>, rcc: &amp;mut <a class="struct" href="../pac/struct.RCC.html" title="struct stm32wlxx_hal::pac::RCC">RCC</a>)</h4></section></summary><div class="docblock"><p>Set the ADC clock source.</p>
+<h5 id="panics"><a href="#panics">Panics</a></h5>
+<ul>
+<li>(debug) ADC is enabled</li>
+</ul>
+<h5 id="example-4"><a href="#example-4">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span>: <span class="ident">Adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::PClkDiv4</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+
+<span class="comment">// change the clock source</span>
+<span class="ident">adc</span>.<span class="ident">disable</span>();
+<span class="ident">adc</span>.<span class="ident">set_clock_source</span>(<span class="ident">adc::Clk::PClkDiv4</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.clock_source" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#578-592">source</a></span><h4 class="code-header">pub fn <a href="#method.clock_source" class="fnname">clock_source</a>(&amp;self, rcc: &amp;<a class="struct" href="../pac/struct.RCC.html" title="struct stm32wlxx_hal::pac::RCC">RCC</a>) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="enum" href="enum.Clk.html" title="enum stm32wlxx_hal::adc::Clk">Clk</a>&gt;</h4></section></summary><div class="docblock"><p>Get the ADC clock source.</p>
+<p>Returns <code>None</code> if the ADC is configured for an asynchronous clock,
+but no asynchronous clock is selected.</p>
+<h5 id="example-5"><a href="#example-5">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span>: <span class="ident">Adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::PClkDiv4</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+
+<span class="macro">assert_eq!</span>(<span class="ident">adc</span>.<span class="ident">clock_source</span>(<span class="kw-2">&amp;</span><span class="ident">dp</span>.<span class="ident">RCC</span>), <span class="prelude-val">Some</span>(<span class="ident">adc::Clk::PClkDiv4</span>));</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.disable_clock" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#601-603">source</a></span><h4 class="code-header">pub unsafe fn <a href="#method.disable_clock" class="fnname">disable_clock</a>(rcc: &amp;mut <a class="struct" href="../pac/struct.RCC.html" title="struct stm32wlxx_hal::pac::RCC">RCC</a>)</h4></section></summary><div class="docblock"><p>Disable the ADC clock.</p>
+<h5 id="safety-2"><a href="#safety-2">Safety</a></h5>
+<ol>
+<li>Ensure nothing is using the ADC before disabling the clock.</li>
+<li>You are responsible for re-enabling the clock before using the ADC.</li>
+</ol>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.enable_clock" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#609-612">source</a></span><h4 class="code-header">pub fn <a href="#method.enable_clock" class="fnname">enable_clock</a>(rcc: &amp;mut <a class="struct" href="../pac/struct.RCC.html" title="struct stm32wlxx_hal::pac::RCC">RCC</a>)</h4></section></summary><div class="docblock"><p>Enable the ADC clock.</p>
+<p><a href="struct.Adc.html#method.new"><code>new</code></a> will enable clocks for you.</p>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.pulse_reset" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#623-626">source</a></span><h4 class="code-header">pub unsafe fn <a href="#method.pulse_reset" class="fnname">pulse_reset</a>(rcc: &amp;mut <a class="struct" href="../pac/struct.RCC.html" title="struct stm32wlxx_hal::pac::RCC">RCC</a>)</h4></section></summary><div class="docblock"><p>Pulse the ADC reset.</p>
+<p><a href="struct.Adc.html#method.new"><code>new</code></a> will pulse reset for you.</p>
+<h5 id="safety-3"><a href="#safety-3">Safety</a></h5>
+<ol>
+<li>Ensure nothing is using the ADC before calling this function.</li>
+<li>You are responsible for setting up the ADC after a reset.</li>
+</ol>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.clock_hz" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#652-698">source</a></span><h4 class="code-header">pub fn <a href="#method.clock_hz" class="fnname">clock_hz</a>(&amp;self, rcc: &amp;<a class="struct" href="../pac/struct.RCC.html" title="struct stm32wlxx_hal::pac::RCC">RCC</a>) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u32.html">u32</a></h4></section></summary><div class="docblock"><p>Calculate the ADC clock frequency in hertz.</p>
+<p><strong>Note:</strong> If the ADC prescaler register erroneously returns a reserved
+value the code will default to an ADC prescaler of 1.</p>
+<p>Fractional frequencies will be rounded towards zero.</p>
+<h5 id="example-6"><a href="#example-6">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// enable the HSI16 source clock</span>
+<span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">modify</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">hsion</span>().<span class="ident">set_bit</span>());
+<span class="kw">while</span> <span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">read</span>().<span class="ident">hsirdy</span>().<span class="ident">is_not_ready</span>() {}
+
+<span class="kw">let</span> <span class="ident">adc</span>: <span class="ident">Adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::RccHsi</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="macro">assert_eq!</span>(<span class="ident">adc</span>.<span class="ident">clock_hz</span>(<span class="kw-2">&amp;</span><span class="ident">dp</span>.<span class="ident">RCC</span>), <span class="number">16_000_000</span>);</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.unmask_irq" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#714-716">source</a></span><h4 class="code-header">pub unsafe fn <a href="#method.unmask_irq" class="fnname">unmask_irq</a>()</h4></section><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>rt</code></strong> only.</div></span></summary><div class="docblock"><p>Unmask the ADC IRQ in the NVIC.</p>
+<h5 id="safety-4"><a href="#safety-4">Safety</a></h5>
+<p>This can break mask-based critical sections.</p>
+<h5 id="example-7"><a href="#example-7">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">unsafe</span> { <span class="ident">stm32wlxx_hal::adc::Adc::unmask_irq</span>() };</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.mask_irq" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#728-730">source</a></span><h4 class="code-header">pub fn <a href="#method.mask_irq" class="fnname">mask_irq</a>()</h4></section><span class="item-info"><div class="stab portability">Available on <strong>crate feature <code>rt</code></strong> only.</div></span></summary><div class="docblock"><p>Mask the ADC IRQ in the NVIC.</p>
+<h5 id="example-8"><a href="#example-8">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">unsafe</span> { <span class="ident">stm32wlxx_hal::adc::Adc::mask_irq</span>() }</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.set_sample_times" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#772-777">source</a></span><h4 class="code-header">pub fn <a href="#method.set_sample_times" class="fnname">set_sample_times</a>(&amp;mut self, mask: <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u32.html">u32</a>, sel0: <a class="enum" href="enum.Ts.html" title="enum stm32wlxx_hal::adc::Ts">Ts</a>, sel1: <a class="enum" href="enum.Ts.html" title="enum stm32wlxx_hal::adc::Ts">Ts</a>)</h4></section></summary><div class="docblock"><p>Set sample times for <strong>all</strong> channels.</p>
+<p>For each bit in the mask:</p>
+<ul>
+<li><code>0</code>: Sample time is set by the <code>sel0</code> argument.</li>
+<li><code>1</code>: Sample time is set by the <code>sel1</code> argument.</li>
+</ul>
+<h5 id="panics-1"><a href="#panics-1">Panics</a></h5>
+<ul>
+<li>(debug) An ADC conversion is in-progress</li>
+</ul>
+<h5 id="example-9"><a href="#example-9">Example</a></h5>
+<p>Set ADC channels <a href="enum.Ch.html#variant.In0"><code>In0</code></a> and <a href="enum.Ch.html#variant.In1"><code>In1</code></a> (pins <a href="../gpio/pins/struct.B13.html"><code>B13</code></a> and <a href="../gpio/pins/struct.B14.html"><code>B14</code></a>
+respectively) and the internal V<sub>BAT</sub> to a sample time of
+39.5 ADC clock cycles, and set all other channels to a sample time of
+160.5 clock cycles.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="self">self</span> <span class="kw">as</span> <span class="ident">hal</span>,
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>, <span class="ident">Ts</span>},
+    <span class="ident">gpio::pins</span>::{<span class="ident">B13</span>, <span class="ident">B14</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::PClkDiv4</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="ident">adc</span>.<span class="ident">set_sample_times</span>(
+    <span class="ident">B14::ADC_CH</span>.<span class="ident">mask</span>() <span class="op">|</span> <span class="ident">B13::ADC_CH</span>.<span class="ident">mask</span>() <span class="op">|</span> <span class="ident">adc::Ch::Vbat</span>.<span class="ident">mask</span>(),
+    <span class="ident">Ts::Cyc160</span>,
+    <span class="ident">Ts::Cyc39</span>,
+);</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.set_max_sample_time" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#806-808">source</a></span><h4 class="code-header">pub fn <a href="#method.set_max_sample_time" class="fnname">set_max_sample_time</a>(&amp;mut self)</h4></section></summary><div class="docblock"><p>Sets all channels to the maximum sample time.</p>
+<p>This is a helper for testing and rapid prototyping purpose because
+<a href="struct.Adc.html#method.set_sample_times"><code>set_sample_times</code></a> is verbose.</p>
+<p>This method is equivalent to this:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal::adc::Ts</span>;
+
+<span class="ident">adc</span>.<span class="ident">set_sample_times</span>(<span class="number">0</span>, <span class="ident">Ts::Cyc160</span>, <span class="ident">Ts::Cyc160</span>);</code></pre></div>
+<h5 id="example-10"><a href="#example-10">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::PClkDiv4</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="ident">adc</span>.<span class="ident">set_max_sample_time</span>();</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.set_isr" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#827-830">source</a></span><h4 class="code-header">pub fn <a href="#method.set_isr" class="fnname">set_isr</a>(&amp;mut self, isr: <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u32.html">u32</a>)</h4></section></summary><div class="docblock"><p>Clear interrupts.</p>
+<h5 id="example-11"><a href="#example-11">Example</a></h5>
+<p>Clear all interrupts.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::PClkDiv4</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="ident">adc</span>.<span class="ident">set_isr</span>(<span class="ident">adc::irq::ALL</span>);</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.isr" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#850-853">source</a></span><h4 class="code-header">pub fn <a href="#method.isr" class="fnname">isr</a>() -&gt; <a class="struct" href="../pac/adc/isr/struct.R.html" title="struct stm32wlxx_hal::pac::adc::isr::R">R</a></h4></section></summary><div class="docblock"><p>Read the interrupt status.</p>
+<h5 id="example-12"><a href="#example-12">Example</a></h5>
+<p>Check if the ADC is ready.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::PClkDiv4</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="comment">// this will be false because the ADC is not enabled</span>
+<span class="kw">let</span> <span class="ident">ready</span>: <span class="ident">bool</span> <span class="op">=</span> <span class="ident">Adc::isr</span>().<span class="ident">adrdy</span>().<span class="ident">is_ready</span>();</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.set_ier" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#872-875">source</a></span><h4 class="code-header">pub fn <a href="#method.set_ier" class="fnname">set_ier</a>(&amp;mut self, ier: <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u32.html">u32</a>)</h4></section></summary><div class="docblock"><p>Enable and disable interrupts.</p>
+<h5 id="example-13"><a href="#example-13">Example</a></h5>
+<p>Enable all IRQs</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::PClkDiv4</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="ident">adc</span>.<span class="ident">set_ier</span>(<span class="ident">adc::irq::ALL</span>);</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.start_chsel" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#909-916">source</a></span><h4 class="code-header">pub fn <a href="#method.start_chsel" class="fnname">start_chsel</a>(&amp;mut self, ch: <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u32.html">u32</a>)</h4></section></summary><div class="docblock"><p>Configure the channel sequencer.</p>
+<p>This is advanced ADC usage, most of the time you will want to use a
+one of the available sample methods that will configure this.</p>
+<ul>
+<li><a href="struct.Adc.html#method.pin"><code>pin</code></a></li>
+<li><a href="struct.Adc.html#method.temperature"><code>temperature</code></a></li>
+<li><a href="struct.Adc.html#method.vbat"><code>vbat</code></a></li>
+</ul>
+<p>This will not poll for completion, when this method returns the channel
+configuration may not be ready.</p>
+<h5 id="panics-2"><a href="#panics-2">Panics</a></h5>
+<ul>
+<li>(debug) ADC conversion is in-progress.</li>
+</ul>
+<h5 id="example-14"><a href="#example-14">Example</a></h5>
+<p>Select the ADC V<sub>BAT</sub> channel.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::PClkDiv4</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="ident">adc</span>.<span class="ident">start_chsel</span>(<span class="ident">adc::Ch::Vbat</span>.<span class="ident">mask</span>());
+<span class="kw">while</span> <span class="ident">Adc::isr</span>().<span class="ident">ccrdy</span>().<span class="ident">is_not_complete</span>() {}</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.start_conversion" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#945-949">source</a></span><h4 class="code-header">pub fn <a href="#method.start_conversion" class="fnname">start_conversion</a>(&amp;mut self)</h4></section></summary><div class="docblock"><p>Start an ADC conversion.</p>
+<p>This is advanced ADC usage, most of the time you will want to use a
+one of the available sample methods that will configure this.</p>
+<ul>
+<li><a href="struct.Adc.html#method.pin"><code>pin</code></a></li>
+<li><a href="struct.Adc.html#method.temperature"><code>temperature</code></a></li>
+<li><a href="struct.Adc.html#method.vbat"><code>vbat</code></a></li>
+</ul>
+<p>This will not poll for completion, when this method returns the AD
+conversion may not be complete.</p>
+<h5 id="panics-3"><a href="#panics-3">Panics</a></h5>
+<ul>
+<li>(debug) ADC is not enabled</li>
+<li>(debug) ADC has a pending disable request</li>
+</ul>
+<h5 id="example-15"><a href="#example-15">Example</a></h5>
+<p>See <a href="struct.Adc.html#method.data"><code>data</code></a>.</p>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.stop_conversion" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#952-957">source</a></span><h4 class="code-header">pub fn <a href="#method.stop_conversion" class="fnname">stop_conversion</a>(&amp;mut self)</h4></section></summary><div class="docblock"><p>Stop an ADC conversion if there is one in-progress.</p>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.data" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1010-1012">source</a></span><h4 class="code-header">pub fn <a href="#method.data" class="fnname">data</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u16.html">u16</a></h4></section></summary><div class="docblock"><p>Read the ADC conversion data.</p>
+<p>This is advanced ADC usage, most of the time you will want to use a
+one of the available sample methods.</p>
+<ul>
+<li><a href="struct.Adc.html#method.pin"><code>pin</code></a></li>
+<li><a href="struct.Adc.html#method.temperature"><code>temperature</code></a></li>
+<li><a href="struct.Adc.html#method.vbat"><code>vbat</code></a></li>
+</ul>
+<h5 id="example-16"><a href="#example-16">Example</a></h5>
+<p>Read the ADC V<sub>BAT</sub> channel.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>,
+    <span class="ident">util::new_delay</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="ident">cp</span>: <span class="ident">pac::CorePeripherals</span> <span class="op">=</span> <span class="ident">pac::CorePeripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// enable the HSI16 source clock</span>
+<span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">modify</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">hsion</span>().<span class="ident">set_bit</span>());
+<span class="kw">while</span> <span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">read</span>().<span class="ident">hsirdy</span>().<span class="ident">is_not_ready</span>() {}
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">delay</span> <span class="op">=</span> <span class="ident">new_delay</span>(<span class="ident">cp</span>.<span class="ident">SYST</span>, <span class="kw-2">&amp;</span><span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::RccHsi</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+
+<span class="comment">// calibrate the ADC before it is enabled</span>
+<span class="ident">adc</span>.<span class="ident">calibrate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">delay</span>);
+
+<span class="comment">// enable the ADC</span>
+<span class="ident">adc</span>.<span class="ident">enable</span>();
+
+<span class="comment">// set the sample times to the maximum (160.5 ADC cycles)</span>
+<span class="ident">adc</span>.<span class="ident">set_max_sample_time</span>();
+
+<span class="comment">// select the Vbat channel and poll for completion</span>
+<span class="ident">adc</span>.<span class="ident">start_chsel</span>(<span class="ident">adc::Ch::Vbat</span>.<span class="ident">mask</span>());
+<span class="kw">while</span> <span class="ident">Adc::isr</span>().<span class="ident">ccrdy</span>().<span class="ident">is_not_complete</span>() {}
+
+<span class="comment">// start the conversion and poll for completion</span>
+<span class="ident">adc</span>.<span class="ident">start_conversion</span>();
+<span class="kw">while</span> <span class="ident">Adc::isr</span>().<span class="ident">eoc</span>().<span class="ident">is_not_complete</span>() {}
+
+<span class="comment">// read the ADC data</span>
+<span class="kw">let</span> <span class="ident">vbat</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="ident">adc</span>.<span class="ident">data</span>();</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.enable_tsen" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1050-1052">source</a></span><h4 class="code-header">pub fn <a href="#method.enable_tsen" class="fnname">enable_tsen</a>(&amp;mut self)</h4></section></summary><div class="docblock"><p>Enable the temperature sensor.</p>
+<p>You <strong>MUST</strong> wait for the temperature sensor to start up
+(<a href="constant.TS_START_TYP.html" title="TS_START_TYP"><code>TS_START_TYP</code></a> or <a href="constant.TS_START_MAX.html" title="TS_START_MAX"><code>TS_START_MAX</code></a>)
+before the samples will be accurate.</p>
+<h5 id="example-17"><a href="#example-17">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>, <span class="ident">rcc</span>,
+    <span class="ident">util::new_delay</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="ident">cp</span>: <span class="ident">pac::CorePeripherals</span> <span class="op">=</span> <span class="ident">pac::CorePeripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// enable the HSI16 source clock</span>
+<span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">modify</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">hsion</span>().<span class="ident">set_bit</span>());
+<span class="kw">while</span> <span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">read</span>().<span class="ident">hsirdy</span>().<span class="ident">is_not_ready</span>() {}
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">delay</span> <span class="op">=</span> <span class="ident">new_delay</span>(<span class="ident">cp</span>.<span class="ident">SYST</span>, <span class="kw-2">&amp;</span><span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::RccHsi</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="ident">adc</span>.<span class="ident">enable_tsen</span>();
+<span class="comment">// wait for the temperature sensor to startup</span>
+<span class="ident">delay</span>.<span class="ident">delay_us</span>(<span class="ident">adc::TS_START_MAX</span>.<span class="ident">as_micros</span>() <span class="kw">as</span> <span class="ident">u32</span>);</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.disable_tsen" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1056-1058">source</a></span><h4 class="code-header">pub fn <a href="#method.disable_tsen" class="fnname">disable_tsen</a>(&amp;mut self)</h4></section></summary><div class="docblock"><p>Disable the temperature sensor.</p>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.is_tsen_enabled" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1063-1065">source</a></span><h4 class="code-header">pub fn <a href="#method.is_tsen_enabled" class="fnname">is_tsen_enabled</a>(&amp;mut self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>Returns <code>true</code> if the temperature sensor is enabled.</p>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.temperature" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1119-1134">source</a></span><h4 class="code-header">pub fn <a href="#method.temperature" class="fnname">temperature</a>(&amp;mut self) -&gt; <a class="struct" href="../struct.Ratio.html" title="struct stm32wlxx_hal::Ratio">Ratio</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.i16.html">i16</a>&gt;</h4></section></summary><div class="docblock"><p>Get the junction temperature.</p>
+<h5 id="panics-4"><a href="#panics-4">Panics</a></h5>
+<ul>
+<li>(debug) ADC is not enabled</li>
+<li>(debug) ADC has a pending disable request</li>
+<li>(debug) Temperature sensor is not enabled</li>
+</ul>
+<h5 id="sample-time"><a href="#sample-time">Sample Time</a></h5>
+<p>You must set a sampling time with
+<a href="struct.Adc.html#method.set_sample_times"><code>set_sample_times</code></a> greater than or equal to
+<a href="constant.TS_MIN_SAMPLE.html" title="TS_MIN_SAMPLE"><code>TS_MIN_SAMPLE</code></a> before calling this method.
+When in doubt use the maximum sampling time, <a href="enum.Ts.html#variant.Cyc160" title="Ts::Cyc160"><code>Ts::Cyc160</code></a>.</p>
+<h5 id="calibration"><a href="#calibration">Calibration</a></h5>
+<p>The temperature calibration provided on-chip appears to be for an
+uncalibrated ADC, though I can find no mention of this in the
+datasheet.</p>
+<p>If the ADC has been calibrated with <a href="struct.Adc.html#method.calibrate"><code>calibrate</code></a> the calibration offset
+will be removed from the sample.</p>
+<h5 id="example-18"><a href="#example-18">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>, <span class="ident">rcc</span>,
+    <span class="ident">util::new_delay</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="ident">cp</span>: <span class="ident">pac::CorePeripherals</span> <span class="op">=</span> <span class="ident">pac::CorePeripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// enable the HSI16 source clock</span>
+<span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">modify</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">hsion</span>().<span class="ident">set_bit</span>());
+<span class="kw">while</span> <span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">read</span>().<span class="ident">hsirdy</span>().<span class="ident">is_not_ready</span>() {}
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">delay</span> <span class="op">=</span> <span class="ident">new_delay</span>(<span class="ident">cp</span>.<span class="ident">SYST</span>, <span class="kw-2">&amp;</span><span class="ident">dp</span>.<span class="ident">RCC</span>);
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::RccHsi</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="ident">adc</span>.<span class="ident">enable</span>();
+<span class="ident">adc</span>.<span class="ident">enable_tsen</span>();
+<span class="ident">delay</span>.<span class="ident">delay_us</span>(<span class="ident">adc::TS_START_MAX</span>.<span class="ident">as_micros</span>() <span class="kw">as</span> <span class="ident">u32</span>);
+<span class="ident">adc</span>.<span class="ident">set_max_sample_time</span>();
+
+<span class="kw">let</span> <span class="ident">tj</span>: <span class="ident">i16</span> <span class="op">=</span> <span class="ident">adc</span>.<span class="ident">temperature</span>().<span class="ident">to_integer</span>();</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.enable_vref" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1138-1140">source</a></span><h4 class="code-header">pub fn <a href="#method.enable_vref" class="fnname">enable_vref</a>(&amp;mut self)</h4></section></summary><div class="docblock"><p>Enable the internal voltage reference.</p>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.disable_vref" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1144-1146">source</a></span><h4 class="code-header">pub fn <a href="#method.disable_vref" class="fnname">disable_vref</a>(&amp;mut self)</h4></section></summary><div class="docblock"><p>Disable the internal voltage reference.</p>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.is_vref_enabled" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1151-1153">source</a></span><h4 class="code-header">pub fn <a href="#method.is_vref_enabled" class="fnname">is_vref_enabled</a>(&amp;mut self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>Returns <code>true</code> if the internal voltage reference is enabled.</p>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.enable_oversampling" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1162-1172">source</a></span><h4 class="code-header">pub fn <a href="#method.enable_oversampling" class="fnname">enable_oversampling</a>(<br>&nbsp;&nbsp;&nbsp;&nbsp;&amp;mut self,<br>&nbsp;&nbsp;&nbsp;&nbsp;ratio: <a class="enum" href="../pac/adc/cfgr2/enum.OVSR_A.html" title="enum stm32wlxx_hal::pac::adc::cfgr2::OVSR_A">OversampleRatio</a>,<br>&nbsp;&nbsp;&nbsp;&nbsp;shift: <a class="enum" href="../pac/adc/cfgr2/enum.OVSS_A.html" title="enum stm32wlxx_hal::pac::adc::cfgr2::OVSS_A">OversampleShift</a><br>)</h4></section></summary><div class="docblock"><p>Enable oversampling.</p>
+<h5 id="panics-5"><a href="#panics-5">Panics</a></h5>
+<ul>
+<li>(debug) ADC is enabled</li>
+</ul>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.disable_oversampling" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1180-1183">source</a></span><h4 class="code-header">pub fn <a href="#method.disable_oversampling" class="fnname">disable_oversampling</a>(&amp;mut self)</h4></section></summary><div class="docblock"><p>Disables oversampling.</p>
+<h5 id="panics-6"><a href="#panics-6">Panics</a></h5>
+<ul>
+<li>(debug) ADC is enabled</li>
+</ul>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.is_oversampling_enabled" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1188-1190">source</a></span><h4 class="code-header">pub fn <a href="#method.is_oversampling_enabled" class="fnname">is_oversampling_enabled</a>(&amp;mut self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>Returns <code>true</code> if oversampling is enabled.</p>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.vref" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1229-1235">source</a></span><h4 class="code-header">pub fn <a href="#method.vref" class="fnname">vref</a>(&amp;mut self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u16.html">u16</a></h4></section></summary><div class="docblock"><p>Read the internal voltage reference.</p>
+<h5 id="panics-7"><a href="#panics-7">Panics</a></h5>
+<ul>
+<li>(debug) ADC is not enabled</li>
+<li>(debug) ADC has a pending disable request</li>
+<li>(debug) Voltage reference is not enabled</li>
+</ul>
+<h5 id="example-19"><a href="#example-19">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>, <span class="ident">rcc</span>,
+    <span class="ident">util::new_delay</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="ident">cp</span>: <span class="ident">pac::CorePeripherals</span> <span class="op">=</span> <span class="ident">pac::CorePeripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// enable the HSI16 source clock</span>
+<span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">modify</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">hsion</span>().<span class="ident">set_bit</span>());
+<span class="kw">while</span> <span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">read</span>().<span class="ident">hsirdy</span>().<span class="ident">is_not_ready</span>() {}
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">delay</span> <span class="op">=</span> <span class="ident">new_delay</span>(<span class="ident">cp</span>.<span class="ident">SYST</span>, <span class="kw-2">&amp;</span><span class="ident">dp</span>.<span class="ident">RCC</span>);
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::RccHsi</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="ident">adc</span>.<span class="ident">calibrate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">delay</span>);
+<span class="ident">adc</span>.<span class="ident">set_max_sample_time</span>();
+<span class="ident">adc</span>.<span class="ident">enable</span>();
+<span class="ident">adc</span>.<span class="ident">enable_vref</span>();
+
+<span class="kw">let</span> <span class="ident">vref</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="ident">adc</span>.<span class="ident">vref</span>();
+<span class="kw">let</span> <span class="ident">vref_cal</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="ident">adc::vref_cal</span>();
+<span class="kw">let</span> <span class="ident">error</span>: <span class="ident">i16</span> <span class="op">=</span> ((<span class="ident">vref</span> <span class="kw">as</span> <span class="ident">i16</span>) <span class="op">-</span> (<span class="ident">vref_cal</span> <span class="kw">as</span> <span class="ident">i16</span>)).<span class="ident">abs</span>();
+<span class="macro">assert!</span>(<span class="ident">error</span> <span class="op">&lt;</span> <span class="number">10</span>);</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.dac" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1278-1283">source</a></span><h4 class="code-header">pub fn <a href="#method.dac" class="fnname">dac</a>(&amp;mut self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u16.html">u16</a></h4></section></summary><div class="docblock"><p>Sample the DAC output.</p>
+<p>The DAC must be configured to output to chip peripherals for this to
+work as expected.</p>
+<h5 id="panics-8"><a href="#panics-8">Panics</a></h5>
+<ul>
+<li>(debug) ADC is not enabled</li>
+<li>(debug) ADC has a pending disable request</li>
+</ul>
+<h5 id="example-20"><a href="#example-20">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">dac</span>::{<span class="ident">Dac</span>, <span class="ident">ModeChip</span>},
+    <span class="ident">pac</span>, <span class="ident">rcc</span>,
+    <span class="ident">util::new_delay</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="ident">cp</span>: <span class="ident">pac::CorePeripherals</span> <span class="op">=</span> <span class="ident">pac::CorePeripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// enable the HSI16 source clock</span>
+<span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">modify</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">hsion</span>().<span class="ident">set_bit</span>());
+<span class="kw">while</span> <span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">read</span>().<span class="ident">hsirdy</span>().<span class="ident">is_not_ready</span>() {}
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">delay</span> <span class="op">=</span> <span class="ident">new_delay</span>(<span class="ident">cp</span>.<span class="ident">SYST</span>, <span class="kw-2">&amp;</span><span class="ident">dp</span>.<span class="ident">RCC</span>);
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::RccHsi</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="ident">adc</span>.<span class="ident">calibrate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">delay</span>);
+<span class="ident">adc</span>.<span class="ident">set_max_sample_time</span>();
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dac</span>: <span class="ident">Dac</span> <span class="op">=</span> <span class="ident">Dac::new</span>(<span class="ident">dp</span>.<span class="ident">DAC</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="ident">dac</span>.<span class="ident">set_mode_chip</span>(<span class="ident">ModeChip::Norm</span>);
+
+<span class="ident">dac</span>.<span class="ident">setup_soft_trigger</span>();
+<span class="ident">dac</span>.<span class="ident">soft_trigger</span>(<span class="number">1234</span>);
+<span class="comment">// should be in the same ballpark as the DAC output</span>
+<span class="kw">let</span> <span class="ident">sample</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="ident">adc</span>.<span class="ident">dac</span>();</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.pin" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1322-1327">source</a></span><h4 class="code-header">pub fn <a href="#method.pin" class="fnname">pin</a>&lt;P:&nbsp;AdcCh&gt;(&amp;mut self, pin: &amp;<a class="struct" href="../gpio/struct.Analog.html" title="struct stm32wlxx_hal::gpio::Analog">Analog</a>&lt;P&gt;) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u16.html">u16</a></h4></section></summary><div class="docblock"><p>Sample a GPIO pin.</p>
+<h5 id="panics-9"><a href="#panics-9">Panics</a></h5>
+<ul>
+<li>(debug) ADC is not enabled</li>
+<li>(debug) ADC has a pending disable request</li>
+</ul>
+<h5 id="example-21"><a href="#example-21">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">gpio</span>::{<span class="ident">pins::B4</span>, <span class="ident">Analog</span>, <span class="ident">PortB</span>},
+    <span class="ident">pac</span>, <span class="ident">rcc</span>,
+    <span class="ident">util::new_delay</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="ident">cp</span>: <span class="ident">pac::CorePeripherals</span> <span class="op">=</span> <span class="ident">pac::CorePeripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// enable the HSI16 source clock</span>
+<span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">modify</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">hsion</span>().<span class="ident">set_bit</span>());
+<span class="kw">while</span> <span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">read</span>().<span class="ident">hsirdy</span>().<span class="ident">is_not_ready</span>() {}
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">delay</span> <span class="op">=</span> <span class="ident">new_delay</span>(<span class="ident">cp</span>.<span class="ident">SYST</span>, <span class="kw-2">&amp;</span><span class="ident">dp</span>.<span class="ident">RCC</span>);
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::RccHsi</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="ident">adc</span>.<span class="ident">calibrate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">delay</span>);
+<span class="ident">adc</span>.<span class="ident">set_max_sample_time</span>();
+<span class="ident">adc</span>.<span class="ident">enable</span>();
+
+<span class="kw">let</span> <span class="ident">gpiob</span>: <span class="ident">PortB</span> <span class="op">=</span> <span class="ident">PortB::split</span>(<span class="ident">dp</span>.<span class="ident">GPIOB</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="kw">let</span> <span class="ident">b4</span>: <span class="ident">Analog</span><span class="op">&lt;</span><span class="ident">B4</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">cortex_m::interrupt::free</span>(<span class="op">|</span><span class="ident">cs</span><span class="op">|</span> <span class="ident">Analog::new</span>(<span class="ident">gpiob</span>.<span class="ident">b4</span>, <span class="ident">cs</span>));
+
+<span class="kw">let</span> <span class="ident">sample</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="ident">adc</span>.<span class="ident">pin</span>(<span class="kw-2">&amp;</span><span class="ident">b4</span>);</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.enable_vbat" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1334-1336">source</a></span><h4 class="code-header">pub fn <a href="#method.enable_vbat" class="fnname">enable_vbat</a>(&amp;mut self)</h4></section></summary><div class="docblock"><p>Enable V<sub>BAT</sub>.</p>
+<p>To prevent any unwanted consumption on the battery, it is recommended to
+enable the bridge divider only when needed for ADC conversion.</p>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.disable_vbat" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1340-1342">source</a></span><h4 class="code-header">pub fn <a href="#method.disable_vbat" class="fnname">disable_vbat</a>(&amp;mut self)</h4></section></summary><div class="docblock"><p>Disable V<sub>BAT</sub>.</p>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.is_vbat_enabled" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1347-1349">source</a></span><h4 class="code-header">pub fn <a href="#method.is_vbat_enabled" class="fnname">is_vbat_enabled</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>Returns <code>true</code> if V<sub>BAT</sub> is enabled.</p>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.vbat" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1390-1396">source</a></span><h4 class="code-header">pub fn <a href="#method.vbat" class="fnname">vbat</a>(&amp;mut self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u16.html">u16</a></h4></section></summary><div class="docblock"><p>Sample the V<sub>BAT</sub> pin.</p>
+<p>This is internally connected to a bridge divider, the converted digital
+value is a third the V<sub>BAT</sub> voltage.</p>
+<h5 id="panics-10"><a href="#panics-10">Panics</a></h5>
+<ul>
+<li>(debug) ADC is not enabled</li>
+<li>(debug) ADC has a pending disable request</li>
+<li>(debug) V<sub>BAT</sub> is not enabled</li>
+</ul>
+<h5 id="example-22"><a href="#example-22">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="self">self</span> <span class="kw">as</span> <span class="ident">hal</span>,
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">dac</span>::{<span class="ident">Dac</span>, <span class="ident">ModeChip</span>},
+    <span class="ident">pac</span>, <span class="ident">rcc</span>,
+    <span class="ident">util::new_delay</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="ident">cp</span>: <span class="ident">pac::CorePeripherals</span> <span class="op">=</span> <span class="ident">pac::CorePeripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// enable the HSI16 source clock</span>
+<span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">modify</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">hsion</span>().<span class="ident">set_bit</span>());
+<span class="kw">while</span> <span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">read</span>().<span class="ident">hsirdy</span>().<span class="ident">is_not_ready</span>() {}
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">delay</span> <span class="op">=</span> <span class="ident">new_delay</span>(<span class="ident">cp</span>.<span class="ident">SYST</span>, <span class="kw-2">&amp;</span><span class="ident">dp</span>.<span class="ident">RCC</span>);
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::RccHsi</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="ident">adc</span>.<span class="ident">calibrate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">delay</span>);
+
+<span class="ident">adc</span>.<span class="ident">enable</span>();
+<span class="ident">adc</span>.<span class="ident">enable_vbat</span>();
+<span class="ident">adc</span>.<span class="ident">set_max_sample_time</span>();
+<span class="kw">let</span> <span class="ident">sample</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="ident">adc</span>.<span class="ident">vbat</span>();</code></pre></div>
+</div></details></div></details><details class="rustdoc-toggle implementors-toggle" open><summary><section id="impl-Adc-1" class="impl has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1402-1592">source</a></span><a href="#impl-Adc-1" class="anchor"></a><h3 class="code-header in-band">impl <a class="struct" href="struct.Adc.html" title="struct stm32wlxx_hal::adc::Adc">Adc</a></h3></section></summary><div class="impl-items"><details class="rustdoc-toggle method-toggle" open><summary><section id="method.is_enabled" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1424-1426">source</a></span><h4 class="code-header">pub fn <a href="#method.is_enabled" class="fnname">is_enabled</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>Returns <code>true</code> if the ADC is enabled.</p>
+<h5 id="example-23"><a href="#example-23">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// enable the HSI16 source clock</span>
+<span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">modify</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">hsion</span>().<span class="ident">set_bit</span>());
+<span class="kw">while</span> <span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">read</span>().<span class="ident">hsirdy</span>().<span class="ident">is_not_ready</span>() {}
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::RccHsi</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="macro">assert_eq!</span>(<span class="ident">adc</span>.<span class="ident">is_enabled</span>(), <span class="bool-val">false</span>);</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.disable_in_progress" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1431-1433">source</a></span><h4 class="code-header">pub fn <a href="#method.disable_in_progress" class="fnname">disable_in_progress</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>Returns <code>true</code> if an ADC disable command is in-progress.</p>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.is_disabled" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1457-1460">source</a></span><h4 class="code-header">pub fn <a href="#method.is_disabled" class="fnname">is_disabled</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>Returns <code>true</code> if the ADC is disabled, and there is no disable command
+in-progress.</p>
+<h5 id="example-24"><a href="#example-24">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// enable the HSI16 source clock</span>
+<span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">modify</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">hsion</span>().<span class="ident">set_bit</span>());
+<span class="kw">while</span> <span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">read</span>().<span class="ident">hsirdy</span>().<span class="ident">is_not_ready</span>() {}
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::RccHsi</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="macro">assert_eq!</span>(<span class="ident">adc</span>.<span class="ident">is_disabled</span>(), <span class="bool-val">true</span>);</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.start_enable" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1492-1500">source</a></span><h4 class="code-header">pub fn <a href="#method.start_enable" class="fnname">start_enable</a>(&amp;mut self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>Start the ADC enable procedure.</p>
+<p>This is advanced ADC usage, most of the time you will want to use
+<a href="struct.Adc.html#method.enable"><code>enable</code></a>.</p>
+<p>This will not poll for completion, when this method returns the ADC
+may not be enabled.</p>
+<p>The method returns <code>true</code> if the caller function should poll for
+completion (the ADC was not already enabled),
+if the ADC was already enabled and the ADRDY interrupt was cleared then
+the ADRDY bit will <strong>not</strong> be set again after calling this method
+which can lead to polling loops that will never terminate.</p>
+<h5 id="example-25"><a href="#example-25">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::PClkDiv4</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="kw">if</span> <span class="ident">adc</span>.<span class="ident">start_enable</span>() {
+    <span class="kw">while</span> <span class="ident">Adc::isr</span>().<span class="ident">adrdy</span>().<span class="ident">is_not_ready</span>() {}
+}</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.enable" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1517-1521">source</a></span><h4 class="code-header">pub fn <a href="#method.enable" class="fnname">enable</a>(&amp;mut self)</h4></section></summary><div class="docblock"><p>Enable the ADC and poll for completion.</p>
+<h5 id="example-26"><a href="#example-26">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::PClkDiv4</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="ident">adc</span>.<span class="ident">enable</span>();</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.start_disable" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1551-1570">source</a></span><h4 class="code-header">pub fn <a href="#method.start_disable" class="fnname">start_disable</a>(&amp;mut self)</h4></section></summary><div class="docblock"><p>Start the ADC disable procedure.</p>
+<p>This is advanced ADC usage, most of the time you will want to use
+<a href="struct.Adc.html#method.disable"><code>disable</code></a>.</p>
+<p>This will not poll for completion, when this function returns the ADC
+may not be disabled.</p>
+<p>This will stop any conversions in-progress.</p>
+<p>The ADC takes about 20 CPU cycles to disable with a 48MHz sysclk and
+the ADC on the 16MHz HSI clock.</p>
+<h5 id="example-27"><a href="#example-27">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::PClkDiv4</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="ident">adc</span>.<span class="ident">enable</span>();
+<span class="comment">// ... use ADC</span>
+<span class="ident">adc</span>.<span class="ident">start_disable</span>();
+<span class="kw">while</span> <span class="op">!</span><span class="ident">adc</span>.<span class="ident">is_disabled</span>() {}</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.disable" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1588-1591">source</a></span><h4 class="code-header">pub fn <a href="#method.disable" class="fnname">disable</a>(&amp;mut self)</h4></section></summary><div class="docblock"><p>Disable the ADC and poll for completion.</p>
+<h5 id="example-28"><a href="#example-28">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::PClkDiv4</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="ident">adc</span>.<span class="ident">enable</span>();
+<span class="comment">// ... use ADC</span>
+<span class="ident">adc</span>.<span class="ident">disable</span>();</code></pre></div>
+</div></details></div></details><details class="rustdoc-toggle implementors-toggle" open><summary><section id="impl-Adc-2" class="impl has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1597-1822">source</a></span><a href="#impl-Adc-2" class="anchor"></a><h3 class="code-header in-band">impl <a class="struct" href="struct.Adc.html" title="struct stm32wlxx_hal::adc::Adc">Adc</a></h3></section></summary><div class="impl-items"><details class="rustdoc-toggle method-toggle" open><summary><section id="method.calibrate" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1640-1651">source</a></span><h4 class="code-header">pub fn <a href="#method.calibrate" class="fnname">calibrate</a>&lt;D:&nbsp;DelayUs&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u8.html">u8</a>&gt;&gt;(&amp;mut self, delay: <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.reference.html">&amp;mut </a>D)</h4></section></summary><div class="docblock"><p>Calibrate the ADC for additional accuracy.</p>
+<p>Calibration should be performed before starting A/D conversion.
+It removes the offset error which may vary from chip to chip due to
+process variation.</p>
+<p>The calibration factor is lost in the following cases:</p>
+<ul>
+<li>The power supply is removed from the ADC
+(for example when entering STANDBY or VBAT mode)</li>
+<li>The ADC peripheral is reset.</li>
+</ul>
+<p>This will disable the ADC if it is not already disabled.</p>
+<p>This function is the simple way to calibrate the ADC, you can use
+these methods to achieve the same results if you desire finer controls:</p>
+<ul>
+<li><a href="struct.Adc.html#method.enable_vreg"><code>enable_vreg</code></a></li>
+<li>A delay function</li>
+<li><a href="struct.Adc.html#method.start_calibrate"><code>start_calibrate</code></a></li>
+<li><a href="struct.Adc.html#method.set_ier"><code>set_ier</code></a> (optional)</li>
+<li><a href="struct.Adc.html#method.isr" title="Adc::isr"><code>Adc::isr</code></a></li>
+</ul>
+<h5 id="example-29"><a href="#example-29">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>, <span class="ident">rcc</span>,
+    <span class="ident">util::new_delay</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="ident">cp</span>: <span class="ident">pac::CorePeripherals</span> <span class="op">=</span> <span class="ident">pac::CorePeripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// enable the HSI16 source clock</span>
+<span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">modify</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">hsion</span>().<span class="ident">set_bit</span>());
+<span class="kw">while</span> <span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">read</span>().<span class="ident">hsirdy</span>().<span class="ident">is_not_ready</span>() {}
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">delay</span> <span class="op">=</span> <span class="ident">new_delay</span>(<span class="ident">cp</span>.<span class="ident">SYST</span>, <span class="kw-2">&amp;</span><span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::RccHsi</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="ident">adc</span>.<span class="ident">calibrate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">delay</span>);</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.enable_vreg" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1685-1704">source</a></span><h4 class="code-header">pub fn <a href="#method.enable_vreg" class="fnname">enable_vreg</a>(&amp;mut self)</h4></section></summary><div class="docblock"><p>Enable the ADC voltage regulator for calibration.</p>
+<p>This is advanced ADC usage, most of the time you will want to use
+<a href="struct.Adc.html#method.calibrate"><code>calibrate</code></a>.</p>
+<p>This will disable the ADC and DMA request generation if not already
+disabled.</p>
+<p>You <strong>MUST</strong> wait <a href="constant.T_ADCVREG_SETUP.html" title="T_ADCVREG_SETUP"><code>T_ADCVREG_SETUP</code></a> before the voltage regulator
+output is available.  This delay is not performed for you.</p>
+<h5 id="example-30"><a href="#example-30">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>, <span class="ident">rcc</span>,
+    <span class="ident">util::new_delay</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="ident">cp</span>: <span class="ident">pac::CorePeripherals</span> <span class="op">=</span> <span class="ident">pac::CorePeripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// enable the HSI16 source clock</span>
+<span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">modify</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">hsion</span>().<span class="ident">set_bit</span>());
+<span class="kw">while</span> <span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">read</span>().<span class="ident">hsirdy</span>().<span class="ident">is_not_ready</span>() {}
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">delay</span> <span class="op">=</span> <span class="ident">new_delay</span>(<span class="ident">cp</span>.<span class="ident">SYST</span>, <span class="kw-2">&amp;</span><span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::RccHsi</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="ident">adc</span>.<span class="ident">enable_vreg</span>();
+<span class="ident">delay</span>.<span class="ident">delay_us</span>(<span class="ident">u32::from</span>(<span class="ident">adc::T_ADCVREG_SETUP_MICROS</span>));</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.disable_vreg" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1712-1715">source</a></span><h4 class="code-header">pub fn <a href="#method.disable_vreg" class="fnname">disable_vreg</a>(&amp;mut self)</h4></section></summary><div class="docblock"><p>Disable the ADC voltage regulator.</p>
+<h5 id="panics-11"><a href="#panics-11">Panics</a></h5>
+<ul>
+<li>(debug) ADC is enabled</li>
+</ul>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.start_calibrate" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1758-1764">source</a></span><h4 class="code-header">pub fn <a href="#method.start_calibrate" class="fnname">start_calibrate</a>(&amp;mut self)</h4></section></summary><div class="docblock"><p>Start the ADC calibration.</p>
+<p>This is advanced ADC usage, most of the time you will want to use
+<a href="struct.Adc.html#method.calibrate"><code>calibrate</code></a>.</p>
+<p>When this function returns the ADC calibration has started, but
+may not have finished.
+Check if the ADC calibration has finished with <a href="struct.Adc.html#method.isr" title="Adc::isr"><code>Adc::isr</code></a>.</p>
+<h5 id="panics-12"><a href="#panics-12">Panics</a></h5>
+<ul>
+<li>(debug) ADC is enabled.</li>
+<li>(debug) ADC voltage regulator is not enabled.</li>
+</ul>
+<h5 id="example-31"><a href="#example-31">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>, <span class="ident">rcc</span>,
+    <span class="ident">util::new_delay</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="ident">cp</span>: <span class="ident">pac::CorePeripherals</span> <span class="op">=</span> <span class="ident">pac::CorePeripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// enable the HSI16 source clock</span>
+<span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">modify</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">hsion</span>().<span class="ident">set_bit</span>());
+<span class="kw">while</span> <span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">read</span>().<span class="ident">hsirdy</span>().<span class="ident">is_not_ready</span>() {}
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">delay</span> <span class="op">=</span> <span class="ident">new_delay</span>(<span class="ident">cp</span>.<span class="ident">SYST</span>, <span class="kw-2">&amp;</span><span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::RccHsi</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+
+<span class="ident">adc</span>.<span class="ident">enable_vreg</span>();
+<span class="ident">delay</span>.<span class="ident">delay_us</span>(<span class="ident">u32::from</span>(<span class="ident">adc::T_ADCVREG_SETUP_MICROS</span>));
+<span class="ident">adc</span>.<span class="ident">start_calibrate</span>();
+<span class="comment">// datasheet says this takes 82 ADC clock cycles</span>
+<span class="comment">// my measurements are closer to 120 ADC clock cycles</span>
+<span class="kw">while</span> <span class="ident">Adc::isr</span>().<span class="ident">eocal</span>().<span class="ident">is_not_complete</span>() {}</code></pre></div>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.calfact" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1772-1774">source</a></span><h4 class="code-header">pub fn <a href="#method.calfact" class="fnname">calfact</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u8.html">u8</a></h4></section></summary><div class="docblock"><p>Get the ADC calibration factor.</p>
+<h5 id="example-32"><a href="#example-32">Example</a></h5>
+<p>See <a href="struct.Adc.html#method.force_cal"><code>force_cal</code></a>.</p>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.force_cal" class="method has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#1817-1821">source</a></span><h4 class="code-header">pub fn <a href="#method.force_cal" class="fnname">force_cal</a>(&amp;mut self, calfact: <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.u8.html">u8</a>)</h4></section></summary><div class="docblock"><p>Force the ADC calibration.</p>
+<p>The calibration factor is lost each time power is removed from the ADC
+(for example when entering standby or V<sub>BAT</sub> mode)
+It is possible to save and restore the calibration factor with firmware
+to save time when re-starting the ADC (as long as temperature and
+voltage are stable during the ADC power-down).</p>
+<h5 id="panics-13"><a href="#panics-13">Panics</a></h5>
+<ul>
+<li>(debug) ADC is not enabled</li>
+<li>(debug) ADC conversion is in-progress</li>
+</ul>
+<h5 id="example-33"><a href="#example-33">Example</a></h5>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal</span>::{
+    <span class="ident">adc</span>::{<span class="self">self</span>, <span class="ident">Adc</span>},
+    <span class="ident">pac</span>, <span class="ident">rcc</span>,
+    <span class="ident">util::new_delay</span>,
+};
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dp</span>: <span class="ident">pac::Peripherals</span> <span class="op">=</span> <span class="ident">pac::Peripherals::take</span>().<span class="ident">unwrap</span>();
+<span class="kw">let</span> <span class="ident">cp</span>: <span class="ident">pac::CorePeripherals</span> <span class="op">=</span> <span class="ident">pac::CorePeripherals::take</span>().<span class="ident">unwrap</span>();
+
+<span class="comment">// enable the HSI16 source clock</span>
+<span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">modify</span>(<span class="op">|</span><span class="kw">_</span>, <span class="ident">w</span><span class="op">|</span> <span class="ident">w</span>.<span class="ident">hsion</span>().<span class="ident">set_bit</span>());
+<span class="kw">while</span> <span class="ident">dp</span>.<span class="ident">RCC</span>.<span class="ident">cr</span>.<span class="ident">read</span>().<span class="ident">hsirdy</span>().<span class="ident">is_not_ready</span>() {}
+
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">delay</span> <span class="op">=</span> <span class="ident">new_delay</span>(<span class="ident">cp</span>.<span class="ident">SYST</span>, <span class="kw-2">&amp;</span><span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adc</span> <span class="op">=</span> <span class="ident">Adc::new</span>(<span class="ident">dp</span>.<span class="ident">ADC</span>, <span class="ident">adc::Clk::RccHsi</span>, <span class="kw-2">&amp;mut</span> <span class="ident">dp</span>.<span class="ident">RCC</span>);
+<span class="ident">adc</span>.<span class="ident">calibrate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">delay</span>);
+
+<span class="comment">// save the calibration factor</span>
+<span class="kw">let</span> <span class="ident">calfact</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="ident">adc</span>.<span class="ident">calfact</span>();
+
+<span class="comment">// restore the calibration</span>
+<span class="ident">adc</span>.<span class="ident">enable</span>(); <span class="comment">// ADC must be enabled to restore the calibration</span>
+<span class="ident">adc</span>.<span class="ident">force_cal</span>(<span class="ident">calfact</span>);</code></pre></div>
+</div></details></div></details></div><h2 id="trait-implementations" class="small-section-header">Trait Implementations<a href="#trait-implementations" class="anchor"></a></h2><div id="trait-implementations-list"><details class="rustdoc-toggle implementors-toggle" open><summary><section id="impl-Debug-for-Adc" class="impl has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#379">source</a></span><a href="#impl-Debug-for-Adc" class="anchor"></a><h3 class="code-header in-band">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html" title="trait core::fmt::Debug">Debug</a> for <a class="struct" href="struct.Adc.html" title="struct stm32wlxx_hal::adc::Adc">Adc</a></h3></section></summary><div class="impl-items"><details class="rustdoc-toggle method-toggle" open><summary><section id="method.fmt" class="method trait-impl has-srclink"><span class="rightside"><a class="srclink" href="../../src/stm32wlxx_hal/adc.rs.html#379">source</a></span><a href="#method.fmt" class="anchor"></a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt" class="fnname">fmt</a>(&amp;self, f: &amp;mut <a class="struct" href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html" title="struct core::fmt::Formatter">Formatter</a>&lt;'_&gt;) -&gt; <a class="type" href="https://doc.rust-lang.org/nightly/core/fmt/type.Result.html" title="type core::fmt::Result">Result</a></h4></section></summary><div class='docblock'><p>Formats the value using the given formatter. <a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt">Read more</a></p>
+</div></details></div></details></div><h2 id="synthetic-implementations" class="small-section-header">Auto Trait Implementations<a href="#synthetic-implementations" class="anchor"></a></h2><div id="synthetic-implementations-list"><section id="impl-RefUnwindSafe-for-Adc" class="impl has-srclink"><a href="#impl-RefUnwindSafe-for-Adc" class="anchor"></a><h3 class="code-header in-band">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/panic/unwind_safe/trait.RefUnwindSafe.html" title="trait core::panic::unwind_safe::RefUnwindSafe">RefUnwindSafe</a> for <a class="struct" href="struct.Adc.html" title="struct stm32wlxx_hal::adc::Adc">Adc</a></h3></section><section id="impl-Send-for-Adc" class="impl has-srclink"><a href="#impl-Send-for-Adc" class="anchor"></a><h3 class="code-header in-band">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> for <a class="struct" href="struct.Adc.html" title="struct stm32wlxx_hal::adc::Adc">Adc</a></h3></section><section id="impl-Sync-for-Adc" class="impl has-srclink"><a href="#impl-Sync-for-Adc" class="anchor"></a><h3 class="code-header in-band">impl !<a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sync.html" title="trait core::marker::Sync">Sync</a> for <a class="struct" href="struct.Adc.html" title="struct stm32wlxx_hal::adc::Adc">Adc</a></h3></section><section id="impl-Unpin-for-Adc" class="impl has-srclink"><a href="#impl-Unpin-for-Adc" class="anchor"></a><h3 class="code-header in-band">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Unpin.html" title="trait core::marker::Unpin">Unpin</a> for <a class="struct" href="struct.Adc.html" title="struct stm32wlxx_hal::adc::Adc">Adc</a></h3></section><section id="impl-UnwindSafe-for-Adc" class="impl has-srclink"><a href="#impl-UnwindSafe-for-Adc" class="anchor"></a><h3 class="code-header in-band">impl <a class="trait" href="https://doc.rust-lang.org/nightly/core/panic/unwind_safe/trait.UnwindSafe.html" title="trait core::panic::unwind_safe::UnwindSafe">UnwindSafe</a> for <a class="struct" href="struct.Adc.html" title="struct stm32wlxx_hal::adc::Adc">Adc</a></h3></section></div><h2 id="blanket-implementations" class="small-section-header">Blanket Implementations<a href="#blanket-implementations" class="anchor"></a></h2><div id="blanket-implementations-list"><details class="rustdoc-toggle implementors-toggle"><summary><section id="impl-Any-for-Adc" class="impl has-srclink"><span class="rightside"><a class="srclink" href="https://doc.rust-lang.org/nightly/src/core/any.rs.html#203">source</a></span><a href="#impl-Any-for-Adc" class="anchor"></a><h3 class="code-header in-band">impl&lt;T&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/any/trait.Any.html" title="trait core::any::Any">Any</a> for T <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;T: 'static + ?<a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a>,&nbsp;</span></h3></section></summary><div class="impl-items"><details class="rustdoc-toggle method-toggle" open><summary><section id="method.type_id" class="method trait-impl has-srclink"><span class="rightside"><a class="srclink" href="https://doc.rust-lang.org/nightly/src/core/any.rs.html#204">source</a></span><a href="#method.type_id" class="anchor"></a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/any/trait.Any.html#tymethod.type_id" class="fnname">type_id</a>(&amp;self) -&gt; <a class="struct" href="https://doc.rust-lang.org/nightly/core/any/struct.TypeId.html" title="struct core::any::TypeId">TypeId</a></h4></section></summary><div class='docblock'><p>Gets the <code>TypeId</code> of <code>self</code>. <a href="https://doc.rust-lang.org/nightly/core/any/trait.Any.html#tymethod.type_id">Read more</a></p>
+</div></details></div></details><details class="rustdoc-toggle implementors-toggle"><summary><section id="impl-Borrow%3CT%3E-for-Adc" class="impl has-srclink"><span class="rightside"><a class="srclink" href="https://doc.rust-lang.org/nightly/src/core/borrow.rs.html#209">source</a></span><a href="#impl-Borrow%3CT%3E-for-Adc" class="anchor"></a><h3 class="code-header in-band">impl&lt;T&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/borrow/trait.Borrow.html" title="trait core::borrow::Borrow">Borrow</a>&lt;T&gt; for T <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;T: ?<a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a>,&nbsp;</span></h3></section></summary><div class="impl-items"><details class="rustdoc-toggle method-toggle" open><summary><section id="method.borrow" class="method trait-impl has-srclink"><span class="rightside"><span class="since" title="const unstable">const: <a href="https://github.com/rust-lang/rust/issues/91522" title="Tracking issue for const_borrow">unstable</a></span> · <a class="srclink" href="https://doc.rust-lang.org/nightly/src/core/borrow.rs.html#211">source</a></span><a href="#method.borrow" class="anchor"></a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/borrow/trait.Borrow.html#tymethod.borrow" class="fnname">borrow</a>(&amp;self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.reference.html">&amp;</a>T</h4></section></summary><div class='docblock'><p>Immutably borrows from an owned value. <a href="https://doc.rust-lang.org/nightly/core/borrow/trait.Borrow.html#tymethod.borrow">Read more</a></p>
+</div></details></div></details><details class="rustdoc-toggle implementors-toggle"><summary><section id="impl-BorrowMut%3CT%3E-for-Adc" class="impl has-srclink"><span class="rightside"><a class="srclink" href="https://doc.rust-lang.org/nightly/src/core/borrow.rs.html#218">source</a></span><a href="#impl-BorrowMut%3CT%3E-for-Adc" class="anchor"></a><h3 class="code-header in-band">impl&lt;T&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/borrow/trait.BorrowMut.html" title="trait core::borrow::BorrowMut">BorrowMut</a>&lt;T&gt; for T <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;T: ?<a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sized.html" title="trait core::marker::Sized">Sized</a>,&nbsp;</span></h3></section></summary><div class="impl-items"><details class="rustdoc-toggle method-toggle" open><summary><section id="method.borrow_mut" class="method trait-impl has-srclink"><span class="rightside"><span class="since" title="const unstable">const: <a href="https://github.com/rust-lang/rust/issues/91522" title="Tracking issue for const_borrow">unstable</a></span> · <a class="srclink" href="https://doc.rust-lang.org/nightly/src/core/borrow.rs.html#219">source</a></span><a href="#method.borrow_mut" class="anchor"></a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/borrow/trait.BorrowMut.html#tymethod.borrow_mut" class="fnname">borrow_mut</a>(&amp;mut self) -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/core/primitive.reference.html">&amp;mut </a>T</h4></section></summary><div class='docblock'><p>Mutably borrows from an owned value. <a href="https://doc.rust-lang.org/nightly/core/borrow/trait.BorrowMut.html#tymethod.borrow_mut">Read more</a></p>
+</div></details></div></details><details class="rustdoc-toggle implementors-toggle"><summary><section id="impl-From%3CT%3E-for-Adc" class="impl has-srclink"><span class="rightside"><a class="srclink" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#557">source</a></span><a href="#impl-From%3CT%3E-for-Adc" class="anchor"></a><h3 class="code-header in-band">impl&lt;T&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html" title="trait core::convert::From">From</a>&lt;T&gt; for T</h3></section></summary><div class="impl-items"><details class="rustdoc-toggle method-toggle" open><summary><section id="method.from" class="method trait-impl has-srclink"><span class="rightside"><span class="since" title="const unstable">const: <a href="https://github.com/rust-lang/rust/issues/88674" title="Tracking issue for const_convert">unstable</a></span> · <a class="srclink" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#559">source</a></span><a href="#method.from" class="anchor"></a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html#tymethod.from" class="fnname">from</a>(t: T) -&gt; T</h4></section></summary><div class="docblock"><p>Returns the argument unchanged.</p>
+</div></details></div></details><details class="rustdoc-toggle implementors-toggle"><summary><section id="impl-Into%3CU%3E-for-Adc" class="impl has-srclink"><span class="rightside"><a class="srclink" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#541">source</a></span><a href="#impl-Into%3CU%3E-for-Adc" class="anchor"></a><h3 class="code-header in-band">impl&lt;T, U&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html" title="trait core::convert::Into">Into</a>&lt;U&gt; for T <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;U: <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html" title="trait core::convert::From">From</a>&lt;T&gt;,&nbsp;</span></h3></section></summary><div class="impl-items"><details class="rustdoc-toggle method-toggle" open><summary><section id="method.into" class="method trait-impl has-srclink"><span class="rightside"><span class="since" title="const unstable">const: <a href="https://github.com/rust-lang/rust/issues/88674" title="Tracking issue for const_convert">unstable</a></span> · <a class="srclink" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#549">source</a></span><a href="#method.into" class="anchor"></a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html#tymethod.into" class="fnname">into</a>(self) -&gt; U</h4></section></summary><div class="docblock"><p>Calls <code>U::from(self)</code>.</p>
+<p>That is, this conversion is whatever the implementation of
+<code><a href="https://doc.rust-lang.org/nightly/core/convert/trait.From.html" title="From">From</a>&lt;T&gt; for U</code> chooses to do.</p>
+</div></details></div></details><details class="rustdoc-toggle implementors-toggle"><summary><section id="impl-TryFrom%3CU%3E-for-Adc" class="impl has-srclink"><span class="rightside"><a class="srclink" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#598">source</a></span><a href="#impl-TryFrom%3CU%3E-for-Adc" class="anchor"></a><h3 class="code-header in-band">impl&lt;T, U&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html" title="trait core::convert::TryFrom">TryFrom</a>&lt;U&gt; for T <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;U: <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.Into.html" title="trait core::convert::Into">Into</a>&lt;T&gt;,&nbsp;</span></h3></section></summary><div class="impl-items"><details class="rustdoc-toggle" open><summary><section id="associatedtype.Error-1" class="associatedtype trait-impl has-srclink"><a href="#associatedtype.Error-1" class="anchor"></a><h4 class="code-header">type <a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html#associatedtype.Error" class="associatedtype">Error</a> = <a class="enum" href="https://doc.rust-lang.org/nightly/core/convert/enum.Infallible.html" title="enum core::convert::Infallible">Infallible</a></h4></section></summary><div class='docblock'><p>The type returned in the event of a conversion error.</p>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.try_from" class="method trait-impl has-srclink"><span class="rightside"><span class="since" title="const unstable">const: <a href="https://github.com/rust-lang/rust/issues/88674" title="Tracking issue for const_convert">unstable</a></span> · <a class="srclink" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#604">source</a></span><a href="#method.try_from" class="anchor"></a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html#tymethod.try_from" class="fnname">try_from</a>(value: U) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;T, &lt;T as <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html" title="trait core::convert::TryFrom">TryFrom</a>&lt;U&gt;&gt;::<a class="associatedtype" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html#associatedtype.Error" title="type core::convert::TryFrom::Error">Error</a>&gt;</h4></section></summary><div class='docblock'><p>Performs the conversion.</p>
+</div></details></div></details><details class="rustdoc-toggle implementors-toggle"><summary><section id="impl-TryInto%3CU%3E-for-Adc" class="impl has-srclink"><span class="rightside"><a class="srclink" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#583">source</a></span><a href="#impl-TryInto%3CU%3E-for-Adc" class="anchor"></a><h3 class="code-header in-band">impl&lt;T, U&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryInto.html" title="trait core::convert::TryInto">TryInto</a>&lt;U&gt; for T <span class="where fmt-newline">where<br>&nbsp;&nbsp;&nbsp;&nbsp;U: <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html" title="trait core::convert::TryFrom">TryFrom</a>&lt;T&gt;,&nbsp;</span></h3></section></summary><div class="impl-items"><details class="rustdoc-toggle" open><summary><section id="associatedtype.Error" class="associatedtype trait-impl has-srclink"><a href="#associatedtype.Error" class="anchor"></a><h4 class="code-header">type <a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryInto.html#associatedtype.Error" class="associatedtype">Error</a> = &lt;U as <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html" title="trait core::convert::TryFrom">TryFrom</a>&lt;T&gt;&gt;::<a class="associatedtype" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html#associatedtype.Error" title="type core::convert::TryFrom::Error">Error</a></h4></section></summary><div class='docblock'><p>The type returned in the event of a conversion error.</p>
+</div></details><details class="rustdoc-toggle method-toggle" open><summary><section id="method.try_into" class="method trait-impl has-srclink"><span class="rightside"><span class="since" title="const unstable">const: <a href="https://github.com/rust-lang/rust/issues/88674" title="Tracking issue for const_convert">unstable</a></span> · <a class="srclink" href="https://doc.rust-lang.org/nightly/src/core/convert/mod.rs.html#589">source</a></span><a href="#method.try_into" class="anchor"></a><h4 class="code-header">fn <a href="https://doc.rust-lang.org/nightly/core/convert/trait.TryInto.html#tymethod.try_into" class="fnname">try_into</a>(self) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;U, &lt;U as <a class="trait" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html" title="trait core::convert::TryFrom">TryFrom</a>&lt;T&gt;&gt;::<a class="associatedtype" href="https://doc.rust-lang.org/nightly/core/convert/trait.TryFrom.html#associatedtype.Error" title="type core::convert::TryFrom::Error">Error</a>&gt;</h4></section></summary><div class='docblock'><p>Performs the conversion.</p>
+</div></details></div></details></div></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="stm32wlxx_hal" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (c2f428d2f 2022-07-14)" ></div>
+</body></html>

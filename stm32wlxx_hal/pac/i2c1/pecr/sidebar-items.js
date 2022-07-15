@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["PECR_SPEC","PEC register"],["R","Register `PECR` reader"]],"type":[["PEC_R","Field `PEC` reader - Packet error checking register"]]};

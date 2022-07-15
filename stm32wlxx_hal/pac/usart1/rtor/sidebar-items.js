@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["R","Register `RTOR` reader"],["RTOR_SPEC","receiver timeout register"],["W","Register `RTOR` writer"]],"type":[["BLEN_R","Field `BLEN` reader - Block Length"],["BLEN_W","Field `BLEN` writer - Block Length"],["RTO_R","Field `RTO` reader - Receiver timeout value"],["RTO_W","Field `RTO` writer - Receiver timeout value"]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["COUNTR_SPEC","monotonic counter register"],["R","Register `COUNTR` reader"]],"type":[["COUNT_R","Field `COUNT` reader - COUNT"]]};

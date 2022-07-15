@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["IVR2_SPEC","initialization vector register 2"],["R","Register `IVR2` reader"],["W","Register `IVR2` writer"]],"type":[["IVI_R","Field `IVI` reader - Initialization Vector Register (IVR [95:64])"],["IVI_W","Field `IVI` writer - Initialization Vector Register (IVR [95:64])"]]};

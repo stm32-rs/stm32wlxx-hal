@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["stm32wlxx_hal"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/ops/drop/trait.Drop.html\" title=\"trait core::ops::drop::Drop\">Drop</a> for <a class=\"struct\" href=\"stm32wlxx_hal/flash/struct.Flash.html\" title=\"struct stm32wlxx_hal::flash::Flash\">Flash</a>&lt;'_&gt;","synthetic":false,"types":["stm32wlxx_hal::flash::Flash"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

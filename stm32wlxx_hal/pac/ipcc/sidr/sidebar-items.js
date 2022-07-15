@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["R","Register `SIDR` reader"],["SIDR_SPEC","IPCC Size ID register"]],"type":[["SID_R","Field `SID` reader - SID"]]};

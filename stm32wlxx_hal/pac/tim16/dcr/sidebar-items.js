@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["DCR_SPEC","TIM16/TIM17 DMA control register"],["R","Register `DCR` reader"],["W","Register `DCR` writer"]],"type":[["DBA_R","Field `DBA` reader - DMA base address"],["DBA_W","Field `DBA` writer - DMA base address"],["DBL_R","Field `DBL` reader - DMA burst length"],["DBL_W","Field `DBL` writer - DMA burst length"]]};

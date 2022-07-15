@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["PSC_SPEC","TIM16/TIM17 prescaler"],["R","Register `PSC` reader"],["W","Register `PSC` writer"]],"type":[["PSC_R","Field `PSC` reader - Prescaler value"],["PSC_W","Field `PSC` writer - Prescaler value"]]};

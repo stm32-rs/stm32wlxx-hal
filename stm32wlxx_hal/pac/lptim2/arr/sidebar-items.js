@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["ARR_SPEC","autoreload register"],["R","Register `ARR` reader"],["W","Register `ARR` writer"]],"type":[["ARR_R","Field `ARR` reader - Auto reload value"],["ARR_W","Field `ARR` writer - Auto reload value"]]};

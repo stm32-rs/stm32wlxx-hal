@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["DR8_SPEC","Data register - byte sized"],["R","Register `DR8` reader"],["W","Register `DR8` writer"]],"type":[["DR8_R","Field `DR8` reader - Data register bits"],["DR8_W","Field `DR8` writer - Data register bits"]]};

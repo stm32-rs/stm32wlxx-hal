@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["OR__A","Option register bit 1"]],"struct":[["OR_SPEC","option register"],["R","Register `OR` reader"],["W","Register `OR` writer"]],"type":[["OR__R","Field `OR_` reader - Option register bit 1"],["OR__W","Field `OR_` writer - Option register bit 1"]]};

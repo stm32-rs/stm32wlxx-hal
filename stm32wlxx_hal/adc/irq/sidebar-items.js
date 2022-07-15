@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":[["ADRDY","ADC ready"],["ALL","All IRQs"],["AWD1","Analog watchdog 1"],["AWD2","Analog watchdog 2"],["AWD3","Analog watchdog 3"],["CCRDY","Channel configuration ready"],["EOC","End of conversion"],["EOCAL","End of calibration"],["EOS","End of conversion sequence"],["EOSMP","End of sampling"],["OVR","Overrun"]]};

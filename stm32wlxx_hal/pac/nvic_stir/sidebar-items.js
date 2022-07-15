@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":[["stir","Software trigger interrupt register"]],"struct":[["RegisterBlock","Register block"]],"type":[["STIR","STIR register accessor: an alias for `Reg<STIR_SPEC>`"]]};

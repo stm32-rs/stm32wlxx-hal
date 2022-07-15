@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["R","Register `SECCFGR` reader"],["SECCFGR_SPEC","Power security configuration register [dual core device only]"],["W","Register `SECCFGR` writer"]],"type":[["C2EWILA_R","Field `C2EWILA` reader - wakeup on CPU2 illegal access interrupt enable"],["C2EWILA_W","Field `C2EWILA` writer - wakeup on CPU2 illegal access interrupt enable"]]};

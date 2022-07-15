@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["ADD1S_AW","Add one second"]],"struct":[["SHIFTR_SPEC","Shift control register"],["W","Register `SHIFTR` writer"]],"type":[["ADD1S_W","Field `ADD1S` writer - Add one second"],["SUBFS_W","Field `SUBFS` writer - Subtract a fraction of a second"]]};

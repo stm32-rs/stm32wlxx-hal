@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["CMAR3_SPEC","channel x memory address register"],["R","Register `CMAR3` reader"],["W","Register `CMAR3` writer"]],"type":[["MA_R","Field `MA` reader - peripheral address"],["MA_W","Field `MA` writer - peripheral address"]]};

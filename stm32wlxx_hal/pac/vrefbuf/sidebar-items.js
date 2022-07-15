@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":[["ccr","calibration control register"],["csr","control and status register"]],"struct":[["RegisterBlock","Register block"]],"type":[["CCR","CCR register accessor: an alias for `Reg<CCR_SPEC>`"],["CSR","CSR register accessor: an alias for `Reg<CSR_SPEC>`"]]};

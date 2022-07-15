@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["IDR3_A","Port input data (y = 0..15)"]],"struct":[["IDR_SPEC","GPIO port input data register"],["R","Register `IDR` reader"]],"type":[["IDR3_R","Field `IDR3` reader - Port input data (y = 0..15)"]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["R","Register `SHRR` reader"],["SHRR_SPEC","Sample and Hold refresh time register"],["W","Register `SHRR` writer"]],"type":[["TREFRESH1_R","Field `TREFRESH1` reader - DAC Channel 1 refresh Time (only valid in Sample and Hold mode)"],["TREFRESH1_W","Field `TREFRESH1` writer - DAC Channel 1 refresh Time (only valid in Sample and Hold mode)"]]};

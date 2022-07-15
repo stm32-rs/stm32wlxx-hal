@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Error","I2C error"]],"struct":[["I2c1","I2C1 peripheral operating in master mode"],["I2c2","I2C2 peripheral operating in master mode"],["I2c3","I2C3 peripheral operating in master mode"]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["R","Register `RSSCMDR` reader"],["RSSCMDR_SPEC","RSS Command register [dual core device only]"],["W","Register `RSSCMDR` writer"]],"type":[["RSSCMD_R","Field `RSSCMD` reader - RSS command"],["RSSCMD_W","Field `RSSCMD` writer - RSS command"]]};

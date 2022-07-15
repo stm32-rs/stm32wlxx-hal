@@ -1,0 +1,70 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Public key accelerator"><meta name="keywords" content="rust, rustlang, rust-lang, pka"><title>stm32wlxx_hal::pka - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../stm32wlxx_hal/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
+        </a><h2 class="location"></h2>
+    </nav>
+    <nav class="sidebar"><a class="sidebar-logo" href="../../stm32wlxx_hal/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
+        </a><h2 class="location"><a href="#">Module pka</a></h2><div class="sidebar-elems"><section><div class="block"><ul><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li></ul></div></section></div></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../stm32wlxx_hal/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
+                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
+                        </div></form></nav></div><section id="main-content" class="content"><div class="main-heading">
+    <h1 class="fqn"><span class="in-band">Module <a href="../index.html">stm32wlxx_hal</a>::<wbr><a class="mod" href="#">pka</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span></h1><span class="out-of-band"><a class="srclink" href="../../src/stm32wlxx_hal/pka.rs.html#1-824">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Public key accelerator</p>
+<p>Quickstart:</p>
+<ul>
+<li><a href="struct.Pka.html#method.ecdsa_sign">ECDSA signing</a></li>
+<li><a href="struct.Pka.html#method.ecdsa_verify">ECDSA verify</a></li>
+</ul>
+<h2 id="alternatives"><a href="#alternatives">Alternatives</a></h2>
+<p>The <a href="https://crates.io/crates/p256-cortex-m4">p256-cortex-m4</a> crate offers an assembly implementation of P256 that is
+about 10x faster then the hardware.</p>
+<h2 id="ecdsa-key-pair-generation"><a href="#ecdsa-key-pair-generation">ECDSA key pair generation</a></h2>
+<p>Generate a private key for <a href="curve/constant.NIST_P256.html"><code>NIST_P256</code></a>:</p>
+<div class="example-wrap"><pre class="language-console"><code>$ openssl ecparam -genkey -name prime256v1 -out key.pem
+$ openssl ec -in key.pem -noout -text
+read EC key
+Private-Key: (256 bit)
+priv:
+    49:ac:87:27:ce:e8:74:84:fe:6d:fd:a5:10:23:8a:
+    d4:11:ac:e8:fe:59:3a:8c:b7:04:92:d6:59:db:81:
+    80:2a
+pub:
+    04:fa:65:57:59:de:c3:90:28:96:46:0a:43:2b:ae:
+    1d:00:91:26:e1:b4:88:78:9f:f4:ef:6b:9a:9b:de:
+    1b:c3:63:8f:a0:2a:c4:c4:21:ca:88:4f:06:51:f4:
+    e9:85:e3:cf:d0:af:40:69:cc:87:f3:a8:8a:8e:95:
+    e7:55:6c:ed:97
+ASN1 OID: prime256v1
+NIST CURVE: P-256</code></pre></div>
+<p>The first <code>04</code> on the public key is encoding information, expressed in rust
+that keypair becomes this:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use</span> <span class="ident">stm32wlxx_hal::pka::EcdsaPublicKey</span>;
+
+<span class="kw">const</span> <span class="ident">PRIV_KEY</span>: [<span class="ident">u32</span>; <span class="number">8</span>] <span class="op">=</span> [
+    <span class="number">0x49ac8727</span>, <span class="number">0xcee87484</span>, <span class="number">0xfe6dfda5</span>, <span class="number">0x10238ad4</span>, <span class="number">0x11ace8fe</span>, <span class="number">0x593a8cb7</span>, <span class="number">0x0492d659</span>,
+    <span class="number">0xdb81802a</span>,
+];
+
+<span class="kw">const</span> <span class="ident">CURVE_PT_X</span>: [<span class="ident">u32</span>; <span class="number">8</span>] <span class="op">=</span> [
+    <span class="number">0xfa655759</span>, <span class="number">0xdec39028</span>, <span class="number">0x96460a43</span>, <span class="number">0x2bae1d00</span>, <span class="number">0x9126e1b4</span>, <span class="number">0x88789ff4</span>, <span class="number">0xef6b9a9b</span>,
+    <span class="number">0xde1bc363</span>,
+];
+<span class="kw">const</span> <span class="ident">CURVE_PT_Y</span>: [<span class="ident">u32</span>; <span class="number">8</span>] <span class="op">=</span> [
+    <span class="number">0x8fa02ac4</span>, <span class="number">0xc421ca88</span>, <span class="number">0x4f0651f4</span>, <span class="number">0xe985e3cf</span>, <span class="number">0xd0af4069</span>, <span class="number">0xcc87f3a8</span>, <span class="number">0x8a8e95e7</span>,
+    <span class="number">0x556ced97</span>,
+];
+<span class="kw">let</span> <span class="ident">pub_key</span>: <span class="ident">EcdsaPublicKey</span><span class="op">&lt;</span><span class="number">8</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">EcdsaPublicKey</span> {
+    <span class="ident">curve_pt_x</span>: <span class="kw-2">&amp;</span><span class="ident">CURVE_PT_X</span>,
+    <span class="ident">curve_pt_y</span>: <span class="kw-2">&amp;</span><span class="ident">CURVE_PT_Y</span>,
+};</code></pre></div>
+<p>Use this command to find the name of other curves:</p>
+<div class="example-wrap"><pre class="language-bash"><code>openssl ecparam -list_curves</code></pre></div></div></details><h2 id="modules" class="small-section-header"><a href="#modules">Modules</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="mod" href="curve/index.html" title="stm32wlxx_hal::pka::curve mod">curve</a></div><div class="item-right docblock-short"><p>Pre-defined elliptic curves.</p>
+</div></div></div><h2 id="structs" class="small-section-header"><a href="#structs">Structs</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.EcdsaPublicKey.html" title="stm32wlxx_hal::pka::EcdsaPublicKey struct">EcdsaPublicKey</a></div><div class="item-right docblock-short"><p>ECDSA public key.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.EcdsaSignature.html" title="stm32wlxx_hal::pka::EcdsaSignature struct">EcdsaSignature</a></div><div class="item-right docblock-short"><p>ECDSA signature.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.EllipticCurve.html" title="stm32wlxx_hal::pka::EllipticCurve struct">EllipticCurve</a></div><div class="item-right docblock-short"><p>Elliptic curve.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.Pka.html" title="stm32wlxx_hal::pka::Pka struct">Pka</a></div><div class="item-right docblock-short"><p>PKA driver.</p>
+</div></div></div><h2 id="enums" class="small-section-header"><a href="#enums">Enums</a></h2>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.EcdsaSignError.html" title="stm32wlxx_hal::pka::EcdsaSignError enum">EcdsaSignError</a></div><div class="item-right docblock-short"><p>Errors from an ECDSA signing operation.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.EcdsaVerifyError.html" title="stm32wlxx_hal::pka::EcdsaVerifyError enum">EcdsaVerifyError</a></div><div class="item-right docblock-short"><p>Errors from an ECDSA verify operation.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.Sign.html" title="stm32wlxx_hal::pka::Sign enum">Sign</a></div><div class="item-right docblock-short"><p>Sign bit for ECDSA coefficient signing and verification.</p>
+</div></div></div></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="stm32wlxx_hal" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (c2f428d2f 2022-07-14)" ></div>
+</body></html>

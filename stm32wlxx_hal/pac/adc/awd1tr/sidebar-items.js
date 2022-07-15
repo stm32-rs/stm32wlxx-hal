@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["AWD1TR_SPEC","ADC watchdog threshold register"],["R","Register `AWD1TR` reader"],["W","Register `AWD1TR` writer"]],"type":[["HT1_R","Field `HT1` reader - HT1"],["HT1_W","Field `HT1` writer - HT1"],["LT1_R","Field `LT1` reader - LT1"],["LT1_W","Field `LT1` writer - LT1"]]};

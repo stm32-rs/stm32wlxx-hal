@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["KEYR_SPEC","Flash key register"],["W","Register `KEYR` writer"]],"type":[["KEY_W","Field `KEY` writer - KEY"]]};

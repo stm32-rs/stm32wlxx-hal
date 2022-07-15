@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["BKPR_SPEC","TAMP backup register"],["R","Register `BKP%sR` reader"],["W","Register `BKP%sR` writer"]],"type":[["BKP_R","Field `BKP` reader - BKP"],["BKP_W","Field `BKP` writer - BKP"]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["BRR_SPEC","Baud rate register"],["R","Register `BRR` reader"],["W","Register `BRR` writer"]],"type":[["BRR_R","Field `BRR` reader - BRR"],["BRR_W","Field `BRR` writer - BRR"]]};

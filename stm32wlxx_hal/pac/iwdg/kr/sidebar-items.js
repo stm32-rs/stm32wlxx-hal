@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["KEY_AW","Key value (write only, read 0x0000)"]],"struct":[["KR_SPEC","Key register"],["W","Register `KR` writer"]],"type":[["KEY_W","Field `KEY` writer - Key value (write only, read 0x0000)"]]};

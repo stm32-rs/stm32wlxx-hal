@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["stm32wlxx_hal"] = [{"text":"impl&lt;SPI:&nbsp;SpiRegs, SCK:&nbsp;SpiSck, MISO:&nbsp;SpiMiso, MOSI:&nbsp;SpiMosi&gt; <a class=\"trait\" href=\"stm32wlxx_hal/spi/trait.FullDuplex.html\" title=\"trait stm32wlxx_hal::spi::FullDuplex\">FullDuplex</a>&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/nightly/core/primitive.u8.html\">u8</a>&gt; for <a class=\"struct\" href=\"stm32wlxx_hal/spi/struct.Spi.html\" title=\"struct stm32wlxx_hal::spi::Spi\">Spi</a>&lt;SPI, SCK, MISO, MOSI&gt;","synthetic":false,"types":["stm32wlxx_hal::spi::Spi"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

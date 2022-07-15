@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["R","Register `TSSSR` reader"],["TSSSR_SPEC","Timestamp sub second register"]],"type":[["SS_R","Field `SS` reader - Sub second value"]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["R","Register `VERR` reader"],["VERR_SPEC","IPCC IP Version register"]],"type":[["MAJREV_R","Field `MAJREV` reader - MAJREV"],["MINREV_R","Field `MINREV` reader - MINREV"]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["DOUTR_SPEC","data output register"],["R","Register `DOUTR` reader"]],"type":[["DOUT_R","Field `DOUT` reader - Data output register"]]};

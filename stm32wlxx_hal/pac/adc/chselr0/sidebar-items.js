@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["CHSEL_A","CHSEL"]],"struct":[["CHSELR0_SPEC","channel selection register"],["R","Register `CHSELR0` reader"],["W","Register `CHSELR0` writer"]],"type":[["CHSEL_R","Field `CHSEL` reader - CHSEL"],["CHSEL_W","Field `CHSEL` writer - CHSEL"]]};

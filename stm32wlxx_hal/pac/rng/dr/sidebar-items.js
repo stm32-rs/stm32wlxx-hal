@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["DR_SPEC","data register"],["R","Register `DR` reader"]],"type":[["RNDATA_R","Field `RNDATA` reader - Random data"]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["CALFACT_SPEC","ADC Calibration factor"],["R","Register `CALFACT` reader"],["W","Register `CALFACT` writer"]],"type":[["CALFACT_R","Field `CALFACT` reader - CALFACT"],["CALFACT_W","Field `CALFACT` writer - CALFACT"]]};

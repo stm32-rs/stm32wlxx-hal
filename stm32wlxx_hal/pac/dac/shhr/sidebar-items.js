@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["R","Register `SHHR` reader"],["SHHR_SPEC","Sample and Hold hold time register"],["W","Register `SHHR` writer"]],"type":[["THOLD1_R","Field `THOLD1` reader - DAC Channel 1 hold Time (only valid in Sample and Hold mode)"],["THOLD1_W","Field `THOLD1` writer - DAC Channel 1 hold Time (only valid in Sample and Hold mode)"]]};

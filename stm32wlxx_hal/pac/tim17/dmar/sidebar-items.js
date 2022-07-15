@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["DMAR_SPEC","TIM16/TIM17 DMA address for full transfer"],["R","Register `DMAR` reader"],["W","Register `DMAR` writer"]],"type":[["DMAB_R","Field `DMAB` reader - DMA register for burst accesses"],["DMAB_W","Field `DMAB` writer - DMA register for burst accesses"]]};

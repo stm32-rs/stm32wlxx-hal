@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["R","Register `SSR` reader"],["SSR_SPEC","Sub second register"]],"type":[["SS_R","Field `SS` reader - Synchronous binary counter"]]};

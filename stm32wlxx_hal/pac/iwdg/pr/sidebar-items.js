@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["PR_A","Prescaler divider"]],"struct":[["PR_SPEC","Prescaler register"],["R","Register `PR` reader"],["W","Register `PR` writer"]],"type":[["PR_R","Field `PR` reader - Prescaler divider"],["PR_W","Field `PR` writer - Prescaler divider"]]};

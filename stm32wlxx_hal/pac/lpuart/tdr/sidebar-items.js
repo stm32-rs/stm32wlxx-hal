@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["R","Register `TDR` reader"],["TDR_SPEC","Transmit data register"],["W","Register `TDR` writer"]],"type":[["TDR_R","Field `TDR` reader - Transmit data value"],["TDR_W","Field `TDR` writer - Transmit data value"]]};

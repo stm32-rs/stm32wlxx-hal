@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["MODE1_A","DAC Channel 1 mode"]],"struct":[["MCR_SPEC","mode control register"],["R","Register `MCR` reader"],["W","Register `MCR` writer"]],"type":[["MODE1_R","Field `MODE1` reader - DAC Channel 1 mode"],["MODE1_W","Field `MODE1` writer - DAC Channel 1 mode"]]};

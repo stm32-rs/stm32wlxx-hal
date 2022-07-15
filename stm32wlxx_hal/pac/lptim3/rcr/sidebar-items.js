@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["R","Register `RCR` reader"],["RCR_SPEC","repetition register"],["W","Register `RCR` writer"]],"type":[["REP_R","Field `REP` reader - Repetition register value"],["REP_W","Field `REP` writer - Repetition register value"]]};

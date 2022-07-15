@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["KEYR1_SPEC","key register 1"],["W","Register `KEYR1` writer"]],"type":[["KEY_W","Field `KEY` writer - AES key register (key [63:32])"]]};

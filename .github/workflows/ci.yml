@@ -36,11 +36,10 @@ jobs:
             target: "thumbv6m-none-eabi"
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1.0.7
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain }}
           target: ${{ matrix.target }}
-          default: true
 
       - name: Build HAL
         run: |
@@ -77,9 +76,8 @@ jobs:
       DEFMT_LOG: "debug"
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1.0.7
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
           target: thumbv7em-none-eabi
       - run: |
           cargo test -p testsuite --target thumbv7em-none-eabi --bins --locked --no-run
@@ -136,9 +134,7 @@ jobs:
           - "stm32wle5"
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: stable
+      - uses: dtolnay/rust-toolchain@stable
 
       - name: Test HAL
         run: cargo test --features ${{ matrix.mcu }},embedded-time,chrono
@@ -157,9 +153,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1.0.7
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
           components: clippy
       # not using clippy-check due to this issue:
       # https://github.com/actions-rs/clippy-check/issues/2
@@ -171,9 +166,8 @@ jobs:
     env: {"RUSTFLAGS": "-D warnings"}
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1.0.7
+      - uses: dtolnay/rust-toolchain@nightly
         with:
-          toolchain: nightly
           components: rustfmt
       - run: cargo +nightly fmt -- --check
 
@@ -183,9 +177,7 @@ jobs:
     env: {"RUSTDOCFLAGS": "-D warnings"}
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: stable
+      - uses: dtolnay/rust-toolchain@stable
       # not run in parallel to avoid hitting concurrency limit
       # stm32wl5x_cm4 covered by rustdoc
       - run: cargo doc --features stm32wl5x_cm0p
@@ -197,9 +189,7 @@ jobs:
     env: {"RUSTDOCFLAGS": "-D warnings --cfg docsrs"}
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
+      - uses: dtolnay/rust-toolchain@nightly
       - name: rustdoc
         run: |
           cd hal
@@ -228,9 +218,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: stable
+      - uses: dtolnay/rust-toolchain@stable
       - name: Release stm32wlxx-hal
         run: |
           cd hal

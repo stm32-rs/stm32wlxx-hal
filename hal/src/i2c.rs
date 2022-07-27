@@ -3,7 +3,7 @@
 use crate::{
     embedded_hal::blocking::i2c::{Read, Write, WriteRead},
     gpio::{OutputType, Pull},
-    pac::{self, rcc::ccipr::I2C3SEL_A, I2C1, I2C2, I2C3, RCC},
+    pac::{self, rcc::ccipr::I2C1SEL_A, I2C1, I2C2, I2C3, RCC},
     rcc::{pclk1_hz, sysclk_hz},
 };
 
@@ -346,9 +346,9 @@ macro_rules! impl_clocks_reset {
                 fn clock(rcc: &RCC) -> u32 {
                     // NOTE(unsafe) atomic read with no side effects
                     match rcc.ccipr.read().$i2cXsel().variant().unwrap() {
-                        I2C3SEL_A::Hsi16 => 16_000_000,
-                        I2C3SEL_A::Sysclk => sysclk_hz(rcc),
-                        I2C3SEL_A::Pclk => pclk1_hz(rcc),
+                        I2C1SEL_A::Hsi16 => 16_000_000,
+                        I2C1SEL_A::Sysclk => sysclk_hz(rcc),
+                        I2C1SEL_A::Pclk => pclk1_hz(rcc),
                     }
                 }
             }

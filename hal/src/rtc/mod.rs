@@ -350,11 +350,7 @@ impl Rtc {
     /// Returns `None` if the calendar is uninitialized.
     #[inline]
     pub fn calendar_initialized(&self) -> Option<()> {
-        use pac::rtc::icsr::INITS_A;
-        match self.rtc.icsr.read().inits().variant() {
-            INITS_A::NotInitalized => None,
-            INITS_A::Initalized => Some(()),
-        }
+        self.rtc.icsr.read().inits().is_initalized().then(|| ())
     }
 
     /// Calibrate the RTC using the low-power mode.

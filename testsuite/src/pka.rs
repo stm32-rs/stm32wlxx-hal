@@ -59,6 +59,32 @@ const PUB_KEY: EcdsaPublicKey<8> = EcdsaPublicKey {
     curve_pt_y: &CURVE_PT_Y,
 };
 
+const fn swap32(i: [u32; 8]) -> [u32; 8] {
+    [
+        i[0].swap_bytes(),
+        i[1].swap_bytes(),
+        i[2].swap_bytes(),
+        i[3].swap_bytes(),
+        i[4].swap_bytes(),
+        i[5].swap_bytes(),
+        i[6].swap_bytes(),
+        i[7].swap_bytes(),
+    ]
+}
+
+fn into_bytes(i: [u32; 8]) -> [u8; 32] {
+    unsafe { core::mem::transmute::<[u32; 8], [u8; 32]>(i) }
+}
+
+// for use with rust-crypto
+const HASH_SWAP: [u32; 8] = swap32(HASH);
+const INTEGER_SWAP: [u32; 8] = swap32(INTEGER);
+const PRIVATE_KEY_SWAP: [u32; 8] = swap32(PRIVATE_KEY);
+const R_SIGN_SWAP: [u32; 8] = swap32(R_SIGN);
+const S_SIGN_SWAP: [u32; 8] = swap32(S_SIGN);
+const CURVE_PT_X_SWAP: [u32; 8] = swap32(CURVE_PT_X);
+const CURVE_PT_Y_SWAP: [u32; 8] = swap32(CURVE_PT_Y);
+
 #[inline(always)]
 fn stopwatch<F>(f: F) -> u32
 where
@@ -116,32 +142,9 @@ mod tests {
             use ecdsa::hazmat::SignPrimitive;
             use p256::{elliptic_curve::ops::Reduce, Scalar};
 
-            const fn swap32(i: [u32; 8]) -> [u32; 8] {
-                [
-                    i[0].swap_bytes(),
-                    i[1].swap_bytes(),
-                    i[2].swap_bytes(),
-                    i[3].swap_bytes(),
-                    i[4].swap_bytes(),
-                    i[5].swap_bytes(),
-                    i[6].swap_bytes(),
-                    i[7].swap_bytes(),
-                ]
-            }
-
-            fn transmute32(i: [u32; 8]) -> [u8; 32] {
-                unsafe { core::mem::transmute::<[u32; 8], [u8; 32]>(i) }
-            }
-
-            const HASH_SWAP: [u32; 8] = swap32(HASH);
-            const INTEGER_SWAP: [u32; 8] = swap32(INTEGER);
-            const PRIVATE_KEY_SWAP: [u32; 8] = swap32(PRIVATE_KEY);
-            const R_SIGN_SWAP: [u32; 8] = swap32(R_SIGN);
-            const S_SIGN_SWAP: [u32; 8] = swap32(S_SIGN);
-
-            let hash_bytes: [u8; 32] = transmute32(HASH_SWAP);
-            let private_key_bytes: [u8; 32] = transmute32(PRIVATE_KEY_SWAP);
-            let integer_bytes: [u8; 32] = transmute32(INTEGER_SWAP);
+            let hash_bytes: [u8; 32] = into_bytes(HASH_SWAP);
+            let private_key_bytes: [u8; 32] = into_bytes(PRIVATE_KEY_SWAP);
+            let integer_bytes: [u8; 32] = into_bytes(INTEGER_SWAP);
 
             let prehashed_message_as_scalar: Scalar =
                 Scalar::from_be_bytes_reduced(hash_bytes.into());
@@ -160,8 +163,8 @@ mod tests {
             defmt::info!("Approximate cycles per rust-crypto p256 sign: {}", elapsed);
 
             let (r, s) = signature.split_bytes();
-            assert_eq!(r.as_slice(), transmute32(R_SIGN_SWAP));
-            assert_eq!(s.as_slice(), transmute32(S_SIGN_SWAP));
+            defmt::assert_eq!(r.as_slice(), into_bytes(R_SIGN_SWAP));
+            defmt::assert_eq!(s.as_slice(), into_bytes(S_SIGN_SWAP));
         }
     }
 
@@ -208,7 +211,47 @@ mod tests {
 
     #[test]
     fn ecdsa_verify(pka: &mut Pka) {
-        unwrap!(pka.ecdsa_verify(&NIST_P256, &SIGNATURE, &PUB_KEY, &HASH))
+        {
+            let elapsed: u32 =
+                stopwatch(|| unwrap!(pka.ecdsa_verify(&NIST_P256, &SIGNATURE, &PUB_KEY, &HASH)));
+
+            defmt::info!("Approximate cycles per PKA p256 verify: {}", elapsed);
+        }
+
+        // rust-crypto p256 for comparsion
+        {
+            use ecdsa::{hazmat::VerifyPrimitive, Signature};
+            use p256::{elliptic_curve::ops::Reduce, PublicKey, Scalar};
+
+            let hash_bytes: [u8; 32] = into_bytes(HASH_SWAP);
+
+            let mut key: [u8; 65] = [0; 65];
+            key[0] = 0x04;
+            key[1..33].copy_from_slice(&into_bytes(CURVE_PT_X_SWAP));
+            key[33..65].copy_from_slice(&into_bytes(CURVE_PT_Y_SWAP));
+
+            let public_key: PublicKey = unwrap!(PublicKey::from_sec1_bytes(&key).ok());
+
+            let prehashed_message_as_scalar: Scalar =
+                Scalar::from_be_bytes_reduced(hash_bytes.into());
+
+            let signature: Signature<_> =
+                unwrap!(
+                    Signature::from_scalars(into_bytes(R_SIGN_SWAP), into_bytes(S_SIGN_SWAP)).ok()
+                );
+
+            let start: u32 = DWT::cycle_count();
+            let result = public_key
+                .as_affine()
+                .verify_prehashed(prehashed_message_as_scalar.to_bytes(), &signature);
+            let elapsed: u32 = DWT::cycle_count().wrapping_sub(start);
+            defmt::info!(
+                "Approximate cycles per rust-crypto p256 verify: {}",
+                elapsed
+            );
+
+            defmt::assert!(result.is_ok(), "Result is Err variant");
+        }
     }
 
     #[test]

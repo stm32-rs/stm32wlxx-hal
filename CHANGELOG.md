@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.6.1] - 2022-08-01
 ### Fixed
-- Fixed undefined behaviour in SPI full duplex RX DMA transfers.
+- Fixed undefined behavior in SPI full duplex RX DMA transfers.
 
 ## [0.6.0] - 2022-07-04
 ### Added

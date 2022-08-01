@@ -148,9 +148,12 @@ const fn cpol_from_polarity(polarity: Polarity) -> bool {
     }
 }
 
+// a space for the RX DMA to transfer into when TX'ing in full-duplex
+static mut GARBAGE: [u8; 1] = [0];
+
 use sealed::SpiRegs;
 pub(crate) mod sealed {
-    use super::Error;
+    use super::{Error, GARBAGE};
     use crate::{
         dma::{self, DmaCh},
         pac,
@@ -261,9 +264,7 @@ pub(crate) mod sealed {
                 .set_mem_inc(true)
                 .set_enable(true);
 
-            let garbage: [u8; 1] = [0];
-
-            rx_dma.set_mem_addr(garbage.as_ptr() as u32);
+            rx_dma.set_mem_addr(unsafe { GARBAGE.as_mut_ptr() } as u32);
             tx_dma.set_mem_addr(words.as_ptr() as u32);
 
             let ndt: u32 = words.len() as u32;

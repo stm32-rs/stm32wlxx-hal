@@ -1703,7 +1703,7 @@ mod tests {
     // included for benchmarking reference
     #[test]
     fn soft_encrypt_gcm_inplace_128() {
-        use aes_gcm::{AeadInPlace, NewAead, Nonce};
+        use aes_gcm::{AeadInPlace, KeyInit, Nonce};
 
         let mut total_elapsed: u32 = 0;
 

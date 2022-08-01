@@ -10,7 +10,7 @@ readme = "../README.md"
 # * BSP READMES
 # * lock file
 # * CHANGELOG Unreleased (URL and header)
-version = "0.6.0"
+version = "0.6.1"
 authors = ["Alex Martens <alex@thinglab.org>"]
 edition = "2021"
 rust-version = "1.60"  # update MSRV in CI, BSPs, and shield in README

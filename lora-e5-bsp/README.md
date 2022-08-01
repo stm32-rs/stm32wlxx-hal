@@ -8,7 +8,7 @@ This crate extends the [stm32wlxx-hal] with board specific hardware, see that cr
 
 ```toml
 [dependencies.lora-e5-bsp]
-version = "0.6.0"
+version = "0.6.1"
 features = [
     # optional: use the cortex-m-rt interrupt interface
     "rt",

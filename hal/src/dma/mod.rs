@@ -102,8 +102,18 @@ impl<const BASE: usize, const CH: u8> Dma<BASE, CH> {
     }
 
     #[inline]
+    pub fn num_data_xfer(&self) -> u32 {
+        unsafe { Self::NDT.read_volatile() }
+    }
+
+    #[inline]
     pub fn set_cr(&mut self, cr: Cr) {
         unsafe { Self::CR.write_volatile(cr.raw()) }
+    }
+
+    #[inline]
+    pub fn cr(&self) -> Cr {
+        Cr::new(unsafe { Self::CR.read_volatile() })
     }
 
     #[inline]
@@ -133,7 +143,9 @@ pub(crate) mod sealed {
         fn set_periph_addr(&mut self, pa: u32);
         fn set_mem_addr(&mut self, ma: u32);
         fn set_num_data_xfer(&mut self, ndt: u32);
+        fn num_data_xfer(&self) -> u32;
         fn set_cr(&mut self, cr: Cr);
+        fn cr(&self) -> Cr;
         fn set_mux_cr_reqid(&mut self, req_id: u8);
         fn sync_ovr(&self) -> bool;
         fn clr_sync_ovr(&mut self);
@@ -256,8 +268,16 @@ macro_rules! dma_ch {
                     self.dma.set_num_data_xfer(ndt)
                 }
                 #[inline]
+                fn num_data_xfer(&self) -> u32 {
+                    self.dma.num_data_xfer()
+                }
+                #[inline]
                 fn set_cr(&mut self, cr: Cr) {
                     self.dma.set_cr(cr)
+                }
+                #[inline]
+                fn cr(&self) -> Cr {
+                    self.dma.cr()
                 }
                 #[inline]
                 fn set_mux_cr_reqid(&mut self, req_id: u8) {

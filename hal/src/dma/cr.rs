@@ -877,3 +877,23 @@ impl From<Cr> for u32 {
         reg.raw()
     }
 }
+
+impl core::fmt::Display for Cr {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("Cr")
+            .field("privileged", &self.privileged())
+            .field("mem2mem", &self.mem2mem())
+            .field("priority", &self.priority())
+            .field("mem_size", &self.mem_size())
+            .field("periph_size", &self.periph_size())
+            .field("mem_inc", &self.mem_inc())
+            .field("periph_inc", &self.periph_inc())
+            .field("circ", &self.circ())
+            .field("dir", &self.dir())
+            .field("xfer_err_irq_en", &self.xfer_err_irq_en())
+            .field("xfer_hlf_irq_en", &self.xfer_hlf_irq_en())
+            .field("xfer_cpl_irq_en", &self.xfer_cpl_irq_en())
+            .field("enabled", &self.enabled())
+            .finish()
+    }
+}

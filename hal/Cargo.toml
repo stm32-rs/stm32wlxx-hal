@@ -27,7 +27,7 @@ rt = ["stm32wl/rt", "cortex-m-rt"]
 
 [dependencies]
 cfg-if = "1"
-chrono = { version = "0.4", default-features = false, optional = true }
+chrono = { version = "0.4.20", default-features = false, optional = true }
 cortex-m = "0.7.2"
 cortex-m-rt = { version = "0.7", optional = true }
 defmt = { version = "0.3", optional = true }

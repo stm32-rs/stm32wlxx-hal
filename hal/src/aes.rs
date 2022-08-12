@@ -407,6 +407,7 @@ impl Aes {
     }
 
     // expensive copy for the sake of allowing unaligned u8 data
+    #[allow(clippy::get_first)]
     fn set_din_block(&mut self, block: &[u8]) {
         for chunk in block.chunks(4) {
             let din: u32 = (chunk.get(0).copied().unwrap_or(0) as u32) << 24

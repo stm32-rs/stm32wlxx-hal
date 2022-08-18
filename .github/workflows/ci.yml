@@ -187,6 +187,8 @@ jobs:
     name: rustdoc
     runs-on: ubuntu-latest
     env: {"RUSTDOCFLAGS": "-D warnings --cfg docsrs"}
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@nightly

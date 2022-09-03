@@ -198,13 +198,26 @@ jobs:
           cargo +nightly rustdoc \
           --features chrono,embedded-time,rt,stm32wl5x_cm4 \
           -- -Z unstable-options --enable-index-page
-      - name: deploy
-        if: ${{ github.ref == 'refs/heads/main' }}
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./target/doc
-          force_orphan: true
+          path: target/doc
+
+  deploy_rustdoc:
+    name: Deploy Nightly Docs
+    runs-on: ubuntu-latest
+    needs: rustdoc
+    if: ${{ github.ref == 'refs/heads/main' }}
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v1
+        id: deployment
 
   release:
     name: crates.io release

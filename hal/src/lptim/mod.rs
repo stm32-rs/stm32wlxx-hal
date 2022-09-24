@@ -824,7 +824,6 @@ impl<P> LpTim1Trg<P> {
     }
 }
 
-// TODO: move to LpTim trait when GATs are stablized
 impl LpTim1 {
     /// Setup a new pin trigger.
     ///
@@ -884,7 +883,6 @@ impl<P> LpTim2Trg<P> {
     }
 }
 
-// TODO: move to LpTim trait when GATs are stablized
 impl LpTim2 {
     /// Setup a new pin trigger.
     ///
@@ -944,7 +942,6 @@ impl LpTim3Trg {
     }
 }
 
-// TODO: move to LpTim trait when GATs are stablized
 impl LpTim3 {
     /// Setup a new pin trigger.
     ///
@@ -1057,7 +1054,6 @@ impl<P> LpTim1OutPin<P> {
     }
 }
 
-// TODO: move to LpTim trait when GATs are stablized
 impl LpTim1 {
     /// Setup a new output pin.
     #[inline]
@@ -1093,7 +1089,6 @@ impl<P> LpTim2OutPin<P> {
     }
 }
 
-// TODO: move to LpTim trait when GATs are stablized
 impl LpTim2 {
     /// Setup a new output pin.
     #[inline]
@@ -1129,7 +1124,6 @@ impl LpTim3OutPin {
     }
 }
 
-// TODO: move to LpTim trait when GATs are stablized
 impl LpTim3 {
     /// Setup a new output pin.
     #[inline]

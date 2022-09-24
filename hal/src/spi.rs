@@ -5,7 +5,6 @@
 //! # Constructors
 //!
 //! There was a minor cartesian explosion when writing this module.
-//! This will get a lot nicer when [GATs are stabilized].
 //!
 //! | Function                            | Bus | plex         | DMA |
 //! |-------------------------------------|-----|--------------|-----|
@@ -18,7 +17,6 @@
 //! | [`new_spi2_mosi_simplex`]           | 2   | MOSI-simplex | No  |
 //! | [`new_spi2_mosi_simplex_dma`]       | 2   | MOSI-simplex | Yes |
 //!
-//! [GATs are stabilized]: https://blog.rust-lang.org/2021/08/03/GATs-stabilization-push.html
 //! [`embedded-hal`]: https://docs.rs/embedded-hal/latest/embedded_hal/
 //! [`new_spi1_full_duplex_dma`]: Spi::new_spi1_full_duplex_dma
 //! [`new_spi1_full_duplex`]: Spi::new_spi1_full_duplex
@@ -1040,8 +1038,8 @@ macro_rules! impl_new_miso_simplex_dma {
         paste::paste! {
             impl<SCK, MISO, MISODMA> Spi<[<SPI $n>], SCK, (MISO, MISODMA), NoMosi>
             where
-            SCK: [<Spi $n Sck>],
-            MISO: [<Spi $n Miso>],
+                SCK: [<Spi $n Sck>],
+                MISO: [<Spi $n Miso>],
                 MISODMA: DmaCh,
             {
                 /// Create a new MISO-simplex slave with DMA transfers.

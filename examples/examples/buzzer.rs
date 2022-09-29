@@ -17,14 +17,14 @@ use stm32wlxx_hal::{
     util::new_delay,
 };
 
-
 #[hal::cortex_m_rt::entry]
 fn main() -> ! {
     let mut dp: pac::Peripherals = defmt::unwrap!(pac::Peripherals::take());
     let cp: pac::CorePeripherals = defmt::unwrap!(pac::CorePeripherals::take());
 
     let gpioa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
-    let mut buzzer : Output<pins::A15> = cortex_m::interrupt::free(|cs| {Output::default(gpioa.a15, cs)});
+    let mut buzzer: Output<pins::A15> =
+        cortex_m::interrupt::free(|cs| Output::default(gpioa.a15, cs));
 
     let mut delay: Delay = new_delay(cp.SYST, &dp.RCC);
 

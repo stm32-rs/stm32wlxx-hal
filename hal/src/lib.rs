@@ -6,7 +6,7 @@
 #![cfg_attr(feature = "stm32wle5", doc = "STM32WLE5.")]
 //!
 #![cfg_attr(not(test), no_std)]
-#![cfg_attr(docsrs, feature(doc_cfg), feature(doc_auto_cfg), feature(doc_cfg_hide))]
+#![cfg_attr(docsrs, feature(doc_cfg), feature(doc_auto_cfg))]
 #![warn(missing_docs)]
 #![warn(clippy::wildcard_imports)]
 
@@ -27,15 +27,15 @@ compile_error!(
 cfg_if::cfg_if! {
     if #[cfg(feature = "stm32wl5x_cm0p")] {
         /// Peripheral access crate
-        #[cfg_attr(docsrs, doc(cfg_hide(feature = "stm32wl5x_cm0p")))]
+        // #[cfg_attr(docsrs, doc(cfg_hide(feature = "stm32wl5x_cm0p")))]
         pub use stm32wl::stm32wl5x_cm0p as pac;
     } else if #[cfg(feature = "stm32wl5x_cm4")] {
         /// Peripheral access crate
-        #[cfg_attr(docsrs, doc(cfg_hide(feature = "stm32wl5x_cm4")))]
+        // #[cfg_attr(docsrs, doc(cfg_hide(feature = "stm32wl5x_cm4")))]
         pub use stm32wl::stm32wl5x_cm4 as pac;
     } else if #[cfg(feature = "stm32wle5")] {
         /// Peripheral access crate
-        #[cfg_attr(docsrs, doc(cfg_hide(feature = "stm32wle5")))]
+        // #[cfg_attr(docsrs, doc(cfg_hide(feature = "stm32wle5")))]
         pub use stm32wl::stm32wle5 as pac;
     } else {
         core::compile_error!("You must select your hardware with a feature flag");

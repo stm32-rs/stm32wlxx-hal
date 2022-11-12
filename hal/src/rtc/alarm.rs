@@ -57,11 +57,11 @@ impl From<chrono::NaiveTime> for Alarm {
 
 impl From<Alarm> for chrono::NaiveTime {
     fn from(alarm: Alarm) -> Self {
-        Self::from_hms(
+        unwrap!(Self::from_hms_opt(
             alarm.hours().into(),
             alarm.minutes().into(),
             alarm.seconds().into(),
-        )
+        ))
     }
 }
 
@@ -524,7 +524,7 @@ mod tests {
 
     #[test]
     fn chrono_convert() {
-        let ndt: NaiveTime = NaiveTime::from_hms(12, 34, 56);
+        let ndt: NaiveTime = NaiveTime::from_hms_opt(12, 34, 56).unwrap();
         let alarm: Alarm = ndt.into();
         assert_eq!(alarm.hours(), 12);
         assert_eq!(alarm.minutes(), 34);

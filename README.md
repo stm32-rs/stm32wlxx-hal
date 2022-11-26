@@ -47,17 +47,19 @@ features = [
 
 ## Examples
 
-All examples run on the NUCLEO-WL55JC2. Examples are located in the `examples` crate. The arguments got long for this, so a `run-ex` cargo alias is provided.
+All examples run on the NUCLEO-WL55JC2.
+
+Most examples are written in the form of on-target tests.  See [testsuite/README.md](https://github.com/stm32-rs/stm32wlxx-hal/blob/main/testsuite/README.md) for details.
+
+There are also simple examples located in the `examples` crate. These can be run with the `run-ex` cargo alias:
 
 ```bash
-DEFMT_LOG=trace cargo run-ex gpio-blink
+cargo run-ex gpio-blink
 ```
-
-The on-target tests are also excellent reference material.
 
 ### System Level Example
 
-The testsuites and examples are a good starting point, but they demonstrate features independent of each-other. A system-level example using multiple features simultaneously is provided in a separate repo: [stm32wl-lightswitch-demo](https://github.com/newAM/stm32wl-lightswitch-demo)
+The on-target tests and examples are a good starting point, but they demonstrate features independent of each-other. A system-level example using multiple features simultaneously is provided in a separate repo: [stm32wl-lightswitch-demo](https://github.com/newAM/stm32wl-lightswitch-demo)
 
 ## Unit Tests
 
@@ -66,10 +68,6 @@ Off-target unit tests use the built-in cargo framework. You must specify the tar
 ```bash
 cargo test --features stm32wl5x_cm4
 ```
-
-## On-Target Tests
-
-See [testsuite/README.md](https://github.com/stm32-rs/stm32wlxx-hal/blob/main/testsuite/README.md).
 
 ## Reference Documentation
 

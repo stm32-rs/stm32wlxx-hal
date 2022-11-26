@@ -33,3 +33,6 @@ unit = "test --features stm32wl5x_cm4,chrono,embedded-time"
 unit-little = "test --features stm32wl5x_cm0p,chrono,embedded-time"
 unit-nucleo = "test -p nucleo-wl55jc-bsp --features stm32wl5x_cm4"
 unit-lora-e5 = "test -p lora-e5-bsp"
+
+[env]
+DEFMT_LOG = "trace"

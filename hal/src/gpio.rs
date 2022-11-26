@@ -167,7 +167,7 @@ impl<const BASE: usize, const N: u8> Pin<BASE, N> {
         self.set_mode(cs, sealed::Mode::Alternate);
         let mut val: u32 = unsafe { Self::AF_R.read_volatile() };
         val &= !(0b1111 << Self::AF_SHIFT);
-        val |= (af as u8 as u32) << Self::AF_SHIFT;
+        val |= (af as u32) << Self::AF_SHIFT;
         unsafe { Self::AF_W.write_volatile(val) };
     }
 }

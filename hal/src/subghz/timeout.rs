@@ -147,7 +147,7 @@ impl Timeout {
         let nanos: u128 = duration.as_nanos();
         const UPPER_LIMIT: u128 =
             Timeout::MAX.as_nanos() as u128 + (Timeout::RESOLUTION_NANOS as u128) / 2;
-        const LOWER_LIMIT: u128 = (((Timeout::RESOLUTION_NANOS as u128) + 1) / 2) as u128;
+        const LOWER_LIMIT: u128 = ((Timeout::RESOLUTION_NANOS as u128) + 1) / 2;
 
         if nanos > UPPER_LIMIT {
             Err(ValueError::too_high(nanos, UPPER_LIMIT))

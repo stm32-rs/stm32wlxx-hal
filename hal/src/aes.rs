@@ -793,7 +793,7 @@ impl Aes {
     /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
     ///
     /// const KEY: [u32; 4] = [0; 4];
-    /// const IV: [u32, 4] = [0; 4];
+    /// const IV: [u32; 4] = [0; 4];
     ///
     /// let plaintext: [u32; 4] = [0xf34481ec, 0x3cc627ba, 0xcd5dc3fb, 0x08f273e6];
     /// let mut ciphertext: [u32; 4] = [0; 4];

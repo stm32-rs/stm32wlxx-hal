@@ -777,6 +777,66 @@ impl Aes {
         Ok(())
     }
 
+
+    /// Encrypt using the Cipher block chaining (CBC) algorithm.
+    ///
+    /// # Panics
+    ///
+    /// * Key is not 128-bits long `[u32; 4]` or 256-bits long `[u32; 8]`.
+    ///
+    /// # Example
+    /// TODO CHANGE
+    /// ```no_run
+    /// use stm32wlxx_hal::{aes::Aes, pac};
+    ///
+    /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
+    /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
+    ///
+    /// const KEY: [u32; 4] = [0; 4];
+    /// const IV: [u32, 4] = [0; 4];
+    ///
+    /// let plaintext: [u32; 4] = [0xf34481ec, 0x3cc627ba, 0xcd5dc3fb, 0x08f273e6];
+    /// let mut ciphertext: [u32; 4] = [0; 4];
+    /// aes.(encrypt_cbc(&KEY, &IV, &plaintext, &mut ciphertext)?;
+    /// # Ok::<(), stm32wlxx_hal::aes::Error>(())
+    /// ```
+    pub fn encrypt_cbc(
+        &mut self,
+        key: &[u32],
+        iv: &[u32; 4],
+        plaintext: &[u32; 4],
+        ciphertext: &mut [u32; 4],
+    ) -> Result<(), Error> {
+        const ALGO: Algorithm = Algorithm::Cbc;
+        const CHMOD2: bool = ALGO.chmod2();
+        const CHMOD10: u8 = ALGO.chmod10();
+        const MODE: u8 = Mode::Encryption.bits();
+
+        let keysize: KeySize = self.set_key(key);
+
+        self.aes.cr.write(|w| {
+            w.en().enabled();
+            w.datatype().variant(self.swap_mode);
+            w.mode().bits(MODE);
+            w.chmod2().bit(CHMOD2);
+            w.chmod().bits(CHMOD10);
+            w.ccfc().clear();
+            w.errc().clear();
+            w.ccfie().disabled();
+            w.errie().disabled();
+            w.dmainen().disabled();
+            w.dmaouten().disabled();
+            w.gcmph().bits(0); // do not care for ECB
+            w.keysize().variant(keysize);
+            w.npblb().bits(0) // no padding
+        });
+
+        self.set_din(plaintext);
+        self.poll_completion()?;
+        self.dout(ciphertext);
+        Ok(())
+    }
+
     /// Encrypt using the Galois counter mode (GCM) algorithm in-place.
     ///
     /// # Panics
@@ -913,7 +973,7 @@ impl Aes {
             w.errie().disabled();
             w.dmainen().disabled();
             w.dmaouten().disabled();
-            w.gcmph().bits(0); // do not care for ECB
+            w.gcmph().bits(0); // do not care for CBC
             w.keysize().variant(keysize);
             w.npblb().bits(0) // no padding
         });

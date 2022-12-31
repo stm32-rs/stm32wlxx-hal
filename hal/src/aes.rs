@@ -792,7 +792,7 @@ impl Aes {
     /// let mut aes: Aes = Aes::new(dp.AES, &mut dp.RCC);
     ///
     /// const KEY: [u32; 4] = [0; 4];
-    /// const IV: [u32; 4] = [0; 4];
+    /// const IV: [u32; 4] = [0; 4]; //currently not used
     ///
     /// let plaintext: [u32; 4] = [0xf34481ec, 0x3cc627ba, 0xcd5dc3fb, 0x08f273e6];
     /// let mut ciphertext: [u32; 4] = [0; 4];
@@ -802,7 +802,7 @@ impl Aes {
     pub fn encrypt_cbc(
         &mut self,
         key: &[u32],
-        iv: &[u32; 4],
+        _iv: &[u32; 4],
         plaintext: &[u32; 4],
         ciphertext: &mut [u32; 4],
     ) -> Result<(), Error> {

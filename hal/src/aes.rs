@@ -803,8 +803,8 @@ impl Aes {
         &mut self,
         key: &[u32],
         _iv: &[u32; 4],
-        plaintext: &[u32; 4],
-        ciphertext: &mut [u32; 4],
+        plaintext: &[u32],
+        ciphertext: &mut [u32],
     ) -> Result<(), Error> {
         const ALGO: Algorithm = Algorithm::Cbc;
         const CHMOD2: bool = ALGO.chmod2();
@@ -830,9 +830,36 @@ impl Aes {
             w.npblb().bits(0) // no padding
         });
 
-        self.set_din(plaintext);
-        self.poll_completion()?;
-        self.dout(ciphertext);
+        if plaintext.len() != ciphertext.len() {
+            panic!("Plaintext and Ciphertext fields need to have the same length!")
+        }
+
+        //Would be nice to have automatic padding here
+        if plaintext.len() % 4 != 0 {
+            panic!("Plaintext has to be a multiple of 128 bits!")
+        }
+
+        let mut i = 0;
+        while i < plaintext.len() {
+            let mut part: [u32; 4] = [0; 4];
+            part[0] = plaintext[i];
+            part[1] = plaintext[i + 1];
+            part[2] = plaintext[i + 2];
+            part[3] = plaintext[i + 3];
+
+            self.set_din(&part);
+            self.poll_completion()?;
+
+            let mut cipher_out: [u32; 4] = [0; 4];
+            self.dout(&mut cipher_out);
+            ciphertext[i] = cipher_out[0];
+            ciphertext[i + 1] = cipher_out[1];
+            ciphertext[i + 2] = cipher_out[2];
+            ciphertext[i + 3] = cipher_out[3];
+
+            i = i + 4;
+        }
+
         Ok(())
     }
 

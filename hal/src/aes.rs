@@ -785,7 +785,7 @@ impl Aes {
     /// * Key is not 128-bits long `[u32; 4]` or 256-bits long `[u32; 8]`.
     ///
     /// # Example
-    /// TODO CHANGE
+    /// 
     /// ```no_run
     /// use stm32wlxx_hal::{aes::Aes, pac};
     ///
@@ -797,7 +797,7 @@ impl Aes {
     ///
     /// let plaintext: [u32; 4] = [0xf34481ec, 0x3cc627ba, 0xcd5dc3fb, 0x08f273e6];
     /// let mut ciphertext: [u32; 4] = [0; 4];
-    /// aes.(encrypt_cbc(&KEY, &IV, &plaintext, &mut ciphertext)?;
+    /// aes.encrypt_cbc(&KEY, &IV, &plaintext, &mut ciphertext)?;
     /// # Ok::<(), stm32wlxx_hal::aes::Error>(())
     /// ```
     pub fn encrypt_cbc(

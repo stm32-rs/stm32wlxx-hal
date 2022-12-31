@@ -814,6 +814,11 @@ impl Aes {
 
         let keysize: KeySize = self.set_key(key);
 
+        self.aes.ivr0.write(|w| w.ivi().bits(iv[3]));
+        self.aes.ivr1.write(|w| w.ivi().bits(iv[2]));
+        self.aes.ivr2.write(|w| w.ivi().bits(iv[1]));
+        self.aes.ivr3.write(|w| w.ivi().bits(iv[0]));
+
         self.aes.cr.write(|w| {
             w.en().enabled();
             w.datatype().variant(self.swap_mode);
@@ -833,7 +838,7 @@ impl Aes {
 
         self.set_din(plaintext);
         self.poll_completion()?;
-        self.dout(ciphertext);
+        self.dout(ciphertext);  
         Ok(())
     }
 

@@ -777,7 +777,6 @@ impl Aes {
         Ok(())
     }
 
-
     /// Encrypt using the Cipher block chaining (CBC) algorithm.
     ///
     /// # Panics
@@ -785,7 +784,7 @@ impl Aes {
     /// * Key is not 128-bits long `[u32; 4]` or 256-bits long `[u32; 8]`.
     ///
     /// # Example
-    /// 
+    ///
     /// ```no_run
     /// use stm32wlxx_hal::{aes::Aes, pac};
     ///
@@ -838,7 +837,7 @@ impl Aes {
 
         self.set_din(plaintext);
         self.poll_completion()?;
-        self.dout(ciphertext);  
+        self.dout(ciphertext);
         Ok(())
     }
 

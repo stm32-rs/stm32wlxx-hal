@@ -826,7 +826,7 @@ impl Aes {
             w.errie().disabled();
             w.dmainen().disabled();
             w.dmaouten().disabled();
-            w.gcmph().bits(0); // do not care for ECB
+            w.gcmph().bits(0); // do not care for CBC
             w.keysize().variant(keysize);
             w.npblb().bits(0) // no padding
         });
@@ -973,7 +973,7 @@ impl Aes {
             w.errie().disabled();
             w.dmainen().disabled();
             w.dmaouten().disabled();
-            w.gcmph().bits(0); // do not care for CBC
+            w.gcmph().bits(0); // do not care for ECB
             w.keysize().variant(keysize);
             w.npblb().bits(0) // no padding
         });

@@ -727,7 +727,6 @@ impl<'a> Flash<'a> {
         let to: *mut u32 = to as *mut u32;
 
         (0..64)
-            .into_iter()
             .for_each(|word| unsafe { write_volatile(to.offset(word), from.offset(word).read()) });
 
         let ret: Result<(), Error> = self.wait_for_not_busy();

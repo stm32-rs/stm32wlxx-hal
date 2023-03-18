@@ -386,7 +386,6 @@ impl Pka {
 
     fn zero_ram(&mut self) {
         (0..RAM_NUM_DW)
-            .into_iter()
             .for_each(|dw| unsafe { write_volatile((dw * 4 + RAM_BASE) as *mut u32, 0) });
     }
 

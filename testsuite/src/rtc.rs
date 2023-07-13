@@ -38,8 +38,8 @@ fn test_set_date_time_with_clk(clk: rtc::Clk) -> Rtc {
 
     defmt::trace!("four_rtc_clk_cycles={}", four_rtc_clk_cycles);
 
-    let date: NaiveDate = NaiveDate::from_ymd(2021, 10, 20);
-    let set_dt: NaiveDateTime = date.and_hms(12, 02, 05);
+    let date: NaiveDate = unwrap!(NaiveDate::from_ymd_opt(2021, 10, 20));
+    let set_dt: NaiveDateTime = unwrap!(date.and_hms_opt(12, 02, 05));
     rtc.set_date_time(set_dt);
     let start: u32 = DWT::cycle_count();
 
@@ -137,7 +137,7 @@ mod tests {
             let mut dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
             let rtc: Rtc = unsafe { Rtc::renew(dp.RTC, &mut dp.PWR, &mut dp.RCC) };
             let date: NaiveDate = unwrap!(rtc.date());
-            assert_eq!(date, NaiveDate::from_ymd(2021, 10, 20));
+            assert_eq!(Some(date), NaiveDate::from_ymd_opt(2021, 10, 20));
         }
 
         unsafe { pulse_reset_backup_domain(&mut ta.rcc, &mut ta.pwr) };

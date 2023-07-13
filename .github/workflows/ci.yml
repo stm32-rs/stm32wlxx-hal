@@ -200,7 +200,7 @@ jobs:
           --features chrono,embedded-time,rt,stm32wl5x_cm4 \
           -- -Z unstable-options --enable-index-page
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v2
         with:
           path: target/doc
 

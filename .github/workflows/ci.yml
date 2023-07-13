@@ -199,6 +199,7 @@ jobs:
           cargo +nightly rustdoc \
           --features chrono,embedded-time,rt,stm32wl5x_cm4 \
           -- -Z unstable-options --enable-index-page
+          chmod -R 777 target
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:

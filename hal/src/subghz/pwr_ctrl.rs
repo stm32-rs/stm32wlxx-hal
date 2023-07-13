@@ -1,13 +1,14 @@
 /// Power-supply current limit.
 ///
 /// Argument of [`PwrCtrl::set_current_lim`].
-#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Clone, Copy)]
+#[derive(Debug, Default, PartialEq, Eq, Ord, PartialOrd, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum CurrentLim {
     /// 25 mA
     Milli25 = 0x0,
     /// 50 mA (default)
+    #[default]
     Milli50 = 0x1,
     /// 100 mA
     Milli100 = 0x2,
@@ -35,12 +36,6 @@ impl CurrentLim {
             CurrentLim::Milli100 => 100,
             CurrentLim::Milli200 => 200,
         }
-    }
-}
-
-impl Default for CurrentLim {
-    fn default() -> Self {
-        CurrentLim::Milli50
     }
 }
 

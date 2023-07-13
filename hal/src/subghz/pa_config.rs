@@ -175,11 +175,12 @@ impl Default for PaConfig {
 ///
 /// Argument of [`PaConfig::set_pa`].
 #[repr(u8)]
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub enum PaSel {
     /// High power amplifier.
     Hp = 0b0,
     /// Low power amplifier.
+    #[default]
     Lp = 0b1,
 }
 
@@ -196,12 +197,6 @@ impl Ord for PaSel {
             (PaSel::Hp, PaSel::Lp) => core::cmp::Ordering::Greater,
             (PaSel::Lp, PaSel::Hp) => core::cmp::Ordering::Less,
         }
-    }
-}
-
-impl Default for PaSel {
-    fn default() -> Self {
-        PaSel::Lp
     }
 }
 

@@ -1,7 +1,7 @@
 /// SMPS maximum drive capability.
 ///
 /// Argument of [`set_smps_drv`](super::SubGhz::set_smps_drv).
-#[derive(Debug, PartialEq, Eq, Ord, PartialOrd, Clone, Copy)]
+#[derive(Debug, Default, PartialEq, Eq, Ord, PartialOrd, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum SmpsDrv {
@@ -12,6 +12,7 @@ pub enum SmpsDrv {
     /// 60 mA
     Milli60 = 0x2,
     /// 100 mA (default)
+    #[default]
     Milli100 = 0x3,
 }
 
@@ -35,11 +36,5 @@ impl SmpsDrv {
             SmpsDrv::Milli60 => 60,
             SmpsDrv::Milli100 => 100,
         }
-    }
-}
-
-impl Default for SmpsDrv {
-    fn default() -> Self {
-        SmpsDrv::Milli100
     }
 }

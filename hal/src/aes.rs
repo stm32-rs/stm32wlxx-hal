@@ -1,7 +1,6 @@
 //! Advanced encryption standard
 
 use crate::pac;
-use core::mem::size_of;
 pub use pac::aes::cr::DATATYPE_A as SwapMode;
 use pac::aes::cr::KEYSIZE_A as KeySize;
 
@@ -642,8 +641,7 @@ impl Aes {
                 w.dmaouten().disabled();
                 w.gcmph().payload();
                 w.keysize().variant(keysize);
-                w.npblb()
-                    .bits(16 - ((block.len() * size_of::<u32>()) as u8))
+                w.npblb().bits(16 - (core::mem::size_of_val(block) as u8))
             });
             self.set_din_slice(block);
             self.poll_completion()?;
@@ -653,8 +651,8 @@ impl Aes {
         // final phase
         self.gcm_final_phase::<MODE>(
             keysize,
-            aad.len() * size_of::<u32>(),
-            buf.len() * size_of::<u32>(),
+            core::mem::size_of_val(aad),
+            core::mem::size_of_val(buf),
             tag,
         )
     }

@@ -1,7 +1,7 @@
 /// Startup configurations when exiting sleep mode.
 ///
 /// Argument of [`SleepCfg::set_startup`].
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
 pub enum Startup {
@@ -14,13 +14,8 @@ pub enum Startup {
     /// before going to sleep mode, is retained.
     /// The configuration of the other modes is lost and must be re-configured
     /// when exiting sleep mode.
+    #[default]
     Warm = 1,
-}
-
-impl Default for Startup {
-    fn default() -> Self {
-        Startup::Warm
-    }
 }
 
 /// Sleep configuration.

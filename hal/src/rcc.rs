@@ -44,6 +44,7 @@ fn set_flash_latency(flash: &pac::FLASH, rcc: &pac::RCC, target_sysclk_hz: u32, 
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
+#[derive(Default)]
 pub enum MsiRange {
     /// Range 0 around 100 kHz.
     Range100k = 0b0000,
@@ -58,6 +59,7 @@ pub enum MsiRange {
     /// Range 5 around 2 MHz.
     Range2M = 0b0101,
     /// Range 6 around 4 MHz.
+    #[default]
     Range4M = 0b0110,
     /// Range 7 around 8 MHz.
     Range8M = 0b0111,
@@ -129,12 +131,6 @@ impl MsiRange {
         } else {
             Vos::V1_0
         }
-    }
-}
-
-impl Default for MsiRange {
-    fn default() -> Self {
-        MsiRange::Range4M
     }
 }
 

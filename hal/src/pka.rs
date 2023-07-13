@@ -392,7 +392,7 @@ impl Pka {
     unsafe fn write_ram(&mut self, offset: usize, buf: &[u32]) {
         // asserts are for internal correctness, should not be accessible by users
         debug_assert_eq!(offset % 4, 0);
-        debug_assert!(offset + buf.len() * size_of::<u32>() < 0x5800_33FF);
+        debug_assert!(offset + core::mem::size_of_val(buf) < 0x5800_33FF);
         buf.iter().rev().enumerate().for_each(|(idx, &dw)| {
             write_volatile((offset + idx * size_of::<u32>()) as *mut u32, dw)
         });
@@ -401,7 +401,7 @@ impl Pka {
     unsafe fn read_ram(&mut self, offset: usize, buf: &mut [u32]) {
         // asserts are for internal correctness, should not be accessible by users
         debug_assert_eq!(offset % 4, 0);
-        debug_assert!(offset + buf.len() * size_of::<u32>() < 0x5800_33FF);
+        debug_assert!(offset + core::mem::size_of_val(buf) < 0x5800_33FF);
         buf.iter_mut().rev().enumerate().for_each(|(idx, dw)| {
             *dw = read_volatile((offset + idx * size_of::<u32>()) as *const u32);
         });

@@ -1,10 +1,11 @@
 /// Generic packet infinite sequence selection.
 ///
 /// Argument of [`PktCtrl::set_inf_seq_sel`].
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum InfSeqSel {
     /// Preamble `0x5555`.
+    #[default]
     Five = 0b00,
     /// Preamble `0x0000`.
     Zero = 0b01,
@@ -12,12 +13,6 @@ pub enum InfSeqSel {
     One = 0b10,
     /// PRBS9.
     Prbs9 = 0b11,
-}
-
-impl Default for InfSeqSel {
-    fn default() -> Self {
-        InfSeqSel::Five
-    }
 }
 
 /// Generic packet control.

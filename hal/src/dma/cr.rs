@@ -280,7 +280,7 @@ impl Cr {
     /// ```
     ///
     /// [`enabled`]: crate::dma::Cr::enabled
-    #[must_use = "set_secm returns a modified Cr"]
+    #[must_use = "set_secure returns a modified Cr"]
     pub const fn set_secure(mut self, sec: bool) -> Cr {
         if sec {
             self.val |= 1 << 17;

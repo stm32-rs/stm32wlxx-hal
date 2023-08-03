@@ -30,7 +30,7 @@ impl FskPacketStatus {
     /// let pkt_status: FskPacketStatus = FskPacketStatus::from(example_data_from_radio);
     /// let status: Status = pkt_status.status();
     /// assert_eq!(status.mode(), Ok(StatusMode::Rx));
-    /// assert_eq!(status.cmd(), Ok(CmdStatus::Avaliable));
+    /// assert_eq!(status.cmd(), Ok(CmdStatus::Available));
     /// ```
     pub const fn status(&self) -> Status {
         Status::from_raw(self.buf[0])
@@ -195,7 +195,7 @@ impl LoRaPacketStatus {
     /// let pkt_status: LoRaPacketStatus = LoRaPacketStatus::from(example_data_from_radio);
     /// let status: Status = pkt_status.status();
     /// assert_eq!(status.mode(), Ok(StatusMode::Rx));
-    /// assert_eq!(status.cmd(), Ok(CmdStatus::Avaliable));
+    /// assert_eq!(status.cmd(), Ok(CmdStatus::Available));
     /// ```
     pub const fn status(&self) -> Status {
         Status::from_raw(self.buf[0])

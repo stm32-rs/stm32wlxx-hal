@@ -188,7 +188,7 @@ pub fn mask_irq() {
 /// details.
 #[inline]
 pub fn rfbusys() -> bool {
-    // safety: atmoic read with no side-effects
+    // safety: atomic read with no side-effects
     unsafe { (*pac::PWR::PTR).sr2.read().rfbusys().is_busy() }
 }
 
@@ -198,7 +198,7 @@ pub fn rfbusys() -> bool {
 /// details.
 #[inline]
 pub fn rfbusyms() -> bool {
-    // saftey: atomic read with no side-effects
+    // safety: atomic read with no side-effects
     unsafe { (*pac::PWR::PTR).sr2.read().rfbusyms().is_busy() }
 }
 
@@ -273,7 +273,7 @@ fn pulse_reset(rcc: &mut pac::RCC) {
 /// const TX_PARAMS: TxParams = TxParams::LP_10.set_ramp_time(RampTime::Micros40);
 ///
 /// const TCXO_MODE: TcxoMode = TcxoMode::new()
-///     .set_txco_trim(TcxoTrim::Volts1pt7)
+///     .set_tcxo_trim(TcxoTrim::Volts1pt7)
 ///     .set_timeout(Timeout::from_millis_sat(10));
 ///
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -769,12 +769,12 @@ where
     ///
     /// [`set_rx_duty_cycle`]: crate::subghz::SubGhz::set_rx_duty_cycle
     pub fn set_rtc_period(&mut self, period: Timeout) -> Result<(), Error> {
-        let tobits: u32 = period.into_bits();
+        let to_bits: u32 = period.into_bits();
         self.write(wr_reg![
             RTCPRDR2,
-            (tobits >> 16) as u8,
-            (tobits >> 8) as u8,
-            tobits as u8
+            (to_bits >> 16) as u8,
+            (to_bits >> 8) as u8,
+            to_bits as u8
         ])
     }
 
@@ -907,23 +907,23 @@ where
 
     /// Setup the sub-GHz radio for TX.
     pub fn set_tx(&mut self, timeout: Timeout) -> Result<(), Error> {
-        let tobits: u32 = timeout.into_bits();
+        let to_bits: u32 = timeout.into_bits();
         self.write(&[
             OpCode::SetTx.into(),
-            (tobits >> 16) as u8,
-            (tobits >> 8) as u8,
-            tobits as u8,
+            (to_bits >> 16) as u8,
+            (to_bits >> 8) as u8,
+            to_bits as u8,
         ])
     }
 
     /// Setup the sub-GHz radio for RX.
     pub fn set_rx(&mut self, timeout: Timeout) -> Result<(), Error> {
-        let tobits: u32 = timeout.into_bits();
+        let to_bits: u32 = timeout.into_bits();
         self.write(&[
             OpCode::SetRx.into(),
-            (tobits >> 16) as u8,
-            (tobits >> 8) as u8,
-            tobits as u8,
+            (to_bits >> 16) as u8,
+            (to_bits >> 8) as u8,
+            to_bits as u8,
         ])
     }
 

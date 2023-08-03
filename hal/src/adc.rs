@@ -825,7 +825,7 @@ impl Adc {
     /// ```
     #[inline]
     pub fn set_isr(&mut self, isr: u32) {
-        // saftey: reserved bits are masked and will be held at reset value
+        // safety: reserved bits are masked and will be held at reset value
         self.adc.isr.write(|w| unsafe { w.bits(isr & irq::ALL) })
     }
 
@@ -848,7 +848,7 @@ impl Adc {
     /// ```
     #[inline]
     pub fn isr() -> pac::adc::isr::R {
-        // saftey: atomic read with no side-effects
+        // safety: atomic read with no side-effects
         unsafe { (*pac::ADC::PTR).isr.read() }
     }
 
@@ -870,7 +870,7 @@ impl Adc {
     /// ```
     #[inline]
     pub fn set_ier(&mut self, ier: u32) {
-        // saftey: reserved bits are masked and will be held at reset value
+        // safety: reserved bits are masked and will be held at reset value
         self.adc.ier.write(|w| unsafe { w.bits(ier & irq::ALL) })
     }
 
@@ -909,7 +909,7 @@ impl Adc {
     pub fn start_chsel(&mut self, ch: u32) {
         debug_assert!(self.adc.cr.read().adstart().is_not_active());
         // See section 18.3.8 page 542 "Channel selection"
-        // saftey: reserved bits are masked and will be held at reset value
+        // safety: reserved bits are masked and will be held at reset value
         self.adc
             .chselr0()
             .write(|w| unsafe { w.chsel().bits(ch & CH_MASK) });

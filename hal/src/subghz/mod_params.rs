@@ -544,7 +544,7 @@ impl FskModParams {
     ///     .set_bandwidth(FskBandwidth::Bw58)
     ///     .set_fdev(FskFdev::from_hertz(10_000));
     ///
-    /// // 30 PPM is wost case (if the HSE32 crystal meets requirements)
+    /// // 30 PPM is worst case (if the HSE32 crystal meets requirements)
     /// sa::const_assert!(MOD_PARAMS.is_valid(30));
     /// ```
     #[must_use = "the return value indicates if the modulation parameters are valid"]
@@ -851,7 +851,7 @@ impl LoRaModParams {
     /// When possible, enabling the low data rate optimization, relaxes the
     /// total frequency drift over the packet time by 16:
     ///
-    /// Freq_drift_optimise_max = 16 × Freq_drift_max
+    /// Freq_drift_optimize_max = 16 × Freq_drift_max
     ///
     /// # Example
     ///

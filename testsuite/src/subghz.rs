@@ -21,9 +21,9 @@ use bsp::{
             rfbusys, wakeup, AddrComp, CalibrateImage, CfgIrq, CmdStatus, CodingRate, CrcType,
             FallbackMode, FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape,
             GenericPacketParams, HeaderType, Irq, LoRaBandwidth, LoRaModParams, LoRaPacketParams,
-            LoRaSyncWord, Ocp, PaConfig, PacketType, PreambleDetection, RampTime, RegMode, RfFreq,
-            SleepCfg, SpreadingFactor, StandbyClk, Startup, Status, StatusMode, SubGhz, TcxoMode,
-            TcxoTrim, Timeout, TxParams,
+            LoRaSyncWord, Ocp, PaConfig, PacketType, PktCtrl, PreambleDetection, RampTime, RegMode,
+            RfFreq, SleepCfg, SpreadingFactor, StandbyClk, Startup, Status, StatusMode, SubGhz,
+            TcxoMode, TcxoTrim, Timeout, TxParams,
         },
         util::new_delay,
     },
@@ -378,6 +378,37 @@ mod tests {
 
         let status: Status = unwrap!(ta.sg.status());
         defmt::assert_eq!(status.mode(), Ok(StatusMode::StandbyRc));
+    }
+
+    #[test]
+    fn read_write_register(ta: &mut TestArgs) {
+        let original_value = unwrap!(ta.sg.get_init_whitening());
+        let test_value = !original_value;
+        unwrap!(ta.sg.set_init_whitening(test_value));
+        let new_value = unwrap!(ta.sg.get_init_whitening());
+        defmt::assert_eq!(test_value, new_value);
+
+        unwrap!(ta.sg.set_init_whitening(original_value));
+    }
+
+    #[test]
+    fn set_whitening_seed_operations(ta: &mut TestArgs) {
+        let original_raw_pkt_ctrl = (unwrap!(ta.sg.get_pkt_ctrl())).as_bits();
+        let original_init_whitening = unwrap!(ta.sg.get_init_whitening());
+        let original_whitening_seed: u16 =
+            (((original_raw_pkt_ctrl & 0x01) as u16) << 8) | original_init_whitening as u16;
+        let test_value = !original_whitening_seed & 0x01FF;
+        let expected_raw_pkt_ctrl =
+            (original_raw_pkt_ctrl & 0xFE) | ((test_value >> 8) & 0x01) as u8;
+        let expected_init_whitening = (test_value & 0x00FF) as u8;
+
+        unwrap!(ta.sg.set_whitening_seed(test_value));
+
+        defmt::assert_eq!(expected_raw_pkt_ctrl, (unwrap!(ta.sg.get_pkt_ctrl())).as_bits());
+        defmt::assert_eq!(expected_init_whitening, unwrap!(ta.sg.get_init_whitening()));
+
+        unwrap!(ta.sg.set_init_whitening(original_init_whitening));
+        unwrap!(ta.sg.set_pkt_ctrl(PktCtrl::from_raw(original_raw_pkt_ctrl)));
     }
 
     #[test]

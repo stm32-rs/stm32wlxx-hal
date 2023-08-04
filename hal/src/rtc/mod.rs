@@ -218,14 +218,14 @@ impl Rtc {
     /// Read the RTC status (interrupt) register.
     #[inline]
     pub fn status() -> pac::rtc::sr::R {
-        // saftey: atomic read with no side-effects
+        // safety: atomic read with no side-effects
         unsafe { (*pac::RTC::PTR).sr.read() }
     }
 
     /// Read the RTC masked status (interrupt) register.
     #[inline]
     pub fn masked_status() -> pac::rtc::misr::R {
-        // saftey: atomic read with no side-effects
+        // safety: atomic read with no side-effects
         unsafe { (*pac::RTC::PTR).misr.read() }
     }
 

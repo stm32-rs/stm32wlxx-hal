@@ -44,7 +44,7 @@ impl core::fmt::Display for TcxoTrim {
 }
 
 impl TcxoTrim {
-    /// Get the value of the TXCO trim in millivolts.
+    /// Get the value of the TCXO trim in millivolts.
     ///
     /// # Example
     ///
@@ -113,11 +113,11 @@ impl TcxoMode {
     /// ```
     /// use stm32wlxx_hal::subghz::{TcxoMode, TcxoTrim};
     ///
-    /// const TCXO_MODE: TcxoMode = TcxoMode::new().set_txco_trim(TcxoTrim::Volts1pt6);
+    /// const TCXO_MODE: TcxoMode = TcxoMode::new().set_tcxo_trim(TcxoTrim::Volts1pt6);
     /// # assert_eq!(TCXO_MODE.as_slice()[1], 0x00);
     /// ```
-    #[must_use = "set_txco_trim returns a modified TcxoMode"]
-    pub const fn set_txco_trim(mut self, tcxo_trim: TcxoTrim) -> TcxoMode {
+    #[must_use = "set_tcxo_trim returns a modified TcxoMode"]
+    pub const fn set_tcxo_trim(mut self, tcxo_trim: TcxoTrim) -> TcxoMode {
         self.buf[1] = tcxo_trim as u8;
         self
     }
@@ -154,7 +154,7 @@ impl TcxoMode {
     /// use stm32wlxx_hal::subghz::{TcxoMode, TcxoTrim, Timeout};
     ///
     /// const TCXO_MODE: TcxoMode = TcxoMode::new()
-    ///     .set_txco_trim(TcxoTrim::Volts1pt7)
+    ///     .set_tcxo_trim(TcxoTrim::Volts1pt7)
     ///     .set_timeout(Timeout::from_raw(0x123456));
     /// assert_eq!(TCXO_MODE.as_slice(), &[0x97, 0x1, 0x12, 0x34, 0x56]);
     /// ```

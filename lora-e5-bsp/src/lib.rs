@@ -1,4 +1,4 @@
-//! seeed LoRa-E5 development kit board support package.
+//! Seeed LoRa-E5 development kit board support package.
 
 #![cfg_attr(not(test), no_std)]
 #![warn(missing_docs)]

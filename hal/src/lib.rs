@@ -16,7 +16,7 @@
     all(feature = "stm32wl5x_cm4", feature = "stm32wle5"),
 ))]
 compile_error!(
-    "Multile chip features activated. \
+    "Multiple chip features activated. \
     You must activate exactly one of the following features: \
     stm32wl5x_cm0p, stm32wl5x_cm4, stm32wle5"
 );

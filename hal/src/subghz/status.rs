@@ -61,7 +61,7 @@ pub enum CmdStatus {
     /// Data available to host.
     ///
     /// Packet received successfully and data can be retrieved.
-    Avaliable = 0x2,
+    Available = 0x2,
     /// Command time out.
     ///
     /// Command took too long to complete triggering a sub-GHz radio watchdog
@@ -91,7 +91,7 @@ impl CmdStatus {
     /// ```
     /// use stm32wlxx_hal::subghz::CmdStatus;
     ///
-    /// assert_eq!(CmdStatus::from_raw(0x2), Ok(CmdStatus::Avaliable));
+    /// assert_eq!(CmdStatus::from_raw(0x2), Ok(CmdStatus::Available));
     /// assert_eq!(CmdStatus::from_raw(0x3), Ok(CmdStatus::Timeout));
     /// assert_eq!(CmdStatus::from_raw(0x4), Ok(CmdStatus::ProcessingError));
     /// assert_eq!(CmdStatus::from_raw(0x5), Ok(CmdStatus::ExecutionFailure));
@@ -101,7 +101,7 @@ impl CmdStatus {
     /// ```
     pub const fn from_raw(bits: u8) -> Result<Self, u8> {
         match bits {
-            0x2 => Ok(CmdStatus::Avaliable),
+            0x2 => Ok(CmdStatus::Available),
             0x3 => Ok(CmdStatus::Timeout),
             0x4 => Ok(CmdStatus::ProcessingError),
             0x5 => Ok(CmdStatus::ExecutionFailure),
@@ -142,7 +142,7 @@ impl Status {
     ///
     /// const STATUS: Status = Status::from_raw(0x54_u8);
     /// assert_eq!(STATUS.mode(), Ok(StatusMode::Rx));
-    /// assert_eq!(STATUS.cmd(), Ok(CmdStatus::Avaliable));
+    /// assert_eq!(STATUS.cmd(), Ok(CmdStatus::Available));
     /// ```
     pub const fn from_raw(value: u8) -> Status {
         Status(value)

@@ -137,7 +137,7 @@ mod tests {
             defmt::info!("Approximate cycles per PKA p256 sign: {}", elapsed);
         }
 
-        // rust-crypto p256 for comparsion
+        // rust-crypto p256 for comparison
         {
             use ecdsa::hazmat::SignPrimitive;
             use p256::{elliptic_curve::ops::Reduce, Scalar};
@@ -216,7 +216,7 @@ mod tests {
             defmt::info!("Approximate cycles per PKA p256 verify: {}", elapsed);
         }
 
-        // rust-crypto p256 for comparsion
+        // rust-crypto p256 for comparison
         {
             use ecdsa::{hazmat::VerifyPrimitive, Signature};
             use p256::{elliptic_curve::ops::Reduce, PublicKey, Scalar};

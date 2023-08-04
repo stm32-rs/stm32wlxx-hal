@@ -91,7 +91,7 @@ const PA_CONFIG: PaConfig = PaConfig::LP_10;
 const TX_PARAMS: TxParams = TxParams::LP_10.set_ramp_time(RampTime::Micros40);
 
 const TCXO_MODE: TcxoMode = TcxoMode::new()
-    .set_txco_trim(TcxoTrim::Volts1pt7)
+    .set_tcxo_trim(TcxoTrim::Volts1pt7)
     .set_timeout(Timeout::from_duration_sat(Duration::from_millis(10)));
 
 // WARNING will wrap-around eventually, use this for relative timing only
@@ -219,7 +219,7 @@ fn ping_pong(sg: &mut MySubghz, rng: &mut Rng, rfs: &mut RfSwitch, pkt: PacketTy
 
                 let (status, len, ptr) = unwrap!(sg.rx_buffer_status());
                 defmt::assert_eq!(len, DATA_LEN);
-                defmt::assert_eq!(status.cmd(), Ok(CmdStatus::Avaliable));
+                defmt::assert_eq!(status.cmd(), Ok(CmdStatus::Available));
                 defmt::assert_eq!(ptr, RX_BUF_OFFSET);
                 defmt::assert_eq!(irq_status, 0b10);
                 let mut data_buf: [u8; DATA_LEN as usize] = [0; DATA_LEN as usize];
@@ -251,7 +251,7 @@ fn ping_pong(sg: &mut MySubghz, rng: &mut Rng, rfs: &mut RfSwitch, pkt: PacketTy
                 return;
             } else {
                 defmt::assert_eq!(irq_status, 0);
-                defmt::assert_ne!(status.cmd(), Ok(CmdStatus::Avaliable));
+                defmt::assert_ne!(status.cmd(), Ok(CmdStatus::Available));
                 defmt::assert_ne!(status.cmd(), Ok(CmdStatus::ProcessingError));
                 defmt::assert_ne!(status.cmd(), Ok(CmdStatus::ExecutionFailure));
 

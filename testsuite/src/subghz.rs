@@ -404,7 +404,10 @@ mod tests {
 
         unwrap!(ta.sg.set_whitening_seed(test_value));
 
-        defmt::assert_eq!(expected_raw_pkt_ctrl, (unwrap!(ta.sg.get_pkt_ctrl())).as_bits());
+        defmt::assert_eq!(
+            expected_raw_pkt_ctrl,
+            (unwrap!(ta.sg.get_pkt_ctrl())).as_bits()
+        );
         defmt::assert_eq!(expected_init_whitening, unwrap!(ta.sg.get_init_whitening()));
 
         unwrap!(ta.sg.set_init_whitening(original_init_whitening));

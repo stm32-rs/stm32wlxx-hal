@@ -382,10 +382,10 @@ mod tests {
 
     #[test]
     fn read_write_register(ta: &mut TestArgs) {
-        let original_value = unwrap!(ta.sg.get_init_whitening());
+        let original_value = unwrap!(ta.sg.init_whitening());
         let test_value = !original_value;
         unwrap!(ta.sg.set_init_whitening(test_value));
-        let new_value = unwrap!(ta.sg.get_init_whitening());
+        let new_value = unwrap!(ta.sg.init_whitening());
         defmt::assert_eq!(test_value, new_value);
 
         unwrap!(ta.sg.set_init_whitening(original_value));
@@ -393,8 +393,8 @@ mod tests {
 
     #[test]
     fn set_whitening_seed_operations(ta: &mut TestArgs) {
-        let original_raw_pkt_ctrl = (unwrap!(ta.sg.get_pkt_ctrl())).as_bits();
-        let original_init_whitening = unwrap!(ta.sg.get_init_whitening());
+        let original_raw_pkt_ctrl = (unwrap!(ta.sg.pkt_ctrl())).as_bits();
+        let original_init_whitening = unwrap!(ta.sg.init_whitening());
         let original_whitening_seed: u16 =
             (((original_raw_pkt_ctrl & 0x01) as u16) << 8) | original_init_whitening as u16;
         let test_value = !original_whitening_seed & 0x01FF;
@@ -406,9 +406,9 @@ mod tests {
 
         defmt::assert_eq!(
             expected_raw_pkt_ctrl,
-            (unwrap!(ta.sg.get_pkt_ctrl())).as_bits()
+            (unwrap!(ta.sg.pkt_ctrl())).as_bits()
         );
-        defmt::assert_eq!(expected_init_whitening, unwrap!(ta.sg.get_init_whitening()));
+        defmt::assert_eq!(expected_init_whitening, unwrap!(ta.sg.init_whitening()));
 
         unwrap!(ta.sg.set_init_whitening(original_init_whitening));
         unwrap!(ta.sg.set_pkt_ctrl(PktCtrl::from_raw(original_raw_pkt_ctrl)));

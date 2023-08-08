@@ -727,7 +727,7 @@ where
     }
 
     /// Reads the Init Whitening register (GWHITEINIRL)
-    pub fn get_init_whitening(&mut self) -> Result<u8, Error> {
+    pub fn init_whitening(&mut self) -> Result<u8, Error> {
         self.read_register(Register::GWHITEINIRL)
     }
 

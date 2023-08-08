@@ -721,7 +721,7 @@ where
     }
 
     /// Reads the PktCtrl register (GPKTCTL1A)
-    pub fn get_pkt_ctrl(&mut self) -> Result<PktCtrl, Error> {
+    pub fn pkt_ctrl(&mut self) -> Result<PktCtrl, Error> {
         let raw_pkt_ctrl = self.read_register(Register::GPKTCTL1A)?;
         Ok(PktCtrl::from_raw(raw_pkt_ctrl))
     }

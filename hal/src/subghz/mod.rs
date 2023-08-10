@@ -703,6 +703,34 @@ where
         Ok(())
     }
 
+    // register read with fixed (one) length data
+    fn read_register(&mut self, register: Register) -> Result<u8, Error> {
+        let addr: [u8; 2] = register.address().to_be_bytes();
+        let mut result = [0_u8];
+
+        self.poll_not_busy();
+        {
+            let _nss: Nss = Nss::new();
+            self.spi
+                .write(&[OpCode::ReadRegister as u8, addr[0], addr[1], 0x00])?;
+            self.spi.transfer(&mut result)?;
+        }
+        self.poll_not_busy();
+
+        Ok(result[0])
+    }
+
+    /// Reads the PktCtrl register (GPKTCTL1A)
+    pub fn pkt_ctrl(&mut self) -> Result<PktCtrl, Error> {
+        let raw_pkt_ctrl = self.read_register(Register::GPKTCTL1A)?;
+        Ok(PktCtrl::from_raw(raw_pkt_ctrl))
+    }
+
+    /// Reads the Init Whitening register (GWHITEINIRL)
+    pub fn init_whitening(&mut self) -> Result<u8, Error> {
+        self.read_register(Register::GWHITEINIRL)
+    }
+
     /// Set the LoRa bit synchronization.
     pub fn set_bit_sync(&mut self, bs: BitSync) -> Result<(), Error> {
         self.write(wr_reg![GBSYNC, bs.as_bits()])
@@ -719,6 +747,15 @@ where
     /// [`set_pkt_ctrl`](Self::set_pkt_ctrl).
     pub fn set_init_whitening(&mut self, init: u8) -> Result<(), Error> {
         self.write(wr_reg![GWHITEINIRL, init])
+    }
+
+    /// Set the seed value for generic packet whitening.
+    pub fn set_whitening_seed(&mut self, seed: u16) -> Result<(), Error> {
+        let seed_as_array = u16::to_be_bytes(seed);
+        let pkt_ctrl_value = self.read_register(Register::GPKTCTL1A)?;
+        let new_pkt_ctrl = (pkt_ctrl_value & 0xFE) | (seed_as_array[0] & 0x01);
+        self.set_pkt_ctrl(PktCtrl::from_raw(new_pkt_ctrl))?;
+        self.set_init_whitening(seed_as_array[1])
     }
 
     /// Set the initial value for generic packet CRC polynomial.
@@ -1312,7 +1349,7 @@ pub(crate) enum OpCode {
     GetStats = 0x10,
     GetStatus = 0xC0,
     ReadBuffer = 0x1E,
-    RegRegister = 0x1D,
+    ReadRegister = 0x1D,
     ResetStats = 0x00,
     SetBufferBaseAddress = 0x8F,
     SetCad = 0xC5,

@@ -118,8 +118,8 @@ jobs:
         timeout-minutes: 5
         run: |
           python3 testsuite/runall.py --elf-dir bins \
-          002900205553500A20393256 \
-          0034001A5553500B20393256
+          0483:374e:002900205553500A20393256 \
+          0483:374e:0034001A5553500B20393256
 
   test:
     name: Unit Tests

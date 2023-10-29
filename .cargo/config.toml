@@ -1,5 +1,5 @@
 [target.'cfg(all(target_arch = "arm", target_os = "none"))']
-runner = "probe-run --chip STM32WLE5JCIx --connect-under-reset"
+runner = "probe-rs run --chip STM32WLE5JCIx --connect-under-reset"
 rustflags = [
   "-C", "link-arg=-Tlink.x",
   "-C", "link-arg=-Tdefmt.x",

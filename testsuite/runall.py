@@ -77,7 +77,8 @@ async def probe_run(elf_path: str, probe: str, log_prefix: str) -> TestResult:
     print(f"[{log_prefix}] Running {elf_path}")
     start = time.monotonic()
     proc = await asyncio.create_subprocess_exec(
-        "probe-run",
+        "probe-rs",
+        "run",
         "--chip",
         "STM32WLE5JCIx",
         "--connect-under-reset",

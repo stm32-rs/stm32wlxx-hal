@@ -167,7 +167,7 @@ impl core::fmt::Debug for FskPacketStatus {
     }
 }
 
-/// (G)FSK packet status.
+/// LoRa packet status.
 ///
 /// Returned by [`lora_packet_status`].
 ///

@@ -107,9 +107,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Display probe-run version
-        run: probe-run --version
+        run: probe-rs --version
       - name: List probes
-        run: probe-run --list-probes
+        run: probe-rs list
       - uses: actions/download-artifact@v3
         with:
           name: test-bins

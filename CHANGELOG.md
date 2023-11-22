@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated minimum `chrono` version to `0.4.23` to satisfy `cargo-audit`.
 - Changed minimum supported rust version from 1.60 to 1.62.
 
+### Fixed
+- Added a missing `must_use` in `SleepCfg::set_startup`.
+
 ## [0.6.1] - 2022-08-01
 ### Fixed
 - Fixed undefined behavior in SPI full duplex RX DMA transfers.

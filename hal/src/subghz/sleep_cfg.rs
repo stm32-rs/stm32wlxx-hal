@@ -60,6 +60,7 @@ impl SleepCfg {
     /// # assert_eq!(u8::from(SLEEP_CFG), 0b001);
     /// # assert_eq!(u8::from(SLEEP_CFG.set_startup(Startup::Warm)), 0b101);
     /// ```
+    #[must_use = "set_startup returns a modified SleepCfg"]
     pub const fn set_startup(mut self, startup: Startup) -> SleepCfg {
         if startup as u8 == 1 {
             self.0 |= 1 << 2

@@ -199,7 +199,7 @@ jobs:
           -- -Z unstable-options --enable-index-page
           chmod -R 777 ../target
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: target/doc
 

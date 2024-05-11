@@ -44,7 +44,7 @@ impl From<RampTime> for core::time::Duration {
     }
 }
 
-#[cfg(feature = "embedded_time")]
+#[cfg(feature = "embedded-time")]
 impl From<RampTime> for embedded_time::duration::Microseconds {
     fn from(rt: RampTime) -> Self {
         match rt {

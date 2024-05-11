@@ -76,15 +76,21 @@ macro_rules! busy_wait {
 }
 
 trait I2cBase {
+    #[allow(dead_code)]
     fn cr1(&self) -> &pac::i2c1::CR1;
     fn cr2(&self) -> &pac::i2c1::CR2;
     fn icr(&self) -> &pac::i2c1::ICR;
     fn isr(&self) -> &pac::i2c1::ISR;
+    #[allow(dead_code)]
     fn oar1(&self) -> &pac::i2c1::OAR1;
+    #[allow(dead_code)]
     fn oar2(&self) -> &pac::i2c1::OAR2;
+    #[allow(dead_code)]
     fn pecr(&self) -> &pac::i2c1::PECR;
     fn rxdr(&self) -> &pac::i2c1::RXDR;
+    #[allow(dead_code)]
     fn timeoutr(&self) -> &pac::i2c1::TIMEOUTR;
+    #[allow(dead_code)]
     fn timingr(&self) -> &pac::i2c1::TIMINGR;
     fn txdr(&self) -> &pac::i2c1::TXDR;
 

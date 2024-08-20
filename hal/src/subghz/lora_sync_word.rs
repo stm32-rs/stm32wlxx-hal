@@ -8,6 +8,8 @@ pub enum LoRaSyncWord {
     Private,
     /// LoRa public network.
     Public,
+    /// Custom sync word
+    Custom([u8; 2])
 }
 
 impl LoRaSyncWord {
@@ -15,6 +17,7 @@ impl LoRaSyncWord {
         match self {
             LoRaSyncWord::Private => [0x14, 0x24],
             LoRaSyncWord::Public => [0x34, 0x44],
+            LoRaSyncWord::Custom(buf) => buf,
         }
     }
 }

@@ -326,10 +326,12 @@ mod tests {
         while rfbusys() {}
         let start: u32 = DWT::cycle_count();
         unwrap!(ta.sg.write_buffer(0, &DATA));
-        unwrap!(ta.sg.read_buffer(0, unsafe { &mut BUF }));
+        unwrap!(ta
+            .sg
+            .read_buffer(0, unsafe { unwrap!(core::ptr::addr_of_mut!(BUF).as_mut()) }));
         let end: u32 = DWT::cycle_count();
         defmt::info!("Cycles 255B: {}", end - start);
-        defmt::assert_eq!(DATA.as_ref(), unsafe { BUF }.as_ref());
+        defmt::assert_eq!(DATA, unsafe { BUF });
 
         let mut buf: [u8; 0] = [];
         while rfbusys() {}
@@ -348,10 +350,10 @@ mod tests {
         while rfbusys() {}
         let start: u32 = DWT::cycle_count();
         unwrap!(sg.write_buffer(0, &DATA));
-        unwrap!(sg.read_buffer(0, unsafe { &mut BUF }));
+        unwrap!(sg.read_buffer(0, unsafe { unwrap!(core::ptr::addr_of_mut!(BUF).as_mut()) }));
         let end: u32 = DWT::cycle_count();
         defmt::info!("Cycles 255B: {}", end - start);
-        defmt::assert_eq!(DATA.as_ref(), unsafe { BUF }.as_ref());
+        defmt::assert_eq!(DATA, unsafe { BUF });
 
         let mut buf: [u8; 0] = [];
         while rfbusys() {}

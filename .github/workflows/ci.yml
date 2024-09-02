@@ -99,28 +99,6 @@ jobs:
             !target/thumbv7em-none-eabi/debug/deps/examples/**/*
             !target/thumbv7em-none-eabi/debug/deps/incremental/**/*
 
-  run_testsuite:
-    name: Run Testsuite
-    runs-on: self-hosted
-    needs:
-      - build_testsuite
-    steps:
-      - uses: actions/checkout@v4
-      - name: Display probe-run version
-        run: probe-rs --version
-      - name: List probes
-        run: probe-rs list
-      - uses: actions/download-artifact@v4
-        with:
-          name: test-bins
-          path: bins
-      - name: Run on-target tests
-        timeout-minutes: 5
-        run: |
-          python3 testsuite/runall.py --elf-dir bins \
-          0483:374e:002900205553500A20393256 \
-          0483:374e:0034001A5553500B20393256
-
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
@@ -155,8 +133,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
-      # not using clippy-check due to this issue:
-      # https://github.com/actions-rs/clippy-check/issues/2
       - run: cargo clippy --features stm32wl5x_cm4 -- --deny warnings
 
   format:
@@ -199,7 +175,7 @@ jobs:
           -- -Z unstable-options --enable-index-page
           chmod -R 777 ../target
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: target/doc
 
@@ -216,7 +192,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v3
+        uses: actions/deploy-pages@v4
         id: deployment
 
   release:

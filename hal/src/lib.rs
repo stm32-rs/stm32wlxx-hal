@@ -77,5 +77,5 @@ pub use chrono;
 pub use cortex_m;
 pub use embedded_hal;
 
-#[cfg(feature = "embedded_time")]
+#[cfg(feature = "embedded-time")]
 pub use embedded_time;

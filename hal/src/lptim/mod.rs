@@ -108,7 +108,9 @@ pub(crate) mod sealed {
         fn autoreload(&self) -> u16;
         fn set_autoreload(&mut self, ar: u16);
         unsafe fn cnt() -> u16;
+        #[allow(dead_code)]
         fn set_or(&mut self, or: u32);
+        #[allow(dead_code)]
         fn set_rep(&mut self, rep: u8);
     }
 

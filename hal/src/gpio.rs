@@ -202,6 +202,7 @@ pub(crate) mod sealed {
     macro_rules! af_trait {
         ($trt:ident, $method:ident) => {
             pub trait $trt {
+                #[allow(dead_code)]
                 fn $method(&mut self, cs: &CriticalSection);
             }
         };
@@ -273,6 +274,7 @@ pub(crate) mod sealed {
     }
 
     /// Indicate a pin has any SPI NSS implementation.
+    #[allow(dead_code)]
     pub trait SpiNss {}
     /// Indicate a pin has any SPI SCK implementation.
     pub trait SpiSck {}

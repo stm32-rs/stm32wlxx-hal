@@ -81,6 +81,7 @@ async def probe_run(elf_path: str, probe: str, log_prefix: str) -> TestResult:
         "run",
         "--chip",
         "STM32WLE5JCIx",
+        "--catch-hardfault",
         "--connect-under-reset",
         elf_path,
         "--probe",

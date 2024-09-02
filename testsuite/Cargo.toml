@@ -89,7 +89,7 @@ defmt-test = "0.3"
 ecdsa = { version = "0.16", default-features = false, features = ["arithmetic", "hazmat"] }
 embedded-time = "0.12"
 hex-literal = "0.4"
-itertools = { version = "0.11", default-features = false }
+itertools = { version = "0.12", default-features = false }
 nb = "1"
 p256 = { version = "0.13", default-features = false, features = ["arithmetic", "ecdsa"] }
 panic-probe = { version = "0.3", features = ["print-defmt" ] }

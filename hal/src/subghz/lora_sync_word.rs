@@ -9,7 +9,7 @@ pub enum LoRaSyncWord {
     /// LoRa public network.
     Public,
     /// Custom sync word
-    Custom([u8; 2])
+    Custom([u8; 2]),
 }
 
 impl LoRaSyncWord {

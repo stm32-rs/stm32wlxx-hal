@@ -232,7 +232,7 @@ impl LoRaPacketStatus {
     /// assert_eq!(pkt_status.snr_pkt().to_integer(), 10);
     /// ```
     pub fn snr_pkt(&self) -> Ratio<i16> {
-        Ratio::new_raw(i16::from(self.buf[2]), 4)
+        Ratio::new_raw(i16::from(self.buf[2] as i8), 4)
     }
 
     /// Estimation of RSSI level of the LoRa signal after despreading.

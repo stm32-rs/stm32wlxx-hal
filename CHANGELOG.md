@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Updated minimum `chrono` version to `0.4.23` to satisfy `cargo-audit`.
+- Updated defmt from `0.3` to `1`.
 - Changed the edition from 2021 to 2024.
 - Changed minimum supported rust version from 1.60 to 1.85.
 

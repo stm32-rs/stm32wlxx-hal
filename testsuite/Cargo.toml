@@ -83,16 +83,16 @@ harness = false
 aes-gcm = { version = "0.10.3", default-features = false, features = ["aes"] }
 cortex-m = { version = "0.7", features = ["critical-section-single-core"] }
 cortex-m-rt = "0.7"
-defmt = "0.3"
-defmt-rtt = "0.4"
-defmt-test = "0.3"
+defmt = "1"
+defmt-rtt = "1"
+defmt-test = "0.4"
 ecdsa = { version = "0.16", default-features = false, features = ["arithmetic", "hazmat"] }
 embedded-time = "0.12"
-hex-literal = "0.4"
-itertools = { version = "0.12", default-features = false }
+hex-literal = "1"
+itertools = { version = "0.14", default-features = false }
 nb = "1"
 p256 = { version = "0.13", default-features = false, features = ["arithmetic", "ecdsa"] }
-panic-probe = { version = "0.3", features = ["print-defmt" ] }
+panic-probe = { version = "1", features = ["print-defmt" ] }
 rand = { version = "0.8", default-features = false }
 rand_chacha = { version = "0.3", default-features = false }
 static_assertions = "1"

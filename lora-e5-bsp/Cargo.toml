@@ -24,7 +24,7 @@ path = "../hal"
 features = ["stm32wle5"]
 
 [dependencies.defmt]
-version = "0.3"
+version = "1"
 optional = true
 
 [package.metadata.docs.rs]

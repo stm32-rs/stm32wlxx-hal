@@ -6,10 +6,10 @@ use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use nucleo_wl55jc_bsp::hal::{
     cortex_m,
-    flash::{self, flash_range, AlignedAddr, Error, Flash, Page},
+    flash::{self, AlignedAddr, Error, Flash, Page, flash_range},
     pac::{self, DWT},
     rcc,
-    rng::{self, rand_core::RngCore, Rng},
+    rng::{self, Rng, rand_core::RngCore},
 };
 use panic_probe as _;
 use rand::Rng as RngTrait;
@@ -131,6 +131,7 @@ mod tests {
     #[test]
     fn fast_program(ta: &mut TestArgs) {
         static mut BUF: [u64; 32] = [0; 32];
+        #[allow(static_mut_refs)]
         unsafe {
             BUF.iter_mut()
                 .for_each(|word| *word = ta.rng.gen_range(1..u64::MAX - 1))
@@ -138,6 +139,7 @@ mod tests {
 
         let mut flash: Flash = Flash::unlock(&mut ta.flash);
 
+        #[allow(static_mut_refs)]
         let elapsed: u32 =
             stopwatch(|| unwrap!(unsafe { flash.fast_program(BUF.as_ptr(), ta.addr as *mut u64) }));
 

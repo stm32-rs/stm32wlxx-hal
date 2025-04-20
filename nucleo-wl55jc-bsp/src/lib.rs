@@ -10,7 +10,7 @@ pub use stm32wlxx_hal as hal;
 
 use hal::{
     cortex_m::interrupt::CriticalSection,
-    gpio::{self, pins, Output, OutputArgs, PinState},
+    gpio::{self, Output, OutputArgs, PinState, pins},
 };
 
 /// RF switch.
@@ -29,8 +29,8 @@ impl RfSwitch {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{cortex_m, gpio::PortC, pac},
     ///     RfSwitch,
+    ///     hal::{cortex_m, gpio::PortC, pac},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -66,12 +66,12 @@ impl RfSwitch {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
+    ///     RfSwitch,
     ///     hal::{
     ///         cortex_m,
-    ///         gpio::{pins, Output, PortC},
+    ///         gpio::{Output, PortC, pins},
     ///         pac,
     ///     },
-    ///     RfSwitch,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -91,9 +91,9 @@ impl RfSwitch {
     #[inline]
     pub unsafe fn steal() -> Self {
         RfSwitch {
-            fe_ctrl1: Output::steal(),
-            fe_ctrl2: Output::steal(),
-            fe_ctrl3: Output::steal(),
+            fe_ctrl1: unsafe { Output::steal() },
+            fe_ctrl2: unsafe { Output::steal() },
+            fe_ctrl3: unsafe { Output::steal() },
         }
     }
 
@@ -103,8 +103,8 @@ impl RfSwitch {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{cortex_m, gpio::PortC, pac},
     ///     RfSwitch,
+    ///     hal::{cortex_m, gpio::PortC, pac},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -127,8 +127,8 @@ impl RfSwitch {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{cortex_m, gpio::PortC, pac},
     ///     RfSwitch,
+    ///     hal::{cortex_m, gpio::PortC, pac},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -151,8 +151,8 @@ impl RfSwitch {
     ///
     /// ```no_run
     /// use nucleo_wl55jc_bsp::{
-    ///     hal::{cortex_m, gpio::PortC, pac},
     ///     RfSwitch,
+    ///     hal::{cortex_m, gpio::PortC, pac},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();

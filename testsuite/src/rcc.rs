@@ -9,8 +9,8 @@ use itertools::iproduct;
 use nucleo_wl55jc_bsp::hal::{
     cortex_m::{self, interrupt::CriticalSection},
     pac,
-    pwr::{enter_lprun_msi, exit_lprun, LprunRange},
-    rcc::{self, lsi_hz, set_sysclk_msi_max, setup_lsi, LsiPre, MsiRange, Vos},
+    pwr::{LprunRange, enter_lprun_msi, exit_lprun},
+    rcc::{self, LsiPre, MsiRange, Vos, lsi_hz, set_sysclk_msi_max, setup_lsi},
 };
 use panic_probe as _;
 
@@ -29,10 +29,12 @@ impl SysClkSrc {
         rcc: &mut pac::RCC,
         cs: &CriticalSection,
     ) {
-        match self {
-            SysClkSrc::Msi(range) => rcc::set_sysclk_msi(flash, pwr, rcc, *range, cs),
-            SysClkSrc::Hse(vos) => rcc::set_sysclk_hse(flash, pwr, rcc, *vos, cs),
-            SysClkSrc::Hsi => rcc::set_sysclk_hsi(flash, pwr, rcc, cs),
+        unsafe {
+            match self {
+                SysClkSrc::Msi(range) => rcc::set_sysclk_msi(flash, pwr, rcc, *range, cs),
+                SysClkSrc::Hse(vos) => rcc::set_sysclk_hse(flash, pwr, rcc, *vos, cs),
+                SysClkSrc::Hsi => rcc::set_sysclk_hsi(flash, pwr, rcc, cs),
+            }
         }
     }
 

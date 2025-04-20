@@ -803,11 +803,7 @@ impl Cr {
     /// ```
     #[must_use = "set_enable returns a modified Cr"]
     pub const fn set_enable(self, en: bool) -> Cr {
-        if en {
-            self.enable()
-        } else {
-            self.disable()
-        }
+        if en { self.enable() } else { self.disable() }
     }
 
     /// Enable the DMA peripheral.

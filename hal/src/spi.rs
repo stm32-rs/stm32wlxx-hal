@@ -37,7 +37,7 @@ use crate::{
 
 pub use embedded_hal::{
     blocking::spi::{Transfer, Write},
-    spi::{FullDuplex, Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3},
+    spi::{FullDuplex, MODE_0, MODE_1, MODE_2, MODE_3, Mode, Phase, Polarity},
 };
 
 use cortex_m::interrupt::CriticalSection;
@@ -158,7 +158,7 @@ pub(crate) mod sealed {
     };
     use core::{
         ptr::{read_volatile, write_volatile},
-        sync::atomic::{compiler_fence, Ordering::SeqCst},
+        sync::atomic::{Ordering::SeqCst, compiler_fence},
     };
 
     use pac::dmamux::c0cr::DMAREQ_ID_A::{
@@ -262,6 +262,7 @@ pub(crate) mod sealed {
                 .set_mem_inc(true)
                 .set_enable(true);
 
+            #[allow(static_mut_refs)]
             rx_dma.set_mem_addr(unsafe { GARBAGE.as_mut_ptr() } as u32);
             tx_dma.set_mem_addr(words.as_ptr() as u32);
 
@@ -1142,10 +1143,12 @@ impl Spi3<SgMiso, SgMosi> {
     }
 
     pub(crate) unsafe fn steal() -> Self {
-        Self {
-            spi: pac::Peripherals::steal().SPI3,
-            mosi: SgMosi::new(),
-            miso: SgMiso::new(),
+        unsafe {
+            Self {
+                spi: pac::Peripherals::steal().SPI3,
+                mosi: SgMosi::new(),
+                miso: SgMiso::new(),
+            }
         }
     }
 }
@@ -1199,10 +1202,12 @@ impl<MISODMA: DmaCh, MOSIDMA: DmaCh> Spi3<MISODMA, MOSIDMA> {
     }
 
     pub(crate) unsafe fn steal_with_dma(miso_dma: MISODMA, mosi_dma: MOSIDMA) -> Self {
-        Self {
-            spi: pac::Peripherals::steal().SPI3,
-            miso: miso_dma,
-            mosi: mosi_dma,
+        unsafe {
+            Self {
+                spi: pac::Peripherals::steal().SPI3,
+                miso: miso_dma,
+                mosi: mosi_dma,
+            }
         }
     }
 }
@@ -1217,7 +1222,7 @@ impl<SPI, SCK, MISO, MOSI> Spi<SPI, SCK, MISO, MOSI> {
     ///     dma::AllDma,
     ///     gpio::PortA,
     ///     pac,
-    ///     spi::{BaudRate::Div2, Spi, MODE_0},
+    ///     spi::{BaudRate::Div2, MODE_0, Spi},
     /// };
     ///
     /// let mut dp = pac::Peripherals::take().unwrap();

@@ -6,7 +6,7 @@ use defmt_rtt as _; // global logger
 use nucleo_wl55jc_bsp::hal::{
     cortex_m,
     embedded_hal::blocking::i2c::WriteRead,
-    gpio::{pins, PortA, PortB},
+    gpio::{PortA, PortB, pins},
     i2c::{I2c1, I2c2},
     pac::{self, interrupt},
     rcc,
@@ -79,7 +79,9 @@ mod tests {
 
     #[test]
     fn sht31_measurement(i2c: &mut I2c1<(pins::B8, pins::B7)>) {
-        defmt::warn!("A SHT31 sensor must be connected to the board on pins B8 (SCL) & B7 (SDA) for this test to work");
+        defmt::warn!(
+            "A SHT31 sensor must be connected to the board on pins B8 (SCL) & B7 (SDA) for this test to work"
+        );
         let cmd: [u8; 2] = [0x2C, 0x06];
         let mut response: [u8; 6] = [0; 6];
 
@@ -92,7 +94,9 @@ mod tests {
 
     #[test]
     fn loopback(i2c: &mut I2c1<(pins::B8, pins::B7)>) {
-        defmt::warn!("I2C1 pins B8 (SCL) and B7 (SDA) must be connected to I2C pins A12 (SCL) and A11 (SDA) for this test to pass");
+        defmt::warn!(
+            "I2C1 pins B8 (SCL) and B7 (SDA) must be connected to I2C pins A12 (SCL) and A11 (SDA) for this test to pass"
+        );
 
         let cmd: [u8; 1] = [LOOPBACK_DATA_IN];
         let mut response: [u8; 1] = [0; 1];

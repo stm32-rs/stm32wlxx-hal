@@ -43,3 +43,18 @@ incremental = false
 lto = false
 opt-level = 3 
 overflow-checks = false
+
+[workspace.package]
+edition = "2024"
+authors = ["Alex Martens <alex@thinglab.org>"]
+repository = "https://github.com/stm32-rs/stm32wlxx-hal"
+license = "MIT OR Apache-2.0"
+# To update version change:
+# * BSP versions
+# * BSP HAL dependency versions
+# * README
+# * BSP READMES
+# * lock file
+# * CHANGELOG Unreleased (URL and header)
+version = "0.6.1"
+rust-version = "1.85"  # update MSRV in CI, and shield in README

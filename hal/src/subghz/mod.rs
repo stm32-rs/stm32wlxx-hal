@@ -165,7 +165,7 @@ pub unsafe fn wakeup() {
 /// ```
 #[inline]
 pub unsafe fn unmask_irq() {
-    pac::NVIC::unmask(pac::Interrupt::RADIO_IRQ_BUSY)
+    unsafe { pac::NVIC::unmask(pac::Interrupt::RADIO_IRQ_BUSY) }
 }
 
 /// Mask the SubGHz IRQ in the NVIC.
@@ -371,7 +371,7 @@ impl<MISO, MOSI> SubGhz<MISO, MOSI> {
     /// 4. You are responsible for setting up anything that may have lost state
     ///    while the clock was disabled.
     pub unsafe fn disable_spi_clock(rcc: &mut pac::RCC) {
-        Spi3::<SgMiso, SgMosi>::disable_clock(rcc)
+        unsafe { Spi3::<SgMiso, SgMosi>::disable_clock(rcc) }
     }
 
     /// Enable the SPI3 (SubGHz SPI) clock.
@@ -522,7 +522,7 @@ impl SubGhz<SgMiso, SgMosi> {
     ///
     /// [`new`]: SubGhz::new
     pub unsafe fn steal() -> SubGhz<SgMiso, SgMosi> {
-        SubGhz { spi: Spi3::steal() }
+        unsafe { SubGhz { spi: Spi3::steal() } }
     }
 }
 
@@ -621,8 +621,10 @@ impl<MISO: DmaCh, MOSI: DmaCh> SubGhz<MISO, MOSI> {
     ///
     /// [`new_with_dma`]: SubGhz::new_with_dma
     pub unsafe fn steal_with_dma(miso_dma: MISO, mosi_dma: MOSI) -> Self {
-        SubGhz {
-            spi: Spi3::steal_with_dma(miso_dma, mosi_dma),
+        unsafe {
+            SubGhz {
+                spi: Spi3::steal_with_dma(miso_dma, mosi_dma),
+            }
         }
     }
 }
@@ -902,7 +904,7 @@ where
     /// # let mut sg = unsafe { stm32wlxx_hal::subghz::SubGhz::steal() };
     /// # let mut delay = new_delay(cp.SYST, &dp.RCC);
     /// use stm32wlxx_hal::{
-    ///     subghz::{wakeup, SleepCfg, StandbyClk},
+    ///     subghz::{SleepCfg, StandbyClk, wakeup},
     ///     util::new_delay,
     /// };
     ///

@@ -15,7 +15,7 @@ use nucleo_wl55jc_bsp::hal::{
     pac::{self, DWT},
     rcc,
     spi::{
-        BaudRate, Mode, NoMiso, NoMosi, NoSck, Phase, Polarity, Spi, MODE_0, MODE_1, MODE_2, MODE_3,
+        BaudRate, MODE_0, MODE_1, MODE_2, MODE_3, Mode, NoMiso, NoMosi, NoSck, Phase, Polarity, Spi,
     },
 };
 use panic_probe as _;
@@ -105,7 +105,7 @@ impl SpiSlave {
 }
 
 unsafe fn setup() -> TestArgs {
-    let mut dp: pac::Peripherals = pac::Peripherals::steal();
+    let mut dp: pac::Peripherals = unsafe { pac::Peripherals::steal() };
     let dma: AllDma = AllDma::split(dp.DMAMUX, dp.DMA1, dp.DMA2, &mut dp.RCC);
     let pa: PortA = PortA::split(dp.GPIOA, &mut dp.RCC);
     let _: PortC = PortC::split(dp.GPIOC, &mut dp.RCC);

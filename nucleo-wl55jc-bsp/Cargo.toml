@@ -2,15 +2,15 @@
 name = "nucleo-wl55jc-bsp"
 description = "Board support package for the NUCLEO-WL55JC"
 readme = "README.md"
-
-version = "0.6.1"
-authors = ["Alex Martens <alex@thinglab.org>"]
-edition = "2021"
-rust-version = "1.62"
-license = "MIT OR Apache-2.0"
 keywords = ["arm", "cortex-m", "stm32", "bsp", "nucleo"]
 categories = ["embedded", "hardware-support", "no-std"]
-repository = "https://github.com/stm32-rs/stm32wlxx-hal"
+
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
 
 [features]
 chrono = ["stm32wlxx-hal/chrono"]

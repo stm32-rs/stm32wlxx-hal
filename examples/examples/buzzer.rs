@@ -12,7 +12,7 @@ use panic_probe as _; // panic handler
 use stm32wlxx_hal::{
     self as hal,
     cortex_m::{self, delay::Delay},
-    gpio::{pins, Output, PinState, PortA},
+    gpio::{Output, PinState, PortA, pins},
     pac,
     util::new_delay,
 };

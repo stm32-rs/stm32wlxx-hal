@@ -6,7 +6,7 @@
 //!
 //! Quickstart: [`set_sysclk_msi_max`]
 
-use crate::{pac, Ratio};
+use crate::{Ratio, pac};
 use cortex_m::{interrupt::CriticalSection, peripheral::syst::SystClkSource};
 
 use pac::flash::acr::LATENCY_A;
@@ -252,7 +252,7 @@ const fn ppre_div(pre: u8) -> u8 {
 /// ```no_run
 /// use stm32wlxx_hal::{
 ///     pac,
-///     rcc::{set_sysclk_hse, Vos},
+///     rcc::{Vos, set_sysclk_hse},
 /// };
 ///
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -375,7 +375,7 @@ pub unsafe fn set_sysclk_hsi(
 /// ```no_run
 /// use stm32wlxx_hal::{
 ///     pac,
-///     rcc::{set_sysclk_msi, MsiRange},
+///     rcc::{MsiRange, set_sysclk_msi},
 /// };
 ///
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -396,46 +396,48 @@ pub unsafe fn set_sysclk_msi(
     range: MsiRange,
     cs: &CriticalSection,
 ) {
-    // startup the MSI clock
-    rcc.cr.modify(|_, w| w.msion().enabled());
+    unsafe {
+        // startup the MSI clock
+        rcc.cr.modify(|_, w| w.msion().enabled());
 
-    let vos: Vos = range.vos();
+        let vos: Vos = range.vos();
 
-    // increase VOS range
-    if vos == Vos::V1_2 {
-        pwr.cr1.modify(|_, w| w.vos().v1_2());
-        while pwr.sr2.read().vosf().is_change() {}
-    }
-
-    let cfgr = rcc.cfgr.read();
-
-    // ES0500 Rev 3 erratum handling:
-    //
-    // A voltage drop to 1.08 V may occur on the 1.2 V regulated supply when the
-    // MSI frequency is changed as follows:
-    // * from MSI at 400 kHz to MSI at 24 MHz and above
-    // * from MSI at 1 MHZ to MSI at 48 MHz
-    // As a result, the voltage drop may cause CPU HardFault.
-    // To ensure there is no impact on the 1.2 V supply, introduce an
-    // intermediate MSI frequency
-    //
-    // Open question:
-    // Does this apply when the CPU is clocked by the PLL via MSI?
-    if cfgr.sws().is_msi() {
-        let current_range: MsiRange = MsiRange::from_rcc(rcc);
-
-        if ((current_range == MsiRange::Range400k) && (range >= MsiRange::Range24M))
-            || ((current_range == MsiRange::Range1M) && (range == MsiRange::Range48M))
-        {
-            set_sysclk_msi_inner(flash, rcc, MsiRange::Range16M, vos, cs)
+        // increase VOS range
+        if vos == Vos::V1_2 {
+            pwr.cr1.modify(|_, w| w.vos().v1_2());
+            while pwr.sr2.read().vosf().is_change() {}
         }
-    }
 
-    set_sysclk_msi_inner(flash, rcc, range, vos, cs);
+        let cfgr = rcc.cfgr.read();
 
-    // decrease VOS range
-    if vos == Vos::V1_0 {
-        pwr.cr1.modify(|_, w| w.vos().v1_0());
+        // ES0500 Rev 3 erratum handling:
+        //
+        // A voltage drop to 1.08 V may occur on the 1.2 V regulated supply when the
+        // MSI frequency is changed as follows:
+        // * from MSI at 400 kHz to MSI at 24 MHz and above
+        // * from MSI at 1 MHZ to MSI at 48 MHz
+        // As a result, the voltage drop may cause CPU HardFault.
+        // To ensure there is no impact on the 1.2 V supply, introduce an
+        // intermediate MSI frequency
+        //
+        // Open question:
+        // Does this apply when the CPU is clocked by the PLL via MSI?
+        if cfgr.sws().is_msi() {
+            let current_range: MsiRange = MsiRange::from_rcc(rcc);
+
+            if ((current_range == MsiRange::Range400k) && (range >= MsiRange::Range24M))
+                || ((current_range == MsiRange::Range1M) && (range == MsiRange::Range48M))
+            {
+                set_sysclk_msi_inner(flash, rcc, MsiRange::Range16M, vos, cs)
+            }
+        }
+
+        set_sysclk_msi_inner(flash, rcc, range, vos, cs);
+
+        // decrease VOS range
+        if vos == Vos::V1_0 {
+            pwr.cr1.modify(|_, w| w.vos().v1_0());
+        }
     }
 }
 
@@ -509,7 +511,7 @@ pub unsafe fn set_sysclk_msi_max(
     rcc: &mut pac::RCC,
     cs: &CriticalSection,
 ) {
-    set_sysclk_msi(flash, pwr, rcc, MsiRange::Range48M, cs)
+    unsafe { set_sysclk_msi(flash, pwr, rcc, MsiRange::Range48M, cs) }
 }
 
 #[cfg_attr(feature = "stm32wl5x_cm0p", allow(dead_code))]
@@ -898,7 +900,7 @@ pub fn lsi_hz(rcc: &pac::RCC) -> u16 {
 /// ```no_run
 /// use stm32wlxx_hal::{
 ///     pac,
-///     rcc::{setup_lsi, LsiPre},
+///     rcc::{LsiPre, setup_lsi},
 /// };
 ///
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -1022,7 +1024,7 @@ impl Lsco {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, PortA},
+    ///     gpio::{PortA, pins},
     ///     pac,
     ///     rcc::{Lsco, LscoSel},
     /// };

@@ -166,7 +166,7 @@ pub trait DmaCh: sealed::DmaOps {
     /// Check if the transfer is complete.
     ///
     /// ```no_run
-    /// use stm32wlxx_hal::dma::{flags, DmaCh};
+    /// use stm32wlxx_hal::dma::{DmaCh, flags};
     ///
     /// # let dma = unsafe { stm32wlxx_hal::dma::AllDma::steal().d1.c1 };
     /// let xfer_cpl: bool = dma.flags() & flags::XFER_CPL != 0;
@@ -182,7 +182,7 @@ pub trait DmaCh: sealed::DmaOps {
     /// Check and clear all set flags.
     ///
     /// ```no_run
-    /// use stm32wlxx_hal::dma::{flags, DmaCh};
+    /// use stm32wlxx_hal::dma::{DmaCh, flags};
     ///
     /// # let mut dma = unsafe { stm32wlxx_hal::dma::AllDma::steal().d1.c1 };
     /// let flags: u8 = dma.flags();
@@ -214,7 +214,7 @@ pub trait DmaCh: sealed::DmaOps {
     ///   DMAMUX1 overrun interrupt (C2IMR2\[15\])
     #[inline]
     unsafe fn unmask_irq(&self) {
-        pac::NVIC::unmask(Self::IRQ)
+        unsafe { pac::NVIC::unmask(Self::IRQ) }
     }
 
     /// Mask the DMA interrupt in the NVIC.

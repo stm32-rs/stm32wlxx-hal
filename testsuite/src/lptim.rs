@@ -7,7 +7,7 @@ use nucleo_wl55jc_bsp::hal::{
     cortex_m,
     embedded_hal::digital::v2::ToggleableOutputPin,
     embedded_hal::timer::CountDown,
-    gpio::{pins, Output, PortA, PortB},
+    gpio::{Output, PortA, PortB, pins},
     lptim::{self, Filter, LpTim, LpTim1, LpTim2, LpTim3, Prescaler, TrgPol},
     pac::{self, DWT},
     rcc,

@@ -66,11 +66,7 @@ impl From<Alarm> for chrono::NaiveTime {
 }
 
 const fn const_min(a: u8, b: u8) -> u32 {
-    if a < b {
-        a as u32
-    } else {
-        b as u32
-    }
+    if a < b { a as u32 } else { b as u32 }
 }
 
 impl Default for Alarm {

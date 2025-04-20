@@ -2,7 +2,7 @@
 
 use stm32wlxx_hal::{
     cortex_m::interrupt::CriticalSection,
-    gpio::{pins, Exti, Input, PinState, Pull},
+    gpio::{Exti, Input, PinState, Pull, pins},
 };
 
 const PULL: Pull = Pull::Up;
@@ -38,7 +38,7 @@ pub trait PushButton {
     ///         gpio::{Exti, ExtiTrg, PortA},
     ///         pac,
     ///     },
-    ///     pb::{PushButton, D0},
+    ///     pb::{D0, PushButton},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -80,7 +80,7 @@ impl D0 {
     /// ```no_run
     /// use lora_e5_bsp::{
     ///     hal::{cortex_m, gpio::PortA, pac},
-    ///     pb::{PushButton, D0},
+    ///     pb::{D0, PushButton},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -101,7 +101,7 @@ impl D0 {
     /// ```no_run
     /// use lora_e5_bsp::{
     ///     hal::{cortex_m, gpio::PortA, pac},
-    ///     pb::{PushButton, D0},
+    ///     pb::{D0, PushButton},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -136,7 +136,7 @@ impl D0 {
     /// ```
     pub unsafe fn steal() -> Self {
         Self {
-            gpio: Input::steal(),
+            gpio: unsafe { Input::steal() },
         }
     }
 }
@@ -207,7 +207,7 @@ impl Boot {
     /// ```
     pub unsafe fn steal() -> Self {
         Self {
-            gpio: Input::steal(),
+            gpio: unsafe { Input::steal() },
         }
     }
 }

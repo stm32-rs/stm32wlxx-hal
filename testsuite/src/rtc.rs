@@ -7,7 +7,7 @@ use nucleo_wl55jc_bsp::hal::{
     chrono::{Datelike, Duration, NaiveDate, NaiveDateTime, NaiveTime, Timelike},
     cortex_m,
     pac::{self, DWT},
-    rcc::{self, pulse_reset_backup_domain, setup_lsi, LsiPre},
+    rcc::{self, LsiPre, pulse_reset_backup_domain, setup_lsi},
     rtc::{self, Alarm, Rtc},
 };
 use panic_probe as _;
@@ -79,8 +79,8 @@ fn test_set_date_time_with_clk(clk: rtc::Clk) -> Rtc {
     defmt::assert_eq!(rtc_date_time.month(), set_dt.month());
     defmt::assert_eq!(rtc_date_time.day(), set_dt.day());
 
-    let before: i64 = set_dt.timestamp_millis();
-    let after: i64 = rtc_date_time.timestamp_millis();
+    let before: i64 = set_dt.and_utc().timestamp_millis();
+    let after: i64 = rtc_date_time.and_utc().timestamp_millis();
     defmt::debug!(
         "Timestamp before {} after {} Δ {}",
         before,

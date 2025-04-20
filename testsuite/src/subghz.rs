@@ -9,6 +9,7 @@ use nucleo_wl55jc_bsp as bsp;
 use static_assertions as sa;
 
 use bsp::{
+    RfSwitch,
     hal::{
         cortex_m::{self, delay::Delay},
         dma::{AllDma, Dma1Ch1, Dma2Ch1},
@@ -18,16 +19,15 @@ use bsp::{
         rng::{self, Rng},
         spi::{SgMiso, SgMosi},
         subghz::{
-            rfbusys, wakeup, AddrComp, CalibrateImage, CfgIrq, CmdStatus, CodingRate, CrcType,
-            FallbackMode, FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape,
-            GenericPacketParams, HeaderType, Irq, LoRaBandwidth, LoRaModParams, LoRaPacketParams,
-            LoRaSyncWord, Ocp, PaConfig, PacketType, PktCtrl, PreambleDetection, RampTime, RegMode,
-            RfFreq, SleepCfg, SpreadingFactor, StandbyClk, Startup, Status, StatusMode, SubGhz,
-            TcxoMode, TcxoTrim, Timeout, TxParams,
+            AddrComp, CalibrateImage, CfgIrq, CmdStatus, CodingRate, CrcType, FallbackMode,
+            FskBandwidth, FskBitrate, FskFdev, FskModParams, FskPulseShape, GenericPacketParams,
+            HeaderType, Irq, LoRaBandwidth, LoRaModParams, LoRaPacketParams, LoRaSyncWord, Ocp,
+            PaConfig, PacketType, PktCtrl, PreambleDetection, RampTime, RegMode, RfFreq, SleepCfg,
+            SpreadingFactor, StandbyClk, Startup, Status, StatusMode, SubGhz, TcxoMode, TcxoTrim,
+            Timeout, TxParams, rfbusys, wakeup,
         },
         util::new_delay,
     },
-    RfSwitch,
 };
 
 type MySubghz = SubGhz<Dma1Ch1, Dma2Ch1>;
@@ -326,9 +326,10 @@ mod tests {
         while rfbusys() {}
         let start: u32 = DWT::cycle_count();
         unwrap!(ta.sg.write_buffer(0, &DATA));
-        unwrap!(ta
-            .sg
-            .read_buffer(0, unsafe { unwrap!(core::ptr::addr_of_mut!(BUF).as_mut()) }));
+        unwrap!(
+            ta.sg
+                .read_buffer(0, unsafe { unwrap!(core::ptr::addr_of_mut!(BUF).as_mut()) })
+        );
         let end: u32 = DWT::cycle_count();
         defmt::info!("Cycles 255B: {}", end - start);
         defmt::assert_eq!(DATA, unsafe { BUF });

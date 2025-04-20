@@ -2,22 +2,15 @@
 name = "stm32wlxx-hal"
 description = "Hardware abstraction layer for the STM32WL series microcontrollers."
 readme = "../README.md"
-
-# To update version change:
-# * BSP versions
-# * BSP HAL dependency versions
-# * README
-# * BSP READMES
-# * lock file
-# * CHANGELOG Unreleased (URL and header)
-version = "0.6.1"
-authors = ["Alex Martens <alex@thinglab.org>"]
-edition = "2021"
-rust-version = "1.62"  # update MSRV in CI, BSPs, and shield in README
-license = "MIT OR Apache-2.0"
 keywords = ["arm", "cortex-m", "stm32", "hal"]
 categories = ["embedded", "hardware-support", "no-std"]
-repository = "https://github.com/stm32-rs/stm32wlxx-hal"
+
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
 
 [features]
 stm32wl5x_cm0p = ["stm32wl/stm32wl5x_cm0p"]

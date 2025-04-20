@@ -578,37 +578,39 @@ impl<'a> Flash<'a> {
     /// # Ok::<(), stm32wlxx_hal::flash::Error>(())
     /// ```
     pub unsafe fn program_bytes(&mut self, from: &[u8], to: AlignedAddr) -> Result<(), Error> {
-        if from.is_empty() {
-            return Ok(());
+        unsafe {
+            if from.is_empty() {
+                return Ok(());
+            }
+
+            if !flash_range().contains(&usize::from(to).saturating_add(from.len())) {
+                return Err(Error::Overflow);
+            }
+
+            let chunks_exact: ChunksExact<u8> = from.chunks_exact(8);
+            let remainder: &[u8] = chunks_exact.remainder();
+            let remainder_len: usize = remainder.len();
+
+            let last_u64: u64 = chunks_exact
+                .remainder()
+                .iter()
+                .enumerate()
+                .fold(0, |acc, (n, byte)| acc | u64::from(*byte) << (8 * n));
+
+            for (n, chunk) in chunks_exact.enumerate() {
+                let chunk_u64: u64 = u64::from_le_bytes(chunk.try_into().unwrap());
+                let addr: usize = n * size_of::<u64>() + usize::from(to);
+
+                self.standard_program(&chunk_u64, addr as *mut u64)?;
+            }
+
+            if remainder_len != 0 {
+                let last_addr: usize = (usize::from(to) + from.len()).prev_multiple_of(&8);
+                self.standard_program(&last_u64, last_addr as *mut u64)?;
+            }
+
+            Ok(())
         }
-
-        if !flash_range().contains(&usize::from(to).saturating_add(from.len())) {
-            return Err(Error::Overflow);
-        }
-
-        let chunks_exact: ChunksExact<u8> = from.chunks_exact(8);
-        let remainder: &[u8] = chunks_exact.remainder();
-        let remainder_len: usize = remainder.len();
-
-        let last_u64: u64 = chunks_exact
-            .remainder()
-            .iter()
-            .enumerate()
-            .fold(0, |acc, (n, byte)| acc | u64::from(*byte) << (8 * n));
-
-        for (n, chunk) in chunks_exact.enumerate() {
-            let chunk_u64: u64 = u64::from_le_bytes(chunk.try_into().unwrap());
-            let addr: usize = n * size_of::<u64>() + usize::from(to);
-
-            self.standard_program(&chunk_u64, addr as *mut u64)?;
-        }
-
-        if remainder_len != 0 {
-            let last_addr: usize = (usize::from(to) + from.len()).prev_multiple_of(&8);
-            self.standard_program(&last_u64, last_addr as *mut u64)?;
-        }
-
-        Ok(())
     }
 
     /// Program a user-defined type.
@@ -625,71 +627,73 @@ impl<'a> Flash<'a> {
         from: *const T,
         to: *mut T,
     ) -> Result<(), Error> {
-        let size: isize = size_of::<T>() as isize;
-        if size == 0 {
-            return Ok(());
-        }
+        unsafe {
+            let size: isize = size_of::<T>() as isize;
+            if size == 0 {
+                return Ok(());
+            }
 
-        if !flash_range().contains(&(size_of::<T>() + to as usize)) {
-            return Err(Error::Overflow);
-        }
+            if !flash_range().contains(&(size_of::<T>() + to as usize)) {
+                return Err(Error::Overflow);
+            }
 
-        let sr: u32 = self.sr();
-        if sr & flags::BSY != 0 {
-            return Err(Error::Busy);
-        }
-        if sr & flags::PESD != 0 {
-            return Err(Error::Suspend);
-        }
+            let sr: u32 = self.sr();
+            if sr & flags::BSY != 0 {
+                return Err(Error::Busy);
+            }
+            if sr & flags::PESD != 0 {
+                return Err(Error::Suspend);
+            }
 
-        self.clear_all_err();
+            self.clear_all_err();
 
-        c1_c2!(
-            self.flash.cr.modify(|_, w| w.pg().set_bit()),
-            self.flash.c2cr.modify(|_, w| w.pg().set_bit())
-        );
+            c1_c2!(
+                self.flash.cr.modify(|_, w| w.pg().set_bit()),
+                self.flash.c2cr.modify(|_, w| w.pg().set_bit())
+            );
 
-        // Calculate the index of the last double word
-        #[allow(unstable_name_collisions)]
-        let last_double_word_idx: isize = size.div_ceil(&8) - 1;
+            // Calculate the index of the last double word
+            #[allow(unstable_name_collisions)]
+            let last_double_word_idx: isize = size.div_ceil(&8) - 1;
 
-        // Write the type as double words and return the number of bytes written
-        let written_bytes: isize = (0..last_double_word_idx).fold(0, |acc, n| {
+            // Write the type as double words and return the number of bytes written
+            let written_bytes: isize = (0..last_double_word_idx).fold(0, |acc, n| {
+                unsafe {
+                    write_volatile(
+                        (to as *mut u64).offset(n),
+                        (from as *const u64).offset(n).read(),
+                    )
+                };
+                acc + 8
+            });
+
+            // Determine how many bytes are left to write
+            let bytes_left: isize = size - written_bytes;
+
+            // Append the left over bytes to a double word,
+            // the last few bytes can look random in flash memory since Rust uses memory alignment to make accessing faster.
+            let last_double_word: u64 = (0..bytes_left).fold(0, |dw, n| {
+                let byte: u8 = (from as *const u8).offset(written_bytes + n).read();
+                dw | u64::from(byte) << (8 * n)
+            });
+
+            // Write the last double word
             unsafe {
                 write_volatile(
-                    (to as *mut u64).offset(n),
-                    (from as *const u64).offset(n).read(),
+                    (to as *mut u64).offset(last_double_word_idx),
+                    (&last_double_word as *const u64).read(),
                 )
             };
-            acc + 8
-        });
 
-        // Determine how many bytes are left to write
-        let bytes_left: isize = size - written_bytes;
+            let ret: Result<(), Error> = self.wait_for_not_busy();
 
-        // Append the left over bytes to a double word,
-        // the last few bytes can look random in flash memory since Rust uses memory alignment to make accessing faster.
-        let last_double_word: u64 = (0..bytes_left).fold(0, |dw, n| {
-            let byte: u8 = (from as *const u8).offset(written_bytes + n).read();
-            dw | u64::from(byte) << (8 * n)
-        });
+            c1_c2!(
+                self.flash.cr.modify(|_, w| w.pg().clear_bit()),
+                self.flash.c2cr.modify(|_, w| w.pg().clear_bit())
+            );
 
-        // Write the last double word
-        unsafe {
-            write_volatile(
-                (to as *mut u64).offset(last_double_word_idx),
-                (&last_double_word as *const u64).read(),
-            )
-        };
-
-        let ret: Result<(), Error> = self.wait_for_not_busy();
-
-        c1_c2!(
-            self.flash.cr.modify(|_, w| w.pg().clear_bit()),
-            self.flash.c2cr.modify(|_, w| w.pg().clear_bit())
-        );
-
-        ret
+            ret
+        }
     }
 
     /// Program 256 bytes.
@@ -705,7 +709,7 @@ impl<'a> Flash<'a> {
     ///    The compiler may inline this function, because `#[inline(never)]` is
     ///    merely a suggestion.
     #[allow(unused_unsafe)]
-    #[cfg_attr(target_os = "none", link_section = ".data")]
+    #[cfg_attr(target_os = "none", unsafe(link_section = ".data"))]
     #[inline(never)]
     pub unsafe fn fast_program(&mut self, from: *const u64, to: *mut u64) -> Result<(), Error> {
         let sr: u32 = self.sr();
@@ -808,7 +812,7 @@ impl<'a> Flash<'a> {
     /// 1. The CPU must execute this from SRAM.
     ///    The compiler may inline this function, because `#[inline(never)]` is
     ///    merely a suggestion.
-    #[cfg_attr(target_os = "none", link_section = ".data")]
+    #[cfg_attr(target_os = "none", unsafe(link_section = ".data"))]
     #[inline(never)]
     pub unsafe fn mass_erase(&mut self) -> Result<(), Error> {
         let sr: u32 = self.sr();

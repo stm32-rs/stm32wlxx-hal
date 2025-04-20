@@ -5,7 +5,7 @@ use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use nucleo_wl55jc_bsp::hal::{
     cortex_m, pac, rcc,
-    rng::{rand_core::RngCore, Clk, Rng},
+    rng::{Clk, Rng, rand_core::RngCore},
 };
 use panic_probe as _;
 
@@ -47,7 +47,7 @@ mod tests {
     #[test]
     fn cha_cha(rng: &mut Rng) {
         defmt::warn!("Test results are only valid for release mode");
-        use rand_chacha::{rand_core::SeedableRng, ChaCha12Rng, ChaCha20Rng, ChaCha8Rng};
+        use rand_chacha::{ChaCha8Rng, ChaCha12Rng, ChaCha20Rng, rand_core::SeedableRng};
 
         let mut seed: [u8; 32] = [0; 32];
 
@@ -67,24 +67,28 @@ mod tests {
         static mut BUF: [u8; BUF_SIZE] = [0; BUF_SIZE];
 
         let start: u32 = pac::DWT::cycle_count();
+        #[allow(static_mut_refs)]
         let ret = cha20.try_fill_bytes(unsafe { &mut BUF });
         let end: u32 = pac::DWT::cycle_count();
         defmt::assert!(ret.is_ok());
         let cha20cyc: u32 = end.wrapping_sub(start);
 
         let start: u32 = pac::DWT::cycle_count();
+        #[allow(static_mut_refs)]
         let ret = cha12.try_fill_bytes(unsafe { &mut BUF });
         let end: u32 = pac::DWT::cycle_count();
         defmt::assert!(ret.is_ok());
         let cha12cyc: u32 = end.wrapping_sub(start);
 
         let start: u32 = pac::DWT::cycle_count();
+        #[allow(static_mut_refs)]
         let ret = cha8.try_fill_bytes(unsafe { &mut BUF });
         let end: u32 = pac::DWT::cycle_count();
         defmt::assert!(ret.is_ok());
         let cha8cyc: u32 = end.wrapping_sub(start);
 
         let start: u32 = pac::DWT::cycle_count();
+        #[allow(static_mut_refs)]
         let ret = rng.try_fill_bytes(unsafe { &mut BUF });
         let end: u32 = pac::DWT::cycle_count();
         defmt::assert!(ret.is_ok());

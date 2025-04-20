@@ -312,10 +312,12 @@ impl Aes {
     /// [`new`]: Aes::new
     #[inline]
     pub unsafe fn steal() -> Aes {
-        let dp: pac::Peripherals = pac::Peripherals::steal();
-        Aes {
-            aes: dp.AES,
-            swap_mode: SwapMode::None,
+        unsafe {
+            let dp: pac::Peripherals = pac::Peripherals::steal();
+            Aes {
+                aes: dp.AES,
+                swap_mode: SwapMode::None,
+            }
         }
     }
 
@@ -334,7 +336,7 @@ impl Aes {
     #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
     #[inline]
     pub unsafe fn unmask_irq() {
-        pac::NVIC::unmask(pac::Interrupt::AES)
+        unsafe { pac::NVIC::unmask(pac::Interrupt::AES) }
     }
 
     fn set_key(&mut self, key: &[u32]) -> KeySize {
@@ -417,7 +419,7 @@ impl Aes {
             self.aes.dinr.write(|w| w.din().bits(din));
         }
 
-        let remain_dw: usize = 4 - ((block.len() + 3) / 4);
+        let remain_dw: usize = 4 - block.len().div_ceil(4);
         for _ in 0..remain_dw {
             self.aes.dinr.write(|w| w.din().bits(0));
         }
@@ -441,7 +443,7 @@ impl Aes {
             }
         }
 
-        let remain_dw: usize = 4 - ((block.len() + 3) / 4);
+        let remain_dw: usize = 4 - block.len().div_ceil(4);
         for _ in 0..remain_dw {
             let _: u32 = self.aes.doutr.read().bits();
         }

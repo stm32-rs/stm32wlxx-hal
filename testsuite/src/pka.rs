@@ -7,7 +7,7 @@ use nucleo_wl55jc_bsp::hal::{
     cortex_m,
     pac::{self, DWT},
     pka::{
-        curve::NIST_P256, EcdsaPublicKey, EcdsaSignError, EcdsaSignature, EcdsaVerifyError, Pka,
+        EcdsaPublicKey, EcdsaSignError, EcdsaSignature, EcdsaVerifyError, Pka, curve::NIST_P256,
     },
     rcc,
 };
@@ -140,7 +140,7 @@ mod tests {
         // rust-crypto p256 for comparison
         {
             use ecdsa::hazmat::SignPrimitive;
-            use p256::{elliptic_curve::ops::Reduce, Scalar};
+            use p256::{Scalar, elliptic_curve::ops::Reduce};
 
             let hash_bytes: [u8; 32] = into_bytes(HASH_SWAP);
             let private_key_bytes: [u8; 32] = into_bytes(PRIVATE_KEY_SWAP);
@@ -154,9 +154,11 @@ mod tests {
             let ephemeral_scalar: Scalar = Scalar::reduce_bytes(&ephemeral_secret.to_bytes());
 
             let start: u32 = DWT::cycle_count();
-            let (signature, _) = unwrap!(static_scalar
-                .try_sign_prehashed(ephemeral_scalar, &prehashed_message_as_scalar.to_bytes())
-                .ok());
+            let (signature, _) = unwrap!(
+                static_scalar
+                    .try_sign_prehashed(ephemeral_scalar, &prehashed_message_as_scalar.to_bytes())
+                    .ok()
+            );
             let elapsed: u32 = DWT::cycle_count().wrapping_sub(start);
             defmt::info!("Approximate cycles per rust-crypto p256 sign: {}", elapsed);
 
@@ -218,8 +220,8 @@ mod tests {
 
         // rust-crypto p256 for comparison
         {
-            use ecdsa::{hazmat::VerifyPrimitive, Signature};
-            use p256::{elliptic_curve::ops::Reduce, PublicKey, Scalar};
+            use ecdsa::{Signature, hazmat::VerifyPrimitive};
+            use p256::{PublicKey, Scalar, elliptic_curve::ops::Reduce};
 
             let hash_bytes: [u8; 32] = into_bytes(HASH_SWAP);
 
@@ -232,10 +234,9 @@ mod tests {
 
             let prehashed_message_as_scalar: Scalar = Scalar::reduce_bytes((&hash_bytes).into());
 
-            let signature: Signature<_> =
-                unwrap!(
-                    Signature::from_scalars(into_bytes(R_SIGN_SWAP), into_bytes(S_SIGN_SWAP)).ok()
-                );
+            let signature: Signature<_> = unwrap!(
+                Signature::from_scalars(into_bytes(R_SIGN_SWAP), into_bytes(S_SIGN_SWAP)).ok()
+            );
 
             let start: u32 = DWT::cycle_count();
             let result = public_key

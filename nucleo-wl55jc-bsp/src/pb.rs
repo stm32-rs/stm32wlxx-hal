@@ -1,7 +1,7 @@
 //! Push-buttons
 use stm32wlxx_hal::{
     cortex_m::interrupt::CriticalSection,
-    gpio::{pins, Exti, Input, PinState, Pull},
+    gpio::{Exti, Input, PinState, Pull, pins},
 };
 
 const PULL: Pull = Pull::Up;
@@ -151,7 +151,7 @@ impl Pb3 {
     /// ```
     pub unsafe fn steal() -> Self {
         Self {
-            gpio: Input::steal(),
+            gpio: unsafe { Input::steal() },
         }
     }
 }
@@ -222,7 +222,7 @@ impl Pb2 {
     /// ```
     pub unsafe fn steal() -> Self {
         Self {
-            gpio: Input::steal(),
+            gpio: unsafe { Input::steal() },
         }
     }
 }
@@ -293,7 +293,7 @@ impl Pb1 {
     /// ```
     pub unsafe fn steal() -> Self {
         Self {
-            gpio: Input::steal(),
+            gpio: unsafe { Input::steal() },
         }
     }
 }

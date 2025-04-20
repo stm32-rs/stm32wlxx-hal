@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 
-use core::sync::atomic::{compiler_fence, Ordering::SeqCst};
+use core::sync::atomic::{Ordering::SeqCst, compiler_fence};
 use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use nucleo_wl55jc_bsp::hal::{

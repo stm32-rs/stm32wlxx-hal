@@ -173,7 +173,7 @@ impl<const BASE: usize, const N: u8> Pin<BASE, N> {
 }
 
 pub(crate) mod sealed {
-    use super::{adc, CriticalSection, OutputType, PinState, Pull, Speed};
+    use super::{CriticalSection, OutputType, PinState, Pull, Speed, adc};
 
     /// GPIO modes.
     #[repr(u8)]
@@ -304,7 +304,7 @@ pub trait Exti {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins::C6, Exti},
+    ///     gpio::{Exti, pins::C6},
     ///     pac,
     /// };
     ///
@@ -321,7 +321,7 @@ pub trait Exti {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins::C6, Exti},
+    ///     gpio::{Exti, pins::C6},
     ///     pac,
     /// };
     ///
@@ -339,7 +339,7 @@ pub trait Exti {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins::C6, Exti},
+    ///     gpio::{Exti, pins::C6},
     ///     pac,
     /// };
     ///
@@ -360,7 +360,7 @@ pub trait Exti {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins::C6, Exti},
+    ///     gpio::{Exti, pins::C6},
     ///     pac,
     /// };
     ///
@@ -402,7 +402,7 @@ pub trait Exti {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins::C6, Exti, ExtiTrg},
+    ///     gpio::{Exti, ExtiTrg, pins::C6},
     ///     pac,
     /// };
     ///
@@ -431,7 +431,7 @@ pub trait Exti {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins::C6, Exti, ExtiTrg},
+    ///     gpio::{Exti, ExtiTrg, pins::C6},
     ///     pac,
     /// };
     ///
@@ -441,7 +441,7 @@ pub trait Exti {
     /// ```
     #[inline]
     unsafe fn unmask() {
-        pac::NVIC::unmask(Self::INTERRUPT)
+        unsafe { pac::NVIC::unmask(Self::INTERRUPT) }
     }
 
     /// Mask the interrupt in the NVIC.
@@ -454,7 +454,7 @@ pub trait Exti {
     /// Mask C6 (which will mask all pins 5-9).
     ///
     /// ```no_run
-    /// use stm32wlxx_hal::gpio::{pins::C6, Exti};
+    /// use stm32wlxx_hal::gpio::{Exti, pins::C6};
     ///
     /// C6::mask();
     /// ```
@@ -467,8 +467,8 @@ pub trait Exti {
 /// GPIO pins
 pub mod pins {
     use super::{
-        adc, pac, CriticalSection, OutputType, Pin, PinState, Pull, Speed, GPIOA_BASE, GPIOB_BASE,
-        GPIOC_BASE,
+        CriticalSection, GPIOA_BASE, GPIOB_BASE, GPIOC_BASE, OutputType, Pin, PinState, Pull,
+        Speed, adc, pac,
     };
 
     macro_rules! gpio_struct {
@@ -897,7 +897,7 @@ impl PortA {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, PortA},
+    ///     gpio::{PortA, pins},
     ///     pac,
     /// };
     ///
@@ -1041,7 +1041,7 @@ impl PortB {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, PortB},
+    ///     gpio::{PortB, pins},
     ///     pac,
     /// };
     ///
@@ -1173,7 +1173,7 @@ impl PortC {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, PortC},
+    ///     gpio::{PortC, pins},
     ///     pac,
     /// };
     ///
@@ -1330,7 +1330,7 @@ where
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{self, pins, Output, PortC},
+    ///     gpio::{self, Output, PortC, pins},
     ///     pac,
     /// };
     ///
@@ -1374,7 +1374,7 @@ where
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, Output, OutputArgs, PortC},
+    ///     gpio::{Output, OutputArgs, PortC, pins},
     ///     pac,
     /// };
     ///
@@ -1401,7 +1401,7 @@ where
     /// # Example
     ///
     /// ```
-    /// use stm32wlxx_hal::gpio::{pins, Output};
+    /// use stm32wlxx_hal::gpio::{Output, pins};
     ///
     /// // ... setup occurs here
     ///
@@ -1409,7 +1409,7 @@ where
     /// ```
     #[inline]
     pub unsafe fn steal() -> Self {
-        Output { pin: P::steal() }
+        unsafe { Output { pin: P::steal() } }
     }
 
     /// Free the GPIO pin.
@@ -1420,7 +1420,7 @@ where
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, Output, PortC},
+    ///     gpio::{Output, PortC, pins},
     ///     pac,
     /// };
     ///
@@ -1446,7 +1446,7 @@ where
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, Output, PinState, PortC},
+    ///     gpio::{Output, PinState, PortC, pins},
     ///     pac,
     /// };
     ///
@@ -1473,7 +1473,7 @@ where
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, Output, PortC},
+    ///     gpio::{Output, PortC, pins},
     ///     pac,
     /// };
     ///
@@ -1499,7 +1499,7 @@ where
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, Output, PortC},
+    ///     gpio::{Output, PortC, pins},
     ///     pac,
     /// };
     ///
@@ -1523,7 +1523,7 @@ where
     /// ```no_run
     /// use core::ops::Not;
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, Output, PinState, PortC},
+    ///     gpio::{Output, PinState, PortC, pins},
     ///     pac,
     /// };
     ///
@@ -1595,7 +1595,7 @@ where
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, Input, PortC, Pull},
+    ///     gpio::{Input, PortC, Pull, pins},
     ///     pac,
     /// };
     ///
@@ -1620,7 +1620,7 @@ where
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, Input, PortC},
+    ///     gpio::{Input, PortC, pins},
     ///     pac,
     /// };
     ///
@@ -1646,7 +1646,7 @@ where
     /// # Example
     ///
     /// ```
-    /// use stm32wlxx_hal::gpio::{pins, Input};
+    /// use stm32wlxx_hal::gpio::{Input, pins};
     ///
     /// // ... setup occurs here
     ///
@@ -1654,7 +1654,7 @@ where
     /// ```
     #[inline]
     pub unsafe fn steal() -> Self {
-        Input { pin: P::steal() }
+        unsafe { Input { pin: P::steal() } }
     }
 
     /// Free the GPIO pin.
@@ -1665,7 +1665,7 @@ where
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, Input, PortC},
+    ///     gpio::{Input, PortC, pins},
     ///     pac,
     /// };
     ///
@@ -1689,7 +1689,7 @@ where
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, Input, PinState, PortC, Pull},
+    ///     gpio::{Input, PinState, PortC, Pull, pins},
     ///     pac,
     /// };
     ///
@@ -1746,7 +1746,7 @@ where
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, Analog, PortB},
+    ///     gpio::{Analog, PortB, pins},
     ///     pac,
     /// };
     ///
@@ -1768,7 +1768,7 @@ where
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, Analog, PortB},
+    ///     gpio::{Analog, PortB, pins},
     ///     pac,
     /// };
     ///
@@ -1819,7 +1819,7 @@ impl RfBusy {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, PortA, RfBusy},
+    ///     gpio::{PortA, RfBusy, pins},
     ///     pac,
     /// };
     ///
@@ -1871,7 +1871,7 @@ impl RfIrq0 {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, PortB, RfIrq0},
+    ///     gpio::{PortB, RfIrq0, pins},
     ///     pac,
     /// };
     ///
@@ -1923,7 +1923,7 @@ impl RfIrq1 {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, PortB, RfIrq1},
+    ///     gpio::{PortB, RfIrq1, pins},
     ///     pac,
     /// };
     ///
@@ -1975,7 +1975,7 @@ impl RfIrq2 {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, PortB, RfIrq2},
+    ///     gpio::{PortB, RfIrq2, pins},
     ///     pac,
     /// };
     ///
@@ -2005,7 +2005,7 @@ impl RfNssDbg {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, PortA, RfNssDbg},
+    ///     gpio::{PortA, RfNssDbg, pins},
     ///     pac,
     /// };
     ///
@@ -2027,7 +2027,7 @@ impl RfNssDbg {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, PortA, RfNssDbg},
+    ///     gpio::{PortA, RfNssDbg, pins},
     ///     pac,
     /// };
     ///
@@ -2057,7 +2057,7 @@ impl SgSckDbg {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, PortA, SgSckDbg},
+    ///     gpio::{PortA, SgSckDbg, pins},
     ///     pac,
     /// };
     ///
@@ -2079,7 +2079,7 @@ impl SgSckDbg {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, PortA, SgSckDbg},
+    ///     gpio::{PortA, SgSckDbg, pins},
     ///     pac,
     /// };
     ///
@@ -2109,7 +2109,7 @@ impl SgMisoDbg {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, PortA, SgMisoDbg},
+    ///     gpio::{PortA, SgMisoDbg, pins},
     ///     pac,
     /// };
     ///
@@ -2131,7 +2131,7 @@ impl SgMisoDbg {
     ///
     /// ```no_run
     /// use stm32wlxx_hal::{
-    ///     gpio::{pins, PortA, SgMisoDbg},
+    ///     gpio::{PortA, SgMisoDbg, pins},
     ///     pac,
     /// };
     ///
@@ -2162,7 +2162,7 @@ impl SgMosiDbg {
     /// ```no_run
     /// use stm32wlxx_hal::{
     ///     cortex_m,
-    ///     gpio::{pins, PortA, SgMosiDbg},
+    ///     gpio::{PortA, SgMosiDbg, pins},
     ///     pac,
     /// };
     ///
@@ -2185,7 +2185,7 @@ impl SgMosiDbg {
     /// ```no_run
     /// use stm32wlxx_hal::{
     ///     cortex_m,
-    ///     gpio::{pins, PortA, SgMosiDbg},
+    ///     gpio::{PortA, SgMosiDbg, pins},
     ///     pac,
     /// };
     ///

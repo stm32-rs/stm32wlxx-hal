@@ -6,7 +6,7 @@ use core::ops::Not;
 use hal::{
     cortex_m::interrupt::CriticalSection,
     embedded_hal::digital::v2::OutputPin,
-    gpio::{self, pins, Output, OutputArgs},
+    gpio::{self, Output, OutputArgs, pins},
 };
 
 const LED_ARGS: OutputArgs = OutputArgs {
@@ -90,7 +90,7 @@ impl D5 {
     /// ```
     pub unsafe fn steal() -> Self {
         Self {
-            gpio: Output::steal(),
+            gpio: unsafe { Output::steal() },
         }
     }
 

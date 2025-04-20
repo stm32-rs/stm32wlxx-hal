@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed function TcxoMode::set_txco_trim() to TcxoMode::set_tcxo_trim() to correct spelling.
 - Renamed enum CmdStatus::Avaliable to CmdStatus::Available to correct spelling.
 - Updated minimum `chrono` version to `0.4.23` to satisfy `cargo-audit`.
-- Changed minimum supported rust version from 1.60 to 1.62.
+- Changed the edition from 2021 to 2024.
+- Changed minimum supported rust version from 1.60 to 1.85.
 
 ### Fixed
 - Added a missing `must_use` in `SleepCfg::set_startup`.

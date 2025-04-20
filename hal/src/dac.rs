@@ -2,7 +2,7 @@
 
 use super::pac;
 
-use crate::gpio::{pins::A10, Analog};
+use crate::gpio::{Analog, pins::A10};
 use pac::dac::mcr::MODE1_A;
 
 /// ADC modes that use the A10 output pin
@@ -133,10 +133,12 @@ impl Dac {
     ///
     /// [`new`]: Dac::new
     pub unsafe fn steal() -> Dac {
-        let dp: pac::Peripherals = pac::Peripherals::steal();
-        Dac {
-            dac: dp.DAC,
-            out: None,
+        unsafe {
+            let dp: pac::Peripherals = pac::Peripherals::steal();
+            Dac {
+                dac: dp.DAC,
+                out: None,
+            }
         }
     }
 
@@ -171,7 +173,7 @@ impl Dac {
     /// ```
     #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
     pub unsafe fn unmask_irq() {
-        pac::NVIC::unmask(pac::Interrupt::DAC)
+        unsafe { pac::NVIC::unmask(pac::Interrupt::DAC) }
     }
 
     /// Mask the DAC interrupt.
@@ -345,7 +347,7 @@ impl Dac {
     /// ```no_run
     /// use stm32wlxx_hal::{
     ///     dac::{Dac, ModeChip, ModePin},
-    ///     gpio::{pins, Analog, PortA},
+    ///     gpio::{Analog, PortA, pins},
     ///     pac,
     /// };
     ///

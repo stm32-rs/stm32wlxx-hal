@@ -167,10 +167,12 @@ impl Rng {
     /// [`new`]: Rng::new
     #[inline]
     pub unsafe fn steal() -> Rng {
-        let dp: pac::Peripherals = pac::Peripherals::steal();
-        Rng {
-            rng: dp.RNG,
-            err_cnt: 0,
+        unsafe {
+            let dp: pac::Peripherals = pac::Peripherals::steal();
+            Rng {
+                rng: dp.RNG,
+                err_cnt: 0,
+            }
         }
     }
 
@@ -189,7 +191,7 @@ impl Rng {
     #[cfg(all(not(feature = "stm32wl5x_cm0p"), feature = "rt"))]
     #[inline]
     pub unsafe fn unmask_irq() {
-        pac::NVIC::unmask(pac::Interrupt::TRUE_RNG)
+        unsafe { pac::NVIC::unmask(pac::Interrupt::TRUE_RNG) }
     }
 
     /// Disable the RNG clock.

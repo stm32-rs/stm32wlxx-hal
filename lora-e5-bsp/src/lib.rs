@@ -10,7 +10,7 @@ pub use stm32wlxx_hal as hal;
 
 use hal::{
     cortex_m::interrupt::CriticalSection,
-    gpio::{self, pins, Output, OutputArgs, PinState},
+    gpio::{self, Output, OutputArgs, PinState, pins},
 };
 
 /// RF switch
@@ -28,8 +28,8 @@ impl RfSwitch {
     ///
     /// ```no_run
     /// use lora_e5_bsp::{
-    ///     hal::{cortex_m, gpio::PortA, pac},
     ///     RfSwitch,
+    ///     hal::{cortex_m, gpio::PortA, pac},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -63,12 +63,12 @@ impl RfSwitch {
     ///
     /// ```no_run
     /// use lora_e5_bsp::{
+    ///     RfSwitch,
     ///     hal::{
     ///         cortex_m,
-    ///         gpio::{pins, Output, PortA},
+    ///         gpio::{Output, PortA, pins},
     ///         pac,
     ///     },
-    ///     RfSwitch,
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -87,8 +87,8 @@ impl RfSwitch {
     #[inline]
     pub unsafe fn steal() -> Self {
         RfSwitch {
-            a4: Output::steal(),
-            a5: Output::steal(),
+            a4: unsafe { Output::steal() },
+            a5: unsafe { Output::steal() },
         }
     }
 
@@ -98,8 +98,8 @@ impl RfSwitch {
     ///
     /// ```no_run
     /// use lora_e5_bsp::{
-    ///     hal::{cortex_m, gpio::PortA, pac},
     ///     RfSwitch,
+    ///     hal::{cortex_m, gpio::PortA, pac},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -120,8 +120,8 @@ impl RfSwitch {
     ///
     /// ```no_run
     /// use lora_e5_bsp::{
-    ///     hal::{cortex_m, gpio::PortA, pac},
     ///     RfSwitch,
+    ///     hal::{cortex_m, gpio::PortA, pac},
     /// };
     ///
     /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();

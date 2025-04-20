@@ -35,11 +35,12 @@ use cortex_m::interrupt::CriticalSection;
 pub use cr::Cr;
 
 use crate::{
+    Ratio,
     gpio::{
         pins,
         sealed::{LpTim1Etr, LpTim1Out, LpTim2Etr, LpTim2Out, LpTim3Etr, LpTim3Out},
     },
-    pac, Ratio,
+    pac,
 };
 use core::cmp::min;
 use paste::paste;
@@ -197,7 +198,7 @@ macro_rules! impl_lptim_base_for {
             /// is set.
             #[inline(always)]
             unsafe fn cnt() -> u16 {
-                (*pac::$lptim::PTR).cnt.read().cnt().bits()
+                unsafe { (*pac::$lptim::PTR).cnt.read().cnt().bits() }
             }
 
             #[inline(always)]

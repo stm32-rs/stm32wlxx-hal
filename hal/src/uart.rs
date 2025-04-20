@@ -1,8 +1,9 @@
 //! Universal synchronous/asynchronous receiver transmitter
 use crate::{
+    Ratio,
     dma::{self, DmaCh},
     gpio::{self},
-    pac, rcc, Ratio,
+    pac, rcc,
 };
 use cortex_m::interrupt::CriticalSection;
 use embedded_hal::prelude::*;
@@ -381,10 +382,12 @@ macro_rules! impl_free_steal {
             ///
             /// [`new`]: Self::new
             pub unsafe fn steal() -> $uart<NoRx, NoTx> {
-                $uart {
-                    uart: pac::Peripherals::steal().$periph,
-                    rx: NoRx::new(),
-                    tx: NoTx::new(),
+                unsafe {
+                    $uart {
+                        uart: pac::Peripherals::steal().$periph,
+                        rx: NoRx::new(),
+                        tx: NoTx::new(),
+                    }
                 }
             }
         }
@@ -429,7 +432,7 @@ macro_rules! impl_tx_en_dis {
             /// ```no_run
             /// use stm32wlxx_hal::{
             ///     cortex_m,
-            ///     gpio::{pins, PortB},
+            ///     gpio::{PortB, pins},
             ///     pac,
             ///     uart::{self, LpUart, NoRx},
             /// };
@@ -470,7 +473,7 @@ macro_rules! impl_tx_en_dis {
             /// use stm32wlxx_hal::{
             ///     cortex_m,
             ///     dma::{AllDma, Dma2Ch7},
-            ///     gpio::{pins, PortB},
+            ///     gpio::{PortB, pins},
             ///     pac,
             ///     uart::{self, LpUart, NoRx},
             /// };
@@ -519,7 +522,7 @@ macro_rules! impl_tx_en_dis {
             /// ```no_run
             /// use stm32wlxx_hal::{
             ///     cortex_m,
-            ///     gpio::{pins, PortB},
+            ///     gpio::{PortB, pins},
             ///     pac,
             ///     uart::{self, LpUart, NoRx, NoTx},
             /// };
@@ -568,7 +571,7 @@ macro_rules! impl_rx_en_dis {
             /// ```no_run
             /// use stm32wlxx_hal::{
             ///     cortex_m,
-            ///     gpio::{pins, PortB},
+            ///     gpio::{PortB, pins},
             ///     pac,
             ///     uart::{self, LpUart, NoTx},
             /// };
@@ -608,7 +611,7 @@ macro_rules! impl_rx_en_dis {
             /// ```no_run
             /// use stm32wlxx_hal::{
             ///     dma::{AllDma, Dma2Ch2},
-            ///     gpio::{pins, PortB},
+            ///     gpio::{PortB, pins},
             ///     pac,
             ///     uart::{self, LpUart, NoTx},
             /// };
@@ -656,7 +659,7 @@ macro_rules! impl_rx_en_dis {
             ///
             /// ```no_run
             /// use stm32wlxx_hal::{
-            ///     gpio::{pins, PortB},
+            ///     gpio::{PortB, pins},
             ///     pac,
             ///     uart::{self, LpUart, NoRx, NoTx},
             /// };

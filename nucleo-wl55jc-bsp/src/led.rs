@@ -5,7 +5,7 @@ use stm32wlxx_hal as hal;
 use hal::{
     cortex_m::interrupt::CriticalSection,
     embedded_hal::digital::v2::{OutputPin, ToggleableOutputPin},
-    gpio::{self, pins, Output, OutputArgs},
+    gpio::{self, Output, OutputArgs, pins},
 };
 
 const LED_ARGS: OutputArgs = OutputArgs {
@@ -116,7 +116,7 @@ impl Red {
     /// ```
     pub unsafe fn steal() -> Self {
         Self {
-            gpio: Output::steal(),
+            gpio: unsafe { Output::steal() },
         }
     }
 }
@@ -203,7 +203,7 @@ impl Green {
     /// ```
     pub unsafe fn steal() -> Self {
         Self {
-            gpio: Output::steal(),
+            gpio: unsafe { Output::steal() },
         }
     }
 }
@@ -290,7 +290,7 @@ impl Blue {
     /// ```
     pub unsafe fn steal() -> Self {
         Self {
-            gpio: Output::steal(),
+            gpio: unsafe { Output::steal() },
         }
     }
 }

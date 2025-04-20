@@ -12,8 +12,8 @@
 #[cfg(not(feature = "stm32wl5x_cm0p"))]
 pub use pac::adc::cfgr2::{OVSR_A as OversampleRatio, OVSS_A as OversampleShift};
 
-use crate::gpio;
 use crate::Ratio;
+use crate::gpio;
 
 use super::pac;
 use core::{ptr::read_volatile, time::Duration};
@@ -522,8 +522,10 @@ impl Adc {
     /// [`new`]: Adc::new
     #[inline]
     pub unsafe fn steal() -> Adc {
-        Adc {
-            adc: pac::Peripherals::steal().ADC,
+        unsafe {
+            Adc {
+                adc: pac::Peripherals::steal().ADC,
+            }
         }
     }
 
@@ -712,7 +714,7 @@ impl Adc {
     #[cfg(feature = "rt")]
     #[inline]
     pub unsafe fn unmask_irq() {
-        pac::NVIC::unmask(pac::Interrupt::ADC)
+        unsafe { pac::NVIC::unmask(pac::Interrupt::ADC) }
     }
 
     /// Mask the ADC IRQ in the NVIC.
@@ -1294,7 +1296,7 @@ impl Adc {
     /// ```no_run
     /// use stm32wlxx_hal::{
     ///     adc::{self, Adc},
-    ///     gpio::{pins::B4, Analog, PortB},
+    ///     gpio::{Analog, PortB, pins::B4},
     ///     pac, rcc,
     ///     util::new_delay,
     /// };

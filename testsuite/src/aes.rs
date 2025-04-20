@@ -1732,9 +1732,11 @@ mod tests {
             let start: u32 = DWT::cycle_count();
             let cipher = aes_gcm::Aes128Gcm::new(key.as_ref().into());
             let nonce = Nonce::from_slice(iv.as_ref().into());
-            let result_tag = unwrap!(cipher
-                .encrypt_in_place_detached(nonce, &gcm.aad, &mut buf[..gcm.pt.len()])
-                .ok());
+            let result_tag = unwrap!(
+                cipher
+                    .encrypt_in_place_detached(nonce, &gcm.aad, &mut buf[..gcm.pt.len()])
+                    .ok()
+            );
             total_elapsed += DWT::cycle_count().wrapping_sub(start);
 
             let result_tag: [u8; 16] = unwrap!(result_tag.try_into());
@@ -2098,7 +2100,10 @@ mod tests {
                 &ZERO_16B,
                 &IV,
                 ASSOCIATED_DATA,
-                unsafe { &mut BUF },
+                #[allow(static_mut_refs)]
+                unsafe {
+                    &mut BUF
+                },
                 &mut encrypt_tag
             ))
         });
@@ -2108,7 +2113,7 @@ mod tests {
             encrypt_elapsed
         );
 
-        assert_ne!(unsafe { &BUF }, PLAINTEXT);
+        assert_ne!(&raw const BUF, PLAINTEXT);
         defmt::assert_ne!(encrypt_tag, ZERO_16B);
 
         let mut decrypt_tag: [u32; 4] = [0; 4];
@@ -2117,12 +2122,15 @@ mod tests {
                 &ZERO_16B,
                 &IV,
                 ASSOCIATED_DATA,
-                unsafe { &mut BUF },
+                #[allow(static_mut_refs)]
+                unsafe {
+                    &mut BUF
+                },
                 &mut decrypt_tag
             ))
         });
 
-        assert_eq!(unsafe { &BUF }, PLAINTEXT);
+        assert_eq!(&raw const BUF, PLAINTEXT);
         defmt::assert_eq!(decrypt_tag, encrypt_tag);
 
         defmt::info!(

@@ -8,7 +8,7 @@ use nucleo_wl55jc_bsp::hal::{
     cortex_m,
     dma::{AllDma, Dma1Ch3, Dma2Ch6},
     embedded_hal::prelude::*,
-    gpio::{pins, PortA, PortC},
+    gpio::{PortA, PortC, pins},
     pac, rcc,
     uart::{self, LpUart, Uart1},
 };

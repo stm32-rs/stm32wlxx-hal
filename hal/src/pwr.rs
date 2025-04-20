@@ -1,6 +1,6 @@
 //! Power control
 
-use core::sync::atomic::{compiler_fence, Ordering::SeqCst};
+use core::sync::atomic::{Ordering::SeqCst, compiler_fence};
 
 use cortex_m::interrupt::CriticalSection;
 
@@ -52,7 +52,7 @@ impl WakeupPin {
 /// ```no_run
 /// use stm32wlxx_hal::{
 ///     pac,
-///     pwr::{setup_wakeup_pins, WakeupPin},
+///     pwr::{WakeupPin, setup_wakeup_pins},
 /// };
 ///
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -214,7 +214,7 @@ impl From<LprunRange> for MsiRange {
 /// ```no_run
 /// use stm32wlxx_hal::{
 ///     pac,
-///     pwr::{enter_lprun_msi, LprunRange},
+///     pwr::{LprunRange, enter_lprun_msi},
 /// };
 ///
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();
@@ -236,9 +236,11 @@ pub unsafe fn enter_lprun_msi(
     range: LprunRange,
     cs: &CriticalSection,
 ) {
-    crate::rcc::set_sysclk_msi(flash, pwr, rcc, range.into(), cs);
-    rcc.cr.modify(|_, w| w.hseon().disabled());
-    pwr.cr1.modify(|_, w| w.lpr().low_power_mode());
+    unsafe {
+        crate::rcc::set_sysclk_msi(flash, pwr, rcc, range.into(), cs);
+        rcc.cr.modify(|_, w| w.hseon().disabled());
+        pwr.cr1.modify(|_, w| w.lpr().low_power_mode());
+    }
 }
 
 /// Exit low-power run mode.
@@ -250,7 +252,7 @@ pub unsafe fn enter_lprun_msi(
 /// ```no_run
 /// use stm32wlxx_hal::{
 ///     pac,
-///     pwr::{enter_lprun_msi, exit_lprun, LprunRange},
+///     pwr::{LprunRange, enter_lprun_msi, exit_lprun},
 /// };
 ///
 /// let mut dp: pac::Peripherals = pac::Peripherals::take().unwrap();

@@ -262,6 +262,7 @@ pub(crate) mod sealed {
                 .set_mem_inc(true)
                 .set_enable(true);
 
+            #[allow(static_mut_refs)]
             rx_dma.set_mem_addr(unsafe { GARBAGE.as_mut_ptr() } as u32);
             tx_dma.set_mem_addr(words.as_ptr() as u32);
 

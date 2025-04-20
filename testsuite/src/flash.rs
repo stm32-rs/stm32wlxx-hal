@@ -9,10 +9,11 @@ use nucleo_wl55jc_bsp::hal::{
     flash::{self, AlignedAddr, Error, Flash, Page, flash_range},
     pac::{self, DWT},
     rcc,
-    rng::{self, Rng, rand_core::RngCore},
+    rng::{self, Rng, rand_core::SeedableRng as _, rand_core::TryRngCore as _},
 };
 use panic_probe as _;
-use rand::Rng as RngTrait;
+use rand::Rng as _;
+use rand_chacha::ChaCha20Rng;
 use static_assertions as sa;
 
 const FREQ: u32 = 48_000_000;
@@ -53,7 +54,7 @@ mod tests {
         // address to use for testing
         // incremented by the test after the address is programmed
         addr: usize,
-        rng: Rng,
+        rng: ChaCha20Rng,
     }
 
     #[init]
@@ -71,9 +72,13 @@ mod tests {
 
         let mut rng: Rng = Rng::new(dp.RNG, rng::Clk::Msi, &mut dp.RCC);
 
+        let mut seed: [u8; 32] = [0; 32];
+        unwrap!(rng.try_fill_u8(&mut seed));
+        let mut cha20: ChaCha20Rng = ChaCha20Rng::from_seed(seed);
+
         // flash only gets 20k program cycles
         // change the location each time to prevent wearout of CI boards
-        let page: u8 = rng.gen_range(64..127);
+        let page: u8 = cha20.random_range(64..127);
         let page: Page = unwrap!(Page::from_index(page));
 
         defmt::info!(
@@ -86,7 +91,7 @@ mod tests {
             flash: dp.FLASH,
             page,
             addr: page.addr(),
-            rng,
+            rng: cha20,
         }
     }
 
@@ -134,7 +139,7 @@ mod tests {
         #[allow(static_mut_refs)]
         unsafe {
             BUF.iter_mut()
-                .for_each(|word| *word = ta.rng.gen_range(1..u64::MAX - 1))
+                .for_each(|word| *word = ta.rng.random_range(1..u64::MAX - 1))
         };
 
         let mut flash: Flash = Flash::unlock(&mut ta.flash);
@@ -160,7 +165,7 @@ mod tests {
 
     #[test]
     fn standard_program(ta: &mut TestArgs) {
-        let data: u64 = ta.rng.gen_range(1..u64::MAX - 1);
+        let data: u64 = ta.rng.random_range(1..u64::MAX - 1);
         defmt::assert_ne!(data, u64::MAX);
         defmt::assert_ne!(data, 0);
 
@@ -208,7 +213,7 @@ mod tests {
     #[test]
     fn program_bytes(ta: &mut TestArgs) {
         let mut data: [u8; 17] = [0; 17];
-        ta.rng.fill_bytes(&mut data);
+        unwrap!(ta.rng.try_fill_bytes(&mut data));
 
         defmt::trace!("data={}", data);
 

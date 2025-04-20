@@ -15,8 +15,6 @@
 
 use crate::pac;
 
-use core::num::NonZeroU32;
-
 /// RNG trait abstractions
 pub use rand_core;
 
@@ -35,13 +33,13 @@ pub enum Error {
     Clock,
 }
 
-impl From<Error> for rand_core::Error {
-    fn from(e: Error) -> Self {
-        match e {
-            // safety: 1 is non-zero
-            Error::Seed => unsafe { NonZeroU32::new_unchecked(1) }.into(),
-            // safety: 2 is non-zero
-            Error::Clock => unsafe { NonZeroU32::new_unchecked(2) }.into(),
+impl core::error::Error for Error {}
+
+impl core::fmt::Display for Error {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Error::Seed => f.write_str("seed"),
+            Error::Clock => f.write_str("clock"),
         }
     }
 }
@@ -456,31 +454,20 @@ impl Rng {
     }
 }
 
-impl rand_core::RngCore for Rng {
-    /// Not recommended for use, panics upon errors.
-    fn next_u32(&mut self) -> u32 {
-        let mut dws: [u32; 1] = [0; 1];
-        unwrap!(self.try_fill_u32(&mut dws));
-        dws[0]
+impl rand_core::TryRngCore for Rng {
+    type Error = Error;
+
+    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
+        self.try_fill_u8(dest)
     }
 
-    /// Not recommended for use, panics upon errors.
-    fn next_u64(&mut self) -> u64 {
-        let mut dws: [u32; 2] = [0; 2];
-        unwrap!(self.try_fill_u32(&mut dws));
-        u64::from(dws[0]) << 32 | u64::from(dws[1])
+    fn try_next_u32(&mut self) -> Result<u32, Self::Error> {
+        self.try_u32()
     }
 
-    /// Not recommended for use, panics upon errors.
-    fn fill_bytes(&mut self, dest: &mut [u8]) {
-        unwrap!(self.try_fill_u8(dest))
-    }
-
-    /// Use this method if using the `RngCore` for `CryptoRng` traits.
-    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand_core::Error> {
-        self.try_fill_u8(dest)?;
-        Ok(())
+    fn try_next_u64(&mut self) -> Result<u64, Self::Error> {
+        self.try_u64()
     }
 }
 
-impl rand_core::CryptoRng for Rng {}
+impl rand_core::TryCryptoRng for Rng {}

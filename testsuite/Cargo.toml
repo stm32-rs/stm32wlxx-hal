@@ -93,8 +93,8 @@ itertools = { version = "0.14", default-features = false }
 nb = "1"
 p256 = { version = "0.13", default-features = false, features = ["arithmetic", "ecdsa"] }
 panic-probe = { version = "1", features = ["print-defmt" ] }
-rand = { version = "0.8", default-features = false }
-rand_chacha = { version = "0.3", default-features = false }
+rand = { version = "0.9", default-features = false }
+rand_chacha = { version = "0.9", default-features = false }
 static_assertions = "1"
 
 [dependencies.nucleo-wl55jc-bsp]

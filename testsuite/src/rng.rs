@@ -5,7 +5,7 @@ use defmt::unwrap;
 use defmt_rtt as _; // global logger
 use nucleo_wl55jc_bsp::hal::{
     cortex_m, pac, rcc,
-    rng::{Clk, Rng, rand_core::RngCore},
+    rng::{Clk, Rng, rand_core::TryRngCore as _},
 };
 use panic_probe as _;
 
@@ -52,11 +52,11 @@ mod tests {
         let mut seed: [u8; 32] = [0; 32];
 
         unwrap!(rng.try_fill_u8(&mut seed));
-        let mut cha20: ChaCha20Rng = ChaCha20Rng::from_seed([0u8; 32]);
+        let mut cha20: ChaCha20Rng = ChaCha20Rng::from_seed(seed);
         unwrap!(rng.try_fill_u8(&mut seed));
-        let mut cha12: ChaCha12Rng = ChaCha12Rng::from_seed([0u8; 32]);
+        let mut cha12: ChaCha12Rng = ChaCha12Rng::from_seed(seed);
         unwrap!(rng.try_fill_u8(&mut seed));
-        let mut cha8: ChaCha8Rng = ChaCha8Rng::from_seed([0u8; 32]);
+        let mut cha8: ChaCha8Rng = ChaCha8Rng::from_seed(seed);
 
         let mut cp = unwrap!(pac::CorePeripherals::take());
         cp.DCB.enable_trace();

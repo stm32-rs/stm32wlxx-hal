@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Updated minimum `chrono` version to `0.4.23` to satisfy `cargo-audit`.
 - Updated defmt from `0.3` to `1`.
+- Updated `rand_core` `0.6` to `0.9`.
+  - `stm32wlxx_hal::rng::Rng` now implements `rand_core::TryRngCore` instead of `rand_core::RngCore`.
+  - `stm32wlxx_hal::rng::Rng` now implements `rand_core::TryCryptoRng` instead of `rand_core::CryptoRng`.
 - Changed the edition from 2021 to 2024.
 - Changed minimum supported rust version from 1.60 to 1.85.
 

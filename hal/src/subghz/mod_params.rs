@@ -170,7 +170,7 @@ impl Ord for FskBandwidth {
 
 impl PartialOrd for FskBandwidth {
     fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
-        Some(self.hertz().cmp(&other.hertz()))
+        Some(self.cmp(other))
     }
 }
 
@@ -278,7 +278,7 @@ impl Ord for FskBitrate {
 
 impl PartialOrd for FskBitrate {
     fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
-        Some(self.as_bps().cmp(&other.as_bps()))
+        Some(self.cmp(other))
     }
 }
 
@@ -711,7 +711,7 @@ impl Ord for LoRaBandwidth {
 
 impl PartialOrd for LoRaBandwidth {
     fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
-        Some(self.hertz().cmp(&other.hertz()))
+        Some(self.cmp(other))
     }
 }
 
@@ -752,7 +752,6 @@ pub enum CodingRate {
 /// LoRa modulation parameters.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
-
 pub struct LoRaModParams {
     buf: [u8; 5],
 }

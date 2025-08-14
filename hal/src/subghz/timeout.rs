@@ -2,10 +2,6 @@ use core::time::Duration;
 
 use super::ValueError;
 
-const fn abs_diff(a: u64, b: u64) -> u64 {
-    if a > b { a - b } else { b - a }
-}
-
 /// Timeout argument.
 ///
 /// This is used by:
@@ -159,8 +155,8 @@ impl Timeout {
             let timeout_ceil: Timeout = Timeout::from_raw(div_ceil as u32);
             let timeout_floor: Timeout = Timeout::from_raw(div_floor as u32);
 
-            let error_ceil: u64 = abs_diff(timeout_ceil.as_nanos(), duration_nanos);
-            let error_floor: u64 = abs_diff(timeout_floor.as_nanos(), duration_nanos);
+            let error_ceil: u64 = timeout_ceil.as_nanos().abs_diff(duration_nanos);
+            let error_floor: u64 = timeout_floor.as_nanos().abs_diff(duration_nanos);
 
             if error_ceil < error_floor {
                 Ok(timeout_ceil)
@@ -221,8 +217,8 @@ impl Timeout {
             let timeout_ceil: Timeout = Timeout::from_raw(div_ceil as u32);
             let timeout_floor: Timeout = Timeout::from_raw(div_floor as u32);
 
-            let error_ceil: u64 = abs_diff(timeout_ceil.as_nanos(), duration_nanos);
-            let error_floor: u64 = abs_diff(timeout_floor.as_nanos(), duration_nanos);
+            let error_ceil: u64 = timeout_ceil.as_nanos().abs_diff(duration_nanos);
+            let error_floor: u64 = timeout_floor.as_nanos().abs_diff(duration_nanos);
 
             if error_ceil < error_floor {
                 timeout_ceil

@@ -34,7 +34,7 @@ jobs:
           - mcu: "stm32wle5"
             target: "thumbv6m-none-eabi"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain }}
@@ -74,7 +74,7 @@ jobs:
       # RUSTFLAGS: "-D warnings"
       DEFMT_LOG: "debug"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
         with:
           target: thumbv7em-none-eabi
@@ -110,7 +110,7 @@ jobs:
           - "stm32wl5x_cm4"
           - "stm32wle5"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Test HAL
@@ -129,7 +129,7 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -140,7 +140,7 @@ jobs:
     runs-on: ubuntu-latest
     env: {"RUSTFLAGS": "-D warnings"}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt
@@ -151,7 +151,7 @@ jobs:
     runs-on: ubuntu-latest
     env: {"RUSTDOCFLAGS": "-D warnings"}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       # not run in parallel to avoid hitting concurrency limit
       # stm32wl5x_cm4 covered by rustdoc
@@ -165,7 +165,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@nightly
       - name: rustdoc
         run: |
@@ -208,7 +208,7 @@ jobs:
       - test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - name: Release stm32wlxx-hal
         run: |

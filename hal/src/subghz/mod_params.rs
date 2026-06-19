@@ -213,15 +213,14 @@ impl FskBitrate {
     /// ```
     pub const fn from_bps(bps: u32) -> Self {
         const MAX: u32 = 0x00FF_FFFF;
-        if bps == 0 {
+        let bits: u32 = match (32u32 * 32_000_000).checked_div(bps) {
+            Some(bits) => bits,
+            None => MAX,
+        };
+        if bits > MAX {
             Self { bits: MAX }
         } else {
-            let bits: u32 = 32 * 32_000_000 / bps;
-            if bits > MAX {
-                Self { bits: MAX }
-            } else {
-                Self { bits }
-            }
+            Self { bits }
         }
     }
 
@@ -258,10 +257,9 @@ impl FskBitrate {
     /// assert_eq!(BITRATE.as_bps(), BITS_PER_SEC);
     /// ```
     pub const fn as_bps(&self) -> u32 {
-        if self.bits == 0 {
-            0
-        } else {
-            32 * 32_000_000 / self.bits
+        match (32u32 * 32_000_000).checked_div(self.bits) {
+            Some(bps) => bps,
+            None => 0,
         }
     }
 
